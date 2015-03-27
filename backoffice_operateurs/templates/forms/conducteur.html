@@ -1,0 +1,12 @@
+{% set active_page = "conducteurs" %}
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+<div id="content">
+<form  class="form form-horizontal" method="{{ form_method }}" role="form">
+  {{ wtf.quick_form(form) }}
+</form>
+</div>
+{% endblock %}
+
