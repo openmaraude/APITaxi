@@ -15,6 +15,7 @@ def zupc_list():
 
 
 @app.route('/zupc/create', methods=['GET', 'POST'])
+@login_required
 def zupc_create():
     form = administrative_forms.ZUPCreateForm()
     if request.method == "POST" and form.validate():

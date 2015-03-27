@@ -5,10 +5,15 @@ from sqlalchemy_defaults import Column
 class Departement(db.Model):
     id = Column(db.Integer, primary_key=True)
     nom = Column(db.String(255), label='Nom')
-    numero = Column(db.String(3), label='Numéro')
+    numero = Column(db.String(3), label='Numero')
+
+    def __str__(self):
+        return '%r %r' % (self.numero, self.nom)
 
 class ZUPC(db.Model):
     id = Column(db.Integer, primary_key=True)
-    departement_id = db.Column(db.Integer, db.ForeignKey('departement.id'))
+    departement_id = Column(db.Integer, db.ForeignKey('departement.id'))
     nom = Column(db.String(255), label='Nom')
     shape = Column(db.String(10000), label='Geojson shape')
+    departement = db.relationship('Departement',
+            backref=db.backref('departements', lazy='dynamic'))

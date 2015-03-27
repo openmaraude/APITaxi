@@ -25,7 +25,8 @@ class ADS(db.Model):
     nom_societe = Column(db.String(255), label=u'Nom de la société', default='')
     artisan = Column(db.String(255), label=u'Nom de l\'artisan', default='')
     personne = Column(db.String(255), label=u'Nom de la personne', default='')
-    ZUPC = db.Column(db.Integer, db.ForeignKey('ZUPC.id'))
+    ZUPC_id = Column(db.Integer, db.ForeignKey('ZUPC.id'))
+    ZUPC = db.relationship('ZUPC', backref='ZUPC')
 
     def __repr__(self):
         return '<ADS %r>' % str(self.id)

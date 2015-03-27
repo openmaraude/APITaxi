@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 from backoffice_operateurs import app, db
 from backoffice_operateurs.forms import taxis as taxis_forms
 from backoffice_operateurs.models import taxis as taxis_models
