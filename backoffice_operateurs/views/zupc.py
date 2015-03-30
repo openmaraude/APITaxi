@@ -69,6 +69,6 @@ def zupc_autocomplete():
 
     response = administrative_models.ZUPC.query.filter(
             administrative_models.ZUPC.nom.ilike(like)).all()
-    app.logger.info(response)
-    return jsonify(suggestions=map(lambda zupc:zupc.nom, response))
+    return jsonify(suggestions=map(lambda zupc:{'name': zupc.nom, 'id': int(zupc.id)},
+                                        response))
 

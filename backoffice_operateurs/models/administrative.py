@@ -17,3 +17,9 @@ class ZUPC(db.Model):
     shape = Column(db.String(10000), label='Geojson shape')
     departement = db.relationship('Departement',
             backref=db.backref('departements', lazy='dynamic'))
+
+    def __repr__(self):
+        return '<ZUPC %r>' % str(self.id)
+
+    def __str__(self):
+        return self.__repr__()

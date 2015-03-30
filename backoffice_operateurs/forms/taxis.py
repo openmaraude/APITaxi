@@ -10,7 +10,8 @@ def get_zupc(id_):
 class ADSForm(ModelForm):
     class Meta:
         model = taxis.ADS
-    ZUPC = TextField(u'ZUPC', id='zupc')
+    ZUPC_autocomplete = TextField(u'ZUPC', id='zupc_autocomplete')
+    ZUPC_id = HiddenField('ZUPC_id', id='ZUPC_id')
 
 class ADSCreateForm(ADSForm):
     submit = SubmitField(u'Créer')
