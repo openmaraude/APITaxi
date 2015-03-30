@@ -3,7 +3,7 @@ from backoffice_operateurs import app, db
 from backoffice_operateurs.models import administrative as administrative_models
 from backoffice_operateurs.forms import administrative as administrative_forms
 from flask.ext.security import login_required
-from flask import request, render_template, redirect
+from flask import request, render_template, redirect, jsonify, url_for
 
 @app.route('/zupc')
 @app.route('/zupc/')
@@ -57,3 +57,18 @@ def zupc_delete():
     db.session.delete(zupc)
     db.session.commit()
     return redirect(url_for("zupc_list"))
+
+
+@app.route('/zupc/autocomplete')
+def zupc_autocomplete():
+    #@TODO: have some identification here?
+    term = request.args.get('q')
+    like = "%{}%".format(term)
+    app.logger.info(term)
+    app.logger.info(like)
+
+    response = administrative_models.ZUPC.query.filter(
+            administrative_models.ZUPC.nom.ilike(like)).all()
+    app.logger.info(response)
+    return jsonify(suggestions=map(lambda zupc:zupc.nom, response))
+

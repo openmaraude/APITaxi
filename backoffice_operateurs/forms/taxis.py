@@ -2,11 +2,15 @@
 from backoffice_operateurs.utils import ModelForm
 from backoffice_operateurs.models import taxis
 from backoffice_operateurs.forms import administrative
-from wtforms import HiddenField, SubmitField
+from wtforms import HiddenField, SubmitField, TextField
+
+def get_zupc(id_):
+    return taxis.ADS.query.filer_by(id=id_)
 
 class ADSForm(ModelForm):
     class Meta:
         model = taxis.ADS
+    ZUPC = TextField(u'ZUPC', id='zupc')
 
 class ADSCreateForm(ADSForm):
     submit = SubmitField(u'Créer')

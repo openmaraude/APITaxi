@@ -1,9 +1,29 @@
 {% set active_page = 'ads' %}
 {% extends "base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
-
+{% block styles %}
+{{super()}}
+{% endblock %}
 {% block content %}
 <div id="content">
   {{ wtf.quick_form(form) }}
 </div>
+{% endblock %}
+{% block scripts %}
+{{super()}}
+<script src="{{url_for('static', filename='bootstrap3-typeahead.min.js')}}"></script>
+<script>
+$('#zupc').typeahead(
+{
+items: 4,
+source: function (query, process) {
+        return $.getJSON(
+            '{{url_for("zupc_autocomplete")}}',
+            { q: query },
+            function (data) {
+                return process(data.suggestions);
+            });
+    }
+});
+</script>
 {% endblock %}
