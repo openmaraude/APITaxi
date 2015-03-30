@@ -22,4 +22,4 @@ class ZUPC(db.Model):
         return '<ZUPC %r>' % str(self.id)
 
     def __str__(self):
-        return self.__repr__()
+        return self.nom

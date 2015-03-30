@@ -4,6 +4,7 @@ from backoffice_operateurs.forms import taxis as taxis_forms
 from backoffice_operateurs.models import taxis as taxis_models
 from flask import render_template, request, redirect, url_for, abort
 from flask.ext.security import login_required
+from wtforms import StringField
 
 
 @app.route('/ads')
@@ -25,8 +26,7 @@ def ads_create():
         db.session.add(ads)
         db.session.commit()
         return redirect(url_for('ads_list'))
-    return render_template('forms/ads.html', form=form, form_method="POST",
-            submit_value="Creer")
+    return render_template('forms/ads.html', form=form, form_method="POST")
 
 
 @app.route('/ads/update', methods=['GET', 'POST'])
@@ -37,7 +37,7 @@ def ads_update():
     ads = taxis_models.ADS.query.get(request.args.get("id"))
     if not ads:
         abort(404)
-    form = taxis_forms.ADSUpdateForm(_obj=ads, obj=ads)
+    form = taxis_forms.ADSUpdateForm(obj=ads, zupc=ads.ZUPC.nom)
     if request.method == "POST":
         form.populate_obj(ads)
         if form.validate():
@@ -45,7 +45,7 @@ def ads_update():
             return redirect(url_for('ads_list'))
 
     return render_template('forms/ads.html', form=form,
-        form_method="POST", submit_value="Modifier")
+        form_method="POST")
 
 
 @app.route('/ads/delete')

@@ -24,8 +24,7 @@ def zupc_create():
         db.session.add(zupc)
         db.session.commit()
         return redirect(url_for('zupc_list'))
-    return render_template('forms/zupc.html', form=form, form_method="POST",
-            submit_value="Creer")
+    return render_template('forms/zupc.html', form=form, form_method="POST")
 
 @app.route('/zupc/update', methods=['GET', 'POST'])
 @login_required
@@ -35,7 +34,7 @@ def zupc_update():
     zupc = administrative_models.ZUPC.query.get(request.args.get("id"))
     if not zupc:
         abort(404)
-    form = administrative_forms.ZUPCUpdateForm(_obj=ads, obj=ads)
+    form = administrative_forms.ZUPCUpdateForm(form_data={"zupc":ads.ZUPC.nom}, obj=ads)
     if request.method == "POST":
         form.populate_obj(zupc)
         if form.validate():

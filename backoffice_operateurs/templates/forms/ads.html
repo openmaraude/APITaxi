@@ -13,7 +13,7 @@
 {{super()}}
 <script src="{{url_for('static', filename='bootstrap3-typeahead.min.js')}}"></script>
 <script>
-$('#zupc_autocomplete').typeahead(
+$('#zupc').typeahead(
 {
 items: 4,
 source: function (query, process) {
@@ -27,10 +27,10 @@ source: function (query, process) {
 displayKey: 'name',
 });
 
-$('#zupc_autocomplete').change(function() {
-    var current = $('#zupc_autocomplete').typeahead("getActive");
+$('#zupc').change(function() {
+    var current = $('#zupc').typeahead("getActive");
     if (current) {
-        if (current.name.toLowerCase() == $('#zupc_autocomplete').val().toLowerCase()) {
+        if (current.name.toLowerCase() == $('#zupc').val().toLowerCase()) {
             $('#ZUPC_id').val(current.id);
         }
     }
