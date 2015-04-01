@@ -4,7 +4,9 @@ from backoffice_operateurs.forms import taxis as taxis_forms
 from backoffice_operateurs.models import taxis as taxis_models
 from flask import render_template, request, redirect, url_for, abort
 from flask.ext.security import login_required
+from flask.ext.login import current_user
 from wtforms import StringField
+from datetime import datetime
 
 
 @app.route('/ads')
@@ -22,6 +24,10 @@ def ads_create():
     form = taxis_forms.ADSCreateForm()
     if request.method == "POST" and form.validate():
         ads = taxis_models.ADS()
+        ads.added_at = datetime.now().isoformat()
+        ads.added_by = current_user.id
+        ads.added_via = "form"
+        ads.source = "user"
         form.populate_obj(ads)
         db.session.add(ads)
         db.session.commit()
@@ -39,6 +45,7 @@ def ads_update():
         abort(404)
     form = taxis_forms.ADSUpdateForm(obj=ads, zupc=ads.ZUPC.nom)
     if request.method == "POST":
+        ads.last_update_at = datetime.now().isoformat()
         form.populate_obj(ads)
         if form.validate():
             db.session.commit()
