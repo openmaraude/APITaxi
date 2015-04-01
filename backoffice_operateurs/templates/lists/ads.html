@@ -1,0 +1,24 @@
+{% set active_page = "ads" %}
+{% extends "base.html" %}
+{% from "bootstrap/pagination.html" import render_pagination %}
+{% block content %}
+<table class="table table-bordered table-striped">
+<tr>
+    <th>Numero</th>
+    <th>Immatriculation</th>
+    <th>Modèle</th>
+    <th>Modifier</th>
+    <th>Supprimer</th>
+</tr>
+{% for ads in ads_list.items %}
+    <tr>
+        <td> {{ ads.numero }} </td>
+        <td> {{ ads.immatriculation }} </td>
+        <td> {{ ads.modele }} </td>
+        <td> <a href="/ads/update?id={{ ads.id }}">Modifier</a> </td>
+        <td> <a href="/ads/delete?id={{ ads.id }}">Supprimer</a> </td>
+{% endfor %}
+</table>
+{{ render_pagination(ads_list) }}
+<a href="/ads/create">Ajouter un ADS</a>
+{% endblock %}

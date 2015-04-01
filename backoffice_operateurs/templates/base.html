@@ -1,0 +1,41 @@
+{% extends "bootstrap/base.html" %}
+
+{% block title %} CRUD Taxis {% endblock %}
+{% block navbar %}
+<style>
+
+    .form {
+        margin: 20px;
+    }
+</style>
+{% set navigation_bar = [
+    ('/ads/', 'ads', 'ADS'),
+    ('/conducteurs/', 'conducteurs', 'Conducteurs'),
+    ('/zupc/', 'zupc', 'ZUPC')
+] -%}
+{% set active_page = active_page|default('index') -%}
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/   ">Registre des taxis</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        {% for href, id, caption in navigation_bar %}
+        <li{% if id == active_page %} class="active"{% endif %}><a href="{{ href|e }}">{{ caption|e }}</a></li>
+        {% endfor %}
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="#">Compte</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+{% endblock %}
+
+
