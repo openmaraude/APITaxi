@@ -1,9 +1,9 @@
 # -*- coding: utf8 -*-
 from backoffice_operateurs.models import db
 from sqlalchemy_defaults import Column
-from backoffice_operateurs.models.administrative import ZUPC
+from backoffice_operateurs.utils import AsDictMixin
 
-class ADS(db.Model):
+class ADS(db.Model, AsDictMixin):
     id = Column(db.Integer, primary_key=True)
     numero = Column(db.Integer, label=u'Numéro')
     immatriculation = Column(db.String(80),
@@ -43,7 +43,7 @@ class ADS(db.Model):
         return not self.__eq__(other)
 
 
-class Conducteur(db.Model):
+class Conducteur(db.Model, AsDictMixin):
     id = Column(db.Integer, primary_key=True)
     nom = Column(db.String(255), label='Nom')
     prenom = Column(db.String(255), label=u'Prénom')
