@@ -3,6 +3,7 @@ from backoffice_operateurs import db
 from backoffice_operateurs.forms import taxis as taxis_forms
 from backoffice_operateurs.models import taxis as taxis_models
 from flask import Blueprint, render_template, request, redirect, url_for, abort
+from backoffice_operateurs.utils import create_obj_from_json
 from flask.ext.security import login_required
 from flask.ext.login import current_user
 from wtforms import StringField
@@ -67,3 +68,19 @@ def ads_delete():
     db.session.delete(ads)
     db.session.commit()
     return redirect(url_for("ads_list"))
+
+@mod.route('/ads_create', methods=['POST'])
+@login_required
+def ads_api_add():
+    json = request.get_json()
+    if "ads" not in json:
+        abort(400)
+    new_ads = None
+    try:
+        new_ads = create_obj_from_json(taxis_models.ADS,
+            json['ads'])
+    except KeyError:
+        abort(400)
+    db.session.add(new_ads)
+    db.session.commit()
+    return jsonify(new_ads.as_dict())

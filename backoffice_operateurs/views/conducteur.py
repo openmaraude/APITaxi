@@ -3,7 +3,9 @@ from backoffice_operateurs import db
 from backoffice_operateurs.forms import taxis as taxis_forms
 from backoffice_operateurs.models import taxis as taxis_models
 from flask import Blueprint, render_template, request, redirect, url_for, abort
+from flask import render_template, request, redirect, url_for, abort, jsonify
 from flask.ext.security import login_required
+from backoffice_operateurs.utils import create_obj_from_json
 
 mod = Blueprint('conducteur', __name__)
 
@@ -63,4 +65,22 @@ def conducteur_delete():
     db.session.delete(conducteur)
     db.session.commit()
     return redirect(url_for("conducteurs_list"))
+
+
+@mod.route('/conducteur', methods=['POST'])
+@login_required
+def conducteur_api_add():
+    json = request.get_json()
+    if "conducteur" not in json:
+        abort(400)
+    new_conducteur = None
+
+    try:
+        new_conducteur = create_obj_from_json(taxis_models.Conducteur,
+            json['conducteur'])
+    except KeyError:
+        abort(400)
+    db.session.add(new_conducteur)
+    db.session.commit()
+    return jsonify(new_conducteur.as_dict())
 
