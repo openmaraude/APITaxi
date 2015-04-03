@@ -22,7 +22,11 @@ class HistoryMixin:
     source = Column(String(255), default='added_by')
     last_update_at = Column(DateTime, nullable=True)
 
-    to_exclude = ['added_at', 'added_via', 'source', 'last_update_at']
+    @classmethod
+    def to_exclude(cls):
+        return_ = [attr for attr in cls.__dict__.keys() if\
+                not attr.startswith('_') and\
+                not attr in ['added_by', 'to_exclude']]
 
     def __init__(self):
         self.added_by = current_user.id if current_user else None

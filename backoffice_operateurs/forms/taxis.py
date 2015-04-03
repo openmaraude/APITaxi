@@ -12,7 +12,7 @@ def get_zupc(id_):
 class ADSForm(ModelForm):
     class Meta:
         model = taxis.ADS
-        exclude = HistoryMixin.to_exclude
+        exclude = HistoryMixin.to_exclude()
 
     zupc = StringField(u'ZUPC', id='zupc')
     ZUPC_id = HiddenField('ZUPC_id', id='ZUPC_id')
@@ -30,7 +30,7 @@ class ADSUpdateForm(ADSForm):
 class ConducteurForm(ModelForm):
     class Meta:
         model = taxis.Conducteur
-        exclude = HistoryMixin.to_exclude
+        exclude = HistoryMixin.to_exclude()
 
 
 class ConducteurCreateForm(ConducteurForm):
