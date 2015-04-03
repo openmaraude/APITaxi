@@ -18,6 +18,10 @@ def conducteur_create():
     form = taxis_forms.ConducteurCreateForm()
     if request.method == "POST" and form.validate():
         conducteur = taxis_models.Conducteur()
+        conducteur.added_at = datetime.now().isoformat()
+        conducteur.added_by = current_user.id
+        conducteur.added_via = "form"
+        conducteur.source = "user"
         form.populate_obj(conducteur)
         db.session.add(conducteur)
         db.session.commit()
@@ -36,6 +40,7 @@ def conducteur_update():
     form = taxis_forms.ConducteurUpdateForm(obj=conducteur)
     if request.method == "POST":
         form.populate_obj(conducteur)
+        conducteur.last_update_at =  datetime.now().isoformat()
         if form.validate():
             db.session.commit()
             return redirect(url_for('conducteurs_list'))

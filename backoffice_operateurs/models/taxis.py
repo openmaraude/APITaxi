@@ -5,8 +5,8 @@ from backoffice_operateurs.models.administrative import ZUPC
 
 class ADS(db.Model):
     id = Column(db.Integer, primary_key=True)
-    numero = Column(db.Integer, unique=True, label=u'Numéro')
-    immatriculation = Column(db.String(80), unique=True,
+    numero = Column(db.Integer, label=u'Numéro')
+    immatriculation = Column(db.String(80),
         label=u'Immatriculation')
     modele = Column(db.String(255), label=u'Modèle')
     annee = Column(db.Integer, label=u'Année')
@@ -27,6 +27,11 @@ class ADS(db.Model):
     personne = Column(db.String(255), label=u'Nom de la personne', default='')
     ZUPC_id = Column(db.Integer, db.ForeignKey('ZUPC.id'))
     ZUPC = db.relationship('ZUPC', backref='ZUPC')
+    added_by = Column(db.Integer, db.ForeignKey('user.id'))
+    added_at = Column(db.DateTime)
+    added_via = Column(db.Enum('form', 'api', name="sources"))
+    source = Column(db.String(255))
+    last_update_at = Column(db.DateTime, nullable=True)
 
     def __repr__(self):
         return '<ADS %r>' % str(self.id)
@@ -45,6 +50,11 @@ class Conducteur(db.Model):
     date_naissance = Column(db.Date(),
         label=u'Date de naissance (format année-mois-jour)')
     carte_pro = Column(db.String(), label=u'Numéro de la carte professionnelle')
+    added_by = Column(db.Integer, db.ForeignKey('user.id'))
+    added_at = Column(db.DateTime)
+    added_via = Column(db.Enum('form', 'api', name="sources"))
+    source = Column(db.String(255))
+    last_update_at = Column(db.DateTime, nullable=True)
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()
