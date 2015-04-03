@@ -55,6 +55,7 @@ def conducteur_form():
         form = ConducteurCreateForm()
     if request.method == "POST":
         if request.args.get("id"):
+            conducteur.last_update_at = datetime.now().isoformat()
             form.populate_obj(conducteur)
             if form.validate():
                 db.session.commit()

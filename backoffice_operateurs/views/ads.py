@@ -1,13 +1,13 @@
 # -*- coding: utf8 -*-
 from backoffice_operateurs import db
-from backoffice_operateurs.forms import taxis as taxis_forms
+from backoffice_operateurs.forms.taxis import ADSCreateForm, ADSUpdateForm
 from backoffice_operateurs.models import taxis as taxis_models
 from flask import Blueprint, render_template, request, redirect, url_for, abort
 from backoffice_operateurs.utils import create_obj_from_json
 from flask.ext.security import login_required
-from flask.ext.login import current_user
 from wtforms import StringField
 from datetime import datetime
+
 
 mod = Blueprint('ads', __name__)
 
@@ -60,6 +60,7 @@ def ads_form():
             db.session.commit()
             return redirect(url_for('ads'))
         elif ads:
+            ads.last_update_at = datetime.now().isoformat()
             form.populate_obj(ads)
             if form.validate():
                 db.session.commit()
