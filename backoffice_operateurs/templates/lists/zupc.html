@@ -13,10 +13,10 @@
     <tr>
         <td> {{ zupc.departement }} </td>
         <td> {{ zupc.nom }} </td>
-        <td> <a href="/zupc/update?id={{ zupc.id }}">Modifier</a> </td>
+        <td> <a href="/zupc/form?id={{ zupc.id }}">Modifier</a> </td>
         <td> <a href="/zupc/delete?id={{ zupc.id }}">Supprimer</a> </td>
 {% endfor %}
 </table>
 {{ render_pagination(zupc_list) }}
-<a href="/zupc/create">Ajouter un ZUPC</a>
+<a href="/zupc/form">Ajouter un ZUPC</a>
 {% endblock %}
