@@ -15,10 +15,10 @@
         <td> {{ ads.numero }} </td>
         <td> {{ ads.immatriculation }} </td>
         <td> {{ ads.modele }} </td>
-        <td> <a href="/ads/update?id={{ ads.id }}">Modifier</a> </td>
+        <td> <a href="/ads/form?id={{ ads.id }}">Modifier</a> </td>
         <td> <a href="/ads/delete?id={{ ads.id }}">Supprimer</a> </td>
 {% endfor %}
 </table>
 {{ render_pagination(ads_list) }}
-<a href="/ads/create">Ajouter un ADS</a>
+<a href="/ads/form">Ajouter un ADS</a>
 {% endblock %}

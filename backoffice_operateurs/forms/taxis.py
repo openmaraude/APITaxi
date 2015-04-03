@@ -22,7 +22,7 @@ class ADSCreateForm(ADSForm):
 
 class ADSUpdateForm(ADSForm):
     id = HiddenField()
-    submit = SubmitField(label="Modifier")
+    submit = SubmitField("Modifier")
 
 
 
