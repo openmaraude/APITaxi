@@ -34,6 +34,7 @@ def ads_create_api():
 
 
 @mod.route('/ads', methods=['GET', 'POST'])
+@mod.route('/ads/', methods=['GET', 'POST'])
 @login_required
 def ads():
     if request.method == 'GET':
