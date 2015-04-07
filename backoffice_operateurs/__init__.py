@@ -28,9 +28,12 @@ security = Security(app, user_datastore)
 from views import ads
 from views import conducteur
 from views import zupc
+from views import home
+
 app.register_blueprint(ads.mod)
 app.register_blueprint(conducteur.mod)
 app.register_blueprint(zupc.mod)
+app.register_blueprint(home.mod)
 
 Bootstrap(app)
 
