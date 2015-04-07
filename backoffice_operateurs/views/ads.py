@@ -32,13 +32,31 @@ def ads_create_api():
     db.session.commit()
     return jsonify(new_ads.as_dict())
 
+def ads_details(immatriculation, numero):
+    ads = taxis_models.ADS.query.filter_by(numero=numero,
+            immatriculation=immatriculation).all()
+    if not ads:
+        abort(404)
+    ads = ads[0]
+    d = taxis_models.ADS.__dict__
+    is_valid_key = lambda k: hasattr(k, "info") and k.info.has_key("label") and k.info['label']
+    if request.content_type == "application/json":
+        return jsonify({(k[0], getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])})
+    return render_template("details/ads.html",
+            ads=[(k[1].info["label"], getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])])
+
 
 @mod.route('/ads', methods=['GET', 'POST'])
 @mod.route('/ads/', methods=['GET', 'POST'])
 @login_required
 def ads():
     if request.method == 'GET':
-        return ads_list()
+        if request.args.has_key("immatriculation")\
+                and request.args.has_key("numero"):
+            return ads_details(request.args.get("immatriculation"),
+                    request.args.get("numero"))
+        else:
+            return ads_list()
     elif request.method == 'POST':
         return ads_create_api()
     abort(405)
