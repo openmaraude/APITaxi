@@ -1,16 +1,17 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs import app, db
+from backoffice_operateurs import db
 from backoffice_operateurs.forms import taxis as taxis_forms
 from backoffice_operateurs.models import taxis as taxis_models
-from flask import render_template, request, redirect, url_for, abort
+from flask import Blueprint, render_template, request, redirect, url_for, abort
 from flask.ext.security import login_required
 from flask.ext.login import current_user
 from wtforms import StringField
 from datetime import datetime
 
+mod = Blueprint('ads', __name__)
 
-@app.route('/ads')
-@app.route('/ads/')
+@mod.route('/ads')
+@mod.route('/ads/')
 @login_required
 def ads_list():
     page = int(request.args.get('page')) if 'page' in request.args else 1
@@ -18,7 +19,7 @@ def ads_list():
         ads_list=taxis_models.ADS.query.paginate(page))
 
 
-@app.route('/ads/create', methods=['GET', 'POST'])
+@mod.route('/ads/create', methods=['GET', 'POST'])
 @login_required
 def ads_create():
     form = taxis_forms.ADSCreateForm()
@@ -35,7 +36,7 @@ def ads_create():
     return render_template('forms/ads.html', form=form, form_method="POST")
 
 
-@app.route('/ads/update', methods=['GET', 'POST'])
+@mod.route('/ads/update', methods=['GET', 'POST'])
 @login_required
 def ads_update():
     if not request.args.get("id"):
@@ -55,7 +56,7 @@ def ads_update():
         form_method="POST")
 
 
-@app.route('/ads/delete')
+@mod.route('/ads/delete')
 @login_required
 def ads_delete():
     if not request.args.get("id"):

@@ -1,12 +1,14 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs import app, db
+from backoffice_operateurs import db
 from backoffice_operateurs.models import administrative as administrative_models
 from backoffice_operateurs.forms import administrative as administrative_forms
 from flask.ext.security import login_required
-from flask import request, render_template, redirect, jsonify, url_for
+from flask import Blueprint, request, render_template, redirect, jsonify, url_for
 
-@app.route('/zupc')
-@app.route('/zupc/')
+mod = Blueprint('zupc', __name__)
+
+@mod.route('/zupc')
+@mod.route('/zupc/')
 @login_required
 def zupc_list():
     page = int(request.args.get('page')) if 'page' in request.args else 1
@@ -14,7 +16,7 @@ def zupc_list():
         zupc_list=administrative_models.ZUPC.query.paginate(page))
 
 
-@app.route('/zupc/create', methods=['GET', 'POST'])
+@mod.route('/zupc/create', methods=['GET', 'POST'])
 @login_required
 def zupc_create():
     form = administrative_forms.ZUPCreateForm()
@@ -26,7 +28,7 @@ def zupc_create():
         return redirect(url_for('zupc_list'))
     return render_template('forms/zupc.html', form=form, form_method="POST")
 
-@app.route('/zupc/update', methods=['GET', 'POST'])
+@mod.route('/zupc/update', methods=['GET', 'POST'])
 @login_required
 def zupc_update():
     if not request.args.get("id"):
@@ -45,7 +47,7 @@ def zupc_update():
         form_method="POST", submit_value="Modifier")
 
 
-@app.route('/zupc/delete')
+@mod.route('/zupc/delete')
 @login_required
 def zupc_delete():
     if not request.args.get("id"):
@@ -58,7 +60,7 @@ def zupc_delete():
     return redirect(url_for("zupc_list"))
 
 
-@app.route('/zupc/autocomplete')
+@mod.route('/zupc/autocomplete')
 def zupc_autocomplete():
     #@TODO: have some identification here?
     term = request.args.get('q')
