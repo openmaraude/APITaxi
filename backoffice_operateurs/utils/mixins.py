@@ -24,7 +24,7 @@ class HistoryMixin:
 
     @classmethod
     def to_exclude(cls):
-        return_ = [attr for attr in cls.__dict__.keys() if\
+        return [attr for attr in cls.__dict__.keys() if\
                 not attr.startswith('_') and\
                 not attr in ['added_by', 'to_exclude']]
 
