@@ -2,6 +2,7 @@
 from backoffice_operateurs import db
 from backoffice_operateurs.forms.taxis import ADSCreateForm, ADSUpdateForm
 from backoffice_operateurs.models import taxis as taxis_models
+from backoffice_operateurs.views.zupc import zupc_autocomplete
 from flask import Blueprint, render_template, request, redirect, url_for, abort
 from backoffice_operateurs.utils import create_obj_from_json
 from flask import render_template, request, redirect, url_for, abort, jsonify

@@ -18,7 +18,7 @@ $('#zupc').typeahead(
 items: 4,
 source: function (query, process) {
         return $.getJSON(
-            '{{url_for("zupc_autocomplete")}}',
+            '{{url_for("zupc.zupc_autocomplete")}}',
             { q: query },
             function (data) {
                 return process(data.suggestions);

@@ -12,7 +12,8 @@ from flask.ext.script import Manager
 from flask.ext.security.utils import verify_and_update_password
 from flask_bootstrap import Bootstrap
 import os
-from models import db, security as security_models, taxis as taxis_models,\
+from models import db
+from models import security as security_models, taxis as taxis_models,\
     administrative as administrative_models
 
 app = Flask(__name__)
@@ -33,7 +34,7 @@ from views import home
 app.register_blueprint(ads.mod)
 app.register_blueprint(conducteur.mod)
 app.register_blueprint(zupc.mod)
-app.register_blueprint(home.
+app.register_blueprint(home.mod)
 
 @app.login_manager.request_loader
 def load_user_from_request(request):

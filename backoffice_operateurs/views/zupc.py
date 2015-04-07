@@ -70,8 +70,6 @@ def zupc_autocomplete():
     #@TODO: have some identification here?
     term = request.args.get('q')
     like = "%{}%".format(term)
-    app.logger.info(term)
-    app.logger.info(like)
 
     response = administrative_models.ZUPC.query.filter(
             administrative_models.ZUPC.nom.ilike(like)).all()
