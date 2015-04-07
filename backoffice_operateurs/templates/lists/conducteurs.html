@@ -15,11 +15,11 @@
         <td> {{ conducteur.nom }} </td>
         <td> {{ conducteur.prenom }} </td>
         <td> {{ conducteur.date_naissance }} </td>
-        <td> <a href="{{ url_for('conducteur_form')}}?id={{ conducteur.id }}">Modifier</a> </td>
+        <td> <a href="{{ url_for('conducteur.conducteur_form')}}?id={{ conducteur.id }}">Modifier</a> </td>
         <td> <a href="/conducteur/delete?id={{ conducteur.id }}">Supprimer</a> </td>
 {% endfor %}
 </table>
 {{ render_pagination(conducteur_list) }}
-<a href="{{ url_for('conducteur_form')}}">Ajouter un conducteur</a>
+<a href="{{ url_for('conducteur.conducteur_form')}}">Ajouter un conducteur</a>
 {% endblock %}
 
