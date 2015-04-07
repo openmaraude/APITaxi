@@ -4,7 +4,8 @@ from backoffice_operateurs.forms.taxis import ConducteurCreateForm,\
         ConducteurUpdateForm
 from backoffice_operateurs.models import taxis as taxis_models
 from flask import Blueprint, render_template, request, redirect, url_for, abort
-from flask import render_template, request, redirect, url_for, abort, jsonify
+from flask import render_template, request, redirect, url_for, abort, jsonify,\
+        current_app
 from flask.ext.security import login_required
 from backoffice_operateurs.utils import create_obj_from_json
 
@@ -13,13 +14,15 @@ mod = Blueprint('conducteur', __name__)
 def conducteur_api_add():
     json = request.get_json()
     if "conducteur" not in json:
+        current_app.logger.error("No conducteur in json")
         abort(400)
     new_conducteur = None
 
     try:
         new_conducteur = create_obj_from_json(taxis_models.Conducteur,
             json['conducteur'])
-    except KeyError:
+    except KeyError as e:
+        current_app.logger.error("Key error in conducteur", e)
         abort(400)
     db.session.add(new_conducteur)
     db.session.commit()
