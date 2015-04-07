@@ -24,7 +24,8 @@ def ads_create_api():
     try:
         new_ads = create_obj_from_json(taxis_models.ADS,
             json['ads'])
-    except KeyError:
+    except KeyError as e:
+        print "Error :",e
         abort(400)
     db.session.add(new_ads)
     db.session.commit()
