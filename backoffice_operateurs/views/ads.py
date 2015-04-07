@@ -39,7 +39,9 @@ def ads_details(immatriculation, numero):
         abort(404)
     ads = ads[0]
     d = taxis_models.ADS.__dict__
-    is_valid_key = lambda k: hasattr(k, "info") and k.info.has_key("label") and k.info['label']
+    keys_to_show = ["numero", "marque", "modele", "immatriculation"]
+    is_valid_key = lambda k: hasattr(k, "info") and k.info.has_key("label") and k.info['label'] and k.key in keys_to_show
+    #@TODO: make it dependent of the user's role
     if request.content_type == "application/json":
         return jsonify({(k[0], getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])})
     return render_template("details/ads.html",
