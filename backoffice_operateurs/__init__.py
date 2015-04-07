@@ -24,6 +24,14 @@ db.init_app(app)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
+
+from views import ads
+from views import conducteur
+from views import zupc
+app.register_blueprint(ads.mod)
+app.register_blueprint(conducteur.mod)
+app.register_blueprint(zupc.mod)
+
 Bootstrap(app)
 
 manager = Manager(app)
