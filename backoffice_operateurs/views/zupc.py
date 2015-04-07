@@ -15,6 +15,7 @@ def zupc_list():
 
 
 @mod.route('/zupc')
+@mod.route('/zupc/')
 @login_required
 def zupc():
     if request.method == "GET":
