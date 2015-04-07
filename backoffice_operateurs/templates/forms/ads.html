@@ -6,7 +6,7 @@
 {% endblock %}
 {% block content %}
 <div id="content">
-  {{ wtf.quick_form(form) }}
+    {{ wtf.quick_form(form) }}
 </div>
 {% endblock %}
 {% block scripts %}
@@ -18,7 +18,7 @@ $('#zupc').typeahead(
 items: 4,
 source: function (query, process) {
         return $.getJSON(
-            '{{url_for("zupc_autocomplete")}}',
+            '{{url_for("zupc.zupc_autocomplete")}}',
             { q: query },
             function (data) {
                 return process(data.suggestions);
