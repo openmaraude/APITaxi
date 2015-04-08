@@ -2,6 +2,7 @@
 from backoffice_operateurs.models import db
 from sqlalchemy_defaults import Column
 from backoffice_operateurs.utils import AsDictMixin, HistoryMixin
+from sqlalchemy.types import Enum
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
     id = Column(db.Integer, primary_key=True)
@@ -30,6 +31,39 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
             nullable=True)
     ZUPC_id = Column(db.Integer, db.ForeignKey('ZUPC.id'))
     ZUPC = db.relationship('ZUPC', backref='ZUPC')
+    last_update_at = Column(db.DateTime, nullable=True)
+    type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal'), name='type',
+            label='Type')
+    luxary = Column(db.Boolean, name='luxary', label='Luxe ?')
+    credit_card_accepted = Column(db.Boolean, name='credit_card_accepted',
+            label=u'Carte bancaire acceptée ?')
+    nfc_cc_accepted = Column(db.Boolean, name='nfc_cc_accepted',
+            label=u'Paiement sans contact sur carte bancaire accepté ?')
+    amex_accepted = Column(db.Boolean, name='amex_accepted',
+            label=u'AMEX acceptée ?')
+    bank_check_accepted = Column(db.Boolean, name='bank_check_accepted',
+            label=u'Chèque bancaire accepté ?')
+    fresh_drink = Column(db.Boolean, name='fresh_drink',
+            label=u'Boisson fraiche ?')
+    dvd_player = Column(db.Boolean, name='dvd_player', label='Lecteur DVD ?')
+    wifi = Column(db.Boolean, name='wifi', label=u'Wifi à bord ?')
+    baby_seat = Column(db.Boolean, name='baby_seat', label=u'Siège bébé ?')
+    bike_accepted = Column(db.Boolean, name='bike_accepted',
+            label=u'Transport de vélo')
+    pet_accepted = Column(db.Boolean, name='pet_accepted',
+            label=u'Animaux de compagnie acceptés ?')
+    AC_vehicle = Column(db.Boolean, name='AC_vehicle',
+            label=u'Véhicule climatisé')
+    telepeage = Column(db.Boolean, name='telepeage',
+            label=u'Véhicule équipé du télépéage')
+    gps = Column(db.Boolean, name='gps', label=u'Véhicule équipé d\'un GPS')
+    conventionne = Column(db.Boolean, name='conventionne',
+            label=u'Conventionné assurance maladie')
+    every_destination = Column(db.Boolean, name='every_destination',
+            label=u'Toute destination')
+    color = db.Column(db.String, name='color', label='Couleur : ')
+    snv = db.Column(db.Boolean, name='snv', 
+            label=u'Véhicule spécialement aménagé pour PMR ')
 
     def __repr__(self):
         return '<ADS %r>' % str(self.id)
