@@ -33,37 +33,39 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
     ZUPC = db.relationship('ZUPC', backref='ZUPC')
     last_update_at = Column(db.DateTime, nullable=True)
     type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal'), name='type',
-            label='Type')
+            label='Type', nullable=True)
     luxary = Column(db.Boolean, name='luxary', label='Luxe ?')
     credit_card_accepted = Column(db.Boolean, name='credit_card_accepted',
-            label=u'Carte bancaire acceptée ?')
+            label=u'Carte bancaire acceptée ?', nullable=True)
     nfc_cc_accepted = Column(db.Boolean, name='nfc_cc_accepted',
-            label=u'Paiement sans contact sur carte bancaire accepté ?')
+            label=u'Paiement sans contact sur carte bancaire accepté ?',
+            nullable=True)
     amex_accepted = Column(db.Boolean, name='amex_accepted',
-            label=u'AMEX acceptée ?')
+            label=u'AMEX acceptée ?', nullable=True)
     bank_check_accepted = Column(db.Boolean, name='bank_check_accepted',
-            label=u'Chèque bancaire accepté ?')
+            label=u'Chèque bancaire accepté ?', nullable=True)
     fresh_drink = Column(db.Boolean, name='fresh_drink',
-            label=u'Boisson fraiche ?')
+            label=u'Boisson fraiche ?', nullable=True)
     dvd_player = Column(db.Boolean, name='dvd_player', label='Lecteur DVD ?')
-    wifi = Column(db.Boolean, name='wifi', label=u'Wifi à bord ?')
+    wifi = Column(db.Boolean, name='wifi', label=u'Wifi à bord ?',
+            nullable=True)
     baby_seat = Column(db.Boolean, name='baby_seat', label=u'Siège bébé ?')
     bike_accepted = Column(db.Boolean, name='bike_accepted',
-            label=u'Transport de vélo')
+            label=u'Transport de vélo', nullable=True)
     pet_accepted = Column(db.Boolean, name='pet_accepted',
-            label=u'Animaux de compagnie acceptés ?')
+            label=u'Animaux de compagnie acceptés ?', nullable=True)
     AC_vehicle = Column(db.Boolean, name='AC_vehicle',
-            label=u'Véhicule climatisé')
+            label=u'Véhicule climatisé', nullable=True)
     telepeage = Column(db.Boolean, name='telepeage',
-            label=u'Véhicule équipé du télépéage')
+            label=u'Véhicule équipé du télépéage', nullable=True)
     gps = Column(db.Boolean, name='gps', label=u'Véhicule équipé d\'un GPS')
     conventionne = Column(db.Boolean, name='conventionne',
-            label=u'Conventionné assurance maladie')
+            label=u'Conventionné assurance maladie', nullable=True)
     every_destination = Column(db.Boolean, name='every_destination',
-            label=u'Toute destination')
+            label=u'Toute destination', nullable=True)
     color = Column(db.String(255), name='color', label='Couleur : ')
     snv = Column(db.Boolean, name='snv', 
-            label=u'Véhicule spécialement aménagé pour PMR ')
+            label=u'Véhicule spécialement aménagé pour PMR ', nullable=True)
 
     def __repr__(self):
         return '<ADS %r>' % str(self.id)
