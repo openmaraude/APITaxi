@@ -1,21 +1,21 @@
 """Add more informations on ADS
 
-Revision ID: 3bd5081e7874
-Revises: 497dacf2e3ba
-Create Date: 2015-04-08 11:07:41.598237
+Revision ID: 2c652630113a
+Revises: 27df69f29c56
+Create Date: 2015-04-08 11:24:02.213755
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '3bd5081e7874'
-down_revision = '497dacf2e3ba'
+revision = '2c652630113a'
+down_revision = '27df69f29c56'
 
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 vehicle_type = postgresql.ENUM('sedan', 'mpv', 'station_wagon', 'normal',
-        name='vehicle_type', create_type=False)
+        name='vehicle_type')
 
 def upgrade():
     vehicle_type.create(op.get_bind())
