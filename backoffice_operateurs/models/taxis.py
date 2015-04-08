@@ -61,8 +61,8 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
             label=u'Conventionné assurance maladie')
     every_destination = Column(db.Boolean, name='every_destination',
             label=u'Toute destination')
-    color = db.Column(db.String, name='color', label='Couleur : ')
-    snv = db.Column(db.Boolean, name='snv', 
+    color = Column(db.String(255), name='color', label='Couleur : ')
+    snv = Column(db.Boolean, name='snv', 
             label=u'Véhicule spécialement aménagé pour PMR ')
 
     def __repr__(self):
