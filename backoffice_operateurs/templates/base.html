@@ -1,5 +1,5 @@
 {% extends "bootstrap/base.html" %}
-
+{% import "bootstrap/utils.html" as util %}
 {% block title %} Registre des Taxis {% endblock %}
 {% block navbar %}
 <style>
@@ -36,6 +36,9 @@
   </div><!-- /.container-fluid -->
 </nav>
 
+{% endblock %}
+{% block content %}
+{{util.flashed_messages()}}
 {% endblock %}
 
 
