@@ -4,6 +4,7 @@ from sqlalchemy_defaults import Column
 from backoffice_operateurs.utils import AsDictMixin, HistoryMixin
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
+    public_fields = set(["numero", "marque", "modele", "immatriculation"])
     id = Column(db.Integer, primary_key=True)
     numero = Column(db.Integer, label=u'Numéro')
     immatriculation = Column(db.String(80), label=u'Immatriculation')
