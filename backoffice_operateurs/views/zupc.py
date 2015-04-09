@@ -2,7 +2,7 @@
 from backoffice_operateurs import db
 from backoffice_operateurs.models import administrative as administrative_models
 from backoffice_operateurs.forms.administrative import ZUPCreateForm, ZUPCUpdateForm
-from flask.ext.security import login_required
+from flask.ext.security import login_required, roles_accepted
 from flask import Blueprint, request, render_template, redirect, jsonify, url_for
 
 
@@ -17,6 +17,7 @@ def zupc_list():
 @mod.route('/zupc')
 @mod.route('/zupc/')
 @login_required
+@roles_accepted('admin', 'mairie', 'prefecture')
 def zupc():
     if request.method == "GET":
         return zupc_list()
@@ -27,6 +28,7 @@ def zupc():
 
 @mod.route('/zupc/form', methods=['GET', 'POST'])
 @login_required
+@roles_accepted('admin', 'mairie', 'prefecture')
 def zupc_update():
     form = None
     if request.args.get("id"):
@@ -41,20 +43,21 @@ def zupc_update():
             form.populate_obj(zupc)
             if form.validate():
                 db.session.commit()
-                return redirect(url_for('zupc'))
+                return redirect(url_for('zupc.zupc'))
         else:
             if form.validate():
                 zupc = administrative_models.ZUPC()
                 form.populate_obj(zupc)
                 db.session.add(zupc)
                 db.session.commit()
-                return redirect(url_for('zupc'))
+                return redirect(url_for('zupc.zupc'))
     return render_template('forms/ads.html', form=form,
         form_method="POST", submit_value="Modifier")
 
 
 @mod.route('/zupc/delete')
 @login_required
+@roles_accepted('admin', 'mairie', 'prefecture')
 def zupc_delete():
     if not request.args.get("id"):
         abort(404)
@@ -63,7 +66,7 @@ def zupc_delete():
         abort(404)
     db.session.delete(zupc)
     db.session.commit()
-    return redirect(url_for("zupc"))
+    return redirect(url_for("zupc.zupc"))
 
 
 @mod.route('/zupc/autocomplete')

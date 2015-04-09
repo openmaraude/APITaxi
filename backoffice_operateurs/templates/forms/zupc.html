@@ -3,6 +3,7 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
+{{super()}}
 <div id="content">
   {{ wtf.quick_form(form) }}
 </div>
