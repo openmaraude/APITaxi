@@ -37,10 +37,10 @@ ns = api.namespace('ADS', description="Description ADS")
 def swagger_ui():
     return apidoc.ui_for(api)
 
-from views import ads
-from views import conducteur
-from views import zupc
-from views import home
+from .views import ads
+from .views import conducteur
+from .views import zupc
+from .views import home
 
 app.register_blueprint(ads.mod)
 app.register_blueprint(conducteur.mod)

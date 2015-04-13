@@ -1,8 +1,7 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs.models import db
+from ..models import db
 from sqlalchemy_defaults import Column
-from backoffice_operateurs.utils import AsDictMixin, HistoryMixin
-from sqlalchemy.types import Enum
+from ..utils import AsDictMixin, HistoryMixin
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
     public_fields = set(["numero", "marque", "modele", "immatriculation"])

@@ -1,9 +1,9 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs import db, ns, api
-from backoffice_operateurs.forms.taxis import ADSCreateForm, ADSUpdateForm
-from backoffice_operateurs.models import taxis as taxis_models
+from .. import db, ns, api
+from ..forms.taxis import ADSCreateForm, ADSUpdateForm
+from ..models import taxis as taxis_models
+from ..utils import create_obj_from_json, request_wants_json
 from flask import Blueprint, render_template, request, redirect, url_for, abort
-from backoffice_operateurs.utils import create_obj_from_json, request_wants_json
 from flask import render_template, request, redirect, url_for, abort, jsonify
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime

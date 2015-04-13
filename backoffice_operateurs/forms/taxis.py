@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs.utils import ModelForm, HistoryMixin
-from backoffice_operateurs.models import taxis
-from backoffice_operateurs.forms import administrative
+from ..utils import ModelForm, HistoryMixin
+from ..models import taxis
+from ..forms import administrative
 from wtforms import HiddenField, SubmitField, StringField
 
 
