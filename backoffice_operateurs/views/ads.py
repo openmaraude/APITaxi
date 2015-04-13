@@ -29,8 +29,7 @@ class ADS(Resource):
             return self.ads_list()
 
     def ads_list(self):
-        if request.content_type and request.content_type != 'text/html':
-            print "pouet"
+        if request_wants_json():
             abort(501)
         if not taxis_models.ADS.can_be_listed_by(current_user):
             abort(403)
