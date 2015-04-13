@@ -16,7 +16,7 @@ import os
 from models import db
 from models import security as security_models, taxis as taxis_models,\
     administrative as administrative_models
-from flask.ext.restplus import Api
+from flask.ext.restplus import Api, apidoc
 
 app = Flask(__name__)
 app.config.from_object('default_settings')
@@ -28,9 +28,14 @@ db.init_app(app)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
-api = Api(app)
+api = Api(app, ui=False)
 api.model(taxis_models.ADS, taxis_models.ADS.marshall_obj())
 ns = api.namespace('ADS', description="Description ADS")
+
+
+@app.route('/doc/', endpoint='doc')
+def swagger_ui():
+    return apidoc.ui_for(api)
 
 from views import ads
 from views import conducteur
@@ -41,6 +46,7 @@ app.register_blueprint(ads.mod)
 app.register_blueprint(conducteur.mod)
 app.register_blueprint(zupc.mod)
 app.register_blueprint(home.mod)
+app.register_blueprint(apidoc.apidoc)
 
 @api.representation('text/html')
 def output_html(data, code=200, headers=None):
@@ -63,6 +69,7 @@ def load_user_from_request(request):
     if not user.is_active():
         return None
     return user
+
 
 
 
