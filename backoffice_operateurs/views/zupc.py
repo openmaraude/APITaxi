@@ -29,7 +29,7 @@ def zupc():
 @mod.route('/zupc/form', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'mairie', 'prefecture')
-def zupc_update():
+def zupc_form():
     form = None
     if request.args.get("id"):
         zupc = administrative_models.ZUPC.query.get(request.args.get("id"))
