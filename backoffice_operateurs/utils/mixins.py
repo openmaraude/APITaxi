@@ -5,6 +5,7 @@ from sqlalchemy_defaults import Column
 from sqlalchemy.types import Integer, DateTime, Enum, String
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
+from flask.ext.restplus import fields
 
 
 class AsDictMixin:
@@ -45,9 +46,39 @@ class HistoryMixin:
     def can_be_listed_by(cls, user):
         return user.has_role("admin")
 
+    @classmethod
+    def list_fields(cls):
+        return set([k for k in cls.__dict__.keys() if k not in cls.to_exclude()])
+
+
     def showable_fields(self, user):
-        if user.has_role("admin") or self.added_by == user.id:
-            return set([k for k in self.__dict__.keys() if k not in self.__class__.to_exclude()])
         cls = self.__class__
+        if user.has_role("admin") or self.added_by == user.id:
+            return cls.list_fields()
         return cls.public_fields if hasattr(cls, "public_fields") else set()
+
+    @classmethod
+    def marshall_obj(cls):
+        fields_cls = cls.list_fields()
+        map_ = {
+            "INTEGER": fields.Integer,
+            "BOOLEAN": fields.Boolean,
+            "DATETIME": fields.DateTime,
+            "DATE": fields.DateTime,
+            "FLOAT": fields.Float,
+        }
+        return_ = {}
+        for k in fields_cls:
+            f = getattr(cls, k)
+            if not hasattr(cls, k) or not hasattr(f, 'type'):
+                continue
+            field_type = map_.get(f.type, None)
+            if not field_type:
+                if str(f.type).startswith("VARCHAR"):
+                    field_type = fields.String
+                else:
+                    continue
+            return_[k] = field_type(required=not f.nullable,
+                    description=f.description)
+        return return_
 
