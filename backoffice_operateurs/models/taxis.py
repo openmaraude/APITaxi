@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 from ..models import db
 from sqlalchemy_defaults import Column
+from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
