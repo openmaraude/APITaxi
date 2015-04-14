@@ -61,7 +61,7 @@ class ADS(Resource):
 
 
     @api.doc(responses={404:'Resource not found',
-        403:'You\'re not authorized to do view it'})
+        403:'You\'re not authorized to view it'})
     @login_required
     @roles_accepted(['admin', 'operateur'])
     def post():
