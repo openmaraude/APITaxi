@@ -86,7 +86,7 @@ class Hail(db.Model):
         self.check_time_out()
         return {
             "id": self.id,
-            "creation_datetime": self.creation_datetime,
+            "creation_datetime": self.creation_datetime.isoformat(),
             "client_id": self.client_id,
             "client_lon": self.client_lon,
             "client_lat": self.client_lat,
