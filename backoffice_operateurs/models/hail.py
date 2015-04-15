@@ -8,15 +8,15 @@ from flask import abort
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
     'received_by_taxi', 'accepted_by_taxi',
-    'declined_by_taxi', 'incident_client',
-    'incident_taxi', 'timeout_client', 'timeout_taxi',
-        'outdated_client', 'outdated_taxi']#This may be redundant
+    'declined_by_taxi', 'incident_customer',
+    'incident_taxi', 'timeout_customer', 'timeout_taxi',
+        'outdated_customer', 'outdated_taxi']#This may be redundant
 class Hail(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
-    client_id = db.Column(db.Integer, nullable=False)
-    client_lon = db.Column(db.Float, nullable=False)
-    client_lat = db.Column(db.Float, nullable=False)
+    customer_id = db.Column(db.Integer, nullable=False)
+    customer_lon = db.Column(db.Float, nullable=False)
+    customer_lat = db.Column(db.Float, nullable=False)
     taxi_id = db.Column(db.Integer, nullable=False)
     status = db.Column(db.Enum(*status_enum_list,
         name='hail_status'), default='emitted', nullable=False)
@@ -75,8 +75,8 @@ class Hail(db.Model):
 
     @login_required
     @roles_required('moteur')
-    def incident_client(self):
-        self.status = 'incident_client'
+    def incident_customer(self):
+        self.status = 'incident_customer'
         self.status_changed()
 
     def check_time_out(self):
@@ -87,9 +87,9 @@ class Hail(db.Model):
         return {
             "id": self.id,
             "creation_datetime": self.creation_datetime.isoformat(),
-            "client_id": self.client_id,
-            "client_lon": self.client_lon,
-            "client_lat": self.client_lat,
+            "customer_id": self.customer_id,
+            "customer_lon": self.customer_lon,
+            "customer_lat": self.customer_lat,
             "taxi_id": self.taxi_id,
             "status": self.status,
             "last_status_change": self.last_status_change
