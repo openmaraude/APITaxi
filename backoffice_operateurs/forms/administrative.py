@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs.utils import ModelForm
-from backoffice_operateurs.models import administrative
+from ..utils import ModelForm
+from ..models import administrative
 from wtforms import HiddenField, SubmitField
 from wtforms.fields import FormField
 from wtforms_alchemy import ModelFormField

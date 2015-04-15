@@ -1,13 +1,13 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs import db
-from backoffice_operateurs.forms.taxis import ConducteurCreateForm,\
+from .. import db
+from ..forms.taxis import ConducteurCreateForm,\
         ConducteurUpdateForm
-from backoffice_operateurs.models import taxis as taxis_models
+from ..models import taxis as taxis_models
+from ..utils import create_obj_from_json
 from flask import Blueprint, render_template, request, redirect, url_for, abort
 from flask import render_template, request, redirect, url_for, abort, jsonify,\
         current_app
 from flask.ext.security import login_required, current_user
-from backoffice_operateurs.utils import create_obj_from_json
 
 mod = Blueprint('conducteur', __name__)
 

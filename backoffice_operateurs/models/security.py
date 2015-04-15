@@ -1,5 +1,5 @@
 from flask.ext.security import UserMixin, RoleMixin
-from backoffice_operateurs.models import db
+from ..models import db
 
 roles_users = db.Table('roles_users',
         db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),

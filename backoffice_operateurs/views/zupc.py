@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs import db
-from backoffice_operateurs.models import administrative as administrative_models
-from backoffice_operateurs.forms.administrative import ZUPCreateForm, ZUPCUpdateForm
+from .. import db
+from ..models import administrative as administrative_models
+from ..forms.administrative import ZUPCreateForm, ZUPCUpdateForm
 from flask.ext.security import login_required, roles_accepted
 from flask import Blueprint, request, render_template, redirect, jsonify, url_for
 
@@ -29,7 +29,7 @@ def zupc():
 @mod.route('/zupc/form', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'mairie', 'prefecture')
-def zupc_update():
+def zupc_form():
     form = None
     if request.args.get("id"):
         zupc = administrative_models.ZUPC.query.get(request.args.get("id"))

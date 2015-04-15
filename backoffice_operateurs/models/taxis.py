@@ -1,36 +1,53 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs.models import db
+from ..models import db
 from sqlalchemy_defaults import Column
-from backoffice_operateurs.utils import AsDictMixin, HistoryMixin
 from sqlalchemy.types import Enum
+from ..utils import AsDictMixin, HistoryMixin
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
     public_fields = set(["numero", "marque", "modele", "immatriculation"])
     id = Column(db.Integer, primary_key=True)
-    numero = Column(db.Integer, label=u'Numéro')
-    immatriculation = Column(db.String(80), label=u'Immatriculation')
-    modele = Column(db.String(255), label=u'Modèle', nullable=True)
-    annee = Column(db.Integer, label=u'Année', nullable=True)
-    motorisation = Column(db.String(80), label=u'Motorisation', nullable=True)
-    puissance = Column(db.Float(), label=u'Puissance', nullable=True)
+    numero = Column(db.Integer, label=u'Numéro',
+            description=u'Numéro de l\'ADS')
+    immatriculation = Column(db.String(80), label=u'Immatriculation',
+            description=u'Immatriculation du véhicule')
+    modele = Column(db.String(255), label=u'Modèle', nullable=True,
+            description=u'Modèle du véhicule')
+    annee = Column(db.Integer, label=u'Année', nullable=True,
+            description=u'Année de mise en production du véhicule')
+    motorisation = Column(db.String(80), label=u'Motorisation', nullable=True,
+            description=u'Motorisation du véhicule')
+    puissance = Column(db.Float(), label=u'Puissance', nullable=True,
+            description=u'Puissance du véhicule')
     doublage = Column(db.Boolean, label=u'Doublage', default=False,
-            nullable=True)
-    relais = Column(db.Boolean, label=u'Relais', default=False, nullable=True)
-    pmr = Column(db.Boolean, label=u'PMR', default=False, nullable=True)
-    marque = Column(db.String(255), label=u'Marque', nullable=True)
-    horodateur = Column(db.String(255), label=u'Horodateur', nullable=True)
-    taximetre = Column(db.String(255), label=u'Taximètre', nullable=True)
+            nullable=True, description=u'L\'ADS est elle doublée ?')
+    relais = Column(db.Boolean, label=u'Relais', default=False, nullable=True,
+            description=u'Est-ce un véhicule relais')
+    pmr = Column(db.Boolean, label=u'PMR', default=False, nullable=True,
+            description=u'Le véhicule est il adapté aux PMR')
+    marque = Column(db.String(255), label=u'Marque', nullable=True,
+            description=u'Marque du véhicule')
+    horodateur = Column(db.String(255), label=u'Horodateur', nullable=True,
+            description=u'Modèle de l\'horodateur')
+    taximetre = Column(db.String(255), label=u'Taximètre', nullable=True,
+            description=u'Modèle du taximètre')
     date_dernier_ct = Column(db.Date(),
-        label=u'Date du dernier CT (format année-mois-jour)')
+        label=u'Date du dernier CT (format année-mois-jour)',
+        description=u'Date du dernier contrôle technique')
     date_validite_ct = Column(db.Date(),
-        label=u'Date de la fin de validité du CT (format année-mois-jour)')
+        label=u'Date de la fin de validité du CT (format année-mois-jour)',
+        description=u'Date de fin de validité du contrôle technique')
     nom_societe = Column(db.String(255), label=u'Nom de la société',
-            default='', nullable=True)
+            default='', nullable=True,
+            description=u'Nom de la société')
     artisan = Column(db.String(255), label=u'Nom de l\'artisan',
-            default='', nullable=True)
+            default='', nullable=True,
+            description=u'Nom de l\'artisan')
     personne = Column(db.String(255), label=u'Nom de la personne', default='',
-            nullable=True)
-    ZUPC_id = Column(db.Integer, db.ForeignKey('ZUPC.id'))
+            nullable=True,
+            description=u'Nom de la personne')
+    ZUPC_id = Column(db.Integer, db.ForeignKey('ZUPC.id'),
+            description=u'Id de la ZUPC à prendre dans l\'API ZUPC')
     ZUPC = db.relationship('ZUPC', backref='ZUPC')
     last_update_at = Column(db.DateTime, nullable=True)
     type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal'), name='type_',
@@ -84,11 +101,15 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
 
 class Conducteur(db.Model, AsDictMixin, HistoryMixin):
     id = Column(db.Integer, primary_key=True)
-    nom = Column(db.String(255), label='Nom')
-    prenom = Column(db.String(255), label=u'Prénom')
+    nom = Column(db.String(255), label='Nom', description=u'Nom du conducteur')
+    prenom = Column(db.String(255), label=u'Prénom',
+            description=u'Prénom du conducteur')
     date_naissance = Column(db.Date(),
-        label=u'Date de naissance (format année-mois-jour)')
-    carte_pro = Column(db.String(), label=u'Numéro de la carte professionnelle')
+        label=u'Date de naissance (format année-mois-jour)',
+        description=u'Date de naissance (format année-mois-jour)')
+    carte_pro = Column(db.String(),
+            label=u'Numéro de la carte professionnelle',
+            description=u'Numéro de la carte professionnelle')
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()

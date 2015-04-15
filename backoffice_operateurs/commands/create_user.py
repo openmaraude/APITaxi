@@ -1,4 +1,4 @@
-from backoffice_operateurs import user_datastore, manager, db
+from .. import user_datastore, manager, db
 from flask.ext.script import prompt_pass
 from validate_email import validate_email
 

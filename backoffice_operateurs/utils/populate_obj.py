@@ -1,4 +1,4 @@
-from backoffice_operateurs.utils import HistoryMixin
+from . import HistoryMixin
 
 def create_obj_from_json(cls, json_obj):
     keys = [getattr(cls, k) for k in cls.__dict__.keys() if k[:1] != '_']

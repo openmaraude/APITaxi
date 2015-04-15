@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from backoffice_operateurs.models import db
+from ..models import db
 from sqlalchemy_defaults import Column
 
 class Departement(db.Model):
