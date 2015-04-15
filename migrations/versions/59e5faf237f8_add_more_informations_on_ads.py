@@ -15,8 +15,15 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 def upgrade():
+
+    # enum are not automatically created, so we create it
+    # workaround from: https://bitbucket.org/zzzeek/alembic/issue/89/opadd_column-and-opdrop_column-should
     vehicle_type = postgresql.ENUM('sedan', 'mpv', 'station_wagon', 'normal',
             name='vehicle_type')
+    bind = op.get_bind()
+    impl = vehicle_type.dialect_impl(bind.dialect)
+    impl.create(bind, checkfirst=True)
+
     op.add_column('ADS', sa.Column('AC_vehicle', sa.Boolean(), nullable=True))
     op.add_column('ADS', sa.Column('amex_accepted', sa.Boolean(), nullable=True))
     op.add_column('ADS', sa.Column('baby_seat', sa.Boolean(), nullable=True))
