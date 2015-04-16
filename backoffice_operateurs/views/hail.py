@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 from flask import request, redirect, url_for, abort
-from flask.ext.restplus import Resource
+from flask.ext.restplus import Resource, reqparse
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
 from .. import ns_hail, db
@@ -49,15 +49,16 @@ class Hail(Resource):
     @login_required
     @roles_required('moteur')
     def post(self):
-        json = request.get_json()
-        if not json or 'hail' not in json:
-            abort(400)
-        hj = json['hail']
-        if any(map(lambda f : f not in hj,
-                ['customer_id', 'customer_lon', 'customer_lat',
-                    'taxi_id'])):
-            abort(400)
-        #@TODO: faire validation des arguments avec http://flask-restful.readthedocs.org/en/0.3.2/reqparse.html
+        parser = reqparse.RequestParser()
+        parser.add_argument('customer_id', type=int, required=True,
+                location='json')
+        parser.add_argument('customer_lon', type=float, required=True,
+               location='json')
+        parser.add_argument('customer_lat', type=float, required=True,
+                location='json')
+        parser.add_argument('taxi_id', type=str, required=True,
+                location='json')
+        hj = parser.parse_args()
         #@TODO: checker existence du taxi
         #@TODO: checker la disponibilité du taxi
         #@TODO: checker que le status est emitted???
