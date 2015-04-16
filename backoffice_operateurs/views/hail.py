@@ -2,9 +2,9 @@
 from flask import request, redirect, url_for, abort
 from flask.ext.restplus import Resource
 from flask.ext.security import login_required, roles_required,\
-        roles_accepted, current_uer
+        roles_accepted, current_user
 from .. import ns_hail, db
-from ..models import Hail as HailModel
+from ..models import Hail as HailModel, Customer as CustomerModel
 from datetime import datetime
 
 
@@ -43,24 +43,32 @@ class HailId(Resource):
         return hail.to_dict()
 
 
-@login_required
-@roles_required('moteur')
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource):
+
+    @login_required
+    @roles_required('moteur')
     def post(self):
         json = request.get_json()
-        if not json:
+        if not json or 'hail' not in json:
             abort(400)
-        if any(map(lambda f : f not in json['hail'],
+        hj = json['hail']
+        if any(map(lambda f : f not in hj,
                 ['customer_id', 'customer_lon', 'customer_lat',
                     'taxi_id'])):
             abort(400)
         #@TODO: faire validation des arguments avec http://flask-restful.readthedocs.org/en/0.3.2/reqparse.html
         #@TODO: checker existence du taxi
         #@TODO: checker la disponibilité du taxi
-        #@TODO: créer profil customer s'il n'existe pas
         #@TODO: checker que le status est emitted???
-        hj = json['hail']
+        customer = CustomerModel.query.filter_by(id=hj['customer_id'],
+                operateur_id=current_user.id)
+        if not customer:
+            customer = CustomerModel()
+            customer.id = hj['customer_id']
+            customer.operateur_id = current_user.id
+            customer.nb_sanctions = 0
+            db.session.add(customer)
         hail = HailModel()
         hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']

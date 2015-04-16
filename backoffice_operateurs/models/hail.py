@@ -4,6 +4,7 @@ from flask.ext.security import login_required, roles_accepted,\
         roles_required
 from datetime import datetime
 from flask import abort
+from .security import User
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -11,16 +12,27 @@ status_enum_list = [ 'emitted', 'received',
     'declined_by_taxi', 'incident_customer',
     'incident_taxi', 'timeout_customer', 'timeout_taxi',
         'outdated_customer', 'outdated_taxi']#This may be redundant
+
+class Customer(db.Model):
+    id = db.Column(db.String, primary_key=True)
+    operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+                             primary_key=True)
+    nb_sanctions = db.Column(db.Integer, default=0)
+
 class Hail(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
-    customer_id = db.Column(db.Integer, nullable=False)
+    operateur_id = db.Column(db.Integer)
+    customer_id = db.Column(db.String,
+                            nullable=False)
     customer_lon = db.Column(db.Float, nullable=False)
     customer_lat = db.Column(db.Float, nullable=False)
     taxi_id = db.Column(db.Integer, nullable=False)
     status = db.Column(db.Enum(*status_enum_list,
         name='hail_status'), default='emitted', nullable=False)
     last_status_change = db.Column(db.DateTime)
+    db.ForeignKeyConstraint(['operateur_id', 'customer_id'],
+        ['customer.operateur_id', 'customer.id'])
 
     def status_changed(self):
         self.last_status_change = datetime.now().isoformat()
@@ -28,7 +40,6 @@ class Hail(db.Model):
     def check_last_status(self, status_required):
         if self.status != status_required:
             abort(500)
-
 
     @login_required
     @roles_required('moteur')
@@ -92,5 +103,5 @@ class Hail(db.Model):
             "customer_lat": self.customer_lat,
             "taxi_id": self.taxi_id,
             "status": self.status,
-            "last_status_change": self.last_status_change
+            "last_status_change": self.last_status_change.isoformat() if self.last_status_change else None
             }
