@@ -6,16 +6,15 @@ __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
 
 
-from flask import Flask, make_response
+from flask import Flask, make_response, jsonify
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.script import Manager
 from flask.ext.security.utils import verify_and_update_password
-from flask.ext import restful
 from flask_bootstrap import Bootstrap
 import os
 from models import db
 from models import security as security_models, taxis as taxis_models,\
-    administrative as administrative_models
+    administrative as administrative_models, hail as hail_model
 from flask.ext.restplus import Api, apidoc
 
 app = Flask(__name__)
@@ -28,19 +27,17 @@ db.init_app(app)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
-api = Api(app, ui=False)
+api = Api(app, ui=False, catch_all_404s=True)
 api.model(taxis_models.ADS, taxis_models.ADS.marshall_obj())
 ns = api.namespace('ADS', description="Description ADS")
+ns_hail = api.namespace('hail')
 
-
-@app.route('/doc/', endpoint='doc')
-def swagger_ui():
-    return apidoc.ui_for(api)
 
 from .views import ads
 from .views import conducteur
 from .views import zupc
 from .views import home
+from .views import hail
 
 app.register_blueprint(ads.mod)
 app.register_blueprint(conducteur.mod)
@@ -50,6 +47,8 @@ app.register_blueprint(apidoc.apidoc)
 
 @api.representation('text/html')
 def output_html(data, code=200, headers=None):
+    if type(data) is dict:
+        data = jsonify(data)
     resp = make_response(data, code)
     resp.headers.extend(headers or {})
     return resp
@@ -69,9 +68,6 @@ def load_user_from_request(request):
     if not user.is_active():
         return None
     return user
-
-
-
 
 Bootstrap(app)
 
