@@ -13,8 +13,8 @@
 {% for ads in ads_list.items %}
     <tr>
         <td> {{ ads.numero }} </td>
-        <td> {{ ads.immatriculation }} </td>
-        <td> {{ ads.modele }} </td>
+        <td> {{ ads.vehicle.immatriculation }} </td>
+        <td> {{ ads.vehicle.modele }} </td>
         <td> <a href="/ads/form?id={{ ads.id }}">Modifier</a> </td>
         <td> <a href="/ads/delete?id={{ ads.id }}">Supprimer</a> </td>
 {% endfor %}

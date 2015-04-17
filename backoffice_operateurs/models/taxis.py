@@ -4,11 +4,12 @@ from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin
 
-class ADS(db.Model, AsDictMixin, HistoryMixin):
-    public_fields = set(["numero", "marque", "modele", "immatriculation"])
+
+class Vehicle(db.Model, AsDictMixin, HistoryMixin):
+    def __init__(self):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
     id = Column(db.Integer, primary_key=True)
-    numero = Column(db.Integer, label=u'Numéro',
-            description=u'Numéro de l\'ADS')
     immatriculation = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule')
     modele = Column(db.String(255), label=u'Modèle', nullable=True,
@@ -19,8 +20,8 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
             description=u'Motorisation du véhicule')
     puissance = Column(db.Float(), label=u'Puissance', nullable=True,
             description=u'Puissance du véhicule')
-    doublage = Column(db.Boolean, label=u'Doublage', default=False,
-            nullable=True, description=u'L\'ADS est elle doublée ?')
+    type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal'), name='type_',
+            label='Type', nullable=True)
     relais = Column(db.Boolean, label=u'Relais', default=False, nullable=True,
             description=u'Est-ce un véhicule relais')
     pmr = Column(db.Boolean, label=u'PMR', default=False, nullable=True,
@@ -37,21 +38,6 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
     date_validite_ct = Column(db.Date(),
         label=u'Date de la fin de validité du CT (format année-mois-jour)',
         description=u'Date de fin de validité du contrôle technique')
-    nom_societe = Column(db.String(255), label=u'Nom de la société',
-            default='', nullable=True,
-            description=u'Nom de la société')
-    artisan = Column(db.String(255), label=u'Nom de l\'artisan',
-            default='', nullable=True,
-            description=u'Nom de l\'artisan')
-    personne = Column(db.String(255), label=u'Nom de la personne', default='',
-            nullable=True,
-            description=u'Nom de la personne')
-    ZUPC_id = Column(db.Integer, db.ForeignKey('ZUPC.id'),
-            description=u'Id de la ZUPC à prendre dans l\'API ZUPC')
-    ZUPC = db.relationship('ZUPC', backref='ZUPC')
-    last_update_at = Column(db.DateTime, nullable=True)
-    type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal'), name='type_',
-            label='Type', nullable=True)
     luxary = Column(db.Boolean, name='luxary', label='Luxe ?', nullable=True)
     credit_card_accepted = Column(db.Boolean, name='credit_card_accepted',
             label=u'Carte bancaire acceptée ?', nullable=True)
@@ -90,6 +76,39 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
             label=u'Véhicule spécialement aménagé pour PMR ', nullable=True)
 
     def __repr__(self):
+        return '<Vehicle %r>' % str(self.id)
+
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+class ADS(db.Model, AsDictMixin, HistoryMixin):
+    def __init__(self):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
+
+    public_fields = set(["numero", "marque", "modele", "immatriculation"])
+    id = Column(db.Integer, primary_key=True)
+    numero = Column(db.Integer, label=u'Numéro',
+            description=u'Numéro de l\'ADS')
+    doublage = Column(db.Boolean, label=u'Doublage', default=False,
+            nullable=True, description=u'L\'ADS est elle doublée ?')
+    nom_societe = Column(db.String(255), label=u'Nom de la société',
+            default='', nullable=True,
+            description=u'Nom de la société')
+    artisan = Column(db.String(255), label=u'Nom de l\'artisan',
+            default='', nullable=True,
+            description=u'Nom de l\'artisan')
+    personne = Column(db.String(255), label=u'Nom de la personne', default='',
+            nullable=True,
+            description=u'Nom de la personne')
+    insee = Column(db.Integer, label=u'Code INSEE de la commune d\'attribution')
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
+    vehicle = db.relationship('Vehicle', backref='vehicle')
+
+    def __repr__(self):
         return '<ADS %r>' % str(self.id)
 
     def __eq__(self, other):
@@ -100,6 +119,9 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
 
 
 class Conducteur(db.Model, AsDictMixin, HistoryMixin):
+    def __init__(self):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
     id = Column(db.Integer, primary_key=True)
     nom = Column(db.String(255), label='Nom', description=u'Nom du conducteur')
     prenom = Column(db.String(255), label=u'Prénom',
