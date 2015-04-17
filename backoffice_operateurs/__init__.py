@@ -39,6 +39,7 @@ from .views import zupc
 from .views import home
 from .views import hail
 from .views import vehicle
+from .views import taxi
 
 app.register_blueprint(ads.mod)
 app.register_blueprint(conducteur.mod)

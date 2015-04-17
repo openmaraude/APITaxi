@@ -66,13 +66,13 @@ def conducteur_form():
             form.populate_obj(conducteur)
             if form.validate():
                 db.session.commit()
-                return redirect(url_for('conducteurs.conducteurs'))
+                return redirect(url_for('conducteurs'))
         else:
             conducteur = taxis_models.Conducteur()
             form.populate_obj(conducteur)
             db.session.add(conducteur)
             db.session.commit()
-            return redirect(url_for('conducteurs.conducteurs'))
+            return redirect(url_for('conducteurs'))
     return render_template('forms/conducteur.html', form=form,
         form_method="POST", submit_value="Modifier")
 
