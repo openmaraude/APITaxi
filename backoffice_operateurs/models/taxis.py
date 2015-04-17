@@ -141,3 +141,19 @@ class Conducteur(db.Model, AsDictMixin, HistoryMixin):
 
     def __repr__(self):
         return '<conducteurs %r>' % str(self.id)
+
+class Taxi(db.Model, AsDictMixin, HistoryMixin):
+    def __init__(self):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
+    id = Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
+            nullable=True)
+    ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
+    ads = db.relationship('ADS', backref='ads')
+    conducteur_id = db.Column(db.Integer, db.ForeignKey('conducteur.id'),
+            nullable=True)
+    conducteur = db.relationship('Conducteur', backref='conducteur')
+    status = Column(Enum('free', 'occupied', 'oncoming', 'off',
+        name='status_taxi_enum'), label='Status', nullable=True)
+

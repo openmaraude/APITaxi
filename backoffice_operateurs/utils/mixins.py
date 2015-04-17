@@ -6,11 +6,17 @@ from sqlalchemy.types import Integer, DateTime, Enum, String
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
 from flask.ext.restplus import fields
+from datetime import datetime
 
 
 class AsDictMixin:
     def as_dict(self):
-       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        def to_str(field):
+            if type(field) is datetime:
+                return field.isoformat()
+            return field
+
+        return {c.name: to_str(getattr(self, c.name)) for c in self.__table__.columns}
 
 class HistoryMixin:
 
