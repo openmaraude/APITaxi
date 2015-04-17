@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
-from .. import db, ns, api
-from ..forms.taxis import ADSCreateForm, ADSUpdateForm
+from .. import db, api
+from ..forms.taxis import ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm
 from ..models import taxis as taxis_models
 from ..utils import create_obj_from_json, request_wants_json
 from flask import Blueprint, render_template, request, redirect, url_for, abort
@@ -12,19 +12,19 @@ from flask_restful import Resource, reqparse
 
 mod = Blueprint('ads', __name__)
 
-@api.route('/ads')
+@api.route('/ads/', endpoint="ads")
 class ADS(Resource):
 
     parser = reqparse.RequestParser()
     parser.add_argument('numero', type=int, help='Numero de l\'ADS')
-    parser.add_argument('immatriculation', type=str, help='Immatriculation du vehicule')
+    parser.add_argument('insee', type=str, help='Code INSEE de la commune d\'attribution de l\'ADS')
 
     @api.doc(parser=parser)
     @login_required
     def get(self):
         args = self.__class__.parser.parse_args()
-        if args["immatriculation"] and args["numero"]:
-            return self.ads_details(args.get("immatriculation"), args.get("numero"))
+        if args["numero"] and args["insee"]:
+            return self.ads_details(args.get("numero"), args.get("insee"))
         else:
             return self.ads_list()
 
@@ -40,14 +40,14 @@ class ADS(Resource):
         return render_template('lists/ads.html',
             ads_list=q.paginate(page))
 
-    def ads_details(self, immatriculation, numero):
+    def ads_details(self, numero, insee):
         filters = {
                 "numero": numero,
-                "immatriculation": immatriculation
+                "insee": insee
                 }
         ads = taxis_models.ADS.query.filter_by(**filters).all()
         if not ads:
-            abort(404, "Unable to find this couple ADS/numero")
+            abort(404, "Unable to find this couple INSEE/numero")
         ads = ads[0]
         d = taxis_models.ADS.__dict__
         keys_to_show = ads.showable_fields(current_user)
@@ -63,8 +63,8 @@ class ADS(Resource):
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @login_required
-    @roles_accepted(['admin', 'operateur'])
-    def post():
+    @roles_accepted('admin', 'operateur')
+    def post(self):
         json = request.get_json()
         if "ads" not in json:
             abort(400)
@@ -83,29 +83,39 @@ class ADS(Resource):
 @mod.route('/ads/form', methods=['GET', 'POST'])
 @login_required
 def ads_form():
-    ads = zupc = form = None
+    ads = form = None
     if request.args.get("id"):
         ads = taxis_models.ADS.query.get(request.args.get("id"))
         if not ads:
             abort(404)
         if not ads.can_be_edited_by(current_user):
             abort(403)
-        form = ADSUpdateForm(obj=ads, zupc=ads.ZUPC.nom)
+        ads.vehicle = ads.vehicle or taxis_models.Vehicle()
+        form = ADSUpdateForm()
+        form.ads.form = ADSForm(obj=ads)
+        if ads.vehicle:
+            form.vehicle.form = VehicleForm(obj=ads.vehicle)
     else:
         form = ADSCreateForm()
     if request.method == "POST":
         if not ads and form.validate():
+            vehicle = taxis_models.Vehicle()
+            form.vehicle.form.populate_obj(vehicle)
+            db.session.add(vehicle)
+            db.session.commit()
             ads = taxis_models.ADS()
-            form.populate_obj(ads)
+            ads.vehicle_id = vehicle.id
+            form.ads.form.populate_obj(ads)
             db.session.add(ads)
             db.session.commit()
-            return redirect(url_for('ads.ads'))
+            return redirect(url_for('ads'))
         elif ads:
             ads.last_update_at = datetime.now().isoformat()
-            form.populate_obj(ads)
+            form.ads.form.populate_obj(ads)
+            form.vehicle.form.populate_obj(ads.vehicle)
             if form.validate():
                 db.session.commit()
-                return redirect(url_for('ads.ads'))
+                return redirect(url_for('ads'))
     return render_template('forms/ads.html', form=form)
 
 @mod.route('/ads/delete')

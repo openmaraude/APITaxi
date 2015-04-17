@@ -2,27 +2,34 @@
 from ..utils import ModelForm, HistoryMixin
 from ..models import taxis
 from ..forms import administrative
-from wtforms import HiddenField, SubmitField, StringField
+from wtforms import HiddenField, SubmitField, StringField, FormField
 
-
-def get_zupc(id_):
-    return taxis.ADS.query.filter_by(id=id_)
+class VehicleForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        kwargs['csrf_enabled'] = False
+        super(ModelForm, self).__init__(*args, **kwargs)
+    class Meta:
+        model = taxis.Vehicle
+        exclude = ['added_at', 'added_via', 'source', 'last_update_at']
 
 
 class ADSForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        kwargs['csrf_enabled'] = False
+        super(ModelForm, self).__init__(*args, **kwargs)
     class Meta:
         model = taxis.ADS
-        exclude = HistoryMixin.to_exclude()
+        exclude = ['added_at', 'added_via', 'source', 'last_update_at']
 
-    zupc = StringField(u'ZUPC', id='zupc')
-    ZUPC_id = HiddenField('ZUPC_id', id='ZUPC_id')
+class ADSFormVehicle(ModelForm):
+    vehicle = FormField(VehicleForm)
+    ads = FormField(ADSForm)
 
-
-class ADSCreateForm(ADSForm):
+class ADSCreateForm(ADSFormVehicle):
     submit = SubmitField(u'Créer')
 
 
-class ADSUpdateForm(ADSForm):
+class ADSUpdateForm(ADSFormVehicle):
     id = HiddenField()
     submit = SubmitField("Modifier")
 
@@ -30,7 +37,7 @@ class ADSUpdateForm(ADSForm):
 class ConducteurForm(ModelForm):
     class Meta:
         model = taxis.Conducteur
-        exclude = HistoryMixin.to_exclude()
+        exclude = ['added_at', 'added_via', 'source', 'last_update_at']
 
 
 class ConducteurCreateForm(ConducteurForm):
