@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from .. import db
+from .. import db, api
 from ..forms.taxis import ConducteurCreateForm,\
         ConducteurUpdateForm
 from ..models import taxis as taxis_models
@@ -9,15 +9,15 @@ from flask import render_template, request, redirect, url_for, abort, jsonify,\
         current_app
 from flask.ext.security import login_required, current_user
 from datetime import datetime
-from flask.ext.restplus import Resource
+from flask_restful import Resource
 
 
 mod = Blueprint('conducteur', __name__)
 
 
 @api.route('/conducteurs/')
-@login_required
 class Conducteur(Resource):
+    @login_required
     def post():
         json = request.get_json()
         if "conducteur" not in json:
@@ -36,6 +36,7 @@ class Conducteur(Resource):
         return jsonify(new_conducteur.as_dict())
 
 
+    @login_required
     def get():
         if not taxis_models.Conducteur.can_be_listed_by(current_user):
             abort(403)
