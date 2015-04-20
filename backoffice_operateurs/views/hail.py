@@ -4,7 +4,7 @@ from flask.ext.restplus import Resource, reqparse
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
 from .. import ns_hail, db
-from ..models import Hail as HailModel, Customer as CustomerModel
+from ..models import Hail as HailModel, Customer as CustomerModel, Taxi as TaxiModel
 from datetime import datetime
 
 
@@ -53,14 +53,19 @@ class Hail(Resource):
         parser.add_argument('customer_id', type=int, required=True,
                 location='json')
         parser.add_argument('customer_lon', type=float, required=True,
-               location='json')
+                location='json')
         parser.add_argument('customer_lat', type=float, required=True,
                 location='json')
         parser.add_argument('taxi_id', type=str, required=True,
                 location='json')
         hj = parser.parse_args()
-        #@TODO: checker existence du taxi
-        #@TODO: checker la disponibilité du taxi
+        taxi = TaxiModel.query.get(hj['taxi_id'])
+        if not taxi:
+            return abort(404)
+        if taxi.status != 'free':
+            return abort(403)
+        taxi.status = 'answering'
+        db.session.commit()
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
                 operateur_id=current_user.id)
