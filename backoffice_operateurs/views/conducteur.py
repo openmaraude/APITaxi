@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, abort
 from flask import render_template, request, redirect, url_for, abort, jsonify,\
         current_app
 from flask.ext.security import login_required, current_user
+from datetime import datetime
 
 mod = Blueprint('conducteur', __name__)
 
@@ -37,8 +38,7 @@ def conducteurs_list():
         conducteur_list=taxis_models.Conducteur.query.paginate(page))
 
 
-@mod.route('/conducteurs', methods=['GET', 'POST'])
-@mod.route('/conducteurs/', methods=['GET', 'POST'])
+@mod.route('/conducteurs/', methods=['GET', 'POST'], endpoint='conducteurs')
 @login_required
 def conducteurs():
     if request.method == 'GET':
@@ -66,13 +66,13 @@ def conducteur_form():
             form.populate_obj(conducteur)
             if form.validate():
                 db.session.commit()
-                return redirect(url_for('conducteurs'))
+                return redirect(url_for('conducteur.conducteurs'))
         else:
             conducteur = taxis_models.Conducteur()
             form.populate_obj(conducteur)
             db.session.add(conducteur)
             db.session.commit()
-            return redirect(url_for('conducteurs'))
+            return redirect(url_for('conducteur.conducteurs'))
     return render_template('forms/conducteur.html', form=form,
         form_method="POST", submit_value="Modifier")
 
@@ -89,4 +89,4 @@ def conducteur_delete():
         abort(403)
     db.session.delete(conducteur)
     db.session.commit()
-    return redirect(url_for("conducteurs.conducteurs"))
+    return redirect(url_for("conducteur.conducteurs"))

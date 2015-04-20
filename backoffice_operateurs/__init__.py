@@ -16,6 +16,9 @@ from models import db
 from models import security as security_models, taxis as taxis_models,\
     administrative as administrative_models, hail as hail_model
 from flask.ext.restplus import Api, apidoc
+from flask.ext.redis import FlaskRedis
+
+
 
 app = Flask(__name__)
 app.config.from_object('default_settings')
@@ -32,6 +35,8 @@ api.model(taxis_models.ADS, taxis_models.ADS.marshall_obj())
 ns = api.namespace('ADS', description="Description ADS")
 ns_hail = api.namespace('hail')
 
+from .utils.redis_geo import GeoRedis
+redis_store = FlaskRedis.from_custom_provider(GeoRedis, app)
 
 from .views import ads
 from .views import conducteur
