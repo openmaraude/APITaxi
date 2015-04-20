@@ -3,7 +3,7 @@ from flask_restful import Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, abort, jsonify
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import db, api
+from .. import db, api, redis_store
 
 
 @api.route('/taxi/', endpoint="taxi")
@@ -48,7 +48,6 @@ class Taxi(Resource):
         return redirect(url_for('taxi_id', taxi_id=taxi.id))
 
 
-
 @api.route('/taxi/<int:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
 
@@ -60,4 +59,23 @@ class TaxiId(Resource):
         taxi = taxis_models.Taxi.query.get(taxi_id)
 #@TODO:gérer la relation operateur<->conducteur
         return taxi.as_dict()
+
+
+@api.route('/taxis/', endpoint="taxi_list")
+class Taxis(Resource):
+
+    @api.doc(responses={403:'You\'re not authorized to view it'})
+    @login_required
+    @roles_accepted('admin', 'moteur')
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('lon', type=float, required=True)
+        parser.add_argument('lat', type=float, required=True)
+        p = parser.parse_args()
+        lon, lat = p['lon'], p['lat']
+
+        r = redis_store.georadius('france', lat, lon)
+
+        return {"taxis": map(lambda a: {"id":a[0], "distance": float(a[1]),
+                               "lon":float(a[2][0]), "lat": float(a[2][1])}, r)}
 
