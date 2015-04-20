@@ -159,6 +159,6 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     conducteur_id = db.Column(db.Integer, db.ForeignKey('conducteur.id'),
             nullable=True)
     conducteur = db.relationship('Conducteur', backref='conducteur')
-    status = Column(Enum('free', 'occupied', 'oncoming', 'off',
-        name='status_taxi_enum'), label='Status', nullable=True)
+    status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
+        name='status_taxi_enum'), label='Status', nullable=True, default='free')
 
