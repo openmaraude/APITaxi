@@ -1,0 +1,63 @@
+# -*- coding: utf8 -*-
+from flask_restful import Resource, reqparse
+from flask.ext.security import login_required, current_user, roles_accepted
+from flask import request, redirect, url_for, abort, jsonify
+from ..models import taxis as taxis_models, administrative as administrative_models
+from .. import db, api
+
+
+@api.route('/taxi/', endpoint="taxi")
+class Taxi(Resource):
+
+    @api.doc(responses={404:'Resource not found',
+        403:'You\'re not authorized to view it'})
+    @login_required
+    @roles_accepted('admin', 'operateur')
+    def put(self):
+        json = request.get_json()
+        fields = ['immatriculation', 'numero_ads', 'insee', 'carte_pro', 'departement']
+        if not json or\
+            any(map(lambda f: f not in json, fields)):
+            abort(400)
+        departement = administrative_models.Departement.query\
+            .filter_by(numero=str(json['departement'])).first()
+        if not departement:
+            abort(404)
+        conducteur = taxis_models.Conducteur.query\
+                .filter_by(carte_pro=json['carte_pro'],
+                           departement_id=departement.id).first()
+        if not conducteur:
+            abort(404, {"error": "Unable to find carte_pro"})
+        vehicle = taxis_models.Vehicle.query\
+                .filter_by(immatriculation=json['immatriculation']).first()
+        if not vehicle:
+            abort(404, {"error": "Unable to find immatriculation"})
+        ads = taxis_models.ADS.query\
+                .filter_by(numero=json['numero_ads'], insee=json['insee']).first()
+        if not ads:
+            abort(404, {"error": "Unable to find numero_ads for this insee code"})
+        taxi = taxis_models.Taxi.query.filter_by(conducteur_id=conducteur.id,
+                vehicle_id=vehicle.id, ads_id=ads.id).first()
+        if not taxi:
+            taxi = taxis_models.Taxi()
+            taxi.conducteur_id = conducteur.id
+            taxi.vehicle_id = vehicle.id
+            taxi.ads_id = ads.id
+            db.session.add(taxi)
+            db.session.commit()
+        return redirect(url_for('taxi_id', taxi_id=taxi.id))
+
+
+
+@api.route('/taxi/<int:taxi_id>/', endpoint="taxi_id")
+class TaxiId(Resource):
+
+    @api.doc(responses={404:'Resource not found',
+        403:'You\'re not authorized to view it'})
+    @login_required
+    @roles_accepted('admin', 'operateur')
+    def get(self, taxi_id):
+        taxi = taxis_models.Taxi.query.get(taxi_id)
+#@TODO:gérer la relation operateur<->conducteur
+        return taxi.as_dict()
+
