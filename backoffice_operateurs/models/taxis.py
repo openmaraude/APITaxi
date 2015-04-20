@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 from ..models import db
+from ..models.administrative import Departement
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin
@@ -132,6 +133,10 @@ class Conducteur(db.Model, AsDictMixin, HistoryMixin):
     carte_pro = Column(db.String(),
             label=u'Numéro de la carte professionnelle',
             description=u'Numéro de la carte professionnelle')
+
+    departement_id = Column(db.Integer, db.ForeignKey('departement.id'),
+            nullable=True)
+    departement = db.relationship('Departement', backref='vehicle')
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()
