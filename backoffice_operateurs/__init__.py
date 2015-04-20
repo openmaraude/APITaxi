@@ -46,6 +46,11 @@ from .views import hail
 from .views import vehicle
 from .views import taxi
 
+@apidoc.apidoc.route('/doc/', endpoint='doc')
+def swagger_ui():
+    return apidoc.ui_for(api)
+
+
 app.register_blueprint(ads.mod)
 app.register_blueprint(conducteur.mod)
 app.register_blueprint(zupc.mod)
