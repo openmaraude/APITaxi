@@ -44,7 +44,7 @@ class HailId(Resource):
     def put(self, hail_id):
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('hail', type=dict, location='json')
-        hj = parser_post.parse_args(req=root_parser.parse_args())
+        hj = parser_put.parse_args(req=root_parser.parse_args())
         hail = HailModel.query.get_or_404(hail_id)
         #We change the status
         if hasattr(hail, hj['status']):
