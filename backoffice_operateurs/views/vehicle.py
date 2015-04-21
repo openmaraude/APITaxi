@@ -5,11 +5,16 @@ from flask import request, redirect, url_for, abort, jsonify
 from ..utils import create_obj_from_json
 from ..models import taxis as taxis_models
 from .. import db, api, ns_administrative
+from flask.ext.restplus import fields
 
 
+vehicle_details = api.model('vehicle_details', taxis_models.Vehicle.marshall_obj())
+vehicle_model = api.model('vehicle', {'vehicle': fields.Nested(vehicle_details)})
 @ns_administrative.route('vehicle/', endpoint="vehicle")
-class ADS(Resource):
+class Vehicle(Resource):
 
+    @api.marshal_with(vehicle_model)
+    @api.expect(vehicle_model)
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @login_required

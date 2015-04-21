@@ -8,10 +8,14 @@ from flask import render_template, request, redirect, url_for, abort, jsonify
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask_restful import Resource, reqparse
+from flask.ext.restplus import fields
 
 
 mod = Blueprint('ads', __name__)
 ads_model = api.model('ADS', taxis_models.ADS.marshall_obj(), as_list=True)
+
+ads_details = api.model('ads_details', taxis_models.ADS.marshall_obj(True))
+ads_nested = api.model('ads', {"ads": fields.Nested(ads_details)})
 
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(Resource):
@@ -63,6 +67,7 @@ class ADS(Resource):
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
+    @api.expect(ads_nested)
     @login_required
     @roles_accepted('admin', 'operateur')
     def post(self):
