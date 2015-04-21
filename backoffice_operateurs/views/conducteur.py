@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from .. import db, api
+from .. import db, api, ns_administrative
 from ..forms.taxis import ConducteurCreateForm,\
         ConducteurUpdateForm
 from ..models import taxis as taxis_models
@@ -15,7 +15,7 @@ from flask_restful import Resource
 mod = Blueprint('conducteur', __name__)
 
 
-@api.route('/conducteurs/')
+@ns_administrative.route('conducteurs/')
 class Conducteur(Resource):
     @login_required
     def post():

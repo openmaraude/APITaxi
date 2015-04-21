@@ -3,17 +3,46 @@ from flask_restful import Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, abort, jsonify
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import db, api, redis_store
+from .. import db, api, redis_store, ns_taxis
 
 
-@api.route('/taxi/', endpoint="taxi")
-class Taxi(Resource):
+@ns_taxis.route('/<int:taxi_id>/', endpoint="taxi_id")
+class TaxiId(Resource):
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @login_required
     @roles_accepted('admin', 'operateur')
-    def put(self):
+    def get(self, taxi_id):
+        taxi = taxis_models.Taxi.query.get(taxi_id)
+#@TODO:gérer la relation operateur<->conducteur
+        return taxi.as_dict()
+
+
+@ns_taxis.route('/', endpoint="taxi_list")
+class Taxis(Resource):
+
+    @api.doc(responses={403:'You\'re not authorized to view it'})
+    @login_required
+    @roles_accepted('admin', 'moteur')
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('lon', type=float, required=True)
+        parser.add_argument('lat', type=float, required=True)
+        p = parser.parse_args()
+        lon, lat = p['lon'], p['lat']
+
+        r = redis_store.georadius('france', lat, lon)
+
+        return {"taxis": map(lambda a: {"id":a[0], "distance": float(a[1]),
+                               "lon":float(a[2][0]), "lat": float(a[2][1])}, r)}
+
+
+    @api.doc(responses={404:'Resource not found',
+        403:'You\'re not authorized to view it'})
+    @login_required
+    @roles_accepted('admin', 'operateur')
+    def post(self):
         json = request.get_json()
         fields = ['immatriculation', 'numero_ads', 'insee', 'carte_pro', 'departement']
         if not json or\
@@ -46,36 +75,3 @@ class Taxi(Resource):
             db.session.add(taxi)
             db.session.commit()
         return redirect(url_for('taxi_id', taxi_id=taxi.id))
-
-
-@api.route('/taxi/<int:taxi_id>/', endpoint="taxi_id")
-class TaxiId(Resource):
-
-    @api.doc(responses={404:'Resource not found',
-        403:'You\'re not authorized to view it'})
-    @login_required
-    @roles_accepted('admin', 'operateur')
-    def get(self, taxi_id):
-        taxi = taxis_models.Taxi.query.get(taxi_id)
-#@TODO:gérer la relation operateur<->conducteur
-        return taxi.as_dict()
-
-
-@api.route('/taxis/', endpoint="taxi_list")
-class Taxis(Resource):
-
-    @api.doc(responses={403:'You\'re not authorized to view it'})
-    @login_required
-    @roles_accepted('admin', 'moteur')
-    def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('lon', type=float, required=True)
-        parser.add_argument('lat', type=float, required=True)
-        p = parser.parse_args()
-        lon, lat = p['lon'], p['lat']
-
-        r = redis_store.georadius('france', lat, lon)
-
-        return {"taxis": map(lambda a: {"id":a[0], "distance": float(a[1]),
-                               "lon":float(a[2][0]), "lat": float(a[2][1])}, r)}
-

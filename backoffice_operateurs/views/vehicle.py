@@ -4,10 +4,10 @@ from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, abort, jsonify
 from ..utils import create_obj_from_json
 from ..models import taxis as taxis_models
-from .. import db, api
+from .. import db, api, ns_administrative
 
 
-@api.route('/vehicle/', endpoint="vehicle")
+@ns_administrative.route('vehicle/', endpoint="vehicle")
 class ADS(Resource):
 
     @api.doc(responses={404:'Resource not found',

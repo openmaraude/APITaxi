@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from .. import db, api
+from .. import db, api, ns_administrative
 from ..forms.taxis import ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm
 from ..models import taxis as taxis_models
 from ..utils import create_obj_from_json, request_wants_json
@@ -12,7 +12,7 @@ from flask_restful import Resource, reqparse
 
 mod = Blueprint('ads', __name__)
 
-@api.route('/ads/', endpoint="ads")
+@ns_administrative.route('ads/', endpoint="ads")
 class ADS(Resource):
 
     parser = reqparse.RequestParser()
