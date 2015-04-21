@@ -1,5 +1,4 @@
 from flask.ext.login import current_user
-from datetime import datetime
 from flask import request
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Integer, DateTime, Enum, String
@@ -31,10 +30,8 @@ class HistoryMixin:
 
     @classmethod
     def to_exclude(cls):
-        return [attr for attr in cls.__dict__.keys() if\
-                attr.startswith('_') or\
-                attr in ['added_by', 'added_at', 'source',
-                    'last_update_at', 'to_exclude']]
+        columns = filter(lambda f: isinstance(getattr(HistoryMixin, f), Column), HistoryMixin.__dict__.keys())
+        return columns
 
     def __init__(self):
         self.added_by = current_user.id if current_user else None
@@ -54,7 +51,8 @@ class HistoryMixin:
 
     @classmethod
     def list_fields(cls):
-        return set([k for k in cls.__dict__.keys() if k not in cls.to_exclude()])
+        columns = cls.__table__.columns._data.keys()
+        return set([k for k in columns if k not in cls.to_exclude()])
 
 
     def showable_fields(self, user):
@@ -64,8 +62,8 @@ class HistoryMixin:
         return cls.public_fields if hasattr(cls, "public_fields") else set()
 
     @classmethod
-    def marshall_obj(cls):
-        if hasattr(cls, 'public_fields'):
+    def marshall_obj(cls, show_all=False):
+        if not show_all and hasattr(cls, 'public_fields'):
             fields_cls = cls.public_fields
         else:
             fields_cls = cls.list_fields()
