@@ -33,7 +33,7 @@ security = Security(app, user_datastore)
 api = Api(app, ui=False, catch_all_404s=True)
 ns_administrative = api.namespace('Administrative',
         description="Administrative APIs", path='/')
-ns_hail = api.namespace('hail', description="Hail API")
+ns_hail = api.namespace('hails', description="Hail API")
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
 from .utils.redis_geo import GeoRedis
