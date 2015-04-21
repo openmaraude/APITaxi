@@ -90,7 +90,7 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
 
-    public_fields = set(["numero", "marque", "modele", "immatriculation"])
+    public_fields = set(['numero', 'insee'])
     id = Column(db.Integer, primary_key=True)
     numero = Column(db.Integer, label=u'Numéro',
             description=u'Numéro de l\'ADS')
@@ -105,7 +105,8 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
     personne = Column(db.String(255), label=u'Nom de la personne', default='',
             nullable=True,
             description=u'Nom de la personne')
-    insee = Column(db.Integer, label=u'Code INSEE de la commune d\'attribution')
+    insee = Column(db.Integer, label=u'Code INSEE de la commune d\'attribution',
+                   description=u'Code INSEE de la commune d\'attribution')
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
     vehicle = db.relationship('Vehicle', backref='vehicle')
 

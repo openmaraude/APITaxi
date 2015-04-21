@@ -11,15 +11,16 @@ from flask_restful import Resource, reqparse
 
 
 mod = Blueprint('ads', __name__)
+ads_model = api.model('ADS', taxis_models.ADS.marshall_obj(), as_list=True)
 
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(Resource):
 
     parser = reqparse.RequestParser()
-    parser.add_argument('numero', type=int, help='Numero de l\'ADS')
-    parser.add_argument('insee', type=str, help='Code INSEE de la commune d\'attribution de l\'ADS')
+    parser.add_argument('numero', type=int, help=u"Numero de l'ADS")
+    parser.add_argument('insee', type=str, help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
-    @api.doc(parser=parser)
+    @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     @login_required
     def get(self):
         args = self.__class__.parser.parse_args()

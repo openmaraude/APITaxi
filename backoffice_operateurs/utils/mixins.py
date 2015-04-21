@@ -32,8 +32,9 @@ class HistoryMixin:
     @classmethod
     def to_exclude(cls):
         return [attr for attr in cls.__dict__.keys() if\
-                not attr.startswith('_') and\
-                not attr in ['added_by', 'to_exclude']]
+                attr.startswith('_') or\
+                attr in ['added_by', 'added_at', 'source',
+                    'last_update_at', 'to_exclude']]
 
     def __init__(self):
         self.added_by = current_user.id if current_user else None
@@ -64,7 +65,10 @@ class HistoryMixin:
 
     @classmethod
     def marshall_obj(cls):
-        fields_cls = cls.list_fields()
+        if hasattr(cls, 'public_fields'):
+            fields_cls = cls.public_fields
+        else:
+            fields_cls = cls.list_fields()
         map_ = {
             "INTEGER": fields.Integer,
             "BOOLEAN": fields.Boolean,
@@ -74,10 +78,10 @@ class HistoryMixin:
         }
         return_ = {}
         for k in fields_cls:
-            f = getattr(cls, k)
-            if not hasattr(cls, k) or not hasattr(f, 'type'):
+            f = getattr(cls, k, None)
+            if not f or not hasattr(f, 'type'):
                 continue
-            field_type = map_.get(f.type, None)
+            field_type = map_.get(str(f.type), None)
             if not field_type:
                 if str(f.type).startswith("VARCHAR"):
                     field_type = fields.String
@@ -85,5 +89,8 @@ class HistoryMixin:
                     continue
             return_[k] = field_type(required=not f.nullable,
                     description=f.description)
+        class Item(fields.Raw):
+            def format(self, value):
+                return value
         return return_
 

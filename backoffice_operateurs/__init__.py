@@ -31,7 +31,6 @@ user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
 api = Api(app, ui=False, catch_all_404s=True)
-api.model(taxis_models.ADS, taxis_models.ADS.marshall_obj())
 ns_administrative = api.namespace('Administrative',
         description="Administrative APIs", path='/')
 ns_hail = api.namespace('hail', description="Hail API")
