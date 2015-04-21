@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from .. import db, api
+from .. import db, api, ns_administrative
 from ..forms.taxis import ConducteurCreateForm,\
         ConducteurUpdateForm
 from ..models import taxis as taxis_models
@@ -10,13 +10,18 @@ from flask import render_template, request, redirect, url_for, abort, jsonify,\
 from flask.ext.security import login_required, current_user
 from datetime import datetime
 from flask_restful import Resource
+from flask.ext.restplus import fields
 
 
 mod = Blueprint('conducteur', __name__)
 
-
-@api.route('/conducteurs/')
+conducteur_details = api.model('conducteur_details', taxis_models.Conducteur.marshall_obj())
+conducteur_model = api.model('conducteur', {"conducteur": fields.Nested(conducteur_details)})
+@ns_administrative.route('conducteurs/')
 class Conducteur(Resource):
+
+    @api.marshal_with(conducteur_model)
+    @api.expect(conducteur_model)
     @login_required
     def post():
         json = request.get_json()
@@ -35,7 +40,7 @@ class Conducteur(Resource):
         db.session.commit()
         return jsonify(new_conducteur.as_dict())
 
-
+    @api.hide
     @login_required
     def get():
         if not taxis_models.Conducteur.can_be_listed_by(current_user):

@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from .. import db, api
+from .. import db, api, ns_administrative
 from ..forms.taxis import ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm
 from ..models import taxis as taxis_models
 from ..utils import create_obj_from_json, request_wants_json
@@ -8,18 +8,23 @@ from flask import render_template, request, redirect, url_for, abort, jsonify
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask_restful import Resource, reqparse
+from flask.ext.restplus import fields
 
 
 mod = Blueprint('ads', __name__)
+ads_model = api.model('ADS', taxis_models.ADS.marshall_obj(), as_list=True)
 
-@api.route('/ads/', endpoint="ads")
+ads_details = api.model('ads_details', taxis_models.ADS.marshall_obj(True))
+ads_nested = api.model('ads', {"ads": fields.Nested(ads_details)})
+
+@ns_administrative.route('ads/', endpoint="ads")
 class ADS(Resource):
 
     parser = reqparse.RequestParser()
-    parser.add_argument('numero', type=int, help='Numero de l\'ADS')
-    parser.add_argument('insee', type=str, help='Code INSEE de la commune d\'attribution de l\'ADS')
+    parser.add_argument('numero', type=int, help=u"Numero de l'ADS")
+    parser.add_argument('insee', type=str, help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
-    @api.doc(parser=parser)
+    @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     @login_required
     def get(self):
         args = self.__class__.parser.parse_args()
@@ -62,6 +67,7 @@ class ADS(Resource):
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
+    @api.expect(ads_nested)
     @login_required
     @roles_accepted('admin', 'operateur')
     def post(self):

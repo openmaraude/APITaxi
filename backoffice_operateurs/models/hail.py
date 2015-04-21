@@ -4,7 +4,8 @@ from flask.ext.security import login_required, roles_accepted,\
         roles_required
 from datetime import datetime
 from flask import abort
-from .security import User
+from ..utils import HistoryMixin, AsDictMixin
+
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -13,13 +14,13 @@ status_enum_list = [ 'emitted', 'received',
     'incident_taxi', 'timeout_customer', 'timeout_taxi',
         'outdated_customer', 'outdated_taxi']#This may be redundant
 
-class Customer(db.Model):
+class Customer(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.String, primary_key=True)
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                              primary_key=True)
     nb_sanctions = db.Column(db.Integer, default=0)
 
-class Hail(db.Model):
+class Hail(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.Integer, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
     operateur_id = db.Column(db.Integer)
@@ -33,6 +34,7 @@ class Hail(db.Model):
     last_status_change = db.Column(db.DateTime)
     db.ForeignKeyConstraint(['operateur_id', 'customer_id'],
         ['customer.operateur_id', 'customer.id'])
+
 
     def status_changed(self):
         self.last_status_change = datetime.now().isoformat()
@@ -95,13 +97,4 @@ class Hail(db.Model):
 
     def to_dict(self):
         self.check_time_out()
-        return {
-            "id": self.id,
-            "creation_datetime": self.creation_datetime.isoformat(),
-            "customer_id": self.customer_id,
-            "customer_lon": self.customer_lon,
-            "customer_lat": self.customer_lat,
-            "taxi_id": self.taxi_id,
-            "status": self.status,
-            "last_status_change": self.last_status_change.isoformat() if self.last_status_change else None
-            }
+        return self.as_dict()

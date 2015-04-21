@@ -31,9 +31,10 @@ user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
 api = Api(app, ui=False, catch_all_404s=True)
-api.model(taxis_models.ADS, taxis_models.ADS.marshall_obj())
-ns = api.namespace('ADS', description="Description ADS")
-ns_hail = api.namespace('hail')
+ns_administrative = api.namespace('Administrative',
+        description="Administrative APIs", path='/')
+ns_hail = api.namespace('hails', description="Hail API")
+ns_taxis = api.namespace('taxis', description="Taxi API")
 
 from .utils.redis_geo import GeoRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis, app)
