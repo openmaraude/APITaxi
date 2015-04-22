@@ -23,15 +23,15 @@ Now you need to edit settings, copy `default_settings.py` file in
 
 ### Database initialization ###
 You can populate your database with the tables and default data, just run :
-`BO_OPERATEURS_CONFIG_FILE=backoffice_operateurs/dev_settings.py PYTHON_PATH=. backoffice_operateurs/manage.py db upgrade head`
+`BO_OPERATEURS_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py db upgrade head`
 
 ### Add an administrator ###
 Just run this command
-`BO_OPERATEURS_CONFIG_FILE=backoffice_operateurs/dev_settings.py PYTHON_PATH=. backoffice_operateurs/manage.py create_admin your_email@your_domain.com`
+`BO_OPERATEURS_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py create_admin your_email@your_domain.com`
 type a password.
 
 ## Run the server ##
 
-`BO_OPERATEURS_CONFIG_FILE=backoffice_operateurs/dev_settings.py PYTHON_PATH=. backoffice_operateurs/manage.py runserver`
+`BO_OPERATEURS_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py runserver`
 
 you can access the backoffice here: `http://127.0.0.1:5000/ads/`

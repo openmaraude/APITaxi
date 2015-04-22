@@ -18,6 +18,6 @@ import os
 def application(environ, start_response):
     for key in ['BO_OPERATEURS_CONFIG_FILE']:
         os.environ[key] = environ.get(key, '')
-    from backoffice_operateurs import app as _application
+    from APITaxi import app as _application
 
     return _application(environ, start_response)
