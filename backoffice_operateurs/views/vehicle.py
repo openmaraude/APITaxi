@@ -8,13 +8,17 @@ from .. import db, api, ns_administrative
 from flask.ext.restplus import fields
 
 
-vehicle_details = api.model('vehicle_details', taxis_models.Vehicle.marshall_obj())
-vehicle_model = api.model('vehicle', {'vehicle': fields.Nested(vehicle_details)})
+vehicle_model = api.model('vehicle_model',
+                            taxis_models.Vehicle.marshall_obj())
+vehicle_expect_details = api.model('vehicle_expect_details',
+                            taxis_models.Vehicle.marshall_obj(filter_id=True))
+vehicle_expect = api.model('vehicle_expect',
+                           {'vehicle': fields.Nested(vehicle_expect_details)})
 @ns_administrative.route('vehicle/', endpoint="vehicle")
 class Vehicle(Resource):
 
-    @api.marshal_with(vehicle_model)
-    @api.expect(vehicle_model)
+    @api.marshal_with(vehicle_model, envelope='vehicle')
+    @api.expect(vehicle_expect)
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @login_required
@@ -32,4 +36,4 @@ class Vehicle(Resource):
             abort(400)
         db.session.add(new_vehicle)
         db.session.commit()
-        return jsonify(new_vehicle.as_dict())
+        return new_vehicle.as_dict()
