@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
-from flask import request, redirect, url_for, abort
-from flask.ext.restplus import Resource, reqparse, fields
+from flask import request, redirect, url_for
+from flask.ext.restplus import Resource, reqparse, fields, abort
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
 from .. import ns_hail, db, api
@@ -8,22 +8,21 @@ from ..models import Hail as HailModel, Customer as CustomerModel, Taxi as TaxiM
 from datetime import datetime
 
 
-hail_model_details = api.model('hail_model_details', HailModel.marshall_obj())
-hail_model = api.model('hail_model', {"hail": fields.Nested(hail_model_details)})
+hail_model = api.model('hail_model', HailModel.marshall_obj())
 
 
 parser_put = reqparse.RequestParser()
 parser_put.add_argument('customer_lon', type=float, required=True,
-        location='json')
+        location='hail')
 parser_put.add_argument('customer_lat', type=float, required=True,
-        location='json')
+        location='hail')
 parser_put.add_argument('status', type=str, required=True,
                         choices=['received_by_taxi',
                                  'accepted_by_taxi',
                                  'declined_by_taxi',
                                  'incident_taxi',
                                  'incident_customer'],
-                        location='json')
+                        location='hail')
 argument_names = map(lambda f: f.name, parser_put.args)
 hail_expect_put_details = api.model('hail_expect_put_details',
                                 dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
@@ -34,7 +33,7 @@ hail_expect_put = api.model('hail_expect_put', {'hail': fields.Nested(hail_expec
 @ns_hail.route('/<int:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
-    @api.marshal_with(hail_model)
+    @api.marshal_with(hail_model, envelope='hail')
     def get(self, hail_id):
         hail = HailModel.query.get_or_404(hail_id)
         return hail.to_dict()
@@ -57,14 +56,14 @@ class HailId(Resource):
 
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument('customer_id', type=int, required=True,
-        location='json')
-parser_post.add_argument('customer_lon', type=float, required=True,
-        location='json')
-parser_post.add_argument('customer_lat', type=float, required=True,
-        location='json')
-parser_post.add_argument('taxi_id', type=str, required=True,
-        location='json')
+parser_post.add_argument('customer_id', type=str,
+                         required=True, location='hail')
+parser_post.add_argument('customer_lon', type=float,
+                         required=True, location='hail')
+parser_post.add_argument('customer_lat', type=float,
+                         required=True, location='hail')
+parser_post.add_argument('taxi_id', type=int,
+                         required=True, location='hail')
 argument_names = map(lambda f: f.name, parser_post.args)
 hail_expect_post_details = api.model('hail_expect_post_details',
                                 dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
@@ -73,19 +72,19 @@ hail_expect = api.model('hail_expect_post', {'hail': fields.Nested(hail_expect_p
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource):
 
-    @api.marshal_with(hail_model)
     @api.expect(hail_expect)
     @login_required
     @roles_required('moteur')
     def post(self):
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('hail', type=dict, location='json')
-        hj = parser_post.parse_args(req=root_parser.parse_args())
+        req = root_parser.parse_args()
+        hj = parser_post.parse_args(req=req)
         taxi = TaxiModel.query.get(hj['taxi_id'])
         if not taxi:
-            return abort(404)
+            return abort(404, message="Unable to find taxi")
         if taxi.status != 'free':
-            return abort(403)
+            return abort(403, message="The taxi is not available")
         taxi.status = 'answering'
         db.session.commit()
         #@TODO: checker que le status est emitted???
@@ -96,12 +95,14 @@ class Hail(Resource):
             customer.id = hj['customer_id']
             customer.operateur_id = current_user.id
             customer.nb_sanctions = 0
+            customer.added_via = 'api'
             db.session.add(customer)
         hail = HailModel()
         hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']
         hail.customer_lon = hj['customer_lon']
         hail.customer_lat = hj['customer_lat']
+        hail.added_via = 'api'
         hail.taxi_id = hj['taxi_id']
         db.session.add(hail)
         db.session.commit()
