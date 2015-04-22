@@ -3,7 +3,7 @@ from . import db
 from flask.ext.security import login_required, roles_accepted,\
         roles_required
 from datetime import datetime
-from flask import abort
+from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin
 
 
@@ -58,6 +58,10 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         self.status_required('sent_to_operator')
         self.status = 'received_by_operator'
         self.status_changed()
+
+    def status_required(self, status_required):
+        if self.status != status_required:
+            abort(400, message="Bad status")
 
     @login_required
     @roles_required('operateur')

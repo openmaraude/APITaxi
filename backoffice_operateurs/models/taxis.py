@@ -155,6 +155,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     id = Column(db.Integer, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
+    vehicle = db.relationship('Vehicle', backref='vehicle_taxi')
     ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
     ads = db.relationship('ADS', backref='ads')
     conducteur_id = db.Column(db.Integer, db.ForeignKey('conducteur.id'),
@@ -163,3 +164,22 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
         name='status_taxi_enum'), label='Status', nullable=True, default='free')
 
+    @property
+    def carte_pro(self):
+        return self.conducteur.carte_pro
+
+    @property
+    def immatriculation(self):
+        return self.vehicle.immatriculation
+
+    @property
+    def numero_ads(self):
+        return self.ads.numero
+
+    @property
+    def insee(self):
+        return self.conducteur.carte_pro
+
+    @property
+    def departement(self):
+        return self.conducteur.departement
