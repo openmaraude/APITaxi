@@ -13,7 +13,7 @@ from flask.ext.restplus import fields
 mod = Blueprint('ads', __name__)
 ads_model = api.model('ADS', taxis_models.ADS.marshall_obj(), as_list=True)
 
-ads_details = api.model('ads_details', taxis_models.ADS.marshall_obj(True))
+ads_details = api.model('ads_details', taxis_models.ADS.marshall_obj(True, filter_id=True))
 ads_nested = api.model('ads', {"ads": fields.Nested(ads_details)})
 
 @ns_administrative.route('ads/', endpoint="ads")

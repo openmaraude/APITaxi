@@ -31,7 +31,7 @@ class HistoryMixin:
     @classmethod
     def to_exclude(cls):
         columns = filter(lambda f: isinstance(getattr(HistoryMixin, f), Column), HistoryMixin.__dict__.keys())
-        return columns + ['id']
+        return columns
 
     def __init__(self):
         self.added_by = current_user.id if current_user else None
@@ -62,7 +62,7 @@ class HistoryMixin:
         return cls.public_fields if hasattr(cls, "public_fields") else set()
 
     @classmethod
-    def marshall_obj(cls, show_all=False):
+    def marshall_obj(cls, show_all=False, filter_id=False):
         if not show_all and hasattr(cls, 'public_fields'):
             fields_cls = cls.public_fields
         else:
@@ -76,6 +76,8 @@ class HistoryMixin:
         }
         return_ = {}
         for k in fields_cls:
+            if filter_id and k == "id":
+                continue
             f = getattr(cls, k, None)
             if not f or not hasattr(f, 'type'):
                 continue
@@ -87,8 +89,5 @@ class HistoryMixin:
                     continue
             return_[k] = field_type(required=not f.nullable,
                     description=f.description)
-        class Item(fields.Raw):
-            def format(self, value):
-                return value
         return return_
 

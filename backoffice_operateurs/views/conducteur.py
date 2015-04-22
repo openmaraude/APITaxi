@@ -2,14 +2,14 @@
 from .. import db, api, ns_administrative
 from ..forms.taxis import ConducteurCreateForm,\
         ConducteurUpdateForm
-from ..models import taxis as taxis_models
+from ..models import taxis as taxis_models, administrative as administrative_models
 from ..utils import create_obj_from_json
 from flask import Blueprint, render_template, request, redirect, url_for, abort
-from flask import render_template, request, redirect, url_for, abort, jsonify,\
+from flask import render_template, request, redirect, url_for, jsonify,\
         current_app
 from flask.ext.security import login_required, current_user
 from datetime import datetime
-from flask_restful import Resource
+from flask_restful import Resource, abort
 from flask.ext.restplus import fields
 
 
@@ -17,19 +17,26 @@ mod = Blueprint('conducteur', __name__)
 
 conducteur_details = api.model('conducteur_details', taxis_models.Conducteur.marshall_obj())
 conducteur_model = api.model('conducteur', {"conducteur": fields.Nested(conducteur_details)})
+
+conducteur_details_expect = api.model('conducteur_details_expect',
+                                      taxis_models.Conducteur.marshall_obj(filter_id=True))
+conducteur_model_expect = api.model('conducteur_model_expect',
+                                    {"conducteur": fields.Nested(conducteur_details_expect)})
+
 @ns_administrative.route('conducteurs/')
 class Conducteur(Resource):
 
     @api.marshal_with(conducteur_model)
-    @api.expect(conducteur_model)
+    @api.expect(conducteur_model_expect)
     @login_required
-    def post():
+    def post(self):
         json = request.get_json()
         if "conducteur" not in json:
             current_app.logger.error("No conducteur in json")
             abort(400)
+        if not administrative_models.Departement.query.get(json['conducteur']['departement_id']):
+            abort(400, message='Unable to find the *departement*')
         new_conducteur = None
-
         try:
             new_conducteur = create_obj_from_json(taxis_models.Conducteur,
                 json['conducteur'])
@@ -42,7 +49,7 @@ class Conducteur(Resource):
 
     @api.hide
     @login_required
-    def get():
+    def get(self):
         if not taxis_models.Conducteur.can_be_listed_by(current_user):
             abort(403)
         page = int(request.args.get('page')) if 'page' in request.args else 1
