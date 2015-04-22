@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from flask.ext.restplus import fields
 from datetime import datetime
 
+from .fields import Date
 
 class AsDictMixin:
     def as_dict(self):
@@ -71,7 +72,7 @@ class HistoryMixin:
             "INTEGER": fields.Integer,
             "BOOLEAN": fields.Boolean,
             "DATETIME": fields.DateTime,
-            "DATE": fields.DateTime,
+            "DATE": Date,
             "FLOAT": fields.Float,
         }
         return_ = {}
