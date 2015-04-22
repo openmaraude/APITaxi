@@ -31,7 +31,7 @@ class HistoryMixin:
     @classmethod
     def to_exclude(cls):
         columns = filter(lambda f: isinstance(getattr(HistoryMixin, f), Column), HistoryMixin.__dict__.keys())
-        return columns
+        return columns + ['id']
 
     def __init__(self):
         self.added_by = current_user.id if current_user else None

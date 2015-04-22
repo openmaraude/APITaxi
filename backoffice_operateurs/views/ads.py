@@ -3,13 +3,12 @@ from .. import db, api, ns_administrative
 from ..forms.taxis import ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm
 from ..models import taxis as taxis_models
 from ..utils import create_obj_from_json, request_wants_json
-from flask import Blueprint, render_template, request, redirect, url_for, abort
+from flask import Blueprint, render_template, request, redirect, url_for
 from flask import render_template, request, redirect, url_for, abort, jsonify
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, abort
 from flask.ext.restplus import fields
-
 
 mod = Blueprint('ads', __name__)
 ads_model = api.model('ADS', taxis_models.ADS.marshall_obj(), as_list=True)
@@ -74,6 +73,8 @@ class ADS(Resource):
         json = request.get_json()
         if "ads" not in json:
             abort(400)
+        if not taxis_models.Vehicle.query.get(json['ads']['vehicle_id']):
+            abort(400, message="Unable to find a vehicle with the given id")
         new_ads = None
         try:
             new_ads = create_obj_from_json(taxis_models.ADS,
@@ -83,6 +84,7 @@ class ADS(Resource):
             abort(400)
         db.session.add(new_ads)
         db.session.commit()
+
         return jsonify(new_ads.as_dict())
 
 
