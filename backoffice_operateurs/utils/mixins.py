@@ -6,17 +6,11 @@ from sqlalchemy.schema import ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
 from flask.ext.restplus import fields
 from datetime import datetime
-
 from .fields import Date
 
 class AsDictMixin:
     def as_dict(self):
-        def to_str(field):
-            if type(field) is datetime:
-                return field.isoformat()
-            return field
-
-        return {c.name: to_str(getattr(self, c.name)) for c in self.__table__.columns}
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class HistoryMixin:
 
@@ -83,12 +77,17 @@ class HistoryMixin:
             if not f or not hasattr(f, 'type'):
                 continue
             field_type = map_.get(str(f.type), None)
+            kwargs = {}
             if not field_type:
-                if str(f.type).startswith("VARCHAR"):
+                if isinstance(f.type, Enum):
+                    kwargs['enum'] = f.type.enums
+                    field_type = fields.String
+                elif str(f.type).startswith("VARCHAR"):
                     field_type = fields.String
                 else:
                     continue
-            return_[k] = field_type(required=not f.nullable,
-                    description=f.description)
+            kwargs['required'] = not f.nullable
+            kwargs['description'] = f.description
+            return_[k] = field_type(**kwargs)
         return return_
 
