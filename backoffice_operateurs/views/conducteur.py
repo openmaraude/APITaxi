@@ -15,8 +15,7 @@ from flask.ext.restplus import fields
 
 mod = Blueprint('conducteur', __name__)
 
-conducteur_details = api.model('conducteur_details', taxis_models.Conducteur.marshall_obj())
-conducteur_model = api.model('conducteur', {"conducteur": fields.Nested(conducteur_details)})
+conducteur_fields = api.model('conducteur_fields', taxis_models.Conducteur.marshall_obj())
 
 conducteur_details_expect = api.model('conducteur_details_expect',
                                       taxis_models.Conducteur.marshall_obj(filter_id=True))
@@ -26,7 +25,8 @@ conducteur_model_expect = api.model('conducteur_model_expect',
 @ns_administrative.route('conducteurs/')
 class Conducteur(Resource):
 
-    @api.marshal_with(conducteur_model)
+    @api.marshal_with(conducteur_fields,
+                      envelope='conducteurs', as_list=True)
     @api.expect(conducteur_model_expect)
     @login_required
     def post(self):
@@ -45,7 +45,7 @@ class Conducteur(Resource):
             abort(400)
         db.session.add(new_conducteur)
         db.session.commit()
-        return jsonify(new_conducteur.as_dict())
+        return [new_conducteur.as_dict()]
 
     @api.hide
     @login_required
