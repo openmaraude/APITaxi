@@ -11,41 +11,40 @@ from flask.ext.security import login_required, current_user
 from datetime import datetime
 from flask_restful import Resource, abort
 from flask.ext.restplus import fields
+from ..utils.make_model import make_model
 
 
 mod = Blueprint('conducteur', __name__)
 
-conducteur_fields = api.model('conducteur_fields', taxis_models.Conducteur.marshall_obj())
-
-conducteur_details_expect = api.model('conducteur_details_expect',
-                                      taxis_models.Conducteur.marshall_obj(filter_id=True))
-conducteur_model_expect = api.model('conducteur_model_expect',
-                                    {"conducteur": fields.Nested(conducteur_details_expect)})
+conducteur_fields = make_model('taxis', 'Conducteur')
+conducteur_details_expect = make_model('taxis', 'Conducteur', filter_id=True)
 
 @ns_administrative.route('conducteurs/')
 class Conducteur(Resource):
 
-    @api.marshal_with(conducteur_fields,
-                      envelope='conducteurs', as_list=True)
-    @api.expect(conducteur_model_expect)
+    @api.marshal_with(conducteur_fields)
+    @api.expect(conducteur_details_expect)
     @login_required
     def post(self):
         json = request.get_json()
-        if "conducteur" not in json:
-            current_app.logger.error("No conducteur in json")
+        if "data" not in json:
+            current_app.logger.error("No data in json")
             abort(400)
-        if not administrative_models.Departement.query.get(json['conducteur']['departement_id']):
-            abort(400, message='Unable to find the *departement*')
-        new_conducteur = None
-        try:
-            new_conducteur = create_obj_from_json(taxis_models.Conducteur,
-                json['conducteur'])
-        except KeyError as e:
-            current_app.logger.error("Key error in conducteur", e)
-            abort(400)
-        db.session.add(new_conducteur)
+        if len(json['data']) > 250:
+            abort(413)
+        new_conducteurs = []
+        for conducteur in json['data']:
+            if not administrative_models.Departement.query.get(conducteur['departement_id']):
+                abort(400, message='Unable to find the *departement*')
+            try:
+                new_conducteurs.append(create_obj_from_json(taxis_models.Conducteur,
+                    conducteur))
+            except KeyError as e:
+                current_app.logger.error("Key error in conducteur", e)
+                abort(400)
+            db.session.add(new_conducteurs[-1])
         db.session.commit()
-        return [new_conducteur.as_dict()]
+        return {'data': new_conducteurs}
 
     @api.hide
     @login_required
