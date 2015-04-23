@@ -6,9 +6,9 @@ from flask.ext.security import login_required, roles_required,\
 from .. import ns_hail, db, api
 from ..models import Hail as HailModel, Customer as CustomerModel, Taxi as TaxiModel
 from datetime import datetime
+from ..utils.make_model import make_model
 
-
-hail_model = api.model('hail_model', HailModel.marshall_obj())
+hail_model = make_model('hail', 'Hail')
 
 
 parser_put = reqparse.RequestParser()
@@ -26,7 +26,7 @@ parser_put.add_argument('status', type=str, required=True,
 argument_names = map(lambda f: f.name, parser_put.args)
 hail_expect_put_details = api.model('hail_expect_put_details',
                                 dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
-hail_expect_put = api.model('hail_expect_put', {'hail': fields.Nested(hail_expect_put_details)})
+hail_expect_put = api.model('hail_expect_put', {'data': fields.List(fields.Nested(hail_expect_put_details))})
 
 @login_required
 @roles_accepted('moteur', 'operateur')
@@ -67,12 +67,13 @@ parser_post.add_argument('taxi_id', type=int,
 argument_names = map(lambda f: f.name, parser_post.args)
 hail_expect_post_details = api.model('hail_expect_post_details',
                                 dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
-hail_expect = api.model('hail_expect_post', {'hail': fields.Nested(hail_expect_post_details)})
+hail_expect = api.model('hail_expect_post', {'data': fields.List(fields.Nested(hail_expect_post_details))})
 
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource):
 
     @api.expect(hail_expect)
+    @api.marshal_with(hail_model)
     @login_required
     @roles_required('moteur')
     def post(self):
