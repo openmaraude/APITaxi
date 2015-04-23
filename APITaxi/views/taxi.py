@@ -7,34 +7,34 @@ from ..models import taxis as taxis_models, administrative as administrative_mod
 from .. import db, api, redis_store, ns_taxis
 
 
-taxi_model = api.model('taxi_model', {'immatriculation': fields.String,
+taxi_model_details = api.model('taxi_model_details', {'immatriculation': fields.String,
                        'numero_ads': fields.Integer,
                        'insee': fields.Integer,
                        'carte_pro': fields.String,
                        'departement': fields.String,
                        'id': fields.Integer})
+taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_model_details))})
 
 @ns_taxis.route('/<int:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @api.marshal_with(taxi_model, envelope='taxi')
+    @api.marshal_with(taxi_model)
     @login_required
     @roles_accepted('admin', 'operateur')
     def get(self, taxi_id):
         taxi = taxis_models.Taxi.query.get(taxi_id)
 #@TODO:gérer la relation operateur<->conducteur
-        return taxi
+        return {'data': [taxi]}
 
-parser_taxi = reqparse.RequestParser()
-parser_taxi.add_argument('taxi', type=dict, location='json')
-parser_nested = reqparse.RequestParser()
-parser_nested.add_argument('immatriculation', type=str, location='taxi')
-parser_nested.add_argument('numero_ads', type=int, location='taxi')
-parser_nested.add_argument('insee', type=int, location='taxi')
-parser_nested.add_argument('carte_pro', type=str, location='taxi')
-parser_nested.add_argument('departement', type=str, location='taxi')
+dict_taxi_expect = \
+    {'immatriculation': fields.String,
+     'numero_ads': fields.Integer,
+     'insee': fields.Integer,
+     'carte_pro': fields.String,
+     'departement': fields.String
+    }
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
@@ -57,30 +57,35 @@ class Taxis(Resource):
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.expect(api.model('taxi_expect',
-                          {'taxi':fields.Nested(api.model('taxi_expect_details', {'immatriculation': fields.String,
-                                                 'numero_ads': fields.Integer,
-                                                 'insee': fields.Integer,
-                                                 'carte_pro': fields.String,
-                                                 'departement': fields.String}))}))
+                          {'data':fields.List(fields.Nested(
+                              api.model('taxi_expect_details',
+                                        dict_taxi_expect)))}))
     @login_required
     @roles_accepted('admin', 'operateur')
     def post(self):
-        json = parser_nested.parse_args(req=parser_taxi.parse_args())
+        json = request.get_json()
+        if 'data' not in json:
+            abort(400)
+        if len(json['data']) > 1:
+            abort(413)
+        taxi_json = json['data'][0]
+        if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
+            abort(400)
         departement = administrative_models.Departement.query\
-            .filter_by(numero=str(json['departement'])).first()
+            .filter_by(numero=str(taxi_json['departement'])).first()
         if not departement:
             abort(404, error='Unable to find the departement')
         conducteur = taxis_models.Conducteur.query\
-                .filter_by(carte_pro=json['carte_pro'],
+                .filter_by(carte_pro=taxi_json['carte_pro'],
                            departement_id=departement.id).first()
         if not conducteur:
             abort(404, {"error": "Unable to find carte_pro"})
         vehicle = taxis_models.Vehicle.query\
-                .filter_by(immatriculation=json['immatriculation']).first()
+                .filter_by(immatriculation=taxi_json['immatriculation']).first()
         if not vehicle:
             abort(404, {"error": "Unable to find immatriculation"})
         ads = taxis_models.ADS.query\
-                .filter_by(numero=json['numero_ads'], insee=json['insee']).first()
+                .filter_by(numero=taxi_json['numero_ads'], insee=taxi_json['insee']).first()
         if not ads:
             abort(404, {"error": "Unable to find numero_ads for this insee code"})
         taxi = taxis_models.Taxi.query.filter_by(conducteur_id=conducteur.id,
@@ -91,5 +96,5 @@ class Taxis(Resource):
             taxi.vehicle_id = vehicle.id
             taxi.ads_id = ads.id
             db.session.add(taxi)
-            db.session.commit()
+        db.session.commit()
         return redirect(url_for('taxi_id', taxi_id=taxi.id))
