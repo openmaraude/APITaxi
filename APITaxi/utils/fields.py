@@ -17,4 +17,7 @@ class Date(basefields.BaseField):
         return self.isoformat()
 
     def output(self, key, value):
-        return value[key].isoformat()
+        if isinstance(value, dict):
+            return value[key].isoformat()
+        else:
+            return getattr(value, key).isoformat()
