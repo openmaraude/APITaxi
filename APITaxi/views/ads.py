@@ -7,14 +7,16 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from flask import render_template, request, redirect, url_for, abort, jsonify
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
-from flask_restful import Resource, reqparse, abort
-from flask.ext.restplus import fields
+from flask_restful import Resource, reqparse
+from flask.ext.restplus import fields, abort
+from ..utils.make_model import make_model
 
 mod = Blueprint('ads', __name__)
-ads_model = api.model('ads_model', taxis_models.ADS.marshall_obj(), as_list=True)
 
-ads_details = api.model('ads_details', taxis_models.ADS.marshall_obj(True, filter_id=True))
-ads_nested = api.model('ads', {"ads": fields.Nested(ads_details)})
+ads_model = make_model('taxis', 'ADS')
+ads_expect = make_model('taxis', 'ADS', True, filter_id=True)
+ads_post = make_model('taxis', 'ADS', True)
+
 
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(Resource):
@@ -66,26 +68,29 @@ class ADS(Resource):
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @api.expect(ads_nested)
+    @api.expect(ads_expect)
+    @api.marshal_with(ads_post)
     @login_required
     @roles_accepted('admin', 'operateur')
     def post(self):
         json = request.get_json()
-        if "ads" not in json:
+        if "data" not in json:
             abort(400)
-        if not taxis_models.Vehicle.query.get(json['ads']['vehicle_id']):
-            abort(400, message="Unable to find a vehicle with the given id")
-        new_ads = None
-        try:
-            new_ads = create_obj_from_json(taxis_models.ADS,
-                json['ads'])
-        except KeyError as e:
-            print "Error :",e
-            abort(400)
-        db.session.add(new_ads)
+        if len(json['data']) > 250:
+            abort(413)
+        new_ads = []
+        for ads in json['data']:
+            if not taxis_models.Vehicle.query.get(ads['vehicle_id']):
+                abort(400, message="Unable to find a vehicle with the id: {}"\
+                        .format(ads['vehicle_id']))
+            try:
+                new_ads.append(create_obj_from_json(taxis_models.ADS, ads))
+            except KeyError as e:
+                abort(400)
+            db.session.add(new_ads[-1])
         db.session.commit()
 
-        return jsonify(new_ads.as_dict())
+        return {"data": new_ads}
 
 
 @mod.route('/ads/form', methods=['GET', 'POST'])
