@@ -6,18 +6,15 @@ from ..utils import create_obj_from_json
 from ..models import taxis as taxis_models
 from .. import db, api, ns_administrative
 from flask.ext.restplus import fields
+from ..utils.make_model import make_model
 
 
-vehicle_model = api.model('vehicle_model',
-                            taxis_models.Vehicle.marshall_obj())
-vehicle_expect_details = api.model('vehicle_expect_details',
-                            taxis_models.Vehicle.marshall_obj(filter_id=True))
-vehicle_expect = api.model('vehicle_expect',
-                           {'vehicle': fields.Nested(vehicle_expect_details)})
+vehicle_model = make_model('taxis', 'Vehicle')
+vehicle_expect = make_model('taxis', 'Vehicle', filter_id=True)
 @ns_administrative.route('vehicles/', endpoint="vehicle")
 class Vehicle(Resource):
 
-    @api.marshal_with(vehicle_model, envelope='vehicle')
+    @api.marshal_with(vehicle_model)
     @api.expect(vehicle_expect)
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
@@ -25,15 +22,17 @@ class Vehicle(Resource):
     @roles_accepted('admin', 'operateur')
     def post(self):
         json = request.get_json()
-        if "vehicle" not in json:
+        if "data" not in json:
             abort(400)
-        new_vehicle = None
-        try:
-            new_vehicle = create_obj_from_json(taxis_models.Vehicle,
-                json['vehicle'])
-        except KeyError as e:
-            print "Error :",e
-            abort(400)
-        db.session.add(new_vehicle)
+        if len(json['data']) > 250:
+            abort(413)
+        new_vehicle = []
+        for vehicle in json['data']:
+            try:
+                new_vehicle.append(create_obj_from_json(taxis_models.Vehicle, vehicle))
+            except KeyError as e:
+                print "Error :", e
+                abort(400)
+            db.session.add(new_vehicle[-1])
         db.session.commit()
-        return new_vehicle.as_dict()
+        return {"data": new_vehicle}
