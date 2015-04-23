@@ -22,8 +22,8 @@ from flask.ext.redis import FlaskRedis
 
 app = Flask(__name__)
 app.config.from_object('default_settings')
-if 'BO_OPERATEURS_CONFIG_FILE' in os.environ:
-    app.config.from_envvar('BO_OPERATEURS_CONFIG_FILE')
+if 'APITAXI_CONFIG_FILE' in os.environ:
+    app.config.from_envvar('APITAXI_CONFIG_FILE')
 
 db.init_app(app)
 
