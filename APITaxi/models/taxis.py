@@ -178,7 +178,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
     @property
     def insee(self):
-        return self.conducteur.carte_pro
+        return self.conducteur.insee
 
     @property
     def departement(self):
