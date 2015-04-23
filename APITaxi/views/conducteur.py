@@ -57,7 +57,7 @@ class Conducteur(Resource):
             conducteur_list=taxis_models.Conducteur.query.paginate(page))
 
 
-@mod.route('/conducteur/form', methods=['GET', 'POST'])
+@mod.route('/conducteurs/form', methods=['GET', 'POST'])
 @login_required
 def conducteur_form():
     form = None
@@ -87,7 +87,7 @@ def conducteur_form():
         form_method="POST", submit_value="Modifier")
 
 
-@mod.route('/conducteur/delete')
+@mod.route('/conducteurs/delete')
 @login_required
 def conducteur_delete():
     if not request.args.get("id"):

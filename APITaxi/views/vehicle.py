@@ -14,7 +14,7 @@ vehicle_expect_details = api.model('vehicle_expect_details',
                             taxis_models.Vehicle.marshall_obj(filter_id=True))
 vehicle_expect = api.model('vehicle_expect',
                            {'vehicle': fields.Nested(vehicle_expect_details)})
-@ns_administrative.route('vehicle/', endpoint="vehicle")
+@ns_administrative.route('vehicles/', endpoint="vehicle")
 class Vehicle(Resource):
 
     @api.marshal_with(vehicle_model, envelope='vehicle')
