@@ -7,18 +7,19 @@ from ..models import taxis as taxis_models, administrative as administrative_mod
 from .. import db, api, redis_store, ns_taxis
 
 
+taxi_model = api.model('taxi_model', {'immatriculation': fields.String,
+                       'numero_ads': fields.Integer,
+                       'insee': fields.Integer,
+                       'carte_pro': fields.String,
+                       'departement': fields.String,
+                       'id': fields.Integer})
 
 @ns_taxis.route('/<int:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @api.marshal_with({'immatriculation': fields.String,
-                       'numero_ads': fields.Integer,
-                       'insee': fields.Integer,
-                       'carte_pro': fields.String,
-                       'departement': fields.String,
-                       'id': fields.Integer}, envelope='taxi')
+    @api.marshal_with(taxi_model, envelope='taxi')
     @login_required
     @roles_accepted('admin', 'operateur')
     def get(self, taxi_id):
