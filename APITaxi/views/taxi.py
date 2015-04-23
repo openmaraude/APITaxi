@@ -26,6 +26,7 @@ class TaxiId(Resource):
     @roles_accepted('admin', 'operateur')
     def get(self, taxi_id):
         taxi = taxis_models.Taxi.query.get(taxi_id)
+#@TODO:gérer la relation operateur<->driver
         return {'data': [taxi]}
 
     @api.doc(responses={404:'Resource not found',
@@ -95,12 +96,12 @@ class Taxis(Resource):
         if not departement:
             abort(404, error='Unable to find the departement')
         driver = taxis_models.Driver.query\
-                .filter_by(carte_pro=taxi_json['driver_professional_licence'],
+                .filter_by(professional_licence=taxi_json['driver_professional_licence'],
                            departement_id=departement.id).first()
         if not driver:
             abort(404, {"error": "Unable to find carte_pro"})
         vehicle = taxis_models.Vehicle.query\
-                .filter_by(immatriculation=taxi_json['vehicle_licence_plate']).first()
+                .filter_by(licence_plate=taxi_json['vehicle_licence_plate']).first()
         if not vehicle:
             abort(404, {"error": "Unable to find immatriculation"})
         ads = taxis_models.ADS.query\
