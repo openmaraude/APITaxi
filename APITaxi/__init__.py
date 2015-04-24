@@ -46,6 +46,7 @@ from .views import home
 from .views import hail
 from .views import vehicle
 from .views import taxi
+from .views import user_key
 
 @apidoc.apidoc.route('/doc/', endpoint='doc')
 def swagger_ui():
