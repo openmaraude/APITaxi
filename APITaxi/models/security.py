@@ -19,3 +19,8 @@ class User(db.Model, UserMixin):
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
+    apikey = db.Column(db.String(36), nullable=False)
+
+    def get_user_from_api_key(self, apikey):
+        user = self.user_model.query.filter_by(apikey=apikey)
+        return user.get() or None

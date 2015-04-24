@@ -46,6 +46,7 @@ from .views import home
 from .views import hail
 from .views import vehicle
 from .views import taxi
+from .views import user_key
 
 @apidoc.apidoc.route('/doc/', endpoint='doc')
 def swagger_ui():
@@ -71,6 +72,10 @@ def output_html(data, code=200, headers=None):
 
 @app.login_manager.request_loader
 def load_user_from_request(request):
+    apikey = request.headers.get('X-API-KEY', None)
+    if apikey:
+        u = security_models.User.query.filter_by(apikey=apikey)
+        return u.first() or None
     auth = request.headers.get('Authorization')
     if not auth or auth.count(':') != 1:
         return None
