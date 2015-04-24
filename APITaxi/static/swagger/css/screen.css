@@ -1195,6 +1195,7 @@
 .swagger-section #header {
   background-color: #89bf04;
   padding: 14px;
+  height: 20px;
 }
 .swagger-section #header a#logo {
   font-size: 1.5em;
