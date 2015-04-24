@@ -13,12 +13,13 @@ down_revision = '3b8033532af1'
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-
+sources_enum = sa.Enum('form', 'api', name='sources')
 def upgrade():
+    sources_enum.create(op.get_bind(), checkfirst=True)
     op.add_column('customer', sa.Column('added_at', sa.DateTime(), nullable=True))
     op.add_column('customer', sa.Column('added_by', sa.Integer(), nullable=True))
-    op.add_column('customer', sa.Column('added_via',
-        sa.Enum('form', 'api', name='sources'), nullable=True))
+    op.add_column('customer', sa.Column('added_via', sources_enum
+        , nullable=True))
     op.add_column('customer', sa.Column('last_update_at', sa.DateTime(), nullable=True))
     op.add_column('customer', sa.Column('source', sa.String(length=255),
         nullable=True))
@@ -56,3 +57,4 @@ def downgrade():
     op.drop_column('customer', 'added_via')
     op.drop_column('customer', 'added_by')
     op.drop_column('customer', 'added_at')
+    sources_enum.drop(op.get_bind(), checkfirst=True)

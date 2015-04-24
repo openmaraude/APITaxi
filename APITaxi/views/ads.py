@@ -27,7 +27,7 @@ class ADS(Resource):
 
     @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     @login_required
-    @roles_accepted(['admin', 'operateur'])
+    @roles_accepted('admin', 'operateur')
     def get(self):
         args = self.__class__.parser.parse_args()
         if args["numero"] and args["insee"]:
@@ -96,7 +96,7 @@ class ADS(Resource):
 
 @mod.route('/ads/form', methods=['GET', 'POST'])
 @login_required
-@roles_accepted(['admin', 'operateur'])
+@roles_accepted('admin', 'operateur')
 def ads_form():
     ads = form = None
     if request.args.get("id"):
@@ -135,7 +135,7 @@ def ads_form():
 
 @mod.route('/ads/delete')
 @login_required
-@roles_accepted(['admin', 'operateur'])
+@roles_accepted('admin', 'operateur')
 def ads_delete():
     if not request.args.get("id"):
         abort(404)
