@@ -9,14 +9,14 @@ from .. import db, api, redis_store, ns_taxis
 
 taxi_model_details = api.model('taxi_model_details',
          {'vehicle_licence_plate': fields.String,
-          'ads_numero': fields.Integer,
+          'ads_numero': fields.String,
           'ads_insee': fields.String,
           'driver_professional_licence': fields.String,
           'driver_departement': fields.String,
-           'id': fields.Integer})
+           'id': fields.String})
 taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_model_details))})
 
-@ns_taxis.route('/<int:taxi_id>/', endpoint="taxi_id")
+@ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
 
     @api.doc(responses={404:'Resource not found',
@@ -50,7 +50,7 @@ class TaxiId(Resource):
 
 dict_taxi_expect = \
          {'vehicle_licence_plate': fields.String,
-          'ads_numero': fields.Integer,
+          'ads_numero': fields.String,
           'ads_insee': fields.String,
           'driver_professional_licence': fields.String,
           'driver_departement': fields.String

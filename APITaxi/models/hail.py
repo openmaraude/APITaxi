@@ -28,7 +28,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
                             nullable=False)
     customer_lon = db.Column(db.Float, nullable=False)
     customer_lat = db.Column(db.Float, nullable=False)
-    taxi_id = db.Column(db.Integer, nullable=False)
+    taxi_id = db.Column(db.String, nullable=False)
     status = db.Column(db.Enum(*status_enum_list,
         name='hail_status'), default='emitted', nullable=False)
     last_status_change = db.Column(db.DateTime)
