@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 from .. import api
 import importlib
 from flask.ext.restplus import fields as basefields
