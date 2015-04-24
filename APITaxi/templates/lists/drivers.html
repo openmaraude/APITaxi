@@ -12,9 +12,9 @@
 </tr>
 {% for driver in driver_list.items %}
     <tr>
-        <td> {{ driver.nom }} </td>
-        <td> {{ driver.prenom }} </td>
-        <td> {{ driver.date_naissance }} </td>
+        <td> {{ driver.last_name }} </td>
+        <td> {{ driver.first_name }} </td>
+        <td> {{ driver.birth_date }} </td>
         <td> <a href="{{ url_for('drivers.driver_form')}}?id={{ driver.id }}">Modifier</a> </td>
         <td> <a href="/driver/delete?id={{ driver.id }}">Supprimer</a> </td>
 {% endfor %}
