@@ -64,9 +64,9 @@ app.register_blueprint(apidoc.apidoc)
 def output_html(data, code=200, headers=None):
     if type(data) is dict:
         data = jsonify(data)
-    resp = make_response(data.encode('latin-1'), code)
+    resp = make_response(data, code)
     resp.headers.extend(headers or {})
-    resp.headers['Content-Type'] = 'text/html; charset=latin-1'
+    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
     return resp
 
 

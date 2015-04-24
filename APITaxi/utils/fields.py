@@ -21,4 +21,5 @@ class Date(basefields.BaseField):
         if isinstance(value, dict):
             return value[key].isoformat()
         else:
-            return getattr(value, key).isoformat()
+            date = getattr(value, key)
+            return date.isoformat() if date else None
