@@ -48,12 +48,12 @@ class ADS(Resource):
 
     def ads_details(self, numero, insee):
         filters = {
-                "numero": numero,
-                "insee": insee
+                "numero": str(numero),
+                "insee": str(insee)
                 }
         ads = taxis_models.ADS.query.filter_by(**filters).all()
         if not ads:
-            abort(404, "Unable to find this couple INSEE/numero")
+            abort(404, error="Unable to find this couple INSEE/numero")
         ads = ads[0]
         d = taxis_models.ADS.__dict__
         keys_to_show = ads.showable_fields(current_user)

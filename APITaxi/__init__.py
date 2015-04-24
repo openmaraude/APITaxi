@@ -72,7 +72,7 @@ def output_html(data, code=200, headers=None):
 
 @app.login_manager.request_loader
 def load_user_from_request(request):
-    apikey = request.headers.get('X-API-KEY', None)
+    apikey = request.headers.environ.get('HTTP_X_API_KEY', None)
     if apikey:
         u = security_models.User.query.filter_by(apikey=apikey)
         return u.first() or None
@@ -91,7 +91,8 @@ def load_user_from_request(request):
 
 from flask import request_started, request, abort, request_finished
 def check_version(sender, **extra):
-    if request.content_type != 'application/json':
+    if len(request.accept_mimetypes) == 0 or\
+        request.accept_mimetypes[0][0] != 'application/json':
         return
     version = request.headers.get('X-VERSION', None)
     if version != '1':
