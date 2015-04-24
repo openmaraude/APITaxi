@@ -4,6 +4,7 @@ from ..models.administrative import Departement
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin
+from uuid import uuid4
 
 
 class Vehicle(db.Model, AsDictMixin, HistoryMixin):
@@ -147,7 +148,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
-    id = Column(db.Integer, primary_key=True)
+    id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
     vehicle = db.relationship('Vehicle', backref='vehicle_taxi')
@@ -158,6 +159,11 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     driver = db.relationship('Driver', backref='driver')
     status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
         name='status_taxi_enum'), label='Status', nullable=True, default='free')
+
+    def __init__(self, *args, **kwargs):
+        kwargs['id'] = str(uuid4())
+        HistoryMixin.__init__(self)
+        super(self.__class__, self).__init__(**kwargs)
 
     @property
     def driver_professional_licence(self):
