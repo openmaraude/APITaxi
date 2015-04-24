@@ -147,7 +147,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
-    id = Column(db.Integer, primary_key=True)
+    id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
     vehicle = db.relationship('Vehicle', backref='vehicle_taxi')
