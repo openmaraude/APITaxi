@@ -82,6 +82,18 @@ def load_user_from_request(request):
         return None
     return user
 
+from flask import request_started, request, abort, request_finished
+def check_version(sender, **extra):
+    if request.content_type != 'application/json':
+        return
+    version = request.headers.get('X-VERSION', None)
+    if version != '1':
+        abort(404)
+def add_version_header(sender, response, **extra):
+    response.headers['X-VERSION'] = request.headers.get('X-VERSION')
+request_started.connect(check_version, app)
+request_finished.connect(add_version_header, app)
+
 Bootstrap(app)
 
 manager = Manager(app)
