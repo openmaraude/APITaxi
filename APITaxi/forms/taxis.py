@@ -38,18 +38,18 @@ class ADSUpdateForm(ADSFormVehicle):
 def departements():
     return administrative.Departement.query.all()
 
-class ConducteurForm(ModelForm):
+class DriverForm(ModelForm):
     class Meta:
-        model = taxis.Conducteur
+        model = taxis.Driver
         exclude = ['added_at', 'added_via', 'source', 'last_update_at']
 
     departement = QuerySelectField(query_factory=departements, get_label='nom')
 
 
-class ConducteurCreateForm(ConducteurForm):
+class DriverCreateForm(DriverForm):
     submit = SubmitField(u'Créer')
 
 
-class ConducteurUpdateForm(ConducteurForm):
+class DriverUpdateForm(DriverForm):
     id = HiddenField()
     submit = SubmitField(u'Modifier')

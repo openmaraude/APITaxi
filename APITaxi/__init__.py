@@ -31,7 +31,7 @@ user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
 api = Api(app, ui=False, catch_all_404s=True)
-ns_administrative = api.namespace('Administrative',
+ns_administrative = api.namespace('administrative',
         description="Administrative APIs", path='/')
 ns_hail = api.namespace('hails', description="Hail API")
 ns_taxis = api.namespace('taxis', description="Taxi API")
@@ -40,7 +40,7 @@ from .utils.redis_geo import GeoRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis, app)
 
 from .views import ads
-from .views import conducteur
+from .views import drivers
 from .views import zupc
 from .views import home
 from .views import hail
@@ -53,7 +53,7 @@ def swagger_ui():
 
 
 app.register_blueprint(ads.mod)
-app.register_blueprint(conducteur.mod)
+app.register_blueprint(drivers.mod)
 app.register_blueprint(zupc.mod)
 app.register_blueprint(home.mod)
 app.register_blueprint(apidoc.apidoc)

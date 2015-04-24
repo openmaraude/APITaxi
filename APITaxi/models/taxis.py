@@ -11,23 +11,21 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
     id = Column(db.Integer, primary_key=True)
-    immatriculation = Column(db.String(80), label=u'Immatriculation',
+    licence_plate = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule')
-    modele = Column(db.String(255), label=u'Modèle', nullable=True,
+    model = Column(db.String(255), label=u'Modèle', nullable=True,
             description=u'Modèle du véhicule')
-    annee = Column(db.Integer, label=u'Année', nullable=True,
+    model_year = Column(db.Integer, label=u'Année', nullable=True,
             description=u'Année de mise en production du véhicule')
-    motorisation = Column(db.String(80), label=u'Motorisation', nullable=True,
+    engine = Column(db.String(80), label=u'Motorisation', nullable=True,
             description=u'Motorisation du véhicule')
-    puissance = Column(db.Float(), label=u'Puissance', nullable=True,
-            description=u'Puissance du véhicule')
+    horse_power = Column(db.Float(), label=u'Puissance', nullable=True,
+            description=u'Puissance du véhicule en chevaux fiscaux')
     type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal'), name='type_',
             label='Type', nullable=True)
     relais = Column(db.Boolean, label=u'Relais', default=False, nullable=True,
             description=u'Est-ce un véhicule relais')
-    pmr = Column(db.Boolean, label=u'PMR', default=False, nullable=True,
-            description=u'Le véhicule est il adapté aux PMR')
-    marque = Column(db.String(255), label=u'Marque', nullable=True,
+    constructor = Column(db.String(255), label=u'Marque', nullable=True,
             description=u'Marque du véhicule')
     horodateur = Column(db.String(255), label=u'Horodateur', nullable=True,
             description=u'Modèle de l\'horodateur')
@@ -39,7 +37,7 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
     date_validite_ct = Column(db.Date(),
         label=u'Date de la fin de validité du CT (format année-mois-jour)',
         description=u'Date de fin de validité du contrôle technique')
-    luxary = Column(db.Boolean, name='luxary', label='Luxe ?', nullable=True)
+    luxury = Column(db.Boolean, name='luxury', label='Luxe ?', nullable=True)
     credit_card_accepted = Column(db.Boolean, name='credit_card_accepted',
             label=u'Carte bancaire acceptée ?', nullable=True)
     nfc_cc_accepted = Column(db.Boolean, name='nfc_cc_accepted',
@@ -53,6 +51,8 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
             label=u'Boisson fraiche ?', nullable=True)
     dvd_player = Column(db.Boolean, name='dvd_player', label='Lecteur DVD ?',
             nullable=True)
+    tablet = Column(db.Boolean, name='tablet', label='Tablette ?',
+            nullable=True)
     wifi = Column(db.Boolean, name='wifi', label=u'Wifi à bord ?',
             nullable=True)
     baby_seat = Column(db.Boolean, name='baby_seat', label=u'Siège bébé ?',
@@ -61,19 +61,19 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
             label=u'Transport de vélo', nullable=True)
     pet_accepted = Column(db.Boolean, name='pet_accepted',
             label=u'Animaux de compagnie acceptés ?', nullable=True)
-    AC_vehicle = Column(db.Boolean, name='AC_vehicle',
+    air_con = Column(db.Boolean, name='air_con',
             label=u'Véhicule climatisé', nullable=True)
-    telepeage = Column(db.Boolean, name='telepeage',
+    electronic_toll = Column(db.Boolean, name='electronic_toll',
             label=u'Véhicule équipé du télépéage', nullable=True)
     gps = Column(db.Boolean, name='gps', label=u'Véhicule équipé d\'un GPS',
             nullable=True)
-    conventionne = Column(db.Boolean, name='conventionne',
+    cpam_conventionne = Column(db.Boolean, name='cpam_conventionne',
             label=u'Conventionné assurance maladie', nullable=True)
     every_destination = Column(db.Boolean, name='every_destination',
             label=u'Toute destination', nullable=True)
     color = Column(db.String(255), name='color', label='Couleur : ',
             nullable=True)
-    snv = Column(db.Boolean, name='snv',
+    special_need_vehicle = Column(db.Boolean, name='special_need_vehicle',
             label=u'Véhicule spécialement aménagé pour PMR ', nullable=True)
 
     def __repr__(self):
@@ -92,23 +92,18 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
 
     public_fields = set(['numero', 'insee'])
     id = Column(db.Integer, primary_key=True)
-    numero = Column(db.Integer, label=u'Numéro',
+    numero = Column(db.String, label=u'Numéro',
             description=u'Numéro de l\'ADS')
     doublage = Column(db.Boolean, label=u'Doublage', default=False,
             nullable=True, description=u'L\'ADS est elle doublée ?')
-    nom_societe = Column(db.String(255), label=u'Nom de la société',
-            default='', nullable=True,
-            description=u'Nom de la société')
-    artisan = Column(db.String(255), label=u'Nom de l\'artisan',
-            default='', nullable=True,
-            description=u'Nom de l\'artisan')
-    personne = Column(db.String(255), label=u'Nom de la personne', default='',
-            nullable=True,
-            description=u'Nom de la personne')
-    insee = Column(db.Integer, label=u'Code INSEE de la commune d\'attribution',
+    insee = Column(db.String, label=u'Code INSEE de la commune d\'attribution',
                    description=u'Code INSEE de la commune d\'attribution')
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
     vehicle = db.relationship('Vehicle', backref='vehicle')
+    owner_type = Column(Enum('company', 'individual', name='owner_type_enum'),
+            label=u'Type Propriétaire')
+    owner_name = Column(db.String, label=u'Nom du propriétaire')
+    category = Column(db.String, label=u'Catégorie de l\'ADS')
 
     def __repr__(self):
         return '<ADS %r>' % str(self.id)
@@ -120,18 +115,18 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
         return not self.__eq__(other)
 
 
-class Conducteur(db.Model, AsDictMixin, HistoryMixin):
+class Driver(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
     id = Column(db.Integer, primary_key=True)
-    nom = Column(db.String(255), label='Nom', description=u'Nom du conducteur')
-    prenom = Column(db.String(255), label=u'Prénom',
+    last_name = Column(db.String(255), label='Nom', description=u'Nom du conducteur')
+    first_name = Column(db.String(255), label=u'Prénom',
             description=u'Prénom du conducteur')
-    date_naissance = Column(db.Date(),
+    birth_date = Column(db.Date(),
         label=u'Date de naissance (format année-mois-jour)',
         description=u'Date de naissance (format année-mois-jour)')
-    carte_pro = Column(db.String(),
+    professional_licence = Column(db.String(),
             label=u'Numéro de la carte professionnelle',
             description=u'Numéro de la carte professionnelle')
 
@@ -146,7 +141,7 @@ class Conducteur(db.Model, AsDictMixin, HistoryMixin):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return '<conducteurs %r>' % str(self.id)
+        return '<drivers %r>' % str(self.id)
 
 class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
@@ -158,28 +153,28 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     vehicle = db.relationship('Vehicle', backref='vehicle_taxi')
     ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
     ads = db.relationship('ADS', backref='ads')
-    conducteur_id = db.Column(db.Integer, db.ForeignKey('conducteur.id'),
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'),
             nullable=True)
-    conducteur = db.relationship('Conducteur', backref='conducteur')
+    driver = db.relationship('Driver', backref='driver')
     status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
         name='status_taxi_enum'), label='Status', nullable=True, default='free')
 
     @property
-    def carte_pro(self):
-        return self.conducteur.carte_pro
+    def driver_professional_licence(self):
+        return self.driver.professional_licence
 
     @property
-    def immatriculation(self):
-        return self.vehicle.immatriculation
+    def vehicle_licence_plate(self):
+        return self.vehicle.licence_plate
 
     @property
-    def numero_ads(self):
+    def ads_numero(self):
         return self.ads.numero
 
     @property
-    def insee(self):
-        return self.conducteur.insee
+    def driver_insee(self):
+        return self.ads.insee
 
     @property
-    def departement(self):
-        return self.conducteur.departement
+    def driver_departement(self):
+        return self.driver.departement
