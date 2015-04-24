@@ -6,7 +6,7 @@ __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
 
 
-from flask import Flask, make_response, jsonify
+from flask import Flask, make_response, jsonify, render_template
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.script import Manager
 from flask.ext.security.utils import verify_and_update_password
@@ -15,7 +15,7 @@ import os
 from models import db
 from models import security as security_models, taxis as taxis_models,\
     administrative as administrative_models, hail as hail_model
-from flask.ext.restplus import Api, apidoc
+from flask.ext.restplus import Api, apidoc, abort
 from flask.ext.redis import FlaskRedis
 
 
@@ -49,7 +49,8 @@ from .views import taxi
 
 @apidoc.apidoc.route('/doc/', endpoint='doc')
 def swagger_ui():
-    return apidoc.ui_for(api)
+    return render_template('swagger/index.html')
+    #return apidoc.ui_for(api)
 
 
 app.register_blueprint(ads.mod)
