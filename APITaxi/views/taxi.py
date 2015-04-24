@@ -7,12 +7,13 @@ from ..models import taxis as taxis_models, administrative as administrative_mod
 from .. import db, api, redis_store, ns_taxis
 
 
-taxi_model_details = api.model('taxi_model_details', {'immatriculation': fields.String,
-                       'numero_ads': fields.Integer,
-                       'insee': fields.Integer,
-                       'carte_pro': fields.String,
-                       'departement': fields.String,
-                       'id': fields.Integer})
+taxi_model_details = api.model('taxi_model_details',
+         {'vehicle_licence_plate': fields.String,
+          'ads_numero': fields.Integer,
+          'ads_insee': fields.String,
+          'driver_professional_licence': fields.String,
+          'driver_departement': fields.String,
+           'id': fields.Integer})
 taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_model_details))})
 
 @ns_taxis.route('/<int:taxi_id>/', endpoint="taxi_id")
@@ -47,12 +48,12 @@ class TaxiId(Resource):
 
 
 dict_taxi_expect = \
-    {'immatriculation': fields.String,
-     'numero_ads': fields.Integer,
-     'insee': fields.Integer,
-     'carte_pro': fields.String,
-     'departement': fields.String
-    }
+         {'vehicle_licence_plate': fields.String,
+          'ads_numero': fields.Integer,
+          'ads_insee': fields.String,
+          'driver_professional_licence': fields.String,
+          'driver_departement': fields.String
+         }
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
@@ -90,27 +91,28 @@ class Taxis(Resource):
         if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
             abort(400)
         departement = administrative_models.Departement.query\
-            .filter_by(numero=str(taxi_json['departement'])).first()
+            .filter_by(numero=str(taxi_json['driver_departement'])).first()
         if not departement:
             abort(404, error='Unable to find the departement')
-        conducteur = taxis_models.Conducteur.query\
-                .filter_by(carte_pro=taxi_json['carte_pro'],
+        driver = taxis_models.Driver.query\
+                .filter_by(carte_pro=taxi_json['driver_professional_licence'],
                            departement_id=departement.id).first()
-        if not conducteur:
+        if not driver:
             abort(404, {"error": "Unable to find carte_pro"})
         vehicle = taxis_models.Vehicle.query\
-                .filter_by(immatriculation=taxi_json['immatriculation']).first()
+                .filter_by(immatriculation=taxi_json['vehicle_licence_plate']).first()
         if not vehicle:
             abort(404, {"error": "Unable to find immatriculation"})
         ads = taxis_models.ADS.query\
-                .filter_by(numero=taxi_json['numero_ads'], insee=taxi_json['insee']).first()
+                .filter_by(numero=taxi_json['ads_numero'],
+                           insee=taxi_json['ads_insee']).first()
         if not ads:
             abort(404, {"error": "Unable to find numero_ads for this insee code"})
-        taxi = taxis_models.Taxi.query.filter_by(conducteur_id=conducteur.id,
+        taxi = taxis_models.Taxi.query.filter_by(driver_id=driver.id,
                 vehicle_id=vehicle.id, ads_id=ads.id).first()
         if not taxi:
             taxi = taxis_models.Taxi()
-            taxi.conducteur_id = conducteur.id
+            taxi.driver_id = driver.id
             taxi.vehicle_id = vehicle.id
             taxi.ads_id = ads.id
             db.session.add(taxi)
