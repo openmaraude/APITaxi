@@ -62,7 +62,7 @@ class Drivers(Resource):
 
 @mod.route('/drivers/form', methods=['GET', 'POST'])
 @login_required
-@roles.accepted(['admin', 'operateur'])
+@roles_accepted(['admin', 'operateur'])
 def driver_form():
     form = None
     if request.args.get("id"):
@@ -92,7 +92,7 @@ def driver_form():
 
 
 @mod.route('/drivers/delete')
-@roles.accepted(['admin', 'operateur'])
+@roles_accepted(['admin', 'operateur'])
 @login_required
 def driver_delete():
     if not request.args.get("id"):
