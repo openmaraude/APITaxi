@@ -22,7 +22,7 @@ ads_post = make_model('taxis', 'ADS', True)
 class ADS(Resource):
 
     parser = reqparse.RequestParser()
-    parser.add_argument('numero', type=int, help=u"Numero de l'ADS")
+    parser.add_argument('numero', type=str, help=u"Numero de l'ADS")
     parser.add_argument('insee', type=str, help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
     @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
