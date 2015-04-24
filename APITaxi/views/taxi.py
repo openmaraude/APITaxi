@@ -25,8 +25,26 @@ class TaxiId(Resource):
     @roles_accepted('admin', 'operateur')
     def get(self, taxi_id):
         taxi = taxis_models.Taxi.query.get(taxi_id)
-#@TODO:gérer la relation operateur<->conducteur
         return {'data': [taxi]}
+
+    @api.doc(responses={404:'Resource not found',
+        403:'You\'re not authorized to view it'})
+    @api.marshal_with(taxi_model)
+    @api.expect(api.model('taxi_put_expect',
+          {'data': fields.List(fields.Nested(api.model('api_expect_status',
+                {'status': fields.String})))}))
+    @login_required
+    @roles_accepted('admin', 'operateur')
+    def put(self, taxi_id):
+        json = request.get_json()
+        status = json['data'][0]['status']
+        if status not in Taxi.__table__.columns.status.type.enums:
+            abort(400)
+        taxi = taxis_models.Taxi.query.get(taxi_id)
+        taxi.status = status
+        db.session.commit()
+        return {'data': [taxi]}
+
 
 dict_taxi_expect = \
     {'immatriculation': fields.String,
