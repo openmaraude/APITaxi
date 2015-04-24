@@ -2,7 +2,7 @@
 from flask_restful import Resource, reqparse
 from flask.ext.restplus import fields, abort
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, redirect, url_for, jsonify
+from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
 from .. import db, api, redis_store, ns_taxis
 
@@ -69,7 +69,7 @@ class Taxis(Resource):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
 
-        r = redis_store.georadius('france', lat, lon)
+        r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
 
         return {"taxis": map(lambda a: {"id":a[0], "distance": float(a[1]),
                                "lon":float(a[2][0]), "lat": float(a[2][1])}, r)}
