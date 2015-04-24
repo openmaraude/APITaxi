@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 from flask.ext.security import LoginForm
 from flask import request, abort
 from functools import wraps

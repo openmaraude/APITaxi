@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 #Source: http://flask.pocoo.org/snippets/45/
 
 from flask import request

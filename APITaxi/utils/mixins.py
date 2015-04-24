@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 from flask.ext.login import current_user
 from flask import request
 from sqlalchemy_defaults import Column

@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 from . import HistoryMixin
 
 def create_obj_from_json(cls, json_obj):

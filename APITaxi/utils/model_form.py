@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 from flask.ext.wtf import Form
 from wtforms_alchemy import model_form_factory
 from ..models import db
