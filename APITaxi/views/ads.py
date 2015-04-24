@@ -75,7 +75,7 @@ class ADS(Resource):
     def post(self):
         json = request.get_json()
         if "data" not in json:
-            abort(400)
+            abort(400, message="No data field in request")
         if len(json['data']) > 250:
             abort(413)
         new_ads = []
@@ -86,7 +86,7 @@ class ADS(Resource):
             try:
                 new_ads.append(create_obj_from_json(taxis_models.ADS, ads))
             except KeyError as e:
-                abort(400)
+                abort(400, message="Missing key: "+str(e))
             db.session.add(new_ads[-1])
         db.session.commit()
 
