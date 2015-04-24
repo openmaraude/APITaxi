@@ -7,7 +7,7 @@ from ..utils import create_obj_from_json
 from flask import Blueprint, render_template, request, redirect, url_for, abort
 from flask import render_template, request, redirect, url_for, jsonify,\
         current_app
-from flask.ext.security import login_required, current_user
+from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask_restful import Resource, abort
 from flask.ext.restplus import fields
@@ -48,16 +48,21 @@ class Drivers(Resource):
 
     @api.hide
     @login_required
+    @roles_accepted(['admin', 'operateur'])
     def get(self):
         if not taxis_models.Driver.can_be_listed_by(current_user):
             abort(403)
         page = int(request.args.get('page')) if 'page' in request.args else 1
+        q = taxis_models.Driver
+        if not current_user.has_role('admin'):
+            q.filter_by(added_by=current_user.id)
         return render_template('lists/drivers.html',
-            driver_list=taxis_models.Driver.query.paginate(page))
+            driver_list=q.query.paginate(page))
 
 
 @mod.route('/drivers/form', methods=['GET', 'POST'])
 @login_required
+@roles.accepted(['admin', 'operateur'])
 def driver_form():
     form = None
     if request.args.get("id"):
@@ -87,6 +92,7 @@ def driver_form():
 
 
 @mod.route('/drivers/delete')
+@roles.accepted(['admin', 'operateur'])
 @login_required
 def driver_delete():
     if not request.args.get("id"):
