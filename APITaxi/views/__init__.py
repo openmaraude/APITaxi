@@ -1,2 +1,2 @@
 # -*- coding: utf8 -*-
-import ads, drivers, zupc
+#import ads, drivers, zupc
