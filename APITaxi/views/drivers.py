@@ -53,11 +53,11 @@ class Drivers(Resource):
         if not taxis_models.Driver.can_be_listed_by(current_user):
             abort(403)
         page = int(request.args.get('page')) if 'page' in request.args else 1
-        q = taxis_models.Driver
+        q = taxis_models.Driver.query
         if not current_user.has_role('admin'):
             q.filter_by(added_by=current_user.id)
         return render_template('lists/drivers.html',
-            driver_list=q.query.paginate(page))
+            driver_list=q.paginate(page))
 
 
 @mod.route('/drivers/form', methods=['GET', 'POST'])
