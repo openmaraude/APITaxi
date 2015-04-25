@@ -30,7 +30,7 @@ db.init_app(app)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
-api = Api(app, ui=False, catch_all_404s=True)
+api = Api(app, ui=False, catch_all_404s=True, title='API version 1.0')
 ns_administrative = api.namespace('administrative',
         description="Administrative APIs", path='/')
 ns_hail = api.namespace('hails', description="Hail API")
