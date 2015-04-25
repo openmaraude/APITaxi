@@ -12,7 +12,7 @@ status_enum_list = [ 'emitted', 'received',
     'received_by_taxi', 'accepted_by_taxi',
     'declined_by_taxi', 'incident_customer',
     'incident_taxi', 'timeout_customer', 'timeout_taxi',
-        'outdated_customer', 'outdated_taxi']#This may be redundant
+        'outdated_customer', 'outdated_taxi', 'failure']#This may be redundant
 
 class Customer(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.String, primary_key=True)
@@ -94,6 +94,11 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @roles_required('moteur')
     def incident_customer(self):
         self.status = 'incident_customer'
+        self.status_changed()
+
+    @login_required
+    def failure(self):
+        self.status = 'failure'
         self.status_changed()
 
     def check_time_out(self):
