@@ -30,6 +30,10 @@ db.init_app(app)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 security = Security(app, user_datastore)
+
+from .views import home
+app.register_blueprint(home.mod)
+
 api = Api(app, ui=False, catch_all_404s=True, title='API version 1.0')
 ns_administrative = api.namespace('administrative',
         description="Administrative APIs", path='/')
@@ -42,7 +46,6 @@ redis_store = FlaskRedis.from_custom_provider(GeoRedis, app)
 from .views import ads
 from .views import drivers
 from .views import zupc
-from .views import home
 from .views import hail
 from .views import vehicle
 from .views import taxi
@@ -53,12 +56,10 @@ def swagger_ui():
     return render_template('swagger/index.html')
     #return apidoc.ui_for(api)
 
-
+app.register_blueprint(apidoc.apidoc)
 app.register_blueprint(ads.mod)
 app.register_blueprint(drivers.mod)
 app.register_blueprint(zupc.mod)
-app.register_blueprint(home.mod)
-app.register_blueprint(apidoc.apidoc)
 
 @api.representation('text/html')
 def output_html(data, code=200, headers=None):
