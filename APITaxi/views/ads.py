@@ -25,6 +25,7 @@ class ADS(Resource):
     parser.add_argument('numero', type=str, help=u"Numero de l'ADS")
     parser.add_argument('insee', type=str, help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
+    @api.hide
     @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     @login_required
     @roles_accepted('admin', 'operateur')
