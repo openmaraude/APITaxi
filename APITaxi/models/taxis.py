@@ -175,6 +175,12 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
 
+    def operator(self, redis_store):
+        a = redis_store.hscan(self.id)
+        operator, _ = min(a[1].iteritems(),
+             key=lambda (k, v): v.split(" ")[0])
+        return operator
+
     @property
     def driver_professional_licence(self):
         return self.driver.professional_licence
