@@ -5,6 +5,7 @@ from flask.ext.security import login_required, roles_accepted,\
 from datetime import datetime
 from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin
+from security import User
 
 
 status_enum_list = [ 'emitted', 'received',
@@ -23,7 +24,9 @@ class Customer(db.Model, AsDictMixin, HistoryMixin):
 class Hail(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.Integer, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
-    operateur_id = db.Column(db.Integer)
+    operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    operateur = db.relationship('User', backref='user_operateur',
+        primaryjoin=(operateur_id==User.id))
     customer_id = db.Column(db.String,
                             nullable=False)
     customer_lon = db.Column(db.Float, nullable=False)
@@ -33,7 +36,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         name='hail_status'), default='emitted', nullable=False)
     last_status_change = db.Column(db.DateTime)
     db.ForeignKeyConstraint(['operateur_id', 'customer_id'],
-        ['customer.operateur_id', 'customer.id'])
+        ['customer.operateur_id', 'customer.id'],
+        )
 
 
     def status_changed(self):
