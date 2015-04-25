@@ -22,6 +22,7 @@ class User(db.Model, UserMixin):
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
     apikey = db.Column(db.String(36), nullable=False)
+    hail_endpoint = db.Column(db.String, nullable=True)
 
     def __init__(self, *args, **kwargs):
         kwargs['apikey'] = str(uuid4())
