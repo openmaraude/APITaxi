@@ -1,4 +1,5 @@
 # -*- coding: utf8 -*-
+import calendar, time
 from flask_restful import Resource, reqparse
 from flask.ext.restplus import fields, abort
 from flask.ext.security import login_required, current_user, roles_accepted
@@ -6,6 +7,36 @@ from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
 from .. import db, api, redis_store, ns_taxis
 
+vehicle_descriptor = api.model('vehicle_descriptor',
+    {
+        "model": fields.String,
+        "constructor": fields.String,
+        "color": fields.String,
+        "licence_plate": fields.String,
+        "caracteristics": fields.List(fields.String),
+    })
+coordinates_descriptor = api.model('coordinates_descriptor',
+        {"lon": fields.Float, "lat": fields.Float})
+ads_descriptor = api.model('ads_descriptor', {
+        "numero": fields.String,
+        "insee": fields.String
+})
+driver_descriptor = api.model('driver_descriptor', {
+        'professional_licence': fields.String,
+        'departement': fields.String(attribute='departement.numero')
+})
+taxi_descriptor = api.model('taxi_descriptor',
+    {
+        "id": fields.String,
+        "operator": fields.String,
+        "position": fields.Nested(coordinates_descriptor),
+        "vehicle": fields.Nested(vehicle_descriptor),
+        "last_update": fields.Integer,
+        "crowfly_distance": fields.Float,
+        "ads": fields.Nested(ads_descriptor),
+        "driver": fields.Nested(driver_descriptor),
+        "status": fields.String
+    })
 
 taxi_model_details = api.model('taxi_model_details',
          {'vehicle_licence_plate': fields.String,
@@ -14,7 +45,7 @@ taxi_model_details = api.model('taxi_model_details',
           'driver_professional_licence': fields.String,
           'driver_departement': fields.String,
            'id': fields.String})
-taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_model_details))})
+taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_descriptor))})
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
@@ -26,6 +57,8 @@ class TaxiId(Resource):
     @roles_accepted('admin', 'operateur')
     def get(self, taxi_id):
         taxi = taxis_models.Taxi.query.get(taxi_id)
+        if not taxi:
+            abort(404, message="Unable to find this taxi")
 #@TODO:gérer la relation operateur<->driver
         return {'data': [taxi]}
 
@@ -49,13 +82,11 @@ class TaxiId(Resource):
 
 
 dict_taxi_expect = \
-         {'vehicle_licence_plate': fields.String,
-          'ads_numero': fields.String,
-          'ads_insee': fields.String,
-          'driver_professional_licence': fields.String,
-          'driver_departement': fields.String
+         {'vehicle': fields.Nested(api.model('vehicle_expect', {'licence_plate': fields.String})),
+          'ads': fields.Nested(api.model('ads_expect', {'numero': fields.String, 'insee': fields.String})),
+          'driver': fields.Nested(api.model('driver_expect', {'professional_licence': fields.String,
+                     'departement': fields.String}))
          }
-
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
     get_parser = reqparse.RequestParser()
@@ -63,6 +94,7 @@ class Taxis(Resource):
     get_parser.add_argument('lat', type=float, required=True)
 
     @api.doc(responses={403:'You\'re not authorized to view it'}, parser=get_parser)
+    @api.marshal_with(taxi_model)
     @login_required
     @roles_accepted('admin', 'moteur')
     def get(self):
@@ -70,9 +102,30 @@ class Taxis(Resource):
         lon, lat = p['lon'], p['lat']
 
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
-
-        return {"taxis": map(lambda a: {"id":a[0], "distance": float(a[1]),
-                               "lon":float(a[2][0]), "lat": float(a[2][1])}, r)}
+        taxis = []
+        min_time = calendar.timegm(time.gmtime()) - 60*60
+        for taxi_id, distance, coords in r:
+            a = redis_store.hscan(taxi_id)
+            taxi_db = taxis_models.Taxi.query.get(taxi_id)
+            if not taxi_db or taxi_db.status != 'free':
+                continue
+            operator, v = min(a[1].iteritems(),
+                 key=lambda (k, v): v.split(" ")[0])
+            taxis.append({
+                "id": taxi_id,
+                "operator": operator,
+                "position": {"lon": coords[0], "lat": coords[1]},
+                "vehicle": {
+                        "model": taxi_db.vehicle.model,
+                        "constructor": taxi_db.vehicle.constructor,
+                        "color": taxi_db.vehicle.color
+                },
+                "caracteristics": taxi_db.vehicle.caracteristics,
+                "last_update": v.split(" ")[0],
+                "crowfly_distance": float(distance)
+                })
+        taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
+        return {'data': taxis}
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
@@ -80,6 +133,7 @@ class Taxis(Resource):
                           {'data':fields.List(fields.Nested(
                               api.model('taxi_expect_details',
                                         dict_taxi_expect)))}))
+    @api.marshal_with(taxi_model)
     @login_required
     @roles_accepted('admin', 'operateur')
     def post(self):
@@ -92,23 +146,23 @@ class Taxis(Resource):
         if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
             abort(400)
         departement = administrative_models.Departement.query\
-            .filter_by(numero=str(taxi_json['driver_departement'])).first()
+            .filter_by(numero=str(taxi_json['driver']['departement'])).first()
         if not departement:
-            abort(404, error='Unable to find the departement')
+            abort(404, message='Unable to find the departement')
         driver = taxis_models.Driver.query\
-                .filter_by(professional_licence=taxi_json['driver_professional_licence'],
+                .filter_by(professional_licence=taxi_json['driver']['professional_licence'],
                            departement_id=departement.id).first()
         if not driver:
-            abort(404, {"error": "Unable to find carte_pro"})
+            abort(404, message="Unable to find the driver")
         vehicle = taxis_models.Vehicle.query\
-                .filter_by(licence_plate=taxi_json['vehicle_licence_plate']).first()
+                .filter_by(licence_plate=taxi_json['vehicle']['licence_plate']).first()
         if not vehicle:
-            abort(404, {"error": "Unable to find immatriculation"})
+            abort(404, message="Unable to find the licence plate")
         ads = taxis_models.ADS.query\
-                .filter_by(numero=taxi_json['ads_numero'],
-                           insee=taxi_json['ads_insee']).first()
+                .filter_by(numero=taxi_json['ads']['numero'],
+                           insee=taxi_json['ads']['insee']).first()
         if not ads:
-            abort(404, {"error": "Unable to find numero_ads for this insee code"})
+            abort(404, message="Unable to find numero_ads for this insee code")
         taxi = taxis_models.Taxi.query.filter_by(driver_id=driver.id,
                 vehicle_id=vehicle.id, ads_id=ads.id).first()
         if not taxi:
