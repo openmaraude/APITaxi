@@ -19,7 +19,9 @@ class Date(basefields.BaseField):
 
     def output(self, key, value):
         if isinstance(value, dict):
-            return value[key].isoformat()
-        else:
-            date = getattr(value, key)
-            return date.isoformat() if date else None
+            return value[key]
+        value = value[key]
+        if isinstance(value, str):
+            return value
+        date = getattr(value, key)
+        return date.isoformat() if date else None
