@@ -43,7 +43,7 @@ class HistoryMixin:
 
     @classmethod
     def can_be_listed_by(cls, user):
-        return user.has_role("admin")
+        return user.has_role("admin", "operateur")
 
     @classmethod
     def list_fields(cls):
