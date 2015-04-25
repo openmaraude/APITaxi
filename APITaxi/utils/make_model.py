@@ -10,7 +10,11 @@ def make_model(filename, model_name, *args, **kwargs):
     list_names.extend(map(lambda i: str(i), args))
     list_names.extend(map(lambda (k, v): k + "_" + str(v), kwargs.items()))
     register_name = "_".join(list_names)
-    details = api.model(register_name + "_details",
-                        model.marshall_obj(*args, **kwargs))
+    #@TODO: gros hack degueu
+    details_dict = model.marshall_obj(*args, **kwargs)
+    if 'operateur_id' in details_dict:
+        del details_dict['operateur_id']
+        details_dict['operateur'] = basefields.String(attribute='operateur.email')
+    details = api.model(register_name + "_details", details_dict)
     return api.model(register_name,
         {"data": basefields.List(basefields.Nested(details))})

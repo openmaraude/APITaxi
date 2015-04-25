@@ -12,7 +12,6 @@ import requests, json
 
 hail_model = make_model('hail', 'Hail')
 
-
 parser_put = reqparse.RequestParser()
 parser_put.add_argument('customer_lon', type=float, required=True,
         location='hail')
@@ -114,16 +113,17 @@ class Hail(Resource):
             customer.nb_sanctions = 0
             customer.added_via = 'api'
             db.session.add(customer)
+        operator = security_models.User.query.get(taxi.operator(redis_store))
         hail = HailModel()
         hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']
         hail.customer_lon = hj['customer_lon']
         hail.customer_lat = hj['customer_lat']
+        hail.operateur_id = operator.id
         hail.added_via = 'api'
         hail.taxi_id = hj['taxi_id']
         db.session.add(hail)
         db.session.commit()
-        operator = security_models.User.query.get(taxi.operator(redis_store))
         r = requests.post(operator.hail_endpoint,
                 data=json.dumps({"data": [marshal(hail, hail_model)]}),
             headers={'Content-Type': 'application/json'})
