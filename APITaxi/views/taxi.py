@@ -105,12 +105,10 @@ class Taxis(Resource):
         taxis = []
         min_time = calendar.timegm(time.gmtime()) - 60*60
         for taxi_id, distance, coords in r:
-            a = redis_store.hscan(taxi_id)
             taxi_db = taxis_models.Taxi.query.get(taxi_id)
             if not taxi_db or taxi_db.status != 'free':
                 continue
-            operator, v = min(a[1].iteritems(),
-                 key=lambda (k, v): v.split(" ")[0])
+            operator = taxi_db.operator(redis_store)
             taxis.append({
                 "id": taxi_id,
                 "operator": operator,

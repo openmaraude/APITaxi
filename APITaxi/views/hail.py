@@ -1,12 +1,14 @@
 # -*- coding: utf8 -*-
 from flask import request, redirect, url_for
-from flask.ext.restplus import Resource, reqparse, fields, abort
+from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
-from .. import ns_hail, db, api
-from ..models import Hail as HailModel, Customer as CustomerModel, Taxi as TaxiModel
+from .. import ns_hail, db, api, redis_store
+from ..models import (Hail as HailModel, Customer as CustomerModel,
+    Taxi as TaxiModel, security as security_models)
 from datetime import datetime
 from ..utils.make_model import make_model
+import requests, json
 
 hail_model = make_model('hail', 'Hail')
 
@@ -35,15 +37,22 @@ class HailId(Resource):
 
     @api.marshal_with(hail_model, envelope='hail')
     def get(self, hail_id):
+        print "get", hail_id
         hail = HailModel.query.get_or_404(hail_id)
-        return hail.to_dict()
+        return {"data": [hail]}
 
     @api.marshal_with(hail_model)
     @api.expect(hail_expect_put)
     def put(self, hail_id):
         root_parser = reqparse.RequestParser()
-        root_parser.add_argument('hail', type=dict, location='json')
-        hj = parser_put.parse_args(req=root_parser.parse_args())
+        root_parser.add_argument('data', type=list, location='json')
+        req = root_parser.parse_args()
+        to_parse = req['data'][0]
+        hj = {}
+        for arg in parser_put.args:
+            if arg.name not in to_parse.keys():
+                abort(400)
+            hj[arg.name] = arg.convert(to_parse[arg.name], '=')
         hail = HailModel.query.get_or_404(hail_id)
         #We change the status
         if hasattr(hail, hj['status']):
@@ -51,19 +60,19 @@ class HailId(Resource):
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']
             hail.customer_lat = hj['customer_lat']
-        db.session.commit()
-        return hail.to_dict()
+            db.session.commit()
+        return {"data": [hail]}
 
 
 parser_post = reqparse.RequestParser()
 parser_post.add_argument('customer_id', type=str,
-                         required=True, location='hail')
+                         required=True)
 parser_post.add_argument('customer_lon', type=float,
-                         required=True, location='hail')
+                         required=True)
 parser_post.add_argument('customer_lat', type=float,
-                         required=True, location='hail')
+                         required=True)
 parser_post.add_argument('taxi_id', type=str,
-                         required=True, location='hail')
+                         required=True)
 argument_names = map(lambda f: f.name, parser_post.args)
 hail_expect_post_details = api.model('hail_expect_post_details',
                                 dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
@@ -73,14 +82,21 @@ hail_expect = api.model('hail_expect_post', {'data': fields.List(fields.Nested(h
 class Hail(Resource):
 
     @api.expect(hail_expect)
-    @api.marshal_with(hail_model)
     @login_required
     @roles_required('moteur')
     def post(self):
         root_parser = reqparse.RequestParser()
-        root_parser.add_argument('hail', type=dict, location='json')
+        root_parser.add_argument('data', type=list, location='json')
         req = root_parser.parse_args()
-        hj = parser_post.parse_args(req=req)
+        if len(req['data']) != 1:
+            abort(400)
+        to_parse = req['data'][0]
+        hj = {}
+        for arg in parser_post.args:
+            if arg.name not in to_parse.keys():
+                abort(400)
+            hj[arg.name] = arg.convert(to_parse[arg.name], '=')
+
         taxi = TaxiModel.query.get(hj['taxi_id'])
         if not taxi:
             return abort(404, message="Unable to find taxi")
@@ -107,8 +123,14 @@ class Hail(Resource):
         hail.taxi_id = hj['taxi_id']
         db.session.add(hail)
         db.session.commit()
-        #send hail to operateur
-        hail.received()
+        operator = security_models.User.query.get(taxi.operator(redis_store))
+        r = requests.post(operator.hail_endpoint,
+                data=json.dumps({"data": [marshal(hail, hail_model)]}),
+            headers={'Content-Type': 'application/json'})
+        if r.status_code == 200:
+            hail.received()
+        else:
+            hail.failure()
         db.session.commit()
         return redirect(url_for('hailid', hail_id=hail.id))
 
