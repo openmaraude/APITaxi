@@ -19,8 +19,7 @@ class Date(basefields.BaseField):
 
     def output(self, key, value):
         if isinstance(value, dict):
-            return value[key]
-        value = value[key]
+            value = value[key]
         if isinstance(value, str):
             return value
         date = getattr(value, key)
