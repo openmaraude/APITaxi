@@ -5,9 +5,9 @@ from validate_email import validate_email
 
 def create_user(email, commit=False):
     "Create a user"
-    if not validate_email(email):
-        print("email is not valid")
-        return
+#    if not validate_email(email):
+#        print("email is not valid")
+#        return
     if user_datastore.find_user(email=email):
         print("User has already been created")
         return
@@ -26,6 +26,10 @@ def create_user_role(email, role_name):
 @manager.command
 def create_operateur(email):
     create_user_role(email, 'operateur')
+
+@manager.command
+def create_moteur(email):
+    create_user_role(email, 'moteur')
 
 @manager.command
 def create_admin(email):
