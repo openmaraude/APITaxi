@@ -26,6 +26,7 @@ passlib==1.6.2
 psycopg2==2.6
 pytz==2015.2
 redis==2.10.3
+requests==2.6.2
 six==1.9.0
 SQLAlchemy==0.9.9
 SQLAlchemy-Defaults==0.4.4
