@@ -62,7 +62,7 @@ parser_post.add_argument('customer_lon', type=float,
                          required=True, location='hail')
 parser_post.add_argument('customer_lat', type=float,
                          required=True, location='hail')
-parser_post.add_argument('taxi_id', type=int,
+parser_post.add_argument('taxi_id', type=str,
                          required=True, location='hail')
 argument_names = map(lambda f: f.name, parser_post.args)
 hail_expect_post_details = api.model('hail_expect_post_details',
