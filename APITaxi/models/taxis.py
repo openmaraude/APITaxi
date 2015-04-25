@@ -5,6 +5,7 @@ from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin
 from uuid import uuid4
+from itertools import compress
 
 
 class Vehicle(db.Model, AsDictMixin, HistoryMixin):
@@ -76,6 +77,15 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
             nullable=True)
     special_need_vehicle = Column(db.Boolean, name='special_need_vehicle',
             label=u'Véhicule spécialement aménagé pour PMR ', nullable=True)
+
+    @property
+    def caracteristics(self):
+        fields = ['special_need_vehicle', 'every_destination', 'gps',
+            'electronic_toll', 'air_con', 'pet_accepted', 'bike_accepted',
+            'baby_seat', 'wifi', 'tablet', 'dvd_player', 'fresh_drink',
+            'amex_accepted', 'bank_check_accepted', 'nfc_cc_accepted',
+            'credit_card_accepted', 'luxury']
+        return compress(fields, map(lambda f: getattr(self, f), fields))
 
     def __repr__(self):
         return '<Vehicle %r>' % str(self.id)
