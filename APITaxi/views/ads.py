@@ -25,10 +25,10 @@ class ADS(Resource):
     parser.add_argument('numero', type=str, help=u"Numero de l'ADS")
     parser.add_argument('insee', type=str, help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
-    @api.hide
-    @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     @login_required
     @roles_accepted('admin', 'operateur')
+    @api.hide
+    @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     def get(self):
         args = self.__class__.parser.parse_args()
         if args["numero"] and args["insee"]:
@@ -68,12 +68,12 @@ class ADS(Resource):
                 ads=[(k[1].info["label"], getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])])
 
 
+    @login_required
+    @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.expect(ads_expect)
     @api.marshal_with(ads_post)
-    @login_required
-    @roles_accepted('admin', 'operateur')
     def post(self):
         json = request.get_json()
         if "data" not in json:

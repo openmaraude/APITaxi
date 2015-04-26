@@ -50,10 +50,10 @@ taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_des
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
 
-    @api.doc(responses={404:'Resource not found',
-        403:'You\'re not authorized to view it'})
     @login_required
     @roles_accepted('admin', 'operateur')
+    @api.doc(responses={404:'Resource not found',
+        403:'You\'re not authorized to view it'})
     def get(self, taxi_id):
         taxi = taxis_models.Taxi.query.get(taxi_id)
         if not taxi:
@@ -62,14 +62,14 @@ class TaxiId(Resource):
         taxi_m['data'][0]['operator'] = None
         return taxi_m
 
+    @login_required
+    @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.marshal_with(taxi_model)
     @api.expect(api.model('taxi_put_expect',
           {'data': fields.List(fields.Nested(api.model('api_expect_status',
                 {'status': fields.String})))}))
-    @login_required
-    @roles_accepted('admin', 'operateur')
     def put(self, taxi_id):
         json = request.get_json()
         status = json['data'][0]['status']
@@ -93,10 +93,10 @@ class Taxis(Resource):
     get_parser.add_argument('lon', type=float, required=True)
     get_parser.add_argument('lat', type=float, required=True)
 
-    @api.doc(responses={403:'You\'re not authorized to view it'}, parser=get_parser)
-    @api.marshal_with(taxi_model)
     @login_required
     @roles_accepted('admin', 'moteur')
+    @api.doc(responses={403:'You\'re not authorized to view it'}, parser=get_parser)
+    @api.marshal_with(taxi_model)
     def get(self):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
@@ -128,14 +128,14 @@ class Taxis(Resource):
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
         return {'data': taxis}
 
+    @login_required
+    @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.expect(api.model('taxi_expect',
                           {'data':fields.List(fields.Nested(
                               api.model('taxi_expect_details',
                                         dict_taxi_expect)))}))
-    @login_required
-    @roles_accepted('admin', 'operateur')
     def post(self):
         json = request.get_json()
         if 'data' not in json:

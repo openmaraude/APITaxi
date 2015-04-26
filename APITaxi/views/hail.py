@@ -80,9 +80,9 @@ hail_expect = api.model('hail_expect_post', {'data': fields.List(fields.Nested(h
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource):
 
-    @api.expect(hail_expect)
     @login_required
     @roles_required('moteur')
+    @api.expect(hail_expect)
     def post(self):
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('data', type=list, location='json')
