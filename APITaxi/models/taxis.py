@@ -178,7 +178,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
     def operator(self, redis_store):
         #Returns operator, timestamp
-        a = redis_store.hscan(self.id)
+        a = redis_store.hscan("taxi:{}".format(self.id))
         if len(a[1]) == 0:
             return (None, None)
         operator, value = min(a[1].iteritems(),
