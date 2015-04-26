@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 import calendar, time
 from flask_restful import Resource, reqparse
-from flask.ext.restplus import fields, abort
+from flask.ext.restplus import fields, abort, marshal
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
@@ -52,15 +52,15 @@ class TaxiId(Resource):
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @api.marshal_with(taxi_model)
     @login_required
     @roles_accepted('admin', 'operateur')
     def get(self, taxi_id):
         taxi = taxis_models.Taxi.query.get(taxi_id)
         if not taxi:
             abort(404, message="Unable to find this taxi")
-#@TODO:gérer la relation operateur<->driver
-        return {'data': [taxi]}
+        taxi_m = marshal({'data':[taxi]}, taxi_model)
+        taxi_m['data'][0]['operator'] = taxi.operator(redis_store)
+        return taxi_m
 
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
