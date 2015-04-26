@@ -13,7 +13,7 @@ vehicle_descriptor = api.model('vehicle_descriptor',
         "constructor": fields.String,
         "color": fields.String,
         "licence_plate": fields.String,
-        "caracteristics": fields.List(fields.String),
+        "characteristics": fields.List(fields.String),
     })
 coordinates_descriptor = api.model('coordinates_descriptor',
         {"lon": fields.Float, "lat": fields.Float})
@@ -118,7 +118,7 @@ class Taxis(Resource):
                         "constructor": taxi_db.vehicle.constructor,
                         "color": taxi_db.vehicle.color
                 },
-                "caracteristics": taxi_db.vehicle.caracteristics,
+                "characteristics": taxi_db.vehicle.characteristics,
                 "last_update": v.split(" ")[0],
                 "crowfly_distance": float(distance)
                 })

@@ -79,7 +79,7 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
             label=u'Véhicule spécialement aménagé pour PMR ', nullable=True)
 
     @property
-    def caracteristics(self):
+    def characteristics(self):
         fields = ['special_need_vehicle', 'every_destination', 'gps',
             'electronic_toll', 'air_con', 'pet_accepted', 'bike_accepted',
             'baby_seat', 'wifi', 'tablet', 'dvd_player', 'fresh_drink',
