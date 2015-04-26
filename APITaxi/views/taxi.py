@@ -59,7 +59,7 @@ class TaxiId(Resource):
         if not taxi:
             abort(404, message="Unable to find this taxi")
         taxi_m = marshal({'data':[taxi]}, taxi_model)
-        taxi_m['data'][0]['operator'] = taxi.operator(redis_store)
+        taxi_m['data'][0]['operator'], _ = taxi.operator(redis_store)
         return taxi_m
 
     @api.doc(responses={404:'Resource not found',
@@ -108,7 +108,9 @@ class Taxis(Resource):
             taxi_db = taxis_models.Taxi.query.get(taxi_id)
             if not taxi_db or taxi_db.status != 'free':
                 continue
-            operator = taxi_db.operator(redis_store)
+            operator, timestamp = taxi_db.operator(redis_store)
+            if timestamp < min_time:
+                continue
             taxis.append({
                 "id": taxi_id,
                 "operator": operator,
@@ -116,10 +118,11 @@ class Taxis(Resource):
                 "vehicle": {
                         "model": taxi_db.vehicle.model,
                         "constructor": taxi_db.vehicle.constructor,
-                        "color": taxi_db.vehicle.color
+                        "color": taxi_db.vehicle.color,
+                        "characteristics": taxi_db.vehicle.characteristics
                 },
                 "characteristics": taxi_db.vehicle.characteristics,
-                "last_update": v.split(" ")[0],
+                "last_update": timestamp,
                 "crowfly_distance": float(distance)
                 })
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])

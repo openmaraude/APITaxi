@@ -85,7 +85,7 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
             'baby_seat', 'wifi', 'tablet', 'dvd_player', 'fresh_drink',
             'amex_accepted', 'bank_check_accepted', 'nfc_cc_accepted',
             'credit_card_accepted', 'luxury']
-        return compress(fields, map(lambda f: getattr(self, f), fields))
+        return list(compress(fields, map(lambda f: getattr(self, f), fields)))
 
     def __repr__(self):
         return '<Vehicle %r>' % str(self.id)
@@ -177,12 +177,13 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         super(self.__class__, self).__init__(**kwargs)
 
     def operator(self, redis_store):
+        #Returns operator, timestamp
         a = redis_store.hscan(self.id)
         if len(a[1]) == 0:
             return None
-        operator, _ = min(a[1].iteritems(),
+        operator, value = min(a[1].iteritems(),
              key=lambda (k, v): v.split(" ")[0])
-        return operator
+        return operator, value[0]
 
     @property
     def driver_professional_licence(self):
