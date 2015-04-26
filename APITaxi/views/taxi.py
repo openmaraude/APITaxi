@@ -131,7 +131,6 @@ class Taxis(Resource):
                           {'data':fields.List(fields.Nested(
                               api.model('taxi_expect_details',
                                         dict_taxi_expect)))}))
-    @api.marshal_with(taxi_model)
     @login_required
     @roles_accepted('admin', 'operateur')
     def post(self):
