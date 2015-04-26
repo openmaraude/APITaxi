@@ -34,11 +34,14 @@ class Drivers(Resource):
             abort(413)
         new_drivers = []
         for driver in json['data']:
-            if not administrative_models.Departement.query.get(driver['departement_id']):
+            departement = administrative_models.Departement.query.\
+                filter_by(numero=driver['departement']).first()
+            if not departement:
                 abort(400, message='Unable to find the *departement*')
             try:
-                new_drivers.append(create_obj_from_json(taxis_models.Driver,
-                    driver))
+                driver_obj = create_obj_from_json(taxis_models.Driver, driver)
+                driver_obj.departement_id = departement.id
+                new_drivers.append(driver_obj)
             except KeyError as e:
                 current_app.logger.error("Key error in driver", e)
                 abort(400)

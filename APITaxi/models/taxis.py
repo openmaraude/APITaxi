@@ -154,6 +154,7 @@ class Driver(db.Model, AsDictMixin, HistoryMixin):
     def __repr__(self):
         return '<drivers %r>' % str(self.id)
 
+
 class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
