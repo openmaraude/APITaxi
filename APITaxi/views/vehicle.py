@@ -14,12 +14,12 @@ vehicle_expect = make_model('taxis', 'Vehicle', filter_id=True)
 @ns_administrative.route('vehicles/', endpoint="vehicle")
 class Vehicle(Resource):
 
+    @login_required
+    @roles_accepted('admin', 'operateur')
     @api.marshal_with(vehicle_model)
     @api.expect(vehicle_expect)
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @login_required
-    @roles_accepted('admin', 'operateur')
     def post(self):
         json = request.get_json()
         if "data" not in json:
