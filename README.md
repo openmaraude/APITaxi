@@ -1,28 +1,27 @@
-# Backoffice operators #
-Backoffice for taxis' operators and public administrative workers.œ
+# API Open Data Taxi #
+API and Backoffice for taxis' operators and local authorities.
 
 ## Pre-requisites ##
 
-You need to have on your machine:
- * Python2.7
- * Alembic (for the database migration)
- * Pip
- * Postgresql and postgresql-dev, other databases should work
+ * `Python 2.7`
+ * `Alembic` (for the database migration)
+ * `Pip`
+ * `Postgresql` and `postgresql-dev` (other databases might work)
 
-It's better if you work with virtualenv
+We also recommend the use of `virtualenv`
 
 ## Initialization ##
 
-### Python dependencies ###
-You need to run `pip install -r requirements.txt` to install python dependencies 
+### Install Python dependencies ###
+Simply run `pip install -r requirements.txt` to install python dependencies 
 
-### Edit settings ###
-Please create a database for this project.
-Now you need to edit settings, copy `default_settings.py` file in
- `dev_settings.py, edit SQLALCHEMY_DATABASE_URI field in `dev_settings.py`.
+### Edit the database settings ###
+A database has to be created for this project.
+The default settings file `default_settings.py` should then be 
+edited accordingly (SQLALCHEMY_DATABASE_URI field) and renamed `dev_settings.py`.
 
-### Database initialization ###
-You can populate your database with the tables and default data, just run :
+### Initialize the database ###
+In order to populate the database with the tables and default data, run:
 `APITAXI_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py db upgrade head`
 
 ### Add an administrator ###
@@ -34,4 +33,8 @@ type a password.
 
 `APITAXI_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py runserver`
 
-you can access the backoffice here: `http://127.0.0.1:5000/ads/`
+you can then access:
+* the backoffice here: `http://127.0.0.1:5000/`
+* and the API doc here: `http://127.0.0.1:5000/doc`
+
+A wsgi file is also provided if a webserver is required (Apache has been tested, Nginx should work). 
