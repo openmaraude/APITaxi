@@ -178,6 +178,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
     def operator(self, redis_store):
         a = redis_store.hscan(self.id)
+        if len(a[1]) == 0:
+            return None
         operator, _ = min(a[1].iteritems(),
              key=lambda (k, v): v.split(" ")[0])
         return operator
