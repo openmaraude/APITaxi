@@ -59,7 +59,7 @@ class TaxiId(Resource):
         if not taxi:
             abort(404, message="Unable to find this taxi")
         taxi_m = marshal({'data':[taxi]}, taxi_model)
-        taxi_m['data'][0]['operator'], _ = taxi.operator(redis_store)
+        taxi_m['data'][0]['operator'] = None
         return taxi_m
 
     @api.doc(responses={404:'Resource not found',
