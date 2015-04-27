@@ -114,7 +114,7 @@ class Taxis(Resource):
             taxis.append({
                 "id": taxi_id,
                 "operator": operator,
-                "position": {"lon": coords[0], "lat": coords[1]},
+                "position": {"lat": coords[0], "lon": coords[1]},
                 "vehicle": {
                         "model": taxi_db.vehicle.model,
                         "constructor": taxi_db.vehicle.constructor,
