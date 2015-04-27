@@ -114,7 +114,9 @@ class Hail(Resource):
             customer.added_via = 'api'
             db.session.add(customer)
         operator_id, _ = taxi.operator(redis_store)
-        operator = security_models.User.query.get(operator_id)
+        if not operator_id:
+            abort(400)
+        operator = security_models.User.query.filter_by(email=operator_id).first()
         hail = HailModel()
         hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']
