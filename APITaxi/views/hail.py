@@ -127,11 +127,14 @@ class Hail(Resource):
         hail.taxi_id = hj['taxi_id']
         db.session.add(hail)
         db.session.commit()
+        hail.received()
+        hail.sent_to_operator()
+        db.session.commit()
         r = requests.post(operator.hail_endpoint,
                 data=json.dumps({"data": [marshal(hail, hail_model)]}),
             headers={'Content-Type': 'application/json'})
         if r.status_code == 200:
-            hail.received()
+            hail.received_by_operator()
         else:
             hail.failure()
         db.session.commit()
