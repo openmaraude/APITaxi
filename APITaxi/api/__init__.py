@@ -1,0 +1,26 @@
+# -*- coding: utf8 -*-
+from flask.ext.restplus import Api, apidoc
+from flask import Blueprint, make_response, render_template
+
+api_blueprint = Blueprint('api', __name__)
+api = Api(ui=False, catch_all_404s=True, title='API version 1.0')
+
+
+@apidoc.apidoc.route('/doc/', endpoint='doc')
+def swagger_ui():
+    return render_template('swagger/index.html')
+
+
+@api.representation('text/html')
+def output_html(data, code=200, headers=None):
+    resp = make_response(data, code)
+    resp.headers.extend(headers or {})
+    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+    return resp
+
+
+def init_app(app):
+    from . import hail, taxi
+    api.init_app(app)
+    app.register_blueprint(api_blueprint)
+    app.register_blueprint(apidoc.apidoc)

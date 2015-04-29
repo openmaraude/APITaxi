@@ -1,13 +1,16 @@
 # -*- coding: utf8 -*-
 from flask_restful import Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, redirect, url_for, abort, jsonify
+from flask import request, redirect, url_for, abort, jsonify, Blueprint
 from ..utils import create_obj_from_json
 from ..models import taxis as taxis_models
-from .. import db, api, ns_administrative
+from .. import db
+from ..api import api
+from . import ns_administrative
 from flask.ext.restplus import fields
 from ..utils.make_model import make_model
 
+mod = Blueprint('vehicle', __name__)
 
 vehicle_model = make_model('taxis', 'Vehicle')
 vehicle_expect = make_model('taxis', 'Vehicle', filter_id=True)

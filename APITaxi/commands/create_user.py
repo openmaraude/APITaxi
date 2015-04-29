@@ -1,7 +1,9 @@
 # -*- coding: utf8 -*-
-from .. import user_datastore, manager, db
+from .. import user_datastore
+from ..models import db
 from flask.ext.script import prompt_pass
 from validate_email import validate_email
+from . import manager
 
 def create_user(email, commit=False):
     "Create a user"
@@ -38,3 +40,4 @@ def create_admin(email):
 @manager.command
 def create_mairie(email):
     create_user_role(email, 'mairie')
+
