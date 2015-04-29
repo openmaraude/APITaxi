@@ -5,7 +5,10 @@ from flask.ext.restplus import fields, abort, marshal
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import db, api, redis_store, ns_taxis
+from .. import db, redis_store
+from ..api import api
+
+ns_taxis = api.namespace('taxis', description="Taxi API")
 
 vehicle_descriptor = api.model('vehicle_descriptor',
     {

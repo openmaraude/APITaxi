@@ -1,10 +1,13 @@
 # -*- coding: utf8 -*-
-from .. import db, api, ns_administrative
+from .. import db
+from ..api import api
+from . import ns_administrative
 from ..forms.taxis import ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm
 from ..models import taxis as taxis_models
 from ..utils import create_obj_from_json, request_wants_json
-from flask import Blueprint, render_template, request, redirect, url_for
-from flask import render_template, request, redirect, url_for, abort, jsonify
+from flask import (Blueprint, render_template, request, redirect, url_for,
+                   render_template, request, redirect, url_for, abort, jsonify,
+                   current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask_restful import Resource, reqparse

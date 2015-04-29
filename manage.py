@@ -1,12 +1,15 @@
 # -*- coding: utf8 -*-
-from APITaxi import manager, app, db
-from flask.ext.migrate import Migrate, MigrateCommand
-from flask.ext.script.commands import ShowUrls
-from APITaxi.commands import *
+from APITaxi import create_app
+from APITaxi.models import db
+from flask.ext.migrate import Migrate
+from APITaxi.commands import register_commands, manager
+import os
+
+app = create_app()
+manager.app = app
 
 migrate = Migrate(app, db)
-manager.add_command('db', MigrateCommand)
-manager.add_command('urls', ShowUrls)
+register_commands(manager)
 
 if __name__ == '__main__':
     manager.run()
