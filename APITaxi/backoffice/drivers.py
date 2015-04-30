@@ -11,8 +11,7 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
                    current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
-from flask_restful import Resource, abort
-from flask.ext.restplus import fields
+from flask.ext.restplus import fields, Resource, reqparse
 from ..utils.make_model import make_model
 
 

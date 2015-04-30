@@ -10,8 +10,7 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
                    current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
-from flask_restful import Resource, reqparse
-from flask.ext.restplus import fields, abort
+from flask.ext.restplus import fields, abort, Resource, reqparse
 from ..utils.make_model import make_model
 
 mod = Blueprint('ads', __name__)
@@ -41,9 +40,9 @@ class ADS(Resource):
 
     def ads_list(self):
         if request_wants_json():
-            abort(501)
+            abort(501, message="You need to ask for JSON")
         if not taxis_models.ADS.can_be_listed_by(current_user):
-            abort(403)
+            abort(403, message="You're not allowed to see this page")
         q = taxis_models.ADS.query
         if not current_user.has_role('admin'):
             q.filter_by(added_by=current_user.id)
@@ -82,10 +81,11 @@ class ADS(Resource):
         if "data" not in json:
             abort(400, message="No data field in request")
         if len(json['data']) > 250:
-            abort(413)
+            abort(413, message="You can only pass 250 objects")
         new_ads = []
         for ads in json['data']:
-            if not taxis_models.Vehicle.query.get(ads['vehicle_id']):
+            if ads['vehicle_id'] and\
+              not taxis_models.Vehicle.query.get(ads['vehicle_id']):
                 abort(400, message="Unable to find a vehicle with the id: {}"\
                         .format(ads['vehicle_id']))
             try:
@@ -106,9 +106,9 @@ def ads_form():
     if request.args.get("id"):
         ads = taxis_models.ADS.query.get(request.args.get("id"))
         if not ads:
-            abort(404)
+            abort(404, message="Unable to find the ADS")
         if not ads.can_be_edited_by(current_user):
-            abort(403)
+            abort(403, message="You're not allowed to edit this ADS")
         ads.vehicle = ads.vehicle or taxis_models.Vehicle()
         form = ADSUpdateForm()
         form.ads.form = ADSForm(obj=ads)
@@ -142,12 +142,12 @@ def ads_form():
 @roles_accepted('admin', 'operateur')
 def ads_delete():
     if not request.args.get("id"):
-        abort(404)
+        abort(404, message="You need to specify an id")
     ads = taxis_models.ADS.query.get(request.args.get("id"))
     if not ads:
-        abort(404)
+        abort(404, message="Unable to find this ADS")
     if not ads.can_be_deleted_by(current_user):
-        abort(403)
+        abort(403, message="You're not allowed to delete this ADS")
     db.session.delete(ads)
     db.session.commit()
     return redirect(url_for("ads.ads"))

@@ -3,7 +3,6 @@ from APITaxi import create_app
 from APITaxi.models import db
 from flask.ext.migrate import Migrate
 from APITaxi.commands import register_commands, manager
-import os
 
 app = create_app()
 manager.app = app

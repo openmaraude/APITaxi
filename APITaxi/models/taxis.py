@@ -23,7 +23,7 @@ class Vehicle(db.Model, AsDictMixin, HistoryMixin):
             description=u'Motorisation du véhicule')
     horse_power = Column(db.Float(), label=u'Puissance', nullable=True,
             description=u'Puissance du véhicule en chevaux fiscaux')
-    type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal'), name='type_',
+    type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal', name='vehicle_type_enum'), name='type_',
             label='Type', nullable=True)
     relais = Column(db.Boolean, label=u'Relais', default=False, nullable=True,
             description=u'Est-ce un véhicule relais')
