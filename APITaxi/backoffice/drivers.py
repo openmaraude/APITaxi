@@ -7,11 +7,11 @@ from ..forms.taxis import DriverCreateForm,\
 from ..models import taxis as taxis_models, administrative as administrative_models
 from ..utils import create_obj_from_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                  abort, render_template, request, redirect, url_for, jsonify,
+                  render_template, request, redirect, url_for, jsonify,
                    current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
-from flask.ext.restplus import fields, Resource, reqparse
+from flask.ext.restplus import fields, Resource, reqparse, abort
 from ..utils.make_model import make_model
 
 
@@ -30,10 +30,9 @@ class Drivers(Resource):
     def post(self):
         json = request.get_json()
         if "data" not in json:
-            current_app.logger.error("No data in json")
-            abort(400)
+            abort(400, message="You need data a data object")
         if len(json['data']) > 250:
-            abort(413)
+            abort(413, message="You've reach the limits of 250 objects")
         new_drivers = []
         for driver in json['data']:
             departement = administrative_models.Departement.query.\
@@ -45,8 +44,7 @@ class Drivers(Resource):
                 driver_obj.departement_id = departement.id
                 new_drivers.append(driver_obj)
             except KeyError as e:
-                current_app.logger.error("Key error in driver", e)
-                abort(400)
+                abort(400, message="Key error")
             db.session.add(new_drivers[-1])
         db.session.commit()
         return {'data': new_drivers}
