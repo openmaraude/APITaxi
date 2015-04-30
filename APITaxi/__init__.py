@@ -8,13 +8,14 @@ __version__ = ".".join(map(str, VERSION))
 
 from flask import Flask, request_started, request, abort, request_finished
 from flask.ext.security import Security, SQLAlchemyUserDatastore
-from flask.ext.script import Manager
 from flask_bootstrap import Bootstrap
 import os
 from models import db, security as security_models
 from flask.ext.redis import FlaskRedis
 from flask.ext.restplus import abort
 from .utils.redis_geo import GeoRedis
+from flask.ext.security.utils import verify_and_update_password
+
 
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
@@ -32,12 +33,32 @@ def check_version(sender, **extra):
 def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
+def load_user_from_request(request):
+    apikey = request.headers.environ.get('HTTP_X_API_KEY', None)
+    if apikey:
+        u = security_models.User.query.filter_by(apikey=apikey)
+        return u.first() or None
+    auth = request.headers.get('Authorization')
+    if not auth or auth.count(':') != 1:
+        return None
+    login, password = auth.split(':')
+    user = user_datastore.get_user(login.strip())
+    if user is None:
+        return None
+    if not verify_and_update_password(password.strip(), user):
+        return None
+    if not user.is_active():
+        return None
+    return user
 
-def create_app():
+
+def create_app(sqlalchemy_uri=None):
     app = Flask(__name__)
     app.config.from_object('default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
         app.config.from_envvar('APITAXI_CONFIG_FILE')
+    if sqlalchemy_uri:
+        app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
     db.init_app(app)
     security = Security(app, user_datastore)
@@ -48,7 +69,8 @@ def create_app():
     api.init_app(app)
     Bootstrap(app)
 
-    manager = Manager(app)
     request_started.connect(check_version, app)
     request_finished.connect(add_version_header, app)
+
+    app.login_manager.request_loader(load_user_from_request)
     return app

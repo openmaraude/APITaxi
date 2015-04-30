@@ -1,7 +1,6 @@
 # -*- coding: utf8 -*-
 import calendar, time
-from flask_restful import Resource, reqparse
-from flask.ext.restplus import fields, abort, marshal
+from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
