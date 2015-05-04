@@ -14,7 +14,11 @@
 #import sys
 #sys.path.insert(0, '/home/opendatataxi/adsapp/backoffice_operateurs')
 
-
 import os
-from APITaxi import create_app
-application = create_app()
+
+def application(environ, start_request):
+    for key in ['APITAXI_CONFIG_FILE']:
+        os.environ[key] = environ.get(key, '')
+    from APITaxi import create_app
+    return create_app()(environ, start_request)
+
