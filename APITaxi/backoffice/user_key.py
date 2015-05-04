@@ -1,5 +1,5 @@
 from flask.ext.security import login_required, current_user
-from flask import Blueprint
+from flask import (Blueprint, render_template)
 
 mod = Blueprint('user_key', __name__)
 
