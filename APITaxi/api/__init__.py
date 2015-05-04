@@ -6,7 +6,7 @@ api_blueprint = Blueprint('api', __name__)
 api = Api(api_blueprint, ui=False, catch_all_404s=True, title='API version 1.0')
 
 
-@apidoc.apidoc.route('/doc/', endpoint='doc')
+@api_blueprint.route('/doc/', endpoint='doc')
 def swagger_ui():
     return render_template('swagger/index.html')
 
