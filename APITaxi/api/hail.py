@@ -37,9 +37,8 @@ hail_expect_put = api.model('hail_expect_put', {'data': fields.List(fields.Neste
 @ns_hail.route('/<int:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
-    @api.marshal_with(hail_model, envelope='hail')
+    @api.marshal_with(hail_model)
     def get(self, hail_id):
-        print "get", hail_id
         hail = HailModel.query.get_or_404(hail_id)
         return {"data": [hail]}
 
@@ -85,13 +84,16 @@ class Hail(Resource):
 
     @login_required
     @roles_required('moteur')
+    @api.marshal_with(hail_model)
     @api.expect(hail_expect)
     def post(self):
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('data', type=list, location='json')
         req = root_parser.parse_args()
-        if len(req['data']) != 1:
+        if 'data' not in req or not isinstance(req['data'], list) or len(req['data']) == 0:
             abort(400)
+        if len(req['data']) != 1:
+            abort(413)
         to_parse = req['data'][0]
         hj = {}
         for arg in parser_post.args:
@@ -106,9 +108,12 @@ class Hail(Resource):
             return abort(403, message="The taxi is not available")
         taxi.status = 'answering'
         db.session.commit()
+        operator_id, _ = taxi.operator(redis_store)
+        if not operator_id:
+            abort(404, message='Unable to find the taxi\'s operator')
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
-                operateur_id=current_user.id)
+                operateur_id=current_user.id).first()
         if not customer:
             customer = CustomerModel()
             customer.id = hj['customer_id']
@@ -116,10 +121,9 @@ class Hail(Resource):
             customer.nb_sanctions = 0
             customer.added_via = 'api'
             db.session.add(customer)
-        operator_id, _ = taxi.operator(redis_store)
-        if not operator_id:
-            abort(400)
         operator = security_models.User.query.filter_by(email=operator_id).first()
+        if not operator:
+            abort(404, message="Unable to find this operator in the db")
         hail = HailModel()
         hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']
@@ -133,14 +137,17 @@ class Hail(Resource):
         hail.received()
         hail.sent_to_operator()
         db.session.commit()
-        r = requests.post(operator.hail_endpoint,
-                data=json.dumps({"data": [marshal(hail, hail_model)]}),
-            headers={'Content-Type': 'application/json'})
+        r = None
+        try:
+            r = requests.post(operator.hail_endpoint,
+                    data=json.dumps({"data": [marshal(hail, hail_model)]}),
+                headers={'Content-Type': 'application/json'})
+        except requests.exceptions.MissingSchema:
+            abort(503, message="Unable to reach operator")
         if r.status_code == 200:
             hail.received_by_operator()
         else:
             hail.failure()
         db.session.commit()
-        return redirect(url_for('hailid', hail_id=hail.id))
-
+        return {"data": [hail]}, 201
 

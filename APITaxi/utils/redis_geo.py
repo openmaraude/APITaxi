@@ -25,7 +25,6 @@ class GeoRedis(StrictRedis):
         if noproperties:
             command += ' noproperties'
         command += ' '+order
-        print command
         return self.execute_command(command)
 
 
