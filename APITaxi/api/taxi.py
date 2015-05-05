@@ -75,7 +75,7 @@ class TaxiId(Resource):
     def put(self, taxi_id):
         json = request.get_json()
         status = json['data'][0]['status']
-        if status not in Taxi.__table__.columns.status.type.enums:
+        if status not in taxis_models.Taxi.__table__.columns.status.type.enums:
             abort(400)
         taxi = taxis_models.Taxi.query.get(taxi_id)
         taxi.status = status
@@ -138,6 +138,7 @@ class Taxis(Resource):
                           {'data':fields.List(fields.Nested(
                               api.model('taxi_expect_details',
                                         dict_taxi_expect)))}))
+    @api.marshal_with(taxi_model)
     def post(self):
         json = request.get_json()
         if 'data' not in json:
@@ -174,4 +175,4 @@ class Taxis(Resource):
             taxi.ads_id = ads.id
             db.session.add(taxi)
         db.session.commit()
-        return redirect(url_for('taxi_id', taxi_id=taxi.id))
+        return {'data':[taxi]}, 201
