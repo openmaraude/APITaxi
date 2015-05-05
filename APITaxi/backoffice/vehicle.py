@@ -37,4 +37,4 @@ class Vehicle(Resource):
                 abort(400)
             db.session.add(new_vehicle[-1])
         db.session.commit()
-        return {"data": new_vehicle}
+        return {"data": new_vehicle}, 201

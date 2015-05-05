@@ -47,7 +47,7 @@ class Drivers(Resource):
                 abort(400, message="Key error")
             db.session.add(new_drivers[-1])
         db.session.commit()
-        return {'data': new_drivers}
+        return {'data': new_drivers}, 201
 
     @api.hide
     @login_required

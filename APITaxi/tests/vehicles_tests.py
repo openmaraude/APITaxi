@@ -9,10 +9,11 @@ from .fake_data import dict_vehicle
 
 class TestVehiclePost(Skeleton):
     url = '/vehicles/'
+    role = 'operateur'
 
     def test_empty_post(self):
         r = self.post([])
-        self.assert200(r)
+        self.assert201(r)
         assert r.headers.get('Content-Type', None) == 'application/json'
         json = loads(r.data)
         assert json['data'] == []
@@ -20,7 +21,7 @@ class TestVehiclePost(Skeleton):
     def test_simple(self):
         dict_ = dict_vehicle
         r = self.post([dict_])
-        self.assert200(r)
+        self.assert201(r)
         json = loads(r.data)
         self.assertEqual(len(json['data']), 1)
         vehicle = json['data'][0]
@@ -30,7 +31,7 @@ class TestVehiclePost(Skeleton):
     def test_two_vehicles(self):
         dict_ = dict_vehicle
         r = self.post([dict_, dict_])
-        self.assert200(r)
+        self.assert201(r)
         json = loads(r.data)
         self.assertEqual(len(json['data']), 2)
         self.assertEqual(len(Vehicle.query.all()), 2)
