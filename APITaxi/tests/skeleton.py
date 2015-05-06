@@ -4,6 +4,7 @@ from json import dumps
 
 from APITaxi import db, create_app, user_datastore
 from APITaxi.api import api
+from APITaxi.models.administrative import Departement
 
 
 class Skeleton(TestCase):
@@ -14,6 +15,7 @@ class Skeleton(TestCase):
         return create_app()
 
     def setUp(self):
+        db.drop_all()
         db.create_all()
         for role in ['admin', 'operateur', 'moteur']:
             r = user_datastore.create_role(name=role)
@@ -32,15 +34,35 @@ class Skeleton(TestCase):
         map(lambda (k, v):
                 self.assertIn(k, req) and self.assertEqual(v, dict_[k]),
                     dict_.iteritems())
-
-    def post(self, data, url=None, envelope_data=True):
+    def call(self, data, url, envelope_data, role, fun):
+        if not role:
+            role = self.__class__.role
+        authorization = "user_{}:{}".format(role, role)
         if envelope_data:
             data = {"data": data}
         if not url:
             url = self.__class__.url
-        return self.client.post(url, data=dumps(data),
-                                follow_redirects=True,
+        return fun(url, data=dumps(data),
                                 headers={
                                     "Content-Type": "application/json",
-                                    "Authorization": "user_operateur:operateur"
+                                    "Authorization": authorization
                                 })
+
+    def post(self, data, url=None, envelope_data=True, role=None):
+        return self.call(data, url, envelope_data, role, self.client.post)
+
+    def put(self, data, url=None, envelope_data=True, role=None):
+        return self.call(data, url, envelope_data, role, self.client.put)
+
+    def init_dep(self):
+        dep = Departement()
+        dep.nom = "Mayenne"
+        dep.numero = "53"
+        db.session.add(dep)
+        db.session.commit()
+
+    def assert201(self, request):
+        self.assertEqual(request.status_code, 201)
+
+    def assert503(self, request):
+        self.assertEqual(request.status_code, 503)

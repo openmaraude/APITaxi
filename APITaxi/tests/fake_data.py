@@ -41,3 +41,16 @@ dict_ads = {
     "owner_type": "company",
 }
 
+dict_driver = {
+    "last_name" : "last name",
+    "first_name" : "first name",
+    "birth_date" : "1980-03-03",
+    "professional_licence" :  "ppkkpp",
+    "departement" : "53"
+}
+
+dict_taxi = {
+    "vehicle": {"licence_plate": "DF-118-FG"},
+    "driver": {"professional_licence": "ppkkpp", "departement":"53"},
+    "ads": {"insee": "75000", "numero": "1"}
+}

@@ -95,7 +95,7 @@ class ADS(Resource):
             db.session.add(new_ads[-1])
         db.session.commit()
 
-        return {"data": new_ads}
+        return {"data": new_ads}, 201
 
 
 @mod.route('/ads/form', methods=['GET', 'POST'])

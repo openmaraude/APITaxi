@@ -6,6 +6,7 @@ from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin
 from uuid import uuid4
 from itertools import compress
+from parse import parse
 
 
 class Vehicle(db.Model, AsDictMixin, HistoryMixin):
@@ -171,6 +172,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
         name='status_taxi_enum'), label='Status', nullable=True, default='free')
 
+    _FORMAT_OPERATOR = "{timestamp} {lat} {lon} {status} {device} {version}"
+
     def __init__(self, *args, **kwargs):
         kwargs['id'] = str(uuid4())
         HistoryMixin.__init__(self)
@@ -178,12 +181,15 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
     def operator(self, redis_store):
         #Returns operator, timestamp
-        a = redis_store.hscan("taxi:{}".format(self.id))
-        if len(a[1]) == 0:
+        _, scan = redis_store.hscan("taxi:{}".format(self.id))
+        if len(scan) == 0:
             return (None, None)
-        operator, value = min(a[1].iteritems(),
-             key=lambda (k, v): v.split(" ")[0])
-        return operator, value[0]
+        min_ = (None, None)
+        for k, v in scan.iteritems():
+             p = parse(self.__class__._FORMAT_OPERATOR, v)
+             if p and (not min_[1] or p['timestamp'] < min_[1]):
+                min_ = (k, p['timestamp'])
+        return min_
 
     @property
     def driver_professional_licence(self):

@@ -63,6 +63,7 @@ def create_app(sqlalchemy_uri=None):
     db.init_app(app)
     security = Security(app, user_datastore)
     redis_store.init_app(app)
+    redis_store.connection_pool.get_connection(0).can_read()
     import backoffice
     backoffice.init_app(app)
     from . import api
