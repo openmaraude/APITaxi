@@ -14,7 +14,6 @@ class AsDictMixin:
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class HistoryMixin:
-
     @declared_attr
     def added_by(self):
         return Column(Integer, ForeignKey('user.id'))

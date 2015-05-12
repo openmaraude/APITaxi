@@ -2,8 +2,9 @@
 from .. import db
 from ..api import api
 from . import ns_administrative
-from ..forms.taxis import ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm
-from ..models import taxis as taxis_models
+from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
+                          VehicleDescriptionForm)
+from ..models import taxis as taxis_models, vehicle as vehicle_models
 from ..utils import create_obj_from_json, request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    render_template, request, redirect, url_for, abort, jsonify,
@@ -110,18 +111,25 @@ def ads_form():
         if not ads.can_be_edited_by(current_user):
             abort(403, message="You're not allowed to edit this ADS")
         ads.vehicle = ads.vehicle or taxis_models.Vehicle()
+        descriptions = (lambda d : d.added_by == current_user.id, ads.vehicle.descriptions)
         form = ADSUpdateForm()
         form.ads.form = ADSForm(obj=ads)
         if ads.vehicle:
             form.vehicle.form = VehicleForm(obj=ads.vehicle)
+        if descriptions:
+            form.vehicle_description.form = VehicleDescriptionForm(obj=descriptions[0])
     else:
         form = ADSCreateForm()
     if request.method == "POST":
+
+        #First create model and creator, if it doesn't exist yet
         if not ads and form.validate():
-            vehicle = taxis_models.Vehicle()
+            vehicle = vehicle_models.Vehicle()
             form.vehicle.form.populate_obj(vehicle)
-            db.session.add(vehicle)
-            db.session.commit()
+            description = vehicle_models.VehicleDescription()
+            form.vehicle_description.form.populate_obj(description)
+            description.vehicle_id = vehicle.id
+            db.session.add(description)
             ads = taxis_models.ADS()
             ads.vehicle_id = vehicle.id
             form.ads.form.populate_obj(ads)
@@ -132,9 +140,22 @@ def ads_form():
             ads.last_update_at = datetime.now().isoformat()
             form.ads.form.populate_obj(ads)
             form.vehicle.form.populate_obj(ads.vehicle)
+            descriptions = filter(lambda d : d.added_by == current_user.id, ads.vehicle.descriptions)
+            if not descriptions:
+                description = vehicle_models.VehicleDescription()
+                description.vehicle_id = ads.vehicle.id
+                model = description.model
+                if not model:
+                    model = vehicle_models.Model()
+                form.vehicle_description.form.model.form.populate_obj(model)
+                form.vehicle_description.form.populate_obj(description)
+                db.session.add(description)
+            else:
+                form.vehicle_description.form.populate_obj(descriptions[0])
+
             if form.validate():
                 db.session.commit()
-                return redirect(url_for('ads'))
+                return redirect(url_for('api.ads'))
     return render_template('forms/ads.html', form=form)
 
 @mod.route('/ads/delete')
