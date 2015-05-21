@@ -1,17 +1,20 @@
-from ..models import db, Vehicle
-from ..models.administrative import Departement
 # -*- coding: utf-8 -*-
+from APITaxi.models import vehicle
+from ..models import db, Vehicle, VehicleDescription
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
-from ..utils import AsDictMixin, HistoryMixin
+from ..utils import AsDictMixin, HistoryMixin, fields
 from uuid import uuid4
-from itertools import compress
+from six import string_types
+from itertool import compress
 from parse import parse
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
-    def __init__(self):
+    def __init__(self, licence_plate=None):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
+        if licence_plate:
+            self.vehicle = licence_plate
 
     public_fields = set(['numero', 'insee'])
     id = Column(db.Integer, primary_key=True)
@@ -22,11 +25,30 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
     insee = Column(db.String, label=u'Code INSEE de la commune d\'attribution',
                    description=u'Code INSEE de la commune d\'attribution')
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
-    vehicle = db.relationship('Vehicle', backref='vehicle')
+    __vehicle = db.relationship('Vehicle', backref='vehicle')
     owner_type = Column(Enum('company', 'individual', name='owner_type_enum'),
             label=u'Type Propriétaire')
     owner_name = Column(db.String, label=u'Nom du propriétaire')
     category = Column(db.String, label=u'Catégorie de l\'ADS')
+
+    @classmethod
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+        if level >=2:
+            return {}
+        return_ = super(ADS, cls).marshall_obj(show_all, filter_id, level=level+1)
+        return_['vehicle_id'] = fields.Integer()
+        return return_
+
+    @property
+    def vehicle(self):
+        return self.__vehicle
+
+    @vehicle.setter
+    def vehicle(self, vehicle):
+        if isinstance(vehicle, string_types):
+            self.__vehicle = Vehicle(vehicle)
+        else:
+            self.__vehicle = Vehicle(vehicle.licence_plate)
 
     def __repr__(self):
         return '<ADS %r>' % str(self.id)
