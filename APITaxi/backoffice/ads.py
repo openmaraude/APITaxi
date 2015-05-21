@@ -102,6 +102,7 @@ class ADS(Resource):
         return {"data": new_ads}, 201
 
 
+
 @mod.route('/ads/form', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'operateur')
@@ -113,53 +114,30 @@ def ads_form():
             abort(404, message="Unable to find the ADS")
         if not ads.can_be_edited_by(current_user):
             abort(403, message="You're not allowed to edit this ADS")
-        ads.vehicle = ads.vehicle or taxis_models.Vehicle()
-        descriptions = (lambda d : d.added_by == current_user.id, ads.vehicle.descriptions)
         form = ADSUpdateForm()
         form.ads.form = ADSForm(obj=ads)
         if ads.vehicle:
             form.vehicle.form = VehicleForm(obj=ads.vehicle)
-        if descriptions:
-            form.vehicle_description.form = VehicleDescriptionForm(obj=descriptions[0])
+            form.vehicle_description.form = VehicleDescriptionForm(obj=ads.vehicle.description)
     else:
         form = ADSCreateForm()
     if request.method == "POST":
-
-        #First create model and creator, if it doesn't exist yet
-        if not ads and form.validate():
-            vehicle = vehicle_models.Vehicle()
-            form.vehicle.form.populate_obj(vehicle)
-            description = vehicle_models.VehicleDescription()
-            form.vehicle_description.form.populate_obj(description)
-            description.vehicle_id = vehicle.id
-            db.session.add(description)
-            ads = taxis_models.ADS()
-            ads.vehicle_id = vehicle.id
-            form.ads.form.populate_obj(ads)
-            db.session.add(ads)
-            db.session.commit()
-            return redirect(url_for('ads'))
-        elif ads:
+        if not form.validate():
+            return render_template('forms/ads.html', form=form)
+        if not ads:
+            ads = taxis_models.ADS(form.vehicle.form.data['licence_plate'])
+        if not ads.vehicle.description:
+            ads.vehicle.descriptions.append(vehicle_models.VehicleDescription())
+        else:
             ads.last_update_at = datetime.now().isoformat()
-            form.ads.form.populate_obj(ads)
-            form.vehicle.form.populate_obj(ads.vehicle)
-            descriptions = filter(lambda d : d.added_by == current_user.id, ads.vehicle.descriptions)
-            if not descriptions:
-                description = vehicle_models.VehicleDescription()
-                description.vehicle_id = ads.vehicle.id
-                model = description.model
-                if not model:
-                    model = vehicle_models.Model()
-                form.vehicle_description.form.model.form.populate_obj(model)
-                form.vehicle_description.form.populate_obj(description)
-                db.session.add(description)
-            else:
-                form.vehicle_description.form.populate_obj(descriptions[0])
-
-            if form.validate():
-                db.session.commit()
-                return redirect(url_for('api.ads'))
+        form.ads.form.populate_obj(ads)
+        form.vehicle.form.populate_obj(ads.vehicle)
+        form.vehicle_description.form.populate_obj(ads.vehicle.description)
+        db.session.add(ads)
+        db.session.commit()
+        return redirect(url_for('api.ads'))
     return render_template('forms/ads.html', form=form)
+
 
 @mod.route('/ads/delete')
 @login_required
