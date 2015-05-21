@@ -1,10 +1,9 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 VERSION = (0, 1, 0)
 __author__ = 'Vincent Lara'
 __contact__ = "vincent.lara@data.gouv.fr"
 __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
-
 
 from flask import Flask, request_started, request, abort, request_finished
 from flask.ext.security import Security, SQLAlchemyUserDatastore
@@ -15,7 +14,7 @@ from flask.ext.redis import FlaskRedis
 from flask.ext.restplus import abort
 from .utils.redis_geo import GeoRedis
 from flask.ext.security.utils import verify_and_update_password
-
+import wtforms_json
 
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
@@ -74,4 +73,5 @@ def create_app(sqlalchemy_uri=None):
     request_finished.connect(add_version_header, app)
 
     app.login_manager.request_loader(load_user_from_request)
+    wtforms_json.init()
     return app

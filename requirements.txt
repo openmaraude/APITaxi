@@ -43,3 +43,4 @@ Werkzeug==0.10.1
 WTForms==2.0.2
 WTForms-Alchemy==0.13.0
 WTForms-Components==0.9.7
+WTForms-JSON==0.2.10
