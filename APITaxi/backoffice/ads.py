@@ -26,7 +26,8 @@ class ADS(Resource):
 
     parser = reqparse.RequestParser()
     parser.add_argument('numero', type=str, help=u"Numero de l'ADS")
-    parser.add_argument('insee', type=str, help=u"Code INSEE de la commune d\'attribution de l'ADS")
+    parser.add_argument('insee', type=str,
+            help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
     @login_required
     @roles_accepted('admin', 'operateur')
@@ -66,9 +67,11 @@ class ADS(Resource):
                                  and k.info['label'] and k.key in keys_to_show
         #@TODO: make it dependent of the user's role
         if request_wants_json():
-            return jsonify({(k[0], getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])})
+            return jsonify({(k[0],
+                getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])})
         return render_template("details/ads.html",
-                ads=[(k[1].info["label"], getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])])
+                ads=[(k[1].info["label"],
+                    getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])])
 
 
     @login_required
