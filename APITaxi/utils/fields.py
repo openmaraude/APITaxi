@@ -1,7 +1,33 @@
 # -*- coding: utf-8 -*-
 from flask.ext.restplus import fields as basefields
 
-class Date(basefields.BaseField):
+
+
+class FromSQLAlchemyColumnMixin(object):
+    def __init__(self, *args, **kwargs):
+        column = kwargs.pop("column", None)
+        super(FromSQLAlchemyColumnMixin, self).__init__(*args, **kwargs)
+        if column is not None:
+            self.required = not column.nullable
+            self.description = column.description
+
+
+class Integer(FromSQLAlchemyColumnMixin, basefields.Integer):
+    pass
+
+class Boolean(FromSQLAlchemyColumnMixin, basefields.Boolean):
+    pass
+
+class DateTime(FromSQLAlchemyColumnMixin, basefields.DateTime):
+    pass
+
+class Float(FromSQLAlchemyColumnMixin, basefields.Float):
+    pass
+
+class String(FromSQLAlchemyColumnMixin, basefields.String):
+    pass
+
+class Date(FromSQLAlchemyColumnMixin, basefields.BaseField):
     __schema_type__ = 'date'
     __schema_format__ = None
 
@@ -24,3 +50,5 @@ class Date(basefields.BaseField):
             return value
         date = getattr(value, key)
         return date.isoformat() if date else None
+
+
