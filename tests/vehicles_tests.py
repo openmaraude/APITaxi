@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from APITaxi.models.taxis import Vehicle
-from APITaxi.models.administrative import Departement
-from json import dumps, loads
-from copy import deepcopy
-from APITaxi import db
+from json import loads
 from .fake_data import dict_vehicle
 
 
@@ -29,13 +26,13 @@ class TestVehiclePost(Skeleton):
         self.check_req_vs_dict(vehicle, dict_)
         self.assertEqual(len(Vehicle.query.all()), 1)
 
-    def test_two_vehicles(self):
+    def test_same_vehicle_twice(self):
         dict_ = dict_vehicle
         r = self.post([dict_, dict_])
         self.assert201(r)
         json = loads(r.data)
         self.assertEqual(len(json['data']), 2)
-        self.assertEqual(len(Vehicle.query.all()), 2)
+        self.assertEqual(len(Vehicle.query.all()), 1)
 
     def test_too_many_vehicles(self):
         dict_ = dict_vehicle
