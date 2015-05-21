@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from APITaxi.models.taxis import ADS, Vehicle
 from APITaxi.tests.vehicles_tests import TestVehiclePost

@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from flask.ext.security import UserMixin, RoleMixin
 from ..models import db
 from uuid import uuid4

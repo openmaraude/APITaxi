@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from .. import db
 from ..api import api
 from . import ns_administrative

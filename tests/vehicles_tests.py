@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from APITaxi.models.taxis import Vehicle
 from APITaxi.models.administrative import Departement

@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from flask.ext.restplus import fields as basefields
 
 class Date(basefields.BaseField):

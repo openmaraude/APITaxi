@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from ..models import db
 from sqlalchemy_defaults import Column
 

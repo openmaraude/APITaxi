@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 dict_vehicle = {
     "licence_plate" : "DF-118-FG",
     "model" : "BX",

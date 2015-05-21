@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from flask import request, redirect, url_for
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import login_required, roles_required,\

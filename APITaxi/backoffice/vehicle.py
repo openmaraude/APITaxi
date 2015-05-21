@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, abort, jsonify, Blueprint
 from ..utils import create_obj_from_json

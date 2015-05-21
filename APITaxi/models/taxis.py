@@ -1,6 +1,6 @@
-# -*- coding: utf8 -*-
 from ..models import db, Vehicle
 from ..models.administrative import Departement
+# -*- coding: utf-8 -*-
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask.ext.security import login_required, current_user
 from flask import (Blueprint, render_template)
 

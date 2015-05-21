@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from APITaxi import create_app
 from APITaxi.models import db
 from flask.ext.migrate import Migrate

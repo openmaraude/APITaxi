@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from . import db
 from flask.ext.security import login_required, roles_accepted,\
         roles_required
