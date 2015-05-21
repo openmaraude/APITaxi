@@ -83,13 +83,13 @@ def driver_form():
             form.populate_obj(driver)
             if form.validate():
                 db.session.commit()
-                return redirect(url_for('drivers'))
+                return redirect(url_for('api.drivers'))
         else:
             driver = taxis_models.Driver()
             form.populate_obj(driver)
             db.session.add(driver)
             db.session.commit()
-            return redirect(url_for('drivers'))
+            return redirect(url_for('api.drivers'))
     return render_template('forms/driver.html', form=form,
         form_method="POST", submit_value="Modifier")
 
@@ -107,4 +107,4 @@ def driver_delete():
         abort(403)
     db.session.delete(driver)
     db.session.commit()
-    return redirect(url_for('drivers'))
+    return redirect(url_for('api.drivers'))
