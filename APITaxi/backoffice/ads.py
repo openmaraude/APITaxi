@@ -46,10 +46,10 @@ class ADS(Resource):
             abort(403, message="You're not allowed to see this page")
         q = taxis_models.ADS.query
         if not current_user.has_role('admin'):
-            q.filter_by(added_by=current_user.id)
+            q = q.filter_by(added_by=current_user.id)
         page = int(request.args.get('page')) if 'page' in request.args else 1
         return render_template('lists/ads.html',
-            ads_list=q.paginate(page))
+            ads_list=q.paginate(page) if q else None)
 
     def ads_details(self, numero, insee):
         filters = {
