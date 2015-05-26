@@ -1,13 +1,13 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, redirect, url_for, abort, jsonify, Blueprint
-from ..utils import create_obj_from_json
-from ..models import taxis as taxis_models
+from flask import request, abort, Blueprint
+from ..models import vehicle as vehicle_models
 from .. import db
 from ..api import api
 from . import ns_administrative
 from flask.ext.restplus import fields, Resource, reqparse
 from ..utils.make_model import make_model
+from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 
 mod = Blueprint('vehicle', __name__)
 
@@ -30,11 +30,14 @@ class Vehicle(Resource):
             abort(413)
         new_vehicle = []
         for vehicle in json['data']:
-            try:
-                new_vehicle.append(create_obj_from_json(taxis_models.Vehicle, vehicle))
-            except KeyError as e:
-                print "Error :", e
-                abort(400)
-            db.session.add(new_vehicle[-1])
+            form = VehicleForm.from_json(vehicle)
+            v = vehicle_models.Vehicle(form.data['licence_plate'])
+            v_description = vehicle_models.VehicleDescription()
+            v.descriptions.append(v_description)
+            form.populate_obj(v)
+            form_description = VehicleDescriptionForm.from_json(vehicle)
+            form_description.populate_obj(v_description)
+            db.session.add(v)
+            new_vehicle.append(v)
         db.session.commit()
         return {"data": new_vehicle}, 201

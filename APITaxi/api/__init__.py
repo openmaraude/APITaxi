@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from flask.ext.restplus import Api, apidoc
 from flask import Blueprint, make_response, render_template
 

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask.ext.testing import TestCase
 from requests import get
 from json import dumps

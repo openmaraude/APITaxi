@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from ..api import api
 
 ns_administrative = api.namespace('administrative',

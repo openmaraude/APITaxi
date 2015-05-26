@@ -1,8 +1,9 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from ..models import db
 from sqlalchemy_defaults import Column
+from ..utils import MarshalMixin
 
-class Departement(db.Model):
+class Departement(db.Model, MarshalMixin):
     id = Column(db.Integer, primary_key=True)
     nom = Column(db.String(255), label='Nom')
     numero = Column(db.String(3), label='Numero')
@@ -10,7 +11,7 @@ class Departement(db.Model):
     def __str__(self):
         return '%r %r' % (self.numero, self.nom)
 
-class ZUPC(db.Model):
+class ZUPC(db.Model, MarshalMixin):
     id = Column(db.Integer, primary_key=True)
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'))
     nom = Column(db.String(255), label='Nom')

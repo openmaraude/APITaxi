@@ -1,8 +1,21 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from ..utils import ModelForm
-from ..models import taxis, administrative
+from ..models import taxis, administrative, vehicle
 from wtforms import HiddenField, SubmitField, StringField, FormField
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
+
+
+class VehicleDescriptionForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        kwargs['csrf_enabled'] = False
+        super(ModelForm, self).__init__(*args, **kwargs)
+    class Meta:
+        model = vehicle.VehicleDescription
+        exclude = ['added_at', 'added_via', 'source', 'last_update_at']
+    model = StringField(label=vehicle.Model.name.info['label'],
+                        description=vehicle.Model.name.description)
+    constructor = StringField(label=vehicle.Constructor.name.info['label'],
+                              description=vehicle.Constructor.name.description)
 
 
 class VehicleForm(ModelForm):
@@ -11,7 +24,6 @@ class VehicleForm(ModelForm):
         super(ModelForm, self).__init__(*args, **kwargs)
     class Meta:
         model = taxis.Vehicle
-        exclude = ['added_at', 'added_via', 'source', 'last_update_at']
 
 
 class ADSForm(ModelForm):
@@ -24,6 +36,7 @@ class ADSForm(ModelForm):
 
 class ADSFormVehicle(ModelForm):
     vehicle = FormField(VehicleForm)
+    vehicle_description = FormField(VehicleDescriptionForm)
     ads = FormField(ADSForm)
 
 class ADSCreateForm(ADSFormVehicle):

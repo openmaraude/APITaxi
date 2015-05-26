@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from .fake_data import dict_driver
 from APITaxi.models.taxis import Driver

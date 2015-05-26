@@ -1,0 +1,256 @@
+# -*- coding: utf-8 -*-
+from ..models import db
+from ..utils import AsDictMixin, HistoryMixin, unique_constructor, MarshalMixin, fields
+from sqlalchemy_defaults import Column
+from sqlalchemy.types import Enum
+from sqlalchemy import UniqueConstraint
+from flask.ext.login import current_user
+
+@unique_constructor(db.session,
+                    lambda name: name,
+                    lambda query, name: query.filter(Constructor.name == name.name) if isinstance(name, Constructor) else query.filter(Constructor.name == name))
+class Constructor(db.Model, AsDictMixin, MarshalMixin):
+    id = Column(db.Integer, primary_key=True)
+    name = Column(db.String, label=u'Dénomination commerciale de la marque',
+                description=u'Dénomination commerciale de la marque',
+                unique=True)
+
+    def __init__(self, name=None):
+        db.Model.__init__(self)
+        if isinstance(name, self.__class__):
+            self.name = name.name
+        else:
+            self.name = name
+
+    def __repr__(self):
+        return '<Constructor %r>' % str(self.name)
+
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+@unique_constructor(db.session,
+                    lambda name: name,
+                    lambda query, name: query.filter(Model.name == name.name) if isinstance(name, Model) else query.filter(Model.name == name))
+class Model(db.Model, AsDictMixin, MarshalMixin):
+
+    id = Column(db.Integer, primary_key=True)
+    name = Column(db.String, label=u'Dénomination commerciale du modèle',
+                description=u'Dénomination commerciale du modèle',
+                unique=True)
+
+    def __init__(self, name=None):
+        db.Model.__init__(self)
+        if isinstance(name, self.__class__):
+            self.name = name.name
+        else:
+            self.name = name
+
+    def __repr__(self):
+        return '<Model %r>' % str(self.id)
+
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
+
+    def __init__(self):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
+
+    id = Column(db.Integer, primary_key=True)
+    model_id = Column(db.Integer, db.ForeignKey("model.id"))
+    __model = db.relationship('Model')
+    constructor_id = Column(db.Integer, db.ForeignKey("constructor.id"))
+    __constructor = db.relationship('Constructor')
+    model_year = Column(db.Integer, label=u'Année', nullable=True,
+            description=u'Année de mise en production du véhicule')
+    engine = Column(db.String(80), label=u'Motorisation', nullable=True,
+            description=u'Motorisation du véhicule, champ P3')
+    horse_power = Column(db.Float(), label=u'Puissance', nullable=True,
+            description=u'Puissance du véhicule en chevaux fiscaux')
+    relais = Column(db.Boolean, label=u'Relais', default=False, nullable=True,
+            description=u'Est-ce un véhicule relais')
+    horodateur = Column(db.String(255), label=u'Horodateur', nullable=True,
+            description=u'Modèle de l\'horodateur')
+    taximetre = Column(db.String(255), label=u'Taximètre', nullable=True,
+            description=u'Modèle du taximètre')
+    date_dernier_ct = Column(db.Date(),
+        label=u'Date du dernier CT (format année-mois-jour)',
+        description=u'Date du dernier contrôle technique')
+    date_validite_ct = Column(db.Date(),
+        label=u'Date de la fin de validité du CT (format année-mois-jour)',
+        description=u'Date de fin de validité du contrôle technique')
+    special_need_vehicle = Column(db.Boolean, name='special_need_vehicle',
+            label=u'Véhicule spécialement aménagé pour PMR ', nullable=True)
+    type_ = Column(Enum('sedan', 'mpv', 'station_wagon', 'normal', name='vehicle_type_enum'),
+            label='Type', nullable=True)
+    luxury = Column(db.Boolean, name='luxury', label='Luxe ?', nullable=True)
+    credit_card_accepted = Column(db.Boolean, name='credit_card_accepted',
+            label=u'Carte bancaire acceptée ?', nullable=True)
+    nfc_cc_accepted = Column(db.Boolean, name='nfc_cc_accepted',
+            label=u'Paiement sans contact sur carte bancaire accepté ?',
+            nullable=True)
+    amex_accepted = Column(db.Boolean, name='amex_accepted',
+            label=u'AMEX acceptée ?', nullable=True)
+    bank_check_accepted = Column(db.Boolean, name='bank_check_accepted',
+            label=u'Chèque bancaire accepté ?', nullable=True)
+    fresh_drink = Column(db.Boolean, name='fresh_drink',
+            label=u'Boisson fraiche ?', nullable=True)
+    dvd_player = Column(db.Boolean, name='dvd_player', label='Lecteur DVD ?',
+            nullable=True)
+    tablet = Column(db.Boolean, name='tablet', label='Tablette ?',
+            nullable=True)
+    wifi = Column(db.Boolean, name='wifi', label=u'Wifi à bord ?',
+            nullable=True)
+    baby_seat = Column(db.Boolean, name='baby_seat', label=u'Siège bébé ?',
+            nullable=True)
+    bike_accepted = Column(db.Boolean, name='bike_accepted',
+            label=u'Transport de vélo', nullable=True)
+    pet_accepted = Column(db.Boolean, name='pet_accepted',
+            label=u'Animaux de compagnie acceptés ?', nullable=True)
+    air_con = Column(db.Boolean, name='air_con',
+            label=u'Véhicule climatisé', nullable=True)
+    electronic_toll = Column(db.Boolean, name='electronic_toll',
+            label=u'Véhicule équipé du télépéage', nullable=True)
+    gps = Column(db.Boolean, name='gps', label=u'Véhicule équipé d\'un GPS',
+            nullable=True)
+    cpam_conventionne = Column(db.Boolean, name='cpam_conventionne',
+            label=u'Conventionné assurance maladie', nullable=True)
+    every_destination = Column(db.Boolean, name='every_destination',
+            label=u'Toute destination', nullable=True)
+    color = Column(db.String(255), name='color', label='Couleur : ',
+            nullable=True)
+    vehicle_id = Column(db.Integer, db.ForeignKey('vehicle.id'))
+    UniqueConstraint('vehicle_id', 'added_by', name="uq_vehicle_description")
+
+
+    @property
+    def constructor(self):
+        return self.__constructor.name
+
+    @constructor.setter
+    def constructor(self, name):
+        self.__constructor = Constructor(name)
+
+    @property
+    def model(self):
+        return self.__model.name
+
+    @model.setter
+    def model(self, name):
+        self.__model = Model(name)
+
+
+
+@unique_constructor(db.session,
+                    lambda licence_plate: licence_plate,
+                    lambda query, licence_plate: query.filter(Vehicle.licence_plate == licence_plate))
+class Vehicle(db.Model, AsDictMixin, MarshalMixin):
+    id = Column(db.Integer, primary_key=True)
+    licence_plate = Column(db.String(80), label=u'Immatriculation',
+            description=u'Immatriculation du véhicule',
+            unique=True)
+    descriptions = db.relationship("VehicleDescription", backref="Vehicle")
+
+    def __init__(self, licence_plate=None):
+        if isinstance(licence_plate, self.__class__):
+            self.licence_plate = licence_plate.licence_plate
+        else:
+            self.licence_plate
+
+    @classmethod
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+        if level >=2:
+            return {}
+        return_ = super(Vehicle, cls).marshall_obj(show_all, filter_id, level=level+1)
+        return_.update(VehicleDescription.marshall_obj(show_all, filter_id, level=level+1))
+        return_.update({"model": fields.String(attribute="model.name"),
+                        "constructor": fields.String(attribute="constructor.name"),
+                        "id": fields.Integer()})
+        return return_
+
+    @property
+    def characteristics(self):
+        fields = ['special_need_vehicle', 'every_destination', 'gps',
+            'electronic_toll', 'air_con', 'pet_accepted', 'bike_accepted',
+            'baby_seat', 'wifi', 'tablet', 'dvd_player', 'fresh_drink',
+            'amex_accepted', 'bank_check_accepted', 'nfc_cc_accepted',
+            'credit_card_accepted', 'luxury']
+        return list(compress(fields, map(lambda f: getattr(self, f), fields)))
+
+    @property
+    def description(self):
+        for description in self.descriptions:
+            if description.added_by == current_user.id:
+                return description
+        return None
+
+    @property
+    def model(self):
+        return self.description.model
+
+    @property
+    def constructor(self):
+        return self.description.constructor.name
+
+    @constructor.setter
+    def constructor(self, name):
+        self.constructor = Constructor(name)
+
+    @property
+    def model_year(self):
+        return self.description.model_year
+
+    @property
+    def engine(self):
+        return self.description.engine
+
+    @property
+    def horse_power(self):
+        return self.description.horse_power
+
+    @property
+    def relais(self):
+        return self.description.relais
+
+    @property
+    def horodateur(self):
+        return self.description.horodateur
+
+    @property
+    def taximetre(self):
+        return self.description.taximetre
+
+    @property
+    def date_dernier_ct(self):
+        return self.description.date_dernier_ct
+
+    @property
+    def date_validite_ct(self):
+        return self.description.date_validite_ct
+
+    @property
+    def type_(self):
+        return self.description.type_
+
+    def __repr__(self):
+        return '<Vehicle %r>' % str(self.id)
+
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    @classmethod
+    def to_exclude(cls):
+        columns = filter(lambda f: isinstance(getattr(HistoryMixin, f), Column), HistoryMixin.__dict__.keys())
+        columns += ["Vehicle", "vehicle_taxi", "descriptions"]
+        return columns

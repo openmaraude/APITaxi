@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from ..utils import ModelForm
 from ..models import administrative
 from wtforms import HiddenField, SubmitField

@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from .. import user_datastore
 from ..models import db
 from flask.ext.script import prompt_pass

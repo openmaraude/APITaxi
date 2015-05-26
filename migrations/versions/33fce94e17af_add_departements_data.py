@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 """Add departements data
 
 Revision ID: 33fce94e17af

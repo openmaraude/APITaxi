@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 from .. import db
 from ..models import administrative as administrative_models
 from ..forms.administrative import ZUPCreateForm, ZUPCUpdateForm
