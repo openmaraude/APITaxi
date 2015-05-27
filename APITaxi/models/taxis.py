@@ -8,6 +8,7 @@ from uuid import uuid4
 from six import string_types
 from itertools import compress
 from parse import parse
+import time
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self, licence_plate=None):
@@ -93,6 +94,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
+
     id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
@@ -112,16 +114,19 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
 
-    def operator(self, redis_store):
-        #Returns operator, timestamp
+    def get_operator(self, redis_store, min_time=None, favorite_operator=None):
         _, scan = redis_store.hscan("taxi:{}".format(self.id))
         if len(scan) == 0:
             return (None, None)
-        min_ = (None, None)
+        min_ = (None, min_time or int(time.time()) + 60*60)
         for k, v in scan.iteritems():
              p = parse(self.__class__._FORMAT_OPERATOR, v)
-             if p and (not min_[1] or p['timestamp'] < min_[1]):
-                min_ = (k, p['timestamp'])
+             if not p:
+                 continue
+             if k == favorite_operator and p['timestamp'] > min_time:
+                 return (k, p['timestamp'])
+             if p['timestamp'] > min_[1]:
+                 min_ = (k, p['timestamp'])
         return min_
 
     @property
