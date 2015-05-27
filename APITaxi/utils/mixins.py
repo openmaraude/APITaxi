@@ -8,6 +8,8 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import inspect
 from datetime import datetime
 from ..utils import fields as custom_fields
+from ..api import api
+from flask.ext.restplus.fields import Nested as fields_Nested
 
 class AsDictMixin:
     def as_dict(self):
@@ -51,8 +53,10 @@ class MarshalMixin(object):
             for k, r in cls.inspect_obj.relationships.items():
                 if k.startswith("_"):
                     continue
-                return_dict[k] = r.mapper.class_.marshall_obj(show_all, filter_id, level=level+1)
-
+                value = r.mapper.class_.marshall_obj(show_all, filter_id, level=level+1)
+                if len(value.keys()) == 0:
+                    continue
+                return_dict[k] = fields_Nested(api.model(k, value))
         return return_dict
 
 
@@ -62,7 +66,7 @@ class MarshalMixin(object):
             cls.inspect_obj = inspect(cls).columns
         columns = list(cls.inspect_obj.columns)
         if hasattr(cls, 'to_exclude'):
-            columns = filter(lambda c: c not in cls.to_exclude(), columns)
+            columns = filter(lambda c: c.name not in cls.to_exclude(), columns)
         return columns
 
 
