@@ -6,7 +6,7 @@ from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin, fields
 from uuid import uuid4
 from six import string_types
-from itertool import compress
+from itertools import compress
 from parse import parse
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
