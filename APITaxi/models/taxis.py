@@ -105,7 +105,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
         name='status_taxi_enum'), label='Status', nullable=True, default='free')
 
-    _FORMAT_OPERATOR = "{timestamp} {lat} {lon} {status} {device} {version}"
+    _FORMAT_OPERATOR = "{timestamp} {lat} {lon} {status} {device}"
 
     def __init__(self, *args, **kwargs):
         kwargs['id'] = str(uuid4())
