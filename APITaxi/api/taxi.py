@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import db, redis_store
+from .. import db, redis_store, user_datastore
 from ..api import api
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
@@ -94,6 +94,7 @@ class Taxis(Resource):
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True)
     get_parser.add_argument('lat', type=float, required=True)
+    get_parser.add_argument('favorite_operator', type=str, required=False)
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -105,25 +106,26 @@ class Taxis(Resource):
 
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
         taxis = []
-        min_time = calendar.timegm(time.gmtime()) - 60*60
+        min_time = int(time.time()) - 60*60
         for taxi_id, distance, coords in r:
             taxi_db = taxis_models.Taxi.query.get(taxi_id)
             if not taxi_db or taxi_db.status != 'free':
                 continue
-            operator, timestamp = taxi_db.operator(redis_store)
-            if timestamp < min_time:
+            operator, timestamp = taxi_db.get_operator(redis_store, min_time, p['favorite_operator'])
+            if not operator:
                 continue
+            description = taxi_db.vehicle.get_description(user_datastore.get_user(operator))
             taxis.append({
                 "id": taxi_id,
                 "operator": operator,
                 "position": {"lat": coords[0], "lon": coords[1]},
                 "vehicle": {
-                        "model": taxi_db.vehicle.model,
-                        "constructor": taxi_db.vehicle.constructor,
-                        "color": taxi_db.vehicle.color,
-                        "characteristics": taxi_db.vehicle.characteristics
+                    "model": description.model,
+                    "constructor": description.constructor,
+                    "color": description.color,
+                    "characteristics": description.characteristics,
+                    "licence_plate": taxi_db.vehicle.licence_plate
                 },
-                "characteristics": taxi_db.vehicle.characteristics,
                 "last_update": timestamp,
                 "crowfly_distance": float(distance)
                 })
