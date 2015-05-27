@@ -79,7 +79,7 @@ class TestHailPost(Skeleton):
 
     def test_received_by_operator(self):
         u = User.query.filter_by(email='user_operateur').first()
-        u.hail_endpoint = 'http://127.0.0.1:5001/hails/'
+        u.hail_endpoint = 'http://127.0.0.1:5001/hail/'
         taxi = self.post_taxi()
         formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=1, lat=1,
             lon=1, status='free', device='d1', version=1)
