@@ -114,20 +114,37 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
 
-    def get_operator(self, redis_store, min_time=None, favorite_operator=None):
+    @staticmethod
+    def cmp_scan(favorite_operator):
+
+        def comparator(t, u):
+            if t[0] == favorite_operator:
+                return -2
+            if t[1]['timestamp'] == u[1]['timestamp']:
+                return 0
+            if t[1]['timestamp'] < u[1]['timestampp']:
+                return 1
+            return -1
+        return comparator
+
+    def get_operator(self, redis_store, user_datastore, min_time=None,
+            favorite_operator=None):
         _, scan = redis_store.hscan("taxi:{}".format(self.id))
         if len(scan) == 0:
             return (None, None)
-        min_ = (None, min_time or int(time.time()) + 60*60)
-        for k, v in scan.iteritems():
-             p = parse(self.__class__._FORMAT_OPERATOR, v)
-             if not p:
-                 continue
-             if k == favorite_operator and p['timestamp'] > min_time:
-                 return (k, p['timestamp'])
-             if p['timestamp'] > min_[1]:
-                 min_ = (k, p['timestamp'])
-        return min_
+        scan = map(lambda k_v: (k_v[0], parse(self.__class__._FORMAT_OPERATOR, k_v[1])),
+            scan.items())
+        scan = filter(lambda t: t[1] is not None, scan)
+        scan = sorted(scan, cmp=self.cmp_scan(favorite_operator))
+        if not min_time:
+            min_time = int(time.time() - 60*60)
+        for operator_name, v in scan:
+            if v['timestamp'] < min_time and operator_name != favorite_operator:
+                return (None, None)
+            operator = user_datastore.find_user(email=operator_name)
+            if operator:
+                return (operator, v['timestamp'])
+        return (None, None)
 
     @property
     def driver_professional_licence(self):
