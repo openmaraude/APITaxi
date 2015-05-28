@@ -5,6 +5,7 @@ from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy import UniqueConstraint
 from flask.ext.login import current_user
+from itertools import compress
 
 @unique_constructor(db.session,
                     lambda name: name,
@@ -147,6 +148,14 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
     def model(self, name):
         self.__model = Model(name)
 
+    @property
+    def characteristics(self):
+        fields = ['special_need_vehicle', 'every_destination', 'gps',
+            'electronic_toll', 'air_con', 'pet_accepted', 'bike_accepted',
+            'baby_seat', 'wifi', 'tablet', 'dvd_player', 'fresh_drink',
+            'amex_accepted', 'bank_check_accepted', 'nfc_cc_accepted',
+            'credit_card_accepted', 'luxury']
+        return list(compress(fields, map(lambda f: getattr(self, f), fields)))
 
 
 @unique_constructor(db.session,
@@ -177,28 +186,24 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin):
         return return_
 
     @property
-    def characteristics(self):
-        fields = ['special_need_vehicle', 'every_destination', 'gps',
-            'electronic_toll', 'air_con', 'pet_accepted', 'bike_accepted',
-            'baby_seat', 'wifi', 'tablet', 'dvd_player', 'fresh_drink',
-            'amex_accepted', 'bank_check_accepted', 'nfc_cc_accepted',
-            'credit_card_accepted', 'luxury']
-        return list(compress(fields, map(lambda f: getattr(self, f), fields)))
-
-    @property
     def description(self):
+        return self.get_description()
+
+    def get_description(self, user=None):
+        if not user:
+            user = current_user
         for description in self.descriptions:
-            if description.added_by == current_user.id:
+            if description.added_by == user.id:
                 return description
         return None
 
     @property
     def model(self):
-        return self.description.model
+        return self.description.model if self.description else None
 
     @property
     def constructor(self):
-        return self.description.constructor.name
+        return self.description.constructor.name if self.description else None
 
     @constructor.setter
     def constructor(self, name):
@@ -206,39 +211,39 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin):
 
     @property
     def model_year(self):
-        return self.description.model_year
+        return self.description.model_year if self.description else None
 
     @property
     def engine(self):
-        return self.description.engine
+        return self.description.engine if self.description else None
 
     @property
     def horse_power(self):
-        return self.description.horse_power
+        return self.description.horse_power if self.description else None
 
     @property
     def relais(self):
-        return self.description.relais
+        return self.description.relais if self.description else None
 
     @property
     def horodateur(self):
-        return self.description.horodateur
+        return self.description.horodateur if self.description else None
 
     @property
     def taximetre(self):
-        return self.description.taximetre
+        return self.description.taximetre if self.description else None
 
     @property
     def date_dernier_ct(self):
-        return self.description.date_dernier_ct
+        return self.description.date_dernier_ct if self.description else None
 
     @property
     def date_validite_ct(self):
-        return self.description.date_validite_ct
+        return self.description.date_validite_ct if self.description else None
 
     @property
     def type_(self):
-        return self.description.type_
+        return self.description.type_ if self.description else None
 
     def __repr__(self):
         return '<Vehicle %r>' % str(self.id)
