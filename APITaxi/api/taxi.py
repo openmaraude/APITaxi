@@ -111,13 +111,14 @@ class Taxis(Resource):
             taxi_db = taxis_models.Taxi.query.get(taxi_id)
             if not taxi_db or taxi_db.status != 'free':
                 continue
-            operator, timestamp = taxi_db.get_operator(redis_store, min_time, p['favorite_operator'])
+            operator, timestamp = taxi_db.get_operator(redis_store,
+                    user_datastore, min_time, p['favorite_operator'])
             if not operator:
                 continue
-            description = taxi_db.vehicle.get_description(user_datastore.get_user(operator))
+            description = taxi_db.vehicle.get_description(operator)
             taxis.append({
                 "id": taxi_id,
-                "operator": operator,
+                "operator": operator.email,
                 "position": {"lat": coords[0], "lon": coords[1]},
                 "vehicle": {
                     "model": description.model,
