@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import UserMixin, RoleMixin
+from flask.ext.security.utils import encrypt_password
 from ..models import db
 from uuid import uuid4
 from ..utils import MarshalMixin
@@ -27,7 +28,10 @@ class User(db.Model, UserMixin, MarshalMixin):
 
     def __init__(self, *args, **kwargs):
         kwargs['apikey'] = str(uuid4())
-        super(self.__class__, self).__init__(**kwargs)
+        kwargs['password'] = encrypt_password(kwargs['password'])
+        kwargs['active'] = True
+        super(self.__class__, self).__init__(*args, **kwargs)
+
 
     def get_user_from_api_key(self, apikey):
         user = self.user_model.query.filter_by(apikey=apikey)
