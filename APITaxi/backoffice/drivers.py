@@ -35,8 +35,13 @@ class Drivers(Resource):
             abort(413, message="You've reach the limits of 250 objects")
         new_drivers = []
         for driver in json['data']:
-            departement = administrative_models.Departement.query.\
-                filter_by(numero=driver['departement']).first()
+            departement = None
+            if 'numero' in driver['departement']:
+                departement = administrative_models.Departement.query.\
+                    filter_by(numero=driver['departement']['numero']).first()
+            elif 'nom' in driver['departement']:
+                departement = administrative_models.Departement.query.\
+                    filter_by(nom=driver['departement']['nom']).first()
             if not departement:
                 abort(400, message='Unable to find the *departement*')
             try:
