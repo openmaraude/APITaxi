@@ -3,7 +3,7 @@ from flask import request, redirect, url_for
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
-from .. import db, redis_store
+from .. import db, redis_store, user_datastore
 from ..api import api
 from ..models import (Hail as HailModel, Customer as CustomerModel,
     Taxi as TaxiModel, security as security_models)

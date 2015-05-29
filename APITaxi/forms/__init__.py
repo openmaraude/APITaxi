@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-import taxis
+from . import taxis

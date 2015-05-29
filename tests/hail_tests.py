@@ -1,11 +1,9 @@
 from .skeleton import Skeleton
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi.models.hail import Customer, Hail
-from APITaxi.models.taxis import Vehicle, Taxi
-from APITaxi.models.administrative import Departement
+from APITaxi.models.taxis import Taxi
 from APITaxi.models.security import User
-from APITaxi import db, redis_store
-from json import dumps, loads
+from APITaxi import redis_store
 from copy import deepcopy
 from functools import partial
 from werkzeug.exceptions import ServiceUnavailable
