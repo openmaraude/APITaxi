@@ -7,8 +7,8 @@ def make_model(filename, model_name, *args, **kwargs):
     module = importlib.import_module(".".join(['APITaxi', 'models', filename]))
     model = getattr(module, model_name)
     list_names = [filename, model_name]
-    list_names.extend(map(lambda i: str(i), args))
-    list_names.extend(map(lambda (k, v): k + "_" + str(v), kwargs.items()))
+    list_names.extend([str(i) for i in args])
+    list_names.extend([k + "_" + str(v) for k, v in kwargs.items()])
     register_name = "_".join(list_names)
     #@TODO: gros hack degueu, il faudra que cette fonction soit une méthode de classe des models
     details_dict = model.marshall_obj(*args, **kwargs)
