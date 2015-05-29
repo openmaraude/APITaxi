@@ -21,8 +21,7 @@ class TestDriverPost(Skeleton):
         dict_ = deepcopy(dict_driver)
         r = self.post([dict_])
         self.assert201(r)
-        json = loads(r.data)
-        self.check_req_vs_dict(json['data'][0], dict_)
+        self.check_req_vs_dict(r.json['data'][0], dict_)
         self.assertEqual(len(Driver.query.all()), 1)
 
     def test_no_data(self):
@@ -33,7 +32,7 @@ class TestDriverPost(Skeleton):
 
     def test_too_many_drivers(self):
         self.init_dep()
-        r = self.post([dict_driver for x in xrange(0, 251)])
+        r = self.post([dict_driver for x in range(0, 251)])
         self.assertEqual(r.status_code, 413)
         self.assertEqual(len(Driver.query.all()), 0)
 
@@ -51,7 +50,7 @@ class TestDriverPost(Skeleton):
 
     def test_two_inserts(self):
         self.init_dep()
-        r = self.post([dict_driver for x in xrange(0, 2)])
+        r = self.post([dict_driver for x in range(0, 2)])
         self.assert201(r)
         self.assertEqual(len(Driver.query.all()), 2)
 

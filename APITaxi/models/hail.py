@@ -5,7 +5,7 @@ from flask.ext.security import login_required, roles_accepted,\
 from datetime import datetime
 from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin
-from security import User
+from .security import User
 
 
 status_enum_list = [ 'emitted', 'received',

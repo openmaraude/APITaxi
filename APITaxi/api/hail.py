@@ -3,7 +3,7 @@ from flask import request, redirect, url_for
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
-from .. import db, redis_store
+from .. import db, redis_store, user_datastore
 from ..api import api
 from ..models import (Hail as HailModel, Customer as CustomerModel,
     Taxi as TaxiModel, security as security_models)
@@ -108,8 +108,8 @@ class Hail(Resource):
             return abort(403, message="The taxi is not available")
         taxi.status = 'answering'
         db.session.commit()
-        operator_id, _ = taxi.operator(redis_store)
-        if not operator_id:
+        operator, _ = taxi.get_operator(redis_store, user_datastore)
+        if not operator:
             abort(404, message='Unable to find the taxi\'s operator')
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
@@ -121,9 +121,6 @@ class Hail(Resource):
             customer.nb_sanctions = 0
             customer.added_via = 'api'
             db.session.add(customer)
-        operator = security_models.User.query.filter_by(email=operator_id).first()
-        if not operator:
-            abort(404, message="Unable to find this operator in the db")
         hail = HailModel()
         hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']
@@ -144,7 +141,7 @@ class Hail(Resource):
                 headers={'Content-Type': 'application/json'})
         except requests.exceptions.MissingSchema:
             abort(503, message="Unable to reach operator")
-        if r.status_code == 200:
+        if r.status_code == 201:
             hail.received_by_operator()
         else:
             hail.failure()

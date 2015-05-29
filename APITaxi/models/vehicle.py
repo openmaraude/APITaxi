@@ -179,9 +179,12 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin):
         if level >=2:
             return {}
         return_ = super(Vehicle, cls).marshall_obj(show_all, filter_id, level=level+1)
-        return_.update(VehicleDescription.marshall_obj(show_all, filter_id, level=level+1))
-        return_.update({"model": fields.String(attribute="model.name"),
-                        "constructor": fields.String(attribute="constructor.name"),
+        dict_description = VehicleDescription.marshall_obj(show_all, filter_id, level=level+1)
+        for k, v in dict_description.items():
+            dict_description[k].attribute = 'description.{}'.format(k)
+        return_.update(dict_description)
+        return_.update({"model": fields.String(attribute="description.model"),
+                        "constructor": fields.String(attribute="description.constructor"),
                         "id": fields.Integer()})
         return return_
 
@@ -204,10 +207,6 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin):
     @property
     def constructor(self):
         return self.description.constructor.name if self.description else None
-
-    @constructor.setter
-    def constructor(self, name):
-        self.constructor = Constructor(name)
 
     @property
     def model_year(self):
@@ -256,6 +255,6 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin):
 
     @classmethod
     def to_exclude(cls):
-        columns = filter(lambda f: isinstance(getattr(HistoryMixin, f), Column), HistoryMixin.__dict__.keys())
+        columns = list(filter(lambda f: isinstance(getattr(HistoryMixin, f), Column), HistoryMixin.__dict__.keys()))
         columns += ["Vehicle", "vehicle_taxi", "descriptions"]
         return columns

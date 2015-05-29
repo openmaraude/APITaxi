@@ -9,7 +9,7 @@ from flask import Flask, request_started, request, abort, request_finished
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask_bootstrap import Bootstrap
 import os
-from models import db, security as security_models
+from .models import db, security as security_models
 from flask.ext.redis import FlaskRedis
 from flask.ext.restplus import abort
 from .utils.redis_geo import GeoRedis
@@ -63,7 +63,7 @@ def create_app(sqlalchemy_uri=None):
     security = Security(app, user_datastore)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()
-    import backoffice
+    from . import backoffice
     backoffice.init_app(app)
     from . import api
     api.init_app(app)

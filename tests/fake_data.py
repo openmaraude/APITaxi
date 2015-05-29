@@ -47,7 +47,9 @@ dict_driver = {
     "first_name" : "first name",
     "birth_date" : "1980-03-03",
     "professional_licence" :  "ppkkpp",
-    "departement" : "53"
+    "departement" : {
+        "numero" : "53"
+        }
 }
 
 dict_taxi = {
