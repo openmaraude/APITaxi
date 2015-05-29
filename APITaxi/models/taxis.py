@@ -121,9 +121,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
             return (None, None)
         if not min_time:
             min_time = int(time.time() - 60*60)
-        print("pre", scan)
         scan = [(k, parse(self.__class__._FORMAT_OPERATOR, v.decode())) for k, v in scan.items()]
-        print(scan)
         min_return = (None, min_time)
         for operator_name, v in scan:
             operator_name = operator_name.decode()
