@@ -20,7 +20,6 @@ class TestVehiclePost(Skeleton):
         r = self.post([dict_])
         self.assert201(r)
         json = r.json
-        print(json)
         self.assertEqual(len(json['data']), 1)
         vehicle = json['data'][0]
         self.check_req_vs_dict(vehicle, dict_)
