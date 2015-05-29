@@ -53,14 +53,13 @@ class TestTaxiPost(Skeleton):
         self.post([dict_driver], url='/drivers/')
         r = self.post([dict_vehicle], url='/vehicles/')
         self.assert201(r)
-        vehicle_id = loads(r.data)['data'][0]['id']
+        vehicle_id = r.json['data'][0]['id']
         dict_ads_ = deepcopy(dict_ads)
         dict_ads_['vehicle_id'] = vehicle_id
         self.post([dict_ads_], url='/ads/')
         r = self.post([dict_taxi])
         self.assert201(r)
-        json = loads(r.data)
-        self.check_req_vs_dict(json['data'][0], dict_taxi)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         self.assertEqual(len(Taxi.query.all()), 1)
 
 

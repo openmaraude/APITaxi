@@ -15,17 +15,15 @@ class TestADSPost(Skeleton):
         r = self.post([])
         self.assert201(r)
         assert r.headers.get('Content-Type', None) == 'application/json'
-        json = loads(r.data)
-        assert json['data'] == []
+        assert r.json['data'] == []
 
     def test_simple(self):
         dict_ = dict_ads
         dict_['vehicle_id'] = None
         r = self.post([dict_])
         self.assert201(r)
-        json = loads(r.data)
-        self.assertEqual(len(json['data']), 1)
-        ads = json['data'][0]
+        self.assertEqual(len(r.json['data']), 1)
+        ads = r.json['data'][0]
         self.check_req_vs_dict(ads, dict_)
         self.assertEqual(len(ADS.query.all()), 1)
 
@@ -33,8 +31,7 @@ class TestADSPost(Skeleton):
         dict_v = deepcopy(dict_vehicle)
         r = self.post([dict_v], url='/vehicles/')
         self.assert201(r)
-        json = loads(r.data)
-        vehicle = json['data'][0]
+        vehicle = r.json['data'][0]
         self.check_req_vs_dict(vehicle, dict_v)
         vehicle_id = vehicle['id']
 
@@ -42,8 +39,7 @@ class TestADSPost(Skeleton):
         dict_a['vehicle_id'] = vehicle_id
         r = self.post([dict_a])
         self.assert201(r)
-        json = loads(r.data)
-        ads = json['data'][0]
+        ads = r.json['data'][0]
         self.check_req_vs_dict(ads, dict_a)
 
         self.assertEquals(len(ADS.query.all()), 1)
@@ -54,13 +50,12 @@ class TestADSPost(Skeleton):
         dict_['vehicle_id'] = None
         r = self.post([dict_, dict_])
         self.assert201(r)
-        json = loads(r.data)
-        self.assertEqual(len(json['data']), 2)
+        self.assertEqual(len(r.json['data']), 2)
         self.assertEqual(len(ADS.query.all()), 2)
 
     def test_too_many_ads(self):
         dict_ = dict_ads
-        r = self.post([dict_ for x in xrange(0, 251)])
+        r = self.post([dict_ for x in range(0, 251)])
         self.assertEqual(r.status_code, 413)
         self.assertEqual(len(ADS.query.all()), 0)
 

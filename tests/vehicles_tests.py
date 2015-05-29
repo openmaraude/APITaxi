@@ -13,14 +13,14 @@ class TestVehiclePost(Skeleton):
         r = self.post([])
         self.assert201(r)
         assert r.headers.get('Content-Type', None) == 'application/json'
-        json = loads(r.data)
-        assert json['data'] == []
+        assert r.json['data'] == []
 
     def test_simple(self):
         dict_ = dict_vehicle
         r = self.post([dict_])
         self.assert201(r)
-        json = loads(r.data)
+        json = r.json
+        print(json)
         self.assertEqual(len(json['data']), 1)
         vehicle = json['data'][0]
         self.check_req_vs_dict(vehicle, dict_)
@@ -30,13 +30,13 @@ class TestVehiclePost(Skeleton):
         dict_ = dict_vehicle
         r = self.post([dict_, dict_])
         self.assert201(r)
-        json = loads(r.data)
+        json = r.json
         self.assertEqual(len(json['data']), 2)
         self.assertEqual(len(Vehicle.query.all()), 1)
 
     def test_too_many_vehicles(self):
         dict_ = dict_vehicle
-        r = self.post([dict_ for x in xrange(0, 251)])
+        r = self.post([dict_ for x in range(0, 251)])
         self.assertEqual(r.status_code, 413)
         self.assertEqual(len(Vehicle.query.all()), 0)
 
