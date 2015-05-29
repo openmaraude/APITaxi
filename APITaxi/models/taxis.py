@@ -107,44 +107,37 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
         name='status_taxi_enum'), label='Status', nullable=True, default='free')
 
-    _FORMAT_OPERATOR = "{timestamp} {lat} {lon} {status} {device}"
+    _FORMAT_OPERATOR = '{timestamp:d} {lat} {lon} {status} {device}'
 
     def __init__(self, *args, **kwargs):
         kwargs['id'] = str(uuid4())
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
 
-    @staticmethod
-    def cmp_scan(favorite_operator):
-
-        def comparator(t, u):
-            if t[0] == favorite_operator:
-                return -2
-            if t[1]['timestamp'] == u[1]['timestamp']:
-                return 0
-            if t[1]['timestamp'] < u[1]['timestampp']:
-                return 1
-            return -1
-        return comparator
-
     def get_operator(self, redis_store, user_datastore, min_time=None,
             favorite_operator=None):
         _, scan = redis_store.hscan("taxi:{}".format(self.id))
         if len(scan) == 0:
             return (None, None)
-        scan = map(lambda k_v: (k_v[0], parse(self.__class__._FORMAT_OPERATOR, k_v[1])),
-            scan.items())
-        scan = filter(lambda t: t[1] is not None, scan)
-        scan = sorted(scan, cmp=self.cmp_scan(favorite_operator))
         if not min_time:
             min_time = int(time.time() - 60*60)
+        print("pre", scan)
+        scan = [(k, parse(self.__class__._FORMAT_OPERATOR, v.decode())) for k, v in scan.items()]
+        print(scan)
+        min_return = (None, min_time)
         for operator_name, v in scan:
-            if v['timestamp'] < min_time and operator_name != favorite_operator:
-                return (None, None)
-            operator = user_datastore.find_user(email=operator_name)
-            if operator:
+            operator_name = operator_name.decode()
+            if not v or (int(v['timestamp']) < min_time and operator_name != favorite_operator):
+                continue
+            if operator_name == favorite_operator:
+                operator = user_datastore.find_user(email=operator_name)
                 return (operator, v['timestamp'])
-        return (None, None)
+            if int(v['timestamp']) > min_return[1]:
+                min_return = (operator_name, v['timestamp'])
+        if min_return[0] is None:
+            return (None, None)
+        operator = user_datastore.find_user(email=min_return[0])
+        return (operator, min_return[1])
 
     @property
     def driver_professional_licence(self):
