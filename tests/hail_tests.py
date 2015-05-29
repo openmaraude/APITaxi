@@ -7,6 +7,7 @@ from APITaxi import redis_store
 from copy import deepcopy
 from functools import partial
 from werkzeug.exceptions import ServiceUnavailable
+import time
 
 dict_ = {
     'customer_id': 'aa',
@@ -57,31 +58,12 @@ class TestHailPost(Skeleton):
         self.assert404(r)
         self.assertEqual(len(Customer.query.all()), 0)
 
-    def test_no_clyde(self):
-        taxi = self.post_taxi()
-        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=1, lat=1,
-            lon=1, status='free', device='d1', version=1)
-        formatted_value = '"' + formatted_value + '"'
-        redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
-                formatted_value)
-        dict_hail = deepcopy(dict_)
-        dict_hail['taxi_id'] = taxi['id']
-        r = None
-        try:
-            r = self.post([dict_hail])
-        except ServiceUnavailable:
-            pass
-        self.assert503(r)
-        self.assertEqual(len(Customer.query.all()), 1)
-        self.assertEqual(len(Hail.query.all()), 1)
-
     def test_received_by_operator(self):
         u = User.query.filter_by(email='user_operateur').first()
         u.hail_endpoint = 'http://127.0.0.1:5001/hail/'
         taxi = self.post_taxi()
-        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=1, lat=1,
+        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
             lon=1, status='free', device='d1', version=1)
-        formatted_value = '"' + formatted_value + '"'
         redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
                 formatted_value)
         dict_hail = deepcopy(dict_)
@@ -94,15 +76,14 @@ class TestHailPost(Skeleton):
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
-        self.assertEqual(loads(r.data)['data'][0]['status'], 'received_by_operator')
+        self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
 
     def test_failure(self):
         u = User.query.filter_by(email='user_operateur').first()
         u.hail_endpoint = 'http://127.0.0.1:5001/hails_failure/'
         taxi = self.post_taxi()
-        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=1, lat=1,
+        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
             lon=1, status='free', device='d1', version=1)
-        formatted_value = '"' + formatted_value + '"'
         redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
                 formatted_value)
         dict_hail = deepcopy(dict_)
@@ -115,7 +96,7 @@ class TestHailPost(Skeleton):
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
-        self.assertEqual(loads(r.data)['data'][0]['status'], 'failure')
+        self.assertEqual(r.json['data'][0]['status'], 'failure')
 
     def post_taxi(self):
         post = partial(self.post, role='operateur')
@@ -123,11 +104,11 @@ class TestHailPost(Skeleton):
         post([dict_driver], url='/drivers/')
         r = post([dict_vehicle], url='/vehicles/')
         self.assert201(r)
-        vehicle_id = loads(r.data)['data'][0]['id']
+        vehicle_id = r.json['data'][0]['id']
         dict_ads_ = deepcopy(dict_ads)
         dict_ads_['vehicle_id'] = vehicle_id
         post([dict_ads_], url='/ads/')
         r = post([dict_taxi], url='/taxis/')
         self.assert201(r)
-        taxi = loads(r.data)['data'][0]
+        taxi = r.json['data'][0]
         return taxi
