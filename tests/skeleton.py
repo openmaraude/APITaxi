@@ -33,9 +33,13 @@ class Skeleton(TestCase):
 
 
     def check_req_vs_dict(self, req, dict_):
-        map(lambda (k, v):
-                self.assertIn(k, req) and self.assertEqual(v, dict_[k]),
-                    dict_.iteritems())
+        for k, v in dict_.items():
+            self.assertIn(k, req)
+            if type(req[k]) is dict:
+                self.check_req_vs_dict(req[k], dict_[k])
+            else:
+                self.assertEqual(v, req[k])
+
     def call(self, data, url, envelope_data, role, fun):
         if not role:
             role = self.__class__.role
@@ -44,7 +48,8 @@ class Skeleton(TestCase):
             data = {"data": data}
         if not url:
             url = self.__class__.url
-        return fun(url, data=dumps(data),
+        data = dumps(data)
+        return fun(url, data=data,
                                 headers={
                                     "Content-Type": "application/json",
                                     "Authorization": authorization
