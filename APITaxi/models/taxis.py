@@ -145,12 +145,12 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         min_return = (None, min_time)
         timestamps = self.timestamps(redis_store, min_time)
-        for operator_name, v in scan:
+        for operator_name, timestamp in timestamps:
             if operator_name == favorite_operator:
                 operator = user_datastore.find_user(email=operator_name)
-                return (operator, v['timestamp'])
-            if int(v['timestamp']) > min_return[1]:
-                min_return = (operator_name, v['timestamp'])
+                return (operator, timestamp)
+            if int(timestamp) > min_return[1]:
+                min_return = (operator_name, timestamp)
         if min_return[0] is None:
             return (None, None)
         operator = user_datastore.find_user(email=min_return[0])

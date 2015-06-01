@@ -104,17 +104,18 @@ class Taxis(Resource):
     def get(self):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
-
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
         taxis = []
         min_time = int(time.time()) - 60*60
         for taxi_id, distance, coords in r:
             taxi_db = taxis_models.Taxi.query.get(taxi_id)
-            if not taxi_db or taxi_db.status != 'free':
+            if not taxi_db or not taxi_db.is_free(redis_store):
+                current_app.logger.info("taxi_db {}, is_free {}".format(taxi_db, taxi_db.is_free(redis_store)))
                 continue
             operator, timestamp = taxi_db.get_operator(redis_store,
                     user_datastore, min_time, p['favorite_operator'])
             if not operator:
+                curreent_app.logger.info("no operator")
                 continue
             description = taxi_db.vehicle.get_description(operator)
             taxis.append({
