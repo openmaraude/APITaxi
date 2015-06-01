@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from APITaxi.models import vehicle
-from ..models import db, Vehicle, VehicleDescription
+from ..models import db, Vehicle, VehicleDescription, User
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from ..utils import AsDictMixin, HistoryMixin, fields
@@ -8,7 +8,7 @@ from uuid import uuid4
 from six import string_types
 from itertools import compress
 from parse import parse
-import time
+import time, operator
 
 class ADS(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self, licence_plate=None):
@@ -51,6 +51,7 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
         else:
             self.__vehicle = Vehicle(vehicle.licence_plate)
 
+
     def __repr__(self):
         return '<ADS %r>' % str(self.id)
 
@@ -89,7 +90,6 @@ class Driver(db.Model, AsDictMixin, HistoryMixin):
     def __repr__(self):
         return '<drivers %r>' % str(self.id)
 
-
 class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
@@ -106,14 +106,13 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     driver = db.relationship('Driver', backref='driver')
 
     _FORMAT_OPERATOR = '{timestamp:d} {lat} {lon} {status} {device}'
+    _DISPONIBILITY_DURATION = 60*60
 
     def __init__(self, *args, **kwargs):
         kwargs['id'] = str(uuid4())
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
 
-    def get_operator(self, redis_store, user_datastore, min_time=None,
-            favorite_operator=None):
     @property
     def status(self):
         return self.vehicle.description.status
@@ -121,17 +120,32 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     @status.setter
     def status(self, status):
         self.vehicle.description.status = status
+
+    def timestamps(self, redis_store, min_time, favorite_operator=None):
         _, scan = redis_store.hscan("taxi:{}".format(self.id))
         if len(scan) == 0:
-            return (None, None)
+            return []
+        scan = map(lambda (k, v): (k.decode(), parse(self._FORMAT_OPERATOR, v.decode())),
+                scan.items())
+        return [(k, int(v['timestamp'])) for k, v in scan\
+                if int(v['timestamp']) > min_time or k == favorite_operator]
+
+    def is_free(self, redis_store, min_time=None):
         if not min_time:
-            min_time = int(time.time() - 60*60)
-        scan = [(k, parse(self.__class__._FORMAT_OPERATOR, v.decode())) for k, v in scan.items()]
+            min_time = int(time.time() - self._DISPONIBILITY_DURATION)
+        timestamps = self.timestamps(redis_store, min_time)
+        print timestamps
+        users = map(lambda u: User.query.filter_by(email=u[0]).first().id, timestamps)
+        return all(map(lambda desc: desc.added_by in users and desc.status == 'free',
+                self.vehicle.descriptions))
+
+    def get_operator(self, redis_store, user_datastore, min_time=None,
+            favorite_operator=None):
+        if not min_time:
+            min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         min_return = (None, min_time)
+        timestamps = self.timestamps(redis_store, min_time)
         for operator_name, v in scan:
-            operator_name = operator_name.decode()
-            if not v or (int(v['timestamp']) < min_time and operator_name != favorite_operator):
-                continue
             if operator_name == favorite_operator:
                 operator = user_datastore.find_user(email=operator_name)
                 return (operator, v['timestamp'])

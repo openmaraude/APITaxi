@@ -55,5 +55,6 @@ dict_driver = {
 dict_taxi = {
     "vehicle": {"licence_plate": "DF-118-FG"},
     "driver": {"professional_licence": "ppkkpp", "departement":"53"},
-    "ads": {"insee": "75000", "numero": "1"}
+    "ads": {"insee": "75000", "numero": "1"},
+    "status": "free"
 }

@@ -66,14 +66,11 @@ class HailId(Resource):
 
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument('customer_id', type=str,
-                         required=True)
-parser_post.add_argument('customer_lon', type=float,
-                         required=True)
-parser_post.add_argument('customer_lat', type=float,
-                         required=True)
-parser_post.add_argument('taxi_id', type=str,
-                         required=True)
+parser_post.add_argument('customer_id', type=str, required=True)
+parser_post.add_argument('customer_lon', type=float, required=True)
+parser_post.add_argument('customer_lat', type=float, required=True)
+parser_post.add_argument('taxi_id', type=str, required=True)
+parser_post.add_argument('operateur', type=int, required=True)
 argument_names = map(lambda f: f.name, parser_post.args)
 hail_expect_post_details = api.model('hail_expect_post_details',
                                 dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
@@ -91,26 +88,26 @@ class Hail(Resource):
         root_parser.add_argument('data', type=list, location='json')
         req = root_parser.parse_args()
         if 'data' not in req or not isinstance(req['data'], list) or len(req['data']) == 0:
-            abort(400)
+            abort(400, message="data is required")
         if len(req['data']) != 1:
             abort(413)
         to_parse = req['data'][0]
         hj = {}
         for arg in parser_post.args:
             if arg.name not in to_parse.keys():
-                abort(400)
+                abort(400, message="{} is required".format(arg.name))
             hj[arg.name] = arg.convert(to_parse[arg.name], '=')
 
         taxi = TaxiModel.query.get(hj['taxi_id'])
         if not taxi:
             return abort(404, message="Unable to find taxi")
-        if taxi.status != 'free':
+        if not taxi.is_free(redis_store):
             return abort(403, message="The taxi is not available")
-        taxi.status = 'answering'
+        operateur = security_models.User.query.get(hj['operateur'])
+        if not operateur:
+            abort(404, message='Unable to find the taxi\'s operateur')
+        taxi.vehicle.get_description(operateur).status = 'answering'
         db.session.commit()
-        operator, _ = taxi.get_operator(redis_store, user_datastore)
-        if not operator:
-            abort(404, message='Unable to find the taxi\'s operator')
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
                 operateur_id=current_user.id).first()
@@ -126,7 +123,7 @@ class Hail(Resource):
         hail.customer_id = hj['customer_id']
         hail.customer_lon = hj['customer_lon']
         hail.customer_lat = hj['customer_lat']
-        hail.operateur_id = operator.id
+        hail.operateur_id = operateur.id
         hail.added_via = 'api'
         hail.taxi_id = hj['taxi_id']
         db.session.add(hail)
@@ -136,11 +133,11 @@ class Hail(Resource):
         db.session.commit()
         r = None
         try:
-            r = requests.post(operator.hail_endpoint,
+            r = requests.post(operateur.hail_endpoint,
                     data=json.dumps({"data": [marshal(hail, hail_model)]}),
                 headers={'Content-Type': 'application/json'})
         except requests.exceptions.MissingSchema:
-            abort(503, message="Unable to reach operator")
+            abort(503, message="Unable to reach operateur")
         if r.status_code == 201:
             hail.received_by_operator()
         else:

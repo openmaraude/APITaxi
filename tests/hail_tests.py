@@ -13,7 +13,8 @@ dict_ = {
     'customer_id': 'aa',
     'customer_lon': 4.4,
     'customer_lat': 0,
-    'taxi_id': 1
+    'taxi_id': 1,
+    'operateur': 2
 }
 class TestHailPost(Skeleton):
     url = '/hails/'
@@ -49,14 +50,6 @@ class TestHailPost(Skeleton):
         dict_hail['taxi_id'] = taxi['id']
         r = self.post([dict_hail])
         self.assert403(r)
-
-    def test_no_operator(self):
-        taxi = self.post_taxi()
-        dict_hail = deepcopy(dict_)
-        dict_hail['taxi_id'] = taxi['id']
-        r = self.post([dict_hail])
-        self.assert404(r)
-        self.assertEqual(len(Customer.query.all()), 0)
 
     def test_received_by_operator(self):
         u = User.query.filter_by(email='user_operateur').first()
@@ -109,6 +102,7 @@ class TestHailPost(Skeleton):
         dict_ads_['vehicle_id'] = vehicle_id
         post([dict_ads_], url='/ads/')
         r = post([dict_taxi], url='/taxis/')
+        print r.json
         self.assert201(r)
         taxi = r.json['data'][0]
         return taxi
