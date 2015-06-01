@@ -134,7 +134,6 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         timestamps = self.timestamps(redis_store, min_time)
-        print timestamps
         users = map(lambda u: User.query.filter_by(email=u[0]).first().id, timestamps)
         return all(map(lambda desc: desc.added_by in users and desc.status == 'free',
                 self.vehicle.descriptions))
