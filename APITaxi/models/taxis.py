@@ -104,8 +104,6 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'),
             nullable=True)
     driver = db.relationship('Driver', backref='driver')
-    status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
-        name='status_taxi_enum'), label='Status', nullable=True, default='free')
 
     _FORMAT_OPERATOR = '{timestamp:d} {lat} {lon} {status} {device}'
 
@@ -116,6 +114,13 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
     def get_operator(self, redis_store, user_datastore, min_time=None,
             favorite_operator=None):
+    @property
+    def status(self):
+        return self.vehicle.description.status
+
+    @status.setter
+    def status(self, status):
+        self.vehicle.description.status = status
         _, scan = redis_store.hscan("taxi:{}".format(self.id))
         if len(scan) == 0:
             return (None, None)
