@@ -24,7 +24,7 @@ driver_details_expect = make_model('taxis', 'Driver', filter_id=True)
 class Drivers(Resource):
 
     @login_required
-    @roles_accepted('admin', 'operateur')
+    @roles_accepted('admin', 'operateur', 'prefecture')
     @api.marshal_with(driver_fields)
     @api.expect(driver_details_expect)
     def post(self):
@@ -56,7 +56,7 @@ class Drivers(Resource):
 
     @api.hide
     @login_required
-    @roles_accepted('admin', 'operateur')
+    @roles_accepted('admin', 'operateur', 'prefecture')
     def get(self):
         if not taxis_models.Driver.can_be_listed_by(current_user):
             abort(403)
@@ -70,7 +70,7 @@ class Drivers(Resource):
 
 @mod.route('/drivers/form', methods=['GET', 'POST'])
 @login_required
-@roles_accepted('admin', 'operateur')
+@roles_accepted('admin', 'operateur', 'prefecture')
 def driver_form():
     form = None
     if request.args.get("id"):
@@ -100,7 +100,7 @@ def driver_form():
 
 
 @mod.route('/drivers/delete')
-@roles_accepted('admin', 'operateur')
+@roles_accepted('admin', 'operateur', 'prefecture')
 @login_required
 def driver_delete():
     if not request.args.get("id"):

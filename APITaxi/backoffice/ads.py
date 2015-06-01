@@ -30,7 +30,7 @@ class ADS(Resource):
             help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
     @login_required
-    @roles_accepted('admin', 'operateur')
+    @roles_accepted('admin', 'operateur', 'prefecture')
     @api.hide
     @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     def get(self):
@@ -46,7 +46,7 @@ class ADS(Resource):
         if not taxis_models.ADS.can_be_listed_by(current_user):
             abort(403, message="You're not allowed to see this page")
         q = taxis_models.ADS.query
-        if not current_user.has_role('admin'):
+        if not current_user.has_role('admin') and current_user.has_role('prefecture'):
             q = q.filter_by(added_by=current_user.id)
         page = int(request.args.get('page')) if 'page' in request.args else 1
         return render_template('lists/ads.html',
@@ -75,7 +75,7 @@ class ADS(Resource):
 
 
     @login_required
-    @roles_accepted('admin', 'operateur')
+    @roles_accepted('admin', 'operateur', 'prefecture')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.expect(ads_expect)
@@ -105,7 +105,7 @@ class ADS(Resource):
 
 @mod.route('/ads/form', methods=['GET', 'POST'])
 @login_required
-@roles_accepted('admin', 'operateur')
+@roles_accepted('admin', 'operateur', 'prefecture')
 def ads_form():
     ads = form = None
     if request.args.get("id"):
@@ -141,7 +141,7 @@ def ads_form():
 
 @mod.route('/ads/delete')
 @login_required
-@roles_accepted('admin', 'operateur')
+@roles_accepted('admin', 'operateur', 'prefecture')
 def ads_delete():
     if not request.args.get("id"):
         abort(404, message="You need to specify an id")
