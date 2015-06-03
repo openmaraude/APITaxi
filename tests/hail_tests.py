@@ -14,7 +14,7 @@ dict_ = {
     'customer_lon': 4.4,
     'customer_lat': 0,
     'taxi_id': 1,
-    'operateur': 2
+    'operateur': 'user_operateur'
 }
 class TestHailPost(Skeleton):
     url = '/hails/'
@@ -102,7 +102,6 @@ class TestHailPost(Skeleton):
         dict_ads_['vehicle_id'] = vehicle_id
         post([dict_ads_], url='/ads/')
         r = post([dict_taxi], url='/taxis/')
-        print r.json
         self.assert201(r)
         taxi = r.json['data'][0]
         return taxi

@@ -125,8 +125,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         _, scan = redis_store.hscan("taxi:{}".format(self.id))
         if len(scan) == 0:
             return []
-        scan = map(lambda (k, v): (k.decode(), parse(self._FORMAT_OPERATOR, v.decode())),
-                scan.items())
+        scan = [(k.decode(), parse(self._FORMAT_OPERATOR, v.decode())) for k, v in scan.items()]
         return [(k, int(v['timestamp'])) for k, v in scan\
                 if int(v['timestamp']) > min_time or k == favorite_operator]
 

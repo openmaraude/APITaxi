@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import request, redirect, url_for
+from flask import request, redirect, url_for, current_app
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
@@ -27,13 +27,14 @@ parser_put.add_argument('status', type=str, required=True,
                                  'incident_taxi',
                                  'incident_customer'],
                         location='hail')
-argument_names = map(lambda f: f.name, parser_put.args)
-hail_expect_put_details = api.model('hail_expect_put_details',
-                                dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
-hail_expect_put = api.model('hail_expect_put', {'data': fields.List(fields.Nested(hail_expect_put_details))})
-
+argument_names = [f.name for f in parser_put.args]
+dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
+dict_hail['operateur'] = fields.String(attribute='operateur.email')
+hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
+hail_expect_put = api.model('hail_expect_put',
+        {'data': fields.List(fields.Nested(hail_expect_put_details))})
 @login_required
-@roles_accepted('moteur', 'operateur')
+@roles_accepted('admin', 'moteur', 'operateur')
 @ns_hail.route('/<int:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
@@ -70,17 +71,19 @@ parser_post.add_argument('customer_id', type=str, required=True)
 parser_post.add_argument('customer_lon', type=float, required=True)
 parser_post.add_argument('customer_lat', type=float, required=True)
 parser_post.add_argument('taxi_id', type=str, required=True)
-parser_post.add_argument('operateur', type=int, required=True)
+parser_post.add_argument('operateur', type=str, required=True)
 argument_names = map(lambda f: f.name, parser_post.args)
-hail_expect_post_details = api.model('hail_expect_post_details',
-                                dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items())))
-hail_expect = api.model('hail_expect_post', {'data': fields.List(fields.Nested(hail_expect_post_details))})
+dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
+dict_hail['operateur'] = fields.String(attribute='operateur.email')
+hail_expect_post_details = api.model('hail_expect_post_details', dict_hail)
+hail_expect = api.model('hail_expect_post',
+        {'data': fields.List(fields.Nested(hail_expect_post_details))})
 
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource):
 
     @login_required
-    @roles_required('moteur')
+    @roles_accepted('admin', 'moteur')
     @api.marshal_with(hail_model)
     @api.expect(hail_expect)
     def post(self):
@@ -103,7 +106,7 @@ class Hail(Resource):
             return abort(404, message="Unable to find taxi")
         if not taxi.is_free(redis_store):
             return abort(403, message="The taxi is not available")
-        operateur = security_models.User.query.get(hj['operateur'])
+        operateur = security_models.User.query.filter_by(email=hj['operateur']).first()
         if not operateur:
             abort(404, message='Unable to find the taxi\'s operateur')
         taxi.vehicle.get_description(operateur).status = 'answering'
@@ -126,6 +129,7 @@ class Hail(Resource):
         hail.operateur_id = operateur.id
         hail.added_via = 'api'
         hail.taxi_id = hj['taxi_id']
+        hail.status = 'emitted'
         db.session.add(hail)
         db.session.commit()
         hail.received()
@@ -137,7 +141,7 @@ class Hail(Resource):
                     data=json.dumps({"data": [marshal(hail, hail_model)]}),
                 headers={'Content-Type': 'application/json'})
         except requests.exceptions.MissingSchema:
-            abort(503, message="Unable to reach operateur")
+            pass
         if r.status_code == 201:
             hail.received_by_operator()
         else:

@@ -4,9 +4,8 @@ from flask.ext.security import login_required, roles_accepted,\
         roles_required
 from datetime import datetime
 from flask.ext.restplus import abort
-from ..utils import HistoryMixin, AsDictMixin
+from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
-
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -38,6 +37,15 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     db.ForeignKeyConstraint(['operateur_id', 'customer_id'],
         ['customer.operateur_id', 'customer.id'],
         )
+
+    @classmethod
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+        if level >=2:
+            return {}
+        return_ = super(Hail, cls).marshall_obj(show_all, filter_id, level=level+1)
+        return_['operateur'] = fields.String(attribute='operateur.email')
+        return_['id'] = fields.String()
+        return return_
 
 
     def status_changed(self):

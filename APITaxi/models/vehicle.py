@@ -135,7 +135,7 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
 
     @classmethod
     def to_exclude(cls):
-        return HistoryMixin.to_exclude() + ['status']
+        return list(HistoryMixin.to_exclude()) + ['status']
 
 
     @property
