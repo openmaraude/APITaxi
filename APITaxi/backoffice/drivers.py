@@ -5,14 +5,16 @@ from . import ns_administrative
 from ..forms.taxis import DriverCreateForm,\
         DriverUpdateForm
 from ..models import taxis as taxis_models, administrative as administrative_models
-from ..utils import create_obj_from_json
+from ..utils import create_obj_from_json, request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
                   render_template, request, redirect, url_for, jsonify,
                    current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
-from flask.ext.restplus import fields, Resource, reqparse, abort
+from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
 from ..utils.make_model import make_model
+from .. import documents
+from ..utils.slack import slack as slacker
 
 
 mod = Blueprint('drivers', __name__)
@@ -24,10 +26,27 @@ driver_details_expect = make_model('taxis', 'Driver', filter_id=True)
 class Drivers(Resource):
 
     @login_required
-    @roles_accepted('admin', 'operateur', 'prefecture')
-    @api.marshal_with(driver_fields)
+    @roles_accepted('admin', 'operateur')
     @api.expect(driver_details_expect)
+    @api.response(200, 'Success', driver_fields)
     def post(self):
+        if request_wants_json():
+            print "JSON ! "
+            return self.post_json()
+        elif 'file' in request.files:
+            filename = "conducteurs-{}-{}.csv".format(current_user.email,
+                    str(datetime.now()))
+            documents.save(request.files['file'], name=filename)
+            slack = slacker()
+            if slack:
+                slack.chat.post_message('#taxis',
+                'Un nouveau fichier conducteurs a été envoyé par {}. {}'.format(
+                    current_user.email, documents.url(filename)))
+            return "OK"
+        abort(400)
+
+
+    def post_json(self):
         json = request.get_json()
         if "data" not in json:
             abort(400, message="You need data a data object")
@@ -52,7 +71,7 @@ class Drivers(Resource):
                 abort(400, message="Key error")
             db.session.add(new_drivers[-1])
         db.session.commit()
-        return {'data': new_drivers}, 201
+        return marshal({'data': new_drivers}, driver_fields), 201
 
     @api.hide
     @login_required
