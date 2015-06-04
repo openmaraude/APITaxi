@@ -2,8 +2,10 @@
 from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
 from ..models import db
-from uuid import uuid4
 from ..utils import MarshalMixin
+from sqlalchemy_defaults import Column
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 
 roles_users = db.Table('roles_users',
@@ -15,6 +17,7 @@ class Role(db.Model, RoleMixin, MarshalMixin):
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
 
+
 class User(db.Model, UserMixin, MarshalMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
@@ -24,7 +27,13 @@ class User(db.Model, UserMixin, MarshalMixin):
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
     apikey = db.Column(db.String(36), nullable=False)
-    hail_endpoint = db.Column(db.String, nullable=True)
+    hail_endpoint = Column(db.String, nullable=True, label='Hail endpoint',
+            description='Hail endpoint')
+    commercial_name = Column(db.String, nullable=True, label='Nom commercial',
+            description='Votre nom commercial')
+    phone_number = Column(db.String, nullable=True, label=u'Numéro de téléphone',
+            description=u'Numéro de téléphone de support pour les clients')
+    logos = db.relationship('Logo', backref="user")
 
     def __init__(self, *args, **kwargs):
         kwargs['apikey'] = str(uuid4())
@@ -35,3 +44,11 @@ class User(db.Model, UserMixin, MarshalMixin):
     def get_user_from_api_key(self, apikey):
         user = self.user_model.query.filter_by(apikey=apikey)
         return user.get() or None
+
+
+class Logo(db.Model):
+    id = db.Column(UUID, primary_key=True)
+    size=db.Column(db.String)
+    format_=db.Column(db.String)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+

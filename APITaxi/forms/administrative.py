@@ -23,7 +23,7 @@ class ZUPCreateForm(ZUPCForm):
 
 
 class ZUPCUpdateForm(ZUPCForm):
-    id = HiddenField()
+    id = HiddenField()          
     submit = SubmitField(u'Modifier')
 
 
