@@ -17,7 +17,7 @@ vehicle_expect = make_model('taxis', 'Vehicle', filter_id=True)
 class Vehicle(Resource):
 
     @login_required
-    @roles_accepted('admin', 'operateur')
+    @roles_accepted('admin', 'operateur', 'prefecture')
     @api.marshal_with(vehicle_model)
     @api.expect(vehicle_expect)
     @api.doc(responses={404:'Resource not found',
