@@ -32,7 +32,6 @@ class User(db.Model, UserMixin, MarshalMixin):
         kwargs['active'] = True
         super(self.__class__, self).__init__(*args, **kwargs)
 
-
     def get_user_from_api_key(self, apikey):
         user = self.user_model.query.filter_by(apikey=apikey)
         return user.get() or None

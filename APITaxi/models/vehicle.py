@@ -130,6 +130,12 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
             nullable=True)
     vehicle_id = Column(db.Integer, db.ForeignKey('vehicle.id'))
     UniqueConstraint('vehicle_id', 'added_by', name="uq_vehicle_description")
+    status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
+        name='status_taxi_enum'), nullable=True, default='free')
+
+    @classmethod
+    def to_exclude(cls):
+        return list(HistoryMixin.to_exclude()) + ['status']
 
 
     @property

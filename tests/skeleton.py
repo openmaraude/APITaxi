@@ -10,7 +10,6 @@ from APITaxi.models.administrative import Departement
 
 
 class Skeleton(TestCase):
-
     TESTING = True
 
     def create_app(self):
@@ -26,11 +25,9 @@ class Skeleton(TestCase):
             user_datastore.add_role_to_user(u, r)
             db.session.commit()
 
-
     def tearDown(self):
         db.session.remove()
         db.drop_all()
-
 
     def check_req_vs_dict(self, req, dict_):
         for k, v in dict_.items():

@@ -37,6 +37,7 @@ class Vehicle(Resource):
             form.populate_obj(v)
             form_description = VehicleDescriptionForm.from_json(vehicle)
             form_description.populate_obj(v_description)
+            v_description.status = 'off'
             db.session.add(v)
             new_vehicle.append(v)
         db.session.commit()

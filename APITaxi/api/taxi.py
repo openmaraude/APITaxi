@@ -75,7 +75,7 @@ class TaxiId(Resource):
     def put(self, taxi_id):
         json = request.get_json()
         status = json['data'][0]['status']
-        if status not in taxis_models.Taxi.__table__.columns.status.type.enums:
+        if status not in taxis_models.VehicleDescription.__table__.columns.status.type.enums:
             abort(400)
         taxi = taxis_models.Taxi.query.get(taxi_id)
         taxi.status = status
@@ -87,7 +87,8 @@ dict_taxi_expect = \
          {'vehicle': fields.Nested(api.model('vehicle_expect', {'licence_plate': fields.String})),
           'ads': fields.Nested(api.model('ads_expect', {'numero': fields.String, 'insee': fields.String})),
           'driver': fields.Nested(api.model('driver_expect', {'professional_licence': fields.String,
-                     'departement': fields.String}))
+                     'departement': fields.String})),
+          'status': fields.String
          }
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
@@ -103,17 +104,18 @@ class Taxis(Resource):
     def get(self):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
-
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
         taxis = []
         min_time = int(time.time()) - 60*60
         for taxi_id, distance, coords in r:
             taxi_db = taxis_models.Taxi.query.get(taxi_id)
-            if not taxi_db or taxi_db.status != 'free':
+            if not taxi_db or not taxi_db.is_free(redis_store):
+                current_app.logger.info("taxi_db {}, is_free {}".format(taxi_db, taxi_db.is_free(redis_store)))
                 continue
             operator, timestamp = taxi_db.get_operator(redis_store,
                     user_datastore, min_time, p['favorite_operator'])
             if not operator:
+                curreent_app.logger.info("no operator")
                 continue
             description = taxi_db.vehicle.get_description(operator)
             taxis.append({
@@ -145,12 +147,12 @@ class Taxis(Resource):
     def post(self):
         json = request.get_json()
         if 'data' not in json:
-            abort(400)
+            abort(400, message="data is required")
         if len(json['data']) > 1:
             abort(413)
         taxi_json = json['data'][0]
         if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
-            abort(400)
+            abort(400, message="bad taxi description")
         departement = administrative_models.Departement.query\
             .filter_by(numero=str(taxi_json['driver']['departement'])).first()
         if not departement:
@@ -173,9 +175,11 @@ class Taxis(Resource):
                 vehicle_id=vehicle.id, ads_id=ads.id).first()
         if not taxi:
             taxi = taxis_models.Taxi()
-            taxi.driver_id = driver.id
-            taxi.vehicle_id = vehicle.id
-            taxi.ads_id = ads.id
+            taxi.driver = driver
+            taxi.vehicle = vehicle
+            taxi.ads = ads
             db.session.add(taxi)
+        if 'status' in taxi_json:
+            taxi.status = taxi_json['status']
         db.session.commit()
         return {'data':[taxi]}, 201
