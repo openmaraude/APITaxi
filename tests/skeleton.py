@@ -48,9 +48,11 @@ class Skeleton(TestCase):
         data = dumps(data)
         return fun(url, data=data,
                                 headers={
-                                    "Content-Type": "application/json",
-                                    "Authorization": authorization
-                                })
+                                    "Authorization": authorization,
+                                    "Accept": "application/json",
+                                    "X-VERSION": 1
+                                },
+                   content_type='application/json')
 
     def post(self, data, url=None, envelope_data=True, role=None):
         return self.call(data, url, envelope_data, role, self.client.post)

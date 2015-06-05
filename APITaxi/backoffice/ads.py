@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .. import db
+from .. import db, documents
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
@@ -11,8 +11,9 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
                    current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
-from flask.ext.restplus import fields, abort, Resource, reqparse
+from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
 from ..utils.make_model import make_model
+from ..utils.slack import slack
 
 mod = Blueprint('ads', __name__)
 
@@ -79,8 +80,24 @@ class ADS(Resource):
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.expect(ads_expect)
-    @api.marshal_with(ads_post)
+    @api.response(200, 'Success', ads_post)
     def post(self):
+        if request_wants_json():
+            return self.post_json()
+        elif 'file' in request.files:
+            filename = "ads-{}-{}.csv".format(current_user.email,
+                    str(datetime.now()))
+            documents.save(request.files['file'], name=filename)
+            slacker = slack()
+            if slacker:
+                slacker.chat.post_message('#taxis',
+                'Un nouveau fichier ADS a été envoyé par {}. {}'.format(
+                    current_user.email, url_for('documents.documents',
+                        filename=filename, _external=True)))
+            return "OK"
+        abort(400)
+
+    def post_json(self):
         json = request.get_json()
         if "data" not in json:
             abort(400, message="No data field in request")
@@ -99,7 +116,7 @@ class ADS(Resource):
             db.session.add(new_ads[-1])
         db.session.commit()
 
-        return {"data": new_ads}, 201
+        return marshal({"data": new_ads}, ads_post), 201
 
 
 

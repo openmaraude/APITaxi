@@ -6,3 +6,7 @@ REDIS_GEOINDEX = 'geoindex'
 SECURITY_PASSWORD_HASH = 'bcrypt'
 SECURITY_PASSWORD_SALT = 'pepper'
 SECURITY_REGISTERABLE = True
+UPLOADS_DOCUMENTS_DEST = 'uploads'
+UPLOADS_DOCUMENTS_URL = '/documents/<path:filename>'
+
+SLACK_API_KEY = None
