@@ -13,16 +13,16 @@ import uuid
 from PIL import Image
 
 
-mod = Blueprint('operateur', __name__)
-@mod.route('/operateur/form', methods=['GET', 'POST'])
+mod = Blueprint('profile', __name__)
+@mod.route('/user/form', methods=['GET', 'POST'])
 @login_required
 def profile_form():
     form = None
     form = UserForm(obj=current_user)
     if not current_user.has_role('operateur') and not current_user.has_role('moteur'):
-        form._fields['commercial_names'].type = 'HiddenField'
+        del form._fields['commercial_name']
     if not current_user.has_role('operateur'):
-        form._fields['logo'].type = 'HiddenField'
+        del form._fields['logo']
     if request.method == "POST" and form.validate():
         if current_user.has_role('operateur'):
             logo = form.logo
@@ -39,11 +39,11 @@ def profile_form():
                 operateur.logos.append(logo_db)
         form.populate_obj(operateur)
         db.session.commit()
-        return redirect(url_for('operateur.operateur_form'))
-    return render_template('forms/operateur.html', form=form,
-        form_method="POST", submit_value="Modifier", current_user)
+        return redirect(url_for('profile.profile_form'))
+    return render_template('forms/profile.html', form=form,
+        form_method="POST", submit_value="Modifier")
 
-@mod.route('/operateurs/<int:user_id>/images/<src>')
+@mod.route('/user/<int:user_id>/images/<src>')
 def profile_images(user_id, src):
     logo = security_models.Logo.query.get(src)
     if not logo:
