@@ -33,6 +33,10 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
     category = Column(db.String, label=u'Catégorie de l\'ADS')
 
     @classmethod
+    def can_be_listed_by(cls, user):
+        return super(ADS, cls).can_be_listed_by(user) or user.has_role('prefecture')
+
+    @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
         if level >=2:
             return {}
@@ -80,6 +84,10 @@ class Driver(db.Model, AsDictMixin, HistoryMixin):
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'),
             nullable=True)
     departement = db.relationship('Departement', backref='vehicle')
+
+    @classmethod
+    def can_be_listed_by(cls, user):
+        return super(Driver, cls).can_be_listed_by(user) or user.has_role('prefecture')
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()

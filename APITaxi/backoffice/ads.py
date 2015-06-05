@@ -47,7 +47,7 @@ class ADS(Resource):
         if not taxis_models.ADS.can_be_listed_by(current_user):
             abort(403, message="You're not allowed to see this page")
         q = taxis_models.ADS.query
-        if not current_user.has_role('admin') and current_user.has_role('prefecture'):
+        if not current_user.has_role('admin') and not current_user.has_role('prefecture'):
             q = q.filter_by(added_by=current_user.id)
         page = int(request.args.get('page')) if 'page' in request.args else 1
         return render_template('lists/ads.html',
