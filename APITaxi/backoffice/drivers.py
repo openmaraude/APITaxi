@@ -31,7 +31,6 @@ class Drivers(Resource):
     @api.response(200, 'Success', driver_fields)
     def post(self):
         if request_wants_json():
-            print "JSON ! "
             return self.post_json()
         elif 'file' in request.files:
             filename = "conducteurs-{}-{}.csv".format(current_user.email,
@@ -41,7 +40,8 @@ class Drivers(Resource):
             if slack:
                 slack.chat.post_message('#taxis',
                 'Un nouveau fichier conducteurs a été envoyé par {}. {}'.format(
-                    current_user.email, documents.url(filename)))
+                    current_user.email, url_for('documents.documents',
+                        filename=filename, _external=True)))
             return "OK"
         abort(400)
 

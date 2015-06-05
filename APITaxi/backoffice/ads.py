@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .. import db
+from .. import db, documents
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
@@ -13,6 +13,7 @@ from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
 from ..utils.make_model import make_model
+from ..utils.slack import slack
 
 mod = Blueprint('ads', __name__)
 
@@ -87,11 +88,12 @@ class ADS(Resource):
             filename = "ads-{}-{}.csv".format(current_user.email,
                     str(datetime.now()))
             documents.save(request.files['file'], name=filename)
-            slack = slacker()
-            if slack:
-                slack.chat.post_message('#taxis',
+            slacker = slack()
+            if slacker:
+                slacker.chat.post_message('#taxis',
                 'Un nouveau fichier ADS a été envoyé par {}. {}'.format(
-                    current_user.email, documents.url(filename)))
+                    current_user.email, url_for('documents.documents',
+                        filename=filename, _external=True)))
             return "OK"
         abort(400)
 
