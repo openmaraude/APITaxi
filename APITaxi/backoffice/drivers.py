@@ -26,7 +26,7 @@ driver_details_expect = make_model('taxis', 'Driver', filter_id=True)
 class Drivers(Resource):
 
     @login_required
-    @roles_accepted('admin', 'operateur')
+    @roles_accepted('admin', 'operateur', 'prefecture')
     @api.expect(driver_details_expect)
     @api.response(200, 'Success', driver_fields)
     def post(self):
