@@ -16,31 +16,35 @@ from PIL import Image
 mod = Blueprint('operateur', __name__)
 @mod.route('/operateur/form', methods=['GET', 'POST'])
 @login_required
-@roles_accepted('admin', 'operateur')
-def operateur_form():
+def profile_form():
     form = None
     form = UserForm(obj=current_user)
+    if not current_user.has_role('operateur') and not current_user.has_role('moteur'):
+        form._fields['commercial_names'].type = 'HiddenField'
+    if not current_user.has_role('operateur'):
+        form._fields['logo'].type = 'HiddenField'
     if request.method == "POST" and form.validate():
-        logo = form.logo
-        operateur = security_models.User.query.get(current_user.id)
-        if logo and logo.has_file():
-            id_ = str(uuid.uuid4())
-            file_dest = os.path.join(current_app.config['UPLOADED_IMAGES_DEST'],
-                        id_)
-            logo.data.save(file_dest)
-            image = Image.open(file_dest)
-            logo_db = security_models.Logo(id=id_, size=image.size,
-                format_=image.format, user_id=current_user.id)
-            db.session.add(logo_db)
-            operateur.logos.append(logo_db)
+        if current_user.has_role('operateur'):
+            logo = form.logo
+            operateur = security_models.User.query.get(current_user.id)
+            if logo and logo.has_file():
+                id_ = str(uuid.uuid4())
+                file_dest = os.path.join(current_app.config['UPLOADED_IMAGES_DEST'],
+                            id_)
+                logo.data.save(file_dest)
+                image = Image.open(file_dest)
+                logo_db = security_models.Logo(id=id_, size=image.size,
+                    format_=image.format, user_id=current_user.id)
+                db.session.add(logo_db)
+                operateur.logos.append(logo_db)
         form.populate_obj(operateur)
         db.session.commit()
         return redirect(url_for('operateur.operateur_form'))
     return render_template('forms/operateur.html', form=form,
-        form_method="POST", submit_value="Modifier", logos=current_user.logos)
+        form_method="POST", submit_value="Modifier", current_user)
 
 @mod.route('/operateurs/<int:user_id>/images/<src>')
-def operateur_images(user_id, src):
+def profile_images(user_id, src):
     logo = security_models.Logo.query.get(src)
     if not logo:
         abort(404)
