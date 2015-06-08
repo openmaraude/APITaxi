@@ -27,16 +27,33 @@ class User(db.Model, UserMixin, MarshalMixin):
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
     apikey = db.Column(db.String(36), nullable=False)
-    hail_endpoint = Column(db.String, nullable=True, label='Hail endpoint',
-            description='Hail endpoint')
+    hail_endpoint_production = Column(db.String, nullable=True,
+            label=u'Hail endpoint production',
+            description='Hail endpoint production')
+    hail_endpoint_staging = Column(db.String, nullable=True,
+            label=u'Hail endpoint staging',
+            description='Hail endpoint staging')
+    hail_endpoint_testing = Column(db.String, nullable=True,
+            label=u'Hail endpoint testing',
+            description='Hail endpoint testing')
     commercial_name = Column(db.String, nullable=True, label='Nom commercial',
             description='Votre nom commercial')
-    phone_number = Column(db.String, nullable=True, label=u'Numéro de téléphone',
+    phone_number_customer = Column(db.String, nullable=True,
+            label=u'Numéro de téléphone du service client',
             description=u'Numéro de téléphone de support pour les clients')
+    phone_number_technical = Column(db.String, nullable=True,
+            label=u'Numéro de téléphone du contact technique',
+            description=u'Numéro de téléphone du contact technique')
+    email_customer = Column(db.String, nullable=True,
+            label=u'Email du service client',
+            description=u'Email de support pour les clients')
+    email_technical = Column(db.String, nullable=True,
+            label=u'Email du contact technique',
+            description=u'Email du contact technique')
     logos = db.relationship('Logo', backref="user")
 
     def __init__(self, *args, **kwargs):
-        kwargs['apikey'] = str(uuid4())
+        kwargs['apikey'] = str(uuid.uuid4())
         kwargs['password'] = encrypt_password(kwargs['password'])
         kwargs['active'] = True
         super(self.__class__, self).__init__(*args, **kwargs)
