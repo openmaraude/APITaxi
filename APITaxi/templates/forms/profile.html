@@ -1,4 +1,4 @@
-{% set active_page = 'ads' %}
+{% set active_page = 'user_form' %}
 {% extends "base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 {% block styles %}
@@ -9,7 +9,7 @@
 <div id="content">
     {{ wtf.quick_form(form, enctype="multipart/form-data") }}
 {% for logo in logos %}
-<img src="/operateurs/{{logo.user_id}}/images/{{ logo.id }}"/>
+<img src="{{ url_for('profile.image', user_id=logo.user_id, src=logo.id) }}"/>
 {% endfor %}
 </div>
 {% endblock %}
