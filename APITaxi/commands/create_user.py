@@ -21,7 +21,7 @@ def create_user(email, commit=False):
 
 def create_user_role(email, role_name):
     user = create_user(email)
-    role = user_datastore.find_role(role_name)
+    role = user_datastore.find_or_create_role(role_name)
     user_datastore.add_role_to_user(user, role)
     db.session.commit()
 
@@ -41,3 +41,7 @@ def create_admin(email):
 def create_mairie(email):
     create_user_role(email, 'mairie')
 
+
+@manager.command
+def create_prefecture(email):
+    create_user_role(email, 'prefecture')

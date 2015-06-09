@@ -13,6 +13,11 @@
     ('/drivers', 'drivers', 'Conducteurs'),
     ('/zupc', 'zupc', 'ZUPC')
 ] -%}
+{% set user_bar = [
+    ('/user_key', 'user_key', 'Clé'),
+    ('/user/form', 'user_form', 'Mon compte'),
+    ('/logout', 'logout', 'Déconnexion')
+] -%}
 {% set active_page = active_page|default('index') -%}
 
 <nav class="navbar navbar-default">
@@ -30,8 +35,9 @@
         {% endfor %}
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="/user_key">Clé</a></li>
-        <li><a href="/logout">Déconnexion</a></li>
+        {% for href, id, caption in user_bar %}
+        <li{% if id == active_page %} class="active"{% endif %}><a href="{{ href|e }}">{{ caption|e }}</a></li>
+        {% endfor %}
       </ul>
     </div><!-- /.navbar-collapse -->
   </div><!-- /.container-fluid -->

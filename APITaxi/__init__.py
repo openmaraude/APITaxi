@@ -16,7 +16,7 @@ from .utils.redis_geo import GeoRedis
 from flask.ext.security.utils import verify_and_update_password
 import wtforms_json
 from flask.ext.uploads import (UploadSet, configure_uploads,
-            DOCUMENTS, DATA, ARCHIVES)
+            DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from slacker import Slacker
 
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
@@ -54,7 +54,7 @@ def load_user_from_request(request):
     return user
 
 documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
-
+images = UploadSet('images', IMAGES)
 
 def create_app(sqlalchemy_uri=None):
     app = Flask(__name__)
@@ -77,7 +77,7 @@ def create_app(sqlalchemy_uri=None):
     request_started.connect(check_version, app)
     request_finished.connect(add_version_header, app)
 
-    configure_uploads(app, (documents,))
+    configure_uploads(app, (documents, images))
 
     app.login_manager.request_loader(load_user_from_request)
     wtforms_json.init()
