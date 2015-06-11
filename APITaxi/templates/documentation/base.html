@@ -1,0 +1,67 @@
+{% set active_page = "documentation" %}
+{% extends "base.html" %}
+{% block styles %}
+{{super()}}
+<link rel="stylesheet"
+      href="{{url_for('static', filename='css/simple-sidebar.css')}}">
+<style>
+.navbar{
+margin-bottom: 0;
+}
+</style>
+{% endblock %}
+{% from "bootstrap/pagination.html" import render_pagination %}
+{% block content %}
+<div id="wrapper">
+     <div id="sidebar-wrapper">
+                <ul class="sidebar-nav">
+                <li class="sidebar-brand">
+                    <a href=#">Vue d'ensemble</a>
+                </li>
+                <ul>
+                <li>
+                    <a href="#">Entêtes HTTP obligatoires</a>
+                </li>
+                <li>
+                    <a href="#">Authentification</a>
+                </li>
+                </ul>
+                <li class="sidebar-brand">
+                    <a href="#">Moteur</a>
+                </li>
+                <ul>
+                <li>
+                    <a href="#">Créer un hail</a>
+                </li>
+                <li>
+                    <a href="#">Suivi du statut d'un hail</a>
+                </li>
+                <li>
+                    <a href="#">Confirmer Hail</a>
+                </li>
+                </ul>
+                <li class="sidebar-brand">
+                    <a href=#">Opérateur</a>
+                </li>
+                <ul>
+                <li>
+                    <a href="#">Réception d'un hail</a>
+                <li>
+                    <a href="#">Mise à jour du statut d'un hail</a>
+                </li>
+                <li>
+                    <a href="#">Suivi du statut d'un hail</a>
+                </li>
+                </ul>
+            </ul>
+        </div>
+<div id="page-content-wrapper">
+    <div id="container-fluid">
+        <div class="row">
+            <div class="lg-col-12">
+{% block documentationcontent %}
+{%- endblock %}
+     </div>   </div>
+     </div>   </div>
+</div>
+{% endblock %}

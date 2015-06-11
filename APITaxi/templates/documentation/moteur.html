@@ -1,0 +1,28 @@
+{% extends "documentation/base.html" %}
+{% block documentationcontent %}
+<h1>Moteur</h1>
+Il y a deux interactions principales entre un moteur de recherche et l'ODT : la géolocalisation des taxis disponibles autour d'un utilisateur, et le hèle d'un taxi par un client.<br>
+<b>Rappel :</b> toutes les actions doivent être déclenchées après une interaction entre le client et son terminal, elles ne doivent pas être faites de manière automatique.
+
+<h2>Géolocalisation des taxis</h2>
+Afin d'obtenir la liste des taxis autour d'un point on effectue un appel HTTP <span>GET</span> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis">taxis</a>.
+Cette API renvoie les taxis actifs autour d'un point. Pour chaque taxi, dans le cas nominal, l'opérateur de l'app ayant envoyé en dernier la géolocalisation du taxi est renvoyé.
+<h4>Fonctionnement du paramètre favorite_operator</h4>
+Ce paramètre permet de spécifier un opérateur préféré. Si l'app de cet opérateur a renvoyé pour ce taxi avant le timeout.
+
+<h2>Créer un hail</h2>
+Après avoir récupéré la liste des taxis, il est possible d'héler un taxi. Pour cela, il faut effectuer un appel HTTP avec le verbe <span>POST</span>. L'objet JSOn hail a créer doit être présent dans la partie data de la requête.<br>
+Le statut du hail doit être <span>emitted</span> à la creation du hail.
+Si la requête s'est bien passé la réponse contiendra le hail nouvellement créé.
+
+<h2>Suivi du statut d'un hail</h2>
+L'évolution du statut du hail se fait en effectuant un appel HTTP avec le verbe <span>GET</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id">hail</a>.
+L'id du hail se trouve dans la réponse de la requête de création de hail.
+
+Différents status possibles, et recommandations liées.
+
+<h2>Confirmation d'un hail</h2>
+Afin de finaliser le hail le client doit reconfirmer sa présence au taxi, lorsque le statut du hail est <span>accepted_by_taxi</span>. Pour cela il faut effectuer un appel HTTP avec le verbe <span>PUT</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id">hail</a>.
+Le nouveau statut à envoyer par le statut afin la fin du timeout doit être en cas de reconfirmation par le client <span>accepted_by_client</span> ou bien en cas de refus <span>declined_by_taxi</span>.
+
+{% endblock %}

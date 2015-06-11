@@ -1,0 +1,18 @@
+{% extends "documentation/base.html" %}
+{% block documentationcontent %}
+<h1>Opérateur</h1>
+
+<h2>Réception d'un hail</h2>
+Afin de recevoir les hails, vous devez mettre à disposition un point d'entrée.<br>
+Ce point d'entrée doit pouvoir recevoir des appels HTTP <span>POST</span>.
+À la suite de la réception d'un hail l'opérateur doit être capable de transmettre ce hèle au taxi désigné dans le hèle.
+Après réception du hèle, s'il n'y a pas eu de mise à jour celui expire au bout de *** secondes.
+
+<h2>Mise à jour du statut d'un hail</h2>
+Après avoir envoyé le hèle au taxi, il faut transmettre à l'ODT les mises à jour à l'ODT. Cela se fait à travers un appel HTTP en <span>PUT</span> à l'API hail.
+<br>
+Les statuts possibles :<br>
+<h2>Suivi du statut d'un hail</h2>
+Le statut du hèle peut changer, il faut donc suivre sont statut en effectuant un appel HTTP avec le verbe <span>GET</span> à l'API <a href="#">hail</a>
+
+{% endblock %}
