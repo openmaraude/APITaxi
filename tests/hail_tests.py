@@ -51,9 +51,20 @@ class TestHailPost(Skeleton):
         r = self.post([dict_hail])
         self.assert403(r)
 
-    def test_received_by_operator(self):
+    def set_env(self, env, url):
+        prev_env = self.app.config['ENV']
+        self.app.config['ENV'] = env
         u = User.query.filter_by(email='user_operateur').first()
-        u.hail_endpoint = 'http://127.0.0.1:5001/hail/'
+        if env == 'PROD':
+            u.hail_endpoint_production = url
+        elif env == 'DEV':
+            u.hail_endpoint_testing = url
+        elif env == 'STAGING':
+            u.hail_endpoint_staging = url
+        return prev_env
+
+    def received_by_operator(self, env):
+        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
         taxi = self.post_taxi()
         formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
             lon=1, status='free', device='d1', version=1)
@@ -70,10 +81,20 @@ class TestHailPost(Skeleton):
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
         self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
+        self.app.config['ENV'] = prev_env
 
-    def test_failure(self):
-        u = User.query.filter_by(email='user_operateur').first()
-        u.hail_endpoint = 'http://127.0.0.1:5001/hails_failure/'
+    def test_received_by_operator_prod(self):
+        self.received_by_operator('PROD')
+
+    def test_received_by_operator_dev(self):
+        self.received_by_operator('DEV')
+
+    def test_received_by_operator_staging(self):
+        self.received_by_operator('STAGING')
+
+
+    def failure_operator(self, env):
+        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail_failure/')
         taxi = self.post_taxi()
         formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
             lon=1, status='free', device='d1', version=1)
@@ -90,6 +111,16 @@ class TestHailPost(Skeleton):
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
         self.assertEqual(r.json['data'][0]['status'], 'failure')
+        self.app.config['ENV'] = prev_env
+
+    def test_failure_operator_prod(self):
+        self.failure_operator('PROD')
+
+    def test_failure_operator_dev(self):
+        self.failure_operator('DEV')
+
+    def test_failure_operator_staging(self):
+        self.failure_operator('STAGING')
 
     def post_taxi(self):
         post = partial(self.post, role='operateur')

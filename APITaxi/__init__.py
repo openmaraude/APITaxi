@@ -61,6 +61,13 @@ def create_app(sqlalchemy_uri=None):
     app.config.from_object('default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
         app.config.from_envvar('APITAXI_CONFIG_FILE')
+    if not 'ENV' in app.config:
+        app.logger.error('ENV is needed in the configuration')
+        return None
+    if app.config['ENV'] not in ('prod', 'staging', 'dev'):
+        app.logger.error("""Here are the possible values for conf['ENV']:
+        ('prod', 'staging', 'dev') your's is: {}""".format(app.config['env']))
+        return None
     if sqlalchemy_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
