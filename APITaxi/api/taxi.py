@@ -61,7 +61,10 @@ class TaxiId(Resource):
         if not taxi:
             abort(404, message="Unable to find this taxi")
         taxi_m = marshal({'data':[taxi]}, taxi_model)
-        taxi_m['data'][0]['operator'] = None
+        taxi_m['data'][0]['operator'] = taxi.get_operator(redis_store,
+                user_datastore, favorite_operator=current_user.email)[0].email
+        if taxi_m['data'][0]['operator'] != current_user.email:
+            abort(403, message="You're not authorized to view this taxi")
         return taxi_m
 
     @login_required
