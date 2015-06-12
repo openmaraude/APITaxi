@@ -13,6 +13,7 @@ dict_ = {
     'customer_id': 'aa',
     'customer_lon': 4.4,
     'customer_lat': 0,
+    'customer_address': 'Pas loin, Paris',
     'taxi_id': 1,
     'operateur': 'user_operateur'
 }
@@ -63,20 +64,24 @@ class TestHailPost(Skeleton):
             u.hail_endpoint_staging = url
         return prev_env
 
-    def received_by_operator(self, env):
-        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
+    def send_hail(self, dict_hail):
         taxi = self.post_taxi()
         formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
             lon=1, status='free', device='d1', version=1)
         redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
                 formatted_value)
-        dict_hail = deepcopy(dict_)
         dict_hail['taxi_id'] = taxi['id']
         r = None
         try:
             r = self.post([dict_hail])
         except ServiceUnavailable:
             pass
+        return r
+
+
+    def received_by_operator(self, env):
+        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(deepcopy(dict_))
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
@@ -95,18 +100,7 @@ class TestHailPost(Skeleton):
 
     def failure_operator(self, env):
         prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail_failure/')
-        taxi = self.post_taxi()
-        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
-            lon=1, status='free', device='d1', version=1)
-        redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
-                formatted_value)
-        dict_hail = deepcopy(dict_)
-        dict_hail['taxi_id'] = taxi['id']
-        r = None
-        try:
-            r = self.post([dict_hail])
-        except ServiceUnavailable:
-            pass
+        r = self.send_hail(deepcopy(dict_))
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
@@ -121,6 +115,13 @@ class TestHailPost(Skeleton):
 
     def test_failure_operator_staging(self):
         self.failure_operator('STAGING')
+
+    def test_no_address(self):
+        prev_env = self.set_env('DEV', 'http://127.0.0.1:5001/hail/')
+        hail = deepcopy(dict_)
+        del hail['customer_address']
+        r = self.send_hail(hail)
+        self.assert400(r)
 
     def post_taxi(self):
         post = partial(self.post, role='operateur')
