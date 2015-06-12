@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from flask.ext.testing import TestCase
-from requests import get
 from json import dumps
 
 from APITaxi import db, create_app, user_datastore
@@ -23,6 +22,9 @@ class Skeleton(TestCase):
             u = user_datastore.create_user(email='user_'+role,
                                            password=role)
             user_datastore.add_role_to_user(u, r)
+            u = user_datastore.create_user(email='user_'+role+'_2',
+                                           password=role)
+            user_datastore.add_role_to_user(u, r)
             db.session.commit()
 
     def tearDown(self):
@@ -37,15 +39,18 @@ class Skeleton(TestCase):
             else:
                 self.assertEqual(v, req[k])
 
-    def call(self, data, url, envelope_data, role, fun):
+    def call(self, url, role, user, fun, data=None, envelope_data=None):
         if not role:
             role = self.__class__.role
-        authorization = "user_{}:{}".format(role, role)
+        if not user:
+            user = 'user_{}'.format(role)
+        authorization = "{}:{}".format(user, role)
+        print('authorization: {}'.format(authorization))
         if envelope_data:
             data = {"data": data}
+        data = dumps(data) if data else data
         if not url:
             url = self.__class__.url
-        data = dumps(data)
         return fun(url, data=data,
                                 headers={
                                     "Authorization": authorization,
@@ -54,11 +59,14 @@ class Skeleton(TestCase):
                                 },
                    content_type='application/json')
 
-    def post(self, data, url=None, envelope_data=True, role=None):
-        return self.call(data, url, envelope_data, role, self.client.post)
+    def get(self, url, role=None, user=None):
+        return self.call(url, role, user, self.client.get)
 
-    def put(self, data, url=None, envelope_data=True, role=None):
-        return self.call(data, url, envelope_data, role, self.client.put)
+    def post(self, data, url=None, envelope_data=True, role=None, user=None):
+        return self.call(url, role, user, self.client.post, data, envelope_data)
+
+    def put(self, data, url=None, envelope_data=True, role=None, user=None):
+        return self.call(url, role, user, self.client.put, data, envelope_data)
 
     def init_dep(self):
         dep = Departement()
