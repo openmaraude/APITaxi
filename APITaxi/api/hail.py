@@ -22,6 +22,8 @@ parser_put.add_argument('customer_lat', type=float, required=True,
         location='hail')
 parser_put.add_argument('customer_address', type=str, required=True,
         location='hail')
+parser_put.add_argument('customer_phone_number', type=str, required=True,
+        location='hail')
 parser_put.add_argument('status', type=str, required=True,
                         choices=['received_by_taxi',
                                  'accepted_by_taxi',
@@ -65,6 +67,7 @@ class HailId(Resource):
             hail.customer_lon = hj['customer_lon']
             hail.customer_lat = hj['customer_lat']
             hail.customer_address = hj['customer_address']
+            hail.customer_phone_number = hj['customer_phone_number']
             db.session.commit()
         return {"data": [hail]}
 
@@ -74,6 +77,7 @@ parser_post.add_argument('customer_id', type=str, required=True)
 parser_post.add_argument('customer_lon', type=float, required=True)
 parser_post.add_argument('customer_lat', type=float, required=True)
 parser_post.add_argument('customer_address', type=str, required=True)
+parser_post.add_argument('customer_phone_number', type=str, required=True)
 parser_post.add_argument('taxi_id', type=str, required=True)
 parser_post.add_argument('operateur', type=str, required=True)
 argument_names = map(lambda f: f.name, parser_post.args)
@@ -131,6 +135,7 @@ class Hail(Resource):
         hail.customer_lon = hj['customer_lon']
         hail.customer_lat = hj['customer_lat']
         hail.customer_address = hj['customer_address']
+        hail.customer_phone_number = hj['customer_phone_number']
         hail.operateur_id = operateur.id
         hail.added_via = 'api'
         hail.taxi_id = hj['taxi_id']
