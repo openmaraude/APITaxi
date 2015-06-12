@@ -6,6 +6,7 @@ from ..utils import MarshalMixin
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from flask import current_app
 
 
 roles_users = db.Table('roles_users',
@@ -57,6 +58,17 @@ class User(db.Model, UserMixin, MarshalMixin):
         kwargs['password'] = encrypt_password(kwargs['password'])
         kwargs['active'] = True
         super(self.__class__, self).__init__(*args, **kwargs)
+
+    @property
+    def hail_endpoint(self):
+        env = current_app.config['ENV']
+        if env == 'PROD':
+            return self.hail_endpoint_production
+        elif env == 'STAGING':
+            return self.hail_endpoint_staging
+        elif env == 'DEV':
+            return self.hail_endpoint_testing
+        return None
 
     def get_user_from_api_key(self, apikey):
         user = self.user_model.query.filter_by(apikey=apikey)
