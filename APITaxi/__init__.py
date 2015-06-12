@@ -64,9 +64,9 @@ def create_app(sqlalchemy_uri=None):
     if not 'ENV' in app.config:
         app.logger.error('ENV is needed in the configuration')
         return None
-    if app.config['ENV'] not in ('prod', 'staging', 'dev'):
+    if app.config['ENV'] not in ('PROD', 'STAGING', 'DEV'):
         app.logger.error("""Here are the possible values for conf['ENV']:
-        ('prod', 'staging', 'dev') your's is: {}""".format(app.config['env']))
+        ('PROD', 'STAGING', 'DEV') your's is: {}""".format(app.config['env']))
         return None
     if sqlalchemy_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
