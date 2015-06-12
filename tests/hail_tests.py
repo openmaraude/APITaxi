@@ -14,6 +14,7 @@ dict_ = {
     'customer_lon': 4.4,
     'customer_lat': 0,
     'customer_address': 'Pas loin, Paris',
+    'customer_phone_number': '067372727',
     'taxi_id': 1,
     'operateur': 'user_operateur'
 }
@@ -120,6 +121,13 @@ class TestHailPost(Skeleton):
         prev_env = self.set_env('DEV', 'http://127.0.0.1:5001/hail/')
         hail = deepcopy(dict_)
         del hail['customer_address']
+        r = self.send_hail(hail)
+        self.assert400(r)
+
+    def test_no_phone_number(self):
+        prev_env = self.set_env('DEV', 'http://127.0.0.1:5001/hail/')
+        hail = deepcopy(dict_)
+        del hail['customer_phone_number']
         r = self.send_hail(hail)
         self.assert400(r)
 
