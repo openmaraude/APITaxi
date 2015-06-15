@@ -2,17 +2,51 @@
 {% block documentationcontent %}
 <h1>Opérateur</h1>
 
-<h2>Réception d'un hail</h2>
+Le rôle de l'opérateur est de faire l'intermédiaire entre un taxi et la plateformme OpenDataTaxi(ODT).<br>
+Un taxi est un objet composé d'un vehicule, d'une Autorisation de Stationnemment (ADS), et d'un chauffeur. 
+La déclaration de cet objet est expliquée dans la partie <a href="#declare_taxi">Déclarer un taxi</a>.<br>
+Il est aussi du rôlé de l'opérateur de <a href="#recept_hail">réceptionner les demandes de course</a>, 
+de les transmettre au taxi, et <a href="#update_hail">d'indiquer les mises à jour à l'ODT</a>.<br>
+
+<a name="declare_taxi"><h2>Déclarer un taxi</h2>
+
+    On déclare un taxi en effectuant un un appel HTTP <span>POST</span> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/post_taxis">taxis</a>.
+    Les différents statut du sont décrits <a href="documentation/reference#taxi_status">ici</a>. Il doit correspondre au statut réel du taxi.
+    Nous vous recommandons de faire une correspondance entre le statut de votre application et le statut que vous transmettez à l'ODT.
+    <br>
+    En cas de succès l'API répond l'objet taxi créé. Les autres réponses sont décrites dans la <a href="documentation/reference#taxi_post_responses">documentation de référence</a>.
+
+
+<a name="get_taxi"><h2>GET taxi</h2>
+    Cette API est notamment utile pour obtenir l'heure de la dernière réception de la géolocalisation d'un taxi par l'ODT.
+
+<a name="udp_taxi"><h2>Remonter de la géolocalisation d'un taxi</h2>
+La remontée de la géolocalisation d'un taxi se fait en envoyant un paquet UDP à : .
+La structure du paquet doit être : 
+L'id du taxi est l'id renvoyé lors de la déclaration d'un taxi.
+
+<a name="post_vehicle"><h2>Déclarer un véhicule</h2>
+    La déclaration d'un taxi se fait en effetuant une requête HTTP <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_vehicle">vehicles</a>.
+    Vous pouvez trouver la structure de l'objet est expliquée dans la <a href="documentation/reference#vehicle_object">documentation de référence.</a>
+<a name="post_driver"><h2>Déclarer un chauffeur</h2>
+    La déclaration d'un taxi se fait en effetuant une requête HTTP <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_drivers">drivers</a>.
+    Vous pouvez trouver la structure de l'objet est expliquée dans la <a href="documentation/reference#driver_object">documentation de référence.</a>
+<a name="post_ads"><h2>Déclarer une ADS</h2>
+    La déclaration d'un taxi se fait en effetuant une requête HTTP <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_ads">ads</a>.
+    Vous pouvez trouver la structure de l'objet est expliquée dans la <a href="documentation/reference#ads_object">documentation de référence.</a>
+
+
+<a name="recept_hail"><h2>Réception d'un hail</h2>
 Afin de recevoir les hails, vous devez mettre à disposition un point d'entrée.<br>
 Ce point d'entrée doit pouvoir recevoir des appels HTTP <span>POST</span>.
 À la suite de la réception d'un hail l'opérateur doit être capable de transmettre ce hèle au taxi désigné dans le hèle.
 Après réception du hèle, s'il n'y a pas eu de mise à jour celui expire au bout de *** secondes.
 
-<h2>Mise à jour du statut d'un hail</h2>
+<a name="#update_hail"><h2>Mise à jour du statut d'un hail</h2>
 Après avoir envoyé le hèle au taxi, il faut transmettre à l'ODT les mises à jour à l'ODT. Cela se fait à travers un appel HTTP en <span>PUT</span> à l'API hail.
 <br>
 Les statuts possibles :<br>
-<h2>Suivi du statut d'un hail</h2>
+<a name="get_hail"><h2>Suivi du statut d'un hail</h2>
 Le statut du hèle peut changer, il faut donc suivre sont statut en effectuant un appel HTTP avec le verbe <span>GET</span> à l'API <a href="#">hail</a>
 
 {% endblock %}
