@@ -60,11 +60,18 @@ class TaxiId(Resource):
         taxi = taxis_models.Taxi.query.get(taxi_id)
         if not taxi:
             abort(404, message="Unable to find this taxi")
-        taxi_m = marshal({'data':[taxi]}, taxi_model)
-        taxi_m['data'][0]['operator'] = taxi.get_operator(redis_store,
-                user_datastore, favorite_operator=current_user.email)[0].email
-        if taxi_m['data'][0]['operator'] != current_user.email:
+        operator = None
+        for description in taxi.vehicle.descriptions:
+            if description.added_by == current_user.id:
+                operator = current_user
+                break
+        if not operator:
             abort(403, message="You're not authorized to view this taxi")
+        taxi_m = marshal({'data':[taxi]}, taxi_model)
+        taxi_m['data'][0]['operator'] = operator.email
+        op, timestamp = taxi.get_operator(redis_store,
+                user_datastore, favorite_operator=current_user.email)
+        taxi_m['data'][0]['timestamp'] = timestamp if op == current_user else None
         return taxi_m
 
     @login_required
