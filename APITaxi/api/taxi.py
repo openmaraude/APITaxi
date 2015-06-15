@@ -71,7 +71,7 @@ class TaxiId(Resource):
         taxi_m['data'][0]['operator'] = operator.email
         op, timestamp = taxi.get_operator(redis_store,
                 user_datastore, favorite_operator=current_user.email)
-        taxi_m['data'][0]['timestamp'] = timestamp if op == current_user else None
+        taxi_m['data'][0]['last_update'] = timestamp if op == current_user else None
         return taxi_m
 
     @login_required
