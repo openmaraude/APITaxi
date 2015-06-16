@@ -2,19 +2,18 @@
 {% block documentationcontent %}
 <h1>Vue d'ensemble</h1>
 
-<h2>Interactions moteur<->operateur<->taxi</h2>
-Le principe de l'opendata taxi(ODT) est découpler les clients des moteurs de recherche, des taxis gérés par les opérateurs. Pour ce faire, l'ODT se place en proxy entre les demandes des clients et les opérateurs. Ainsi une app client ne parle jamais directement à un opérateur, mais à l'ODT qui relaie la requête à l'opérateur. Aussi toutes les actions entre le client et l'ODT doivent avoir été déclenchées par une interaction entre le client et son terminal, ces actions ne doivent pas être faites de manière automatique.<br>
-Il en va de même pour les opérateurs, ils ne peuvent pas dialoguer directement avec les clients, mais doivent passer par un proxy.<br>
-En revanche afin de remonter leur position les taxis doivent communiquer directement avec l'ODT.
+<h2>Interactions moteur &#8644; operateur &#8644; taxi</h2>
+L'objectif du Registre Géolocalisé des Taxis (RGT) est de mettre en relation les clients des moteurs de recherche et des taxis outillés par des opérateurs de taxis. Pour ce faire, le RGT sert d'intermédiaire entre les moteurs de recherche et les opérateurs de taxis. <br>
+Afin de garantir une fiabilité maximale, la communication de la position et de la disponibilité des taxis doit être faite <em>directement</em> depuis un équipement embarqué dans le taxi vers le RGT. Toutes les autres interactions avec le RGT peuvent être faites depuis les infrastructures centrales des opérateurs de taxis (resp. des moteurs de recherche).
 
-<h2>Principes de l'API</h2>
-Toutes les API présententées ici, à l'exception de celle permettant la remontée de la géolocalisation du taxi, sont des API web REST.<br>
-Elles doivent être appellées à travers le protocol standard HTTPS.<br>
-Tous les retours sont encodés en <a href="http://www.json.org">JSON</a>.<br>
+
+<h2>Mise en oeuvre de l'API</h2>
+Toutes les API présententées ici, à l'exception de celle permettant la remontée de la géolocalisation du taxi, sont des API web REST sur HTTPS.<br>
+Tous les retours sont encodés en <a href="http://www.json.org" target="_blank">JSON</a>.<br>
 
 <a name="headers"><h2>Entêtes HTTP obligatoires</h2></a>
 
-Afin de faire les appels vous devez remplir les entêtes https suivantes:
+Les entêtes HTTPS suivantes sont attendues dans toutes les requètes à l'API :
 <table class="table-desc">
     <th>
         <td><h4>Nom</h3></td>
@@ -42,6 +41,7 @@ Afin de faire les appels vous devez remplir les entêtes https suivantes:
 </table>
 
 <a name="authentication"><h2>Authentification</h2></a>
-L'authentification lors des appels se fait grâce à l'ajout de l'entête X-API-KEY, elle peut être récupéree <a href="user_key">ici</a>
+L'authentification lors des appels se fait grâce à l'ajout de l'entête X-API-KEY.<br>
+Elle est disponible sur la <a href="user_key">page "Clé"</a> du menu principal.
 
 {% endblock %}
