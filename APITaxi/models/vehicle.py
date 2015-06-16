@@ -190,8 +190,9 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin):
             dict_description[k].attribute = 'description.{}'.format(k)
         return_.update(dict_description)
         return_.update({"model": fields.String(attribute="description.model"),
-                        "constructor": fields.String(attribute="description.constructor"),
-                        "id": fields.Integer()})
+                        "constructor": fields.String(attribute="description.constructor")})
+        if not filter_id:
+            return_["id"] = fields.Integer()
         return return_
 
     @property
