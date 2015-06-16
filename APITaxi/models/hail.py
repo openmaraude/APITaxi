@@ -6,8 +6,8 @@ from datetime import datetime
 from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
-A
-status_enum_list = [ 'emitted', 'received',A
+
+status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
     'received_by_taxi', 'accepted_by_taxi',
     'declined_by_taxi', 'incident_customer',
