@@ -79,6 +79,8 @@ def create_app(sqlalchemy_uri=None):
     backoffice.init_app(app)
     from . import api
     api.init_app(app)
+    from . import documentation
+    documentation.init_app(app)
     Bootstrap(app)
 
     request_started.connect(check_version, app)

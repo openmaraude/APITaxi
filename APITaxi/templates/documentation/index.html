@@ -1,0 +1,47 @@
+{% extends "documentation/base.html" %}
+{% block documentationcontent %}
+<h1>Vue d'ensemble</h1>
+
+<h2>Interactions moteur &#8644; operateur &#8644; taxi</h2>
+L'objectif du Registre Géolocalisé des Taxis (RGT) est de mettre en relation les clients des moteurs de recherche et des taxis outillés par des opérateurs de taxis. Pour ce faire, le RGT sert d'intermédiaire entre les moteurs de recherche et les opérateurs de taxis. <br>
+Afin de garantir une fiabilité maximale, la communication de la position et de la disponibilité des taxis doit être faite <em>directement</em> depuis un équipement embarqué dans le taxi vers le RGT. Toutes les autres interactions avec le RGT peuvent être faites depuis les infrastructures centrales des opérateurs de taxis (resp. des moteurs de recherche).
+
+
+<h2>Mise en oeuvre de l'API</h2>
+Toutes les API présententées ici, à l'exception de celle permettant la remontée de la géolocalisation du taxi, sont des API web REST sur HTTPS.<br>
+Tous les retours sont encodés en <a href="http://www.json.org" target="_blank">JSON</a>.<br>
+
+<a name="headers"><h2>Entêtes HTTP obligatoires</h2></a>
+
+Les entêtes HTTPS suivantes sont attendues dans toutes les requètes à l'API :
+<table class="table-desc">
+    <th>
+        <td><h4>Nom</h3></td>
+        <td><h4>Description</h3></td>
+        <td><h4>Valeur</h3></td>
+    </th>
+    <tr>
+        <td></td>
+        <td>Accept</td>
+        <td>Format attendu de la réponse</td>
+        <td>application/json</td>
+    </tr>
+    <tr>
+        <td></td>
+        <td>X-VERSION</td>
+        <td>Version de l'API</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td></td>
+        <td>X-API-KEY</td>
+        <td>Clé d'API</td>
+        <td>{{ apikey }}</td>
+    </tr>
+</table>
+
+<a name="authentication"><h2>Authentification</h2></a>
+L'authentification lors des appels se fait grâce à l'ajout de l'entête X-API-KEY.<br>
+Elle est disponible sur la <a href="user_key">page "Clé"</a> du menu principal.
+
+{% endblock %}
