@@ -13,9 +13,9 @@ Le paramètre <span>favorite_operator</span> permet de spécifier un opérateur 
 
 <a name"post_hail"></a><h2>Créer une course</h2>
 Après avoir récupéré la liste des taxis disponibles aux alentours immédiats du client, il est possible de héler un de ces taxi. Pour cela, il fauti créer une course en effectuant un appel HTTPS <a href="https://api.opendatataxi.fr/doc/#!/hails/post"><span>POST</span> sur l'api <em>hails</em></a>.
-L'objet JSON <a href="reference#hail_object"><span>hail</span></a> à créer doit être présent dans la partie data de la requête.<br>
+L'objet JSON <a href="documentation/reference#hail_object"><span>hail</span></a> à créer doit être présent dans la partie data de la requête.<br>
 Le statut de la course doit être <span>emitted</span> lors de sa creation.<br>
-En cas de succès, le retour contient l'objet JSON <a href="reference#hail_object"><span>hail</span></a> nouvellement créé.
+En cas de succès, le retour contient l'objet JSON <a href="documentation/reference#hail_object"><span>hail</span></a> nouvellement créé.
 
 <a name="get_hail"></a><h2>Suivre le statut d'une course</h2>
 Le suivi de l'évolution du statut de la course se fait en effectuant un appel HTTPS <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id"><span>GET</span> sur l'api <em>hails</em></a>. L'identifiant de l'objet <a href="https://api.opendatataxi.fr/doc/#!/hails/post"><span>POST</span> sur l'api <em>hails</em></a> se trouve dans la réponse de la requête de création de cet objet (voir <a href="#post_hail">Créer une course</a>).
