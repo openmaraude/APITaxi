@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from . import db
+from .taxis import Taxi as TaxiModel
 from flask.ext.security import login_required, roles_accepted,\
-        roles_required
+        roles_accepted
 from datetime import datetime
 from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
 from ..descriptors.common import coordinates_descriptor
+from ..api import api
+from .. import redis_store
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -64,78 +67,90 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
             abort(500)
 
     @login_required
-    @roles_required('moteur')
+    @roles_accepted('moteur', 'admin')
     def received(self):
         self.status = 'received'
         self.status_changed()
+        return True
 
     def sent_to_operator(self):
         self.status_required('received')
         self.status = 'sent_to_operator'
         self.status_changed()
+        return True
 
     def received_by_operator(self):
         self.status_required('sent_to_operator')
         self.status = 'received_by_operator'
         self.status_changed()
+        return True
 
     def status_required(self, status_required):
         if self.status != status_required:
             abort(400, message="Bad status")
+        return True
 
     @login_required
-    @roles_required('operateur')
+    @roles_accepted('operateur', 'admin')
     def received_by_taxi(self):
         self.status_required('received_by_operator')
         self.status = 'received_by_taxi'
         self.status_changed()
+        return True
 
     @login_required
-    @roles_required('operateur')
+    @roles_accepted('operateur', 'admin')
     def accepted_by_taxi(self):
         self.status_required('received_by_taxi')
         self.status = 'accepted_by_taxi'
         self.status_changed()
+        return True
 
     @login_required
-    @roles_required('operateur')
+    @roles_accepted('operateur', 'admin')
     def declined_by_taxi(self):
         self.status_required('received_by_taxi')
         self.status = 'declined_by_taxi'
         self.status_changed()
+        return True
 
     @login_required
-    @roles_required('operateur')
+    @roles_accepted('operateur', 'admin')
     def incident_taxi(self):
         self.status = 'incident_taxi'
         self.status_changed()
+        return True
 
     @login_required
-    @roles_required('moteur')
+    @roles_accepted('moteur', 'admin')
     def incident_customer(self):
         self.status = 'incident_customer'
         self.status_changed()
+        return True
 
     @login_required
-    @roles_required('moteur')
+    @roles_accepted('moteur', 'admin')
     def accepted_by_customer(self):
         self.statu_required('accepted_by_taxi')
         self.status = 'accepted_by_customer'
         self.status_changed()
+        return True
 
     @login_required
-    @roles_required('moteur')
+    @roles_accepted('moteur', 'admin')
     def declined_by_customer(self):
         self.statu_required('accepted_by_taxi')
         self.status = 'declined_by_customer'
         self.status_changed()
+        return True
 
     @login_required
-    @roles_required('moteur')
+    @roles_accepted('moteur', 'admin')
     def timeout_customer(self):
         self.statu_required('accepted_by_taxi')
         self.status = 'timeout_customer'
         self.status_changed()
+        return True
 
     @login_required
     def failure(self):
