@@ -129,19 +129,26 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def status(self, status):
         self.vehicle.description.status = status
 
-    def timestamps(self, redis_store, min_time, favorite_operator=None):
-        _, scan = redis_store.hscan("taxi:{}".format(self.id))
+    @classmethod
+    def retrieve_caracs(cls, id_, redis_store, min_time, favorite_operator):
+        _, scan = redis_store.hscan("taxi:{}".format(id_))
         if len(scan) == 0:
             return []
-        scan = [(k.decode(), parse(self._FORMAT_OPERATOR, v.decode())) for k, v in scan.items()]
-        return [(k, int(v['timestamp'])) for k, v in scan\
+        scan = [(k.decode(), parse(cls._FORMAT_OPERATOR, v.decode())) for k, v in scan.items()]
+        return [(k, v) for k, v in scan\
                 if int(v['timestamp']) > min_time or k == favorite_operator]
+
+
+
+    def caracs(self, redis_store, min_time, favorite_operator=None):
+        self.__class__.retrieve_caracs(self.id, redis_store, min_time,
+                favorite_operator)
 
     def is_free(self, redis_store, min_time=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        timestamps = self.timestamps(redis_store, min_time)
-        users = map(lambda u: User.query.filter_by(email=u[0]).first().id, timestamps)
+        caracs = self.caracs(redis_store, min_time)
+        users = map(lambda u: User.query.filter_by(email=u[0]).first().id, caracs)
         return all(map(lambda desc: desc.added_by in users and desc.status == 'free',
                 self.vehicle.descriptions))
 
@@ -150,13 +157,13 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         min_return = (None, min_time)
-        timestamps = self.timestamps(redis_store, min_time)
-        for operator_name, timestamp in timestamps:
+        caracs = self.caracs(redis_store, min_time)
+        for operator_name, carac in caracs:
             if operator_name == favorite_operator:
                 operator = user_datastore.find_user(email=operator_name)
-                return (operator, timestamp)
-            if int(timestamp) > min_return[1]:
-                min_return = (operator_name, timestamp)
+                return (operator, carac['timestamp'])
+            if int(carac['timestamp']) > min_return[1]:
+                min_return = (operator_name, carac['timestamp'])
         if min_return[0] is None:
             return (None, None)
         operator = user_datastore.find_user(email=min_return[0])
