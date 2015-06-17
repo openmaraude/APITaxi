@@ -148,3 +148,19 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     def to_dict(self):
         self.check_time_out()
         return self.as_dict()
+
+    @property
+    def taxi(self):
+        caracs = TaxiModel.retrieve_caracs(self.taxi_id, redis_store, 0,
+                self.operateur.email)
+        for operator, carac in caracs:
+            if operator != self.operateur.email:
+                continue
+            return {
+                    'position': {'lon': carac['lon'],
+                                 'lat' : carac['lat']
+                                 },
+                    'last_update' : carac['timestamp']
+                    }
+        return {}
+
