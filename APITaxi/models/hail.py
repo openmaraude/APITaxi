@@ -6,6 +6,7 @@ from datetime import datetime
 from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
+from ..descriptors.common import coordinates_descriptor
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -49,6 +50,9 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         return_ = super(Hail, cls).marshall_obj(show_all, filter_id, level=level+1)
         return_['operateur'] = fields.String(attribute='operateur.email')
         return_['id'] = fields.String()
+        return_['taxi'] = fields.Nested(api.model('hail_taxi',
+                {'position': fields.Nested(coordinates_descriptor),
+                 'last_update': fields.Integer()}))
         return return_
 
 

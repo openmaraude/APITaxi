@@ -6,7 +6,7 @@ from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
 from .. import db, redis_store, user_datastore
 from ..api import api
-from ..descriptors import taxi
+from ..descriptors.taxi import taxi_model
 
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
