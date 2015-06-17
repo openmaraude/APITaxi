@@ -151,7 +151,7 @@ class Hail(Resource):
                 headers={'Content-Type': 'application/json'})
         except requests.exceptions.MissingSchema:
             pass
-        if r.status_code == 201:
+        if r and r.status_code == 201:
             hail.received_by_operator()
         else:
             hail.failure()
