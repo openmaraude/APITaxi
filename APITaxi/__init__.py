@@ -9,17 +9,17 @@ from flask import Flask, request_started, request, abort, request_finished
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask_bootstrap import Bootstrap
 import os
-from .models import db, security as security_models
 from flask.ext.redis import FlaskRedis
-from flask.ext.restplus import abort
 from .utils.redis_geo import GeoRedis
+redis_store = FlaskRedis.from_custom_provider(GeoRedis)
+from .models import db, security as security_models
+from flask.ext.restplus import abort
 from flask.ext.security.utils import verify_and_update_password
 import wtforms_json
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from slacker import Slacker
 
-redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 
