@@ -45,6 +45,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     db.ForeignKeyConstraint(['operateur_id', 'customer_id'],
         ['customer.operateur_id', 'customer.id'],
         )
+    taxi_phone_number = db.Column(db.String, nullable=True)
 
     @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
