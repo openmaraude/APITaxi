@@ -8,4 +8,4 @@ mod = Blueprint('documentation', __name__)
 @mod.route('/documentation/index')
 def doc_index():
     return render_template('documentation/index.html',
-                 apikey=current_user.apikey  if current_user else 'token')
+                 apikey='token' if current_user.is_anonymous else current_user.apikey)

@@ -7,4 +7,4 @@ mod = Blueprint('documentation_operateur', __name__)
 @mod.route('/documentation/operateur')
 def doc_index():
     return render_template('documentation/operateur.html',
-                 apikey=current_user.apikey  if current_user else 'token')
+                 apikey='token' if current_user.is_anonymous else current_user.apikey)
