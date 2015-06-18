@@ -27,6 +27,12 @@ class Float(FromSQLAlchemyColumnMixin, basefields.Float):
 class String(FromSQLAlchemyColumnMixin, basefields.String):
     pass
 
+class Nested(FromSQLAlchemyColumnMixin, basefields.Nested):
+    pass
+
+class List(FromSQLAlchemyColumnMixin, basefields.List):
+    pass
+
 class Date(FromSQLAlchemyColumnMixin, basefields.BaseField):
     __schema_type__ = 'date'
     __schema_format__ = None

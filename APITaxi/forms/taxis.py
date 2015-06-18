@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..utils import ModelForm
+from ..utils.model_form import ModelForm
 from ..models import taxis, administrative, vehicle
 from wtforms import HiddenField, SubmitField, StringField, FormField
 from wtforms.ext.sqlalchemy.fields import QuerySelectField

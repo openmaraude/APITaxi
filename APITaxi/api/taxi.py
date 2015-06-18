@@ -6,48 +6,11 @@ from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
 from .. import db, redis_store, user_datastore
 from ..api import api
+from ..descriptors.taxi import taxi_model
+
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
-vehicle_descriptor = api.model('vehicle_descriptor',
-    {
-        "model": fields.String,
-        "constructor": fields.String,
-        "color": fields.String,
-        "licence_plate": fields.String,
-        "characteristics": fields.List(fields.String),
-    })
-coordinates_descriptor = api.model('coordinates_descriptor',
-        {"lon": fields.Float, "lat": fields.Float})
-ads_descriptor = api.model('ads_descriptor', {
-        "numero": fields.String,
-        "insee": fields.String
-})
-driver_descriptor = api.model('driver_descriptor', {
-        'professional_licence': fields.String,
-        'departement': fields.String(attribute='departement.numero')
-})
-taxi_descriptor = api.model('taxi_descriptor',
-    {
-        "id": fields.String,
-        "operator": fields.String,
-        "position": fields.Nested(coordinates_descriptor),
-        "vehicle": fields.Nested(vehicle_descriptor),
-        "last_update": fields.Integer,
-        "crowfly_distance": fields.Float,
-        "ads": fields.Nested(ads_descriptor),
-        "driver": fields.Nested(driver_descriptor),
-        "status": fields.String
-    })
-
-taxi_model_details = api.model('taxi_model_details',
-         {'vehicle_licence_plate': fields.String,
-          'ads_numero': fields.String,
-          'ads_insee': fields.String,
-          'driver_professional_licence': fields.String,
-          'driver_departement': fields.String,
-           'id': fields.String})
-taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_descriptor))})
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):

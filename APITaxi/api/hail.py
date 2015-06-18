@@ -8,12 +8,11 @@ from ..api import api
 from ..models import (Hail as HailModel, Customer as CustomerModel,
     Taxi as TaxiModel, security as security_models)
 from datetime import datetime
-from ..utils.make_model import make_model
 import requests, json
+from ..descriptors.hail import hail_model
 
 ns_hail = api.namespace('hails', description="Hail API")
 
-hail_model = make_model('hail', 'Hail')
 
 parser_put = reqparse.RequestParser()
 parser_put.add_argument('customer_lon', type=float, required=True,
@@ -152,7 +151,7 @@ class Hail(Resource):
                 headers={'Content-Type': 'application/json'})
         except requests.exceptions.MissingSchema:
             pass
-        if r.status_code == 201:
+        if r and r.status_code == 201:
             hail.received_by_operator()
         else:
             hail.failure()

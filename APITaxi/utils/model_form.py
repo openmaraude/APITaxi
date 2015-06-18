@@ -10,7 +10,3 @@ class ModelForm(BaseModelForm):
     @classmethod
     def get_session(self):
         return db.session
-
-
-
-
