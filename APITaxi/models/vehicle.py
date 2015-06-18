@@ -132,6 +132,9 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
     UniqueConstraint('vehicle_id', 'added_by', name="uq_vehicle_description")
     status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
         name='status_taxi_enum'), nullable=True, default='free')
+    nb_seats = Column(db.Integer, name='nb_seats',
+            description=u'Nombre de places assises disponibles pour les voyageurs',
+            label=u'Nombre de places')
 
     @classmethod
     def to_exclude(cls):
