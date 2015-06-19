@@ -141,7 +141,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
 
     def caracs(self, redis_store, min_time, favorite_operator=None):
-        self.__class__.retrieve_caracs(self.id, redis_store, min_time,
+        return self.__class__.retrieve_caracs(self.id, redis_store, min_time,
                 favorite_operator)
 
     def is_free(self, redis_store, min_time=None):
@@ -158,12 +158,13 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         min_return = (None, min_time)
         caracs = self.caracs(redis_store, min_time)
-        for operator_name, carac in caracs:
-            if operator_name == favorite_operator:
-                operator = user_datastore.find_user(email=operator_name)
-                return (operator, carac['timestamp'])
-            if int(carac['timestamp']) > min_return[1]:
-                min_return = (operator_name, carac['timestamp'])
+        if caracs:
+            for operator_name, carac in caracs:
+                if operator_name == favorite_operator:
+                    operator = user_datastore.find_user(email=operator_name)
+                    return (operator, carac['timestamp'])
+                if int(carac['timestamp']) > min_return[1]:
+                    min_return = (operator_name, carac['timestamp'])
         if min_return[0] is None:
             return (None, None)
         operator = user_datastore.find_user(email=min_return[0])
