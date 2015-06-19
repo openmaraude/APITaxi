@@ -66,7 +66,7 @@ class HailId(Resource):
         if hasattr(hail, hj['status']):
             if hj['status'] == 'accepted_by_taxi':
                 if g.version == 1:
-                    hail.taxi_phone_number = '00'
+                    hail.taxi_phone_number = ''
                 elif g.version == 2:
                     if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
                         abort(400, message='Taxi phone number is needed')
