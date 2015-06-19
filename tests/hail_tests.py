@@ -33,7 +33,7 @@ class HailMixin(Skeleton):
             u.hail_endpoint_staging = url
         return prev_env
 
-    def send_hail(self, dict_hail, method="post"):
+    def send_hail(self, dict_hail, method="post", role=None):
         taxi = self.post_taxi()
         formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
             lon=1, status='free', device='d1', version=1)
@@ -42,12 +42,12 @@ class HailMixin(Skeleton):
         dict_hail['taxi_id'] = taxi['id']
         r = None
         try:
-            r = self.post([dict_hail])
+            r = self.post([dict_hail], role='moteur')
         except ServiceUnavailable:
             pass
         return r
 
-    def post_taxi(self):
+    def post_taxi(self, role=None):
         post = partial(self.post, role='operateur')
         self.init_dep()
         post([dict_driver], url='/drivers/')
@@ -151,12 +151,22 @@ class TestHailPut(HailMixin):
     role = 'operateur'
 
     def test_received_by_taxi_ok(self):
+        dict_hail = deepcopy(dict_)
         prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
-        r = self.send_hail(deepcopy(dict_))
+        r = self.send_hail(deepcopy(dict_hail))
         self.assert201(r)
-        
+        dict_hail['taxi_phone_number'] = '000000'
+        r = self.put([dict_])
+        self.assert201(r)
         self.app.config['ENV'] = prev_env
 
     def test_received_by_taxi_no_phone_number(self):
-
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(deepcopy(dict_hail))
+        self.assert201(r)
+        dict_hail['taxi_phone_number'] = '000000'
+        r = self.put([dict_])
+        self.assert400(r)
+        self.app.config['ENV'] = prev_env
 
