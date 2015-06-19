@@ -61,6 +61,11 @@ class HailId(Resource):
         hail = HailModel.query.get_or_404(hail_id)
         #We change the status
         if hasattr(hail, hj['status']):
+            if hj['status'] == 'received_by_taxi':
+                if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
+                    abort(400, message='Taxi phone number is needed')
+                else:
+                    hail.taxi_phone_number = hj['taxi_phone_number']
             getattr(hail, hj['status'])()
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']
@@ -68,6 +73,7 @@ class HailId(Resource):
             hail.customer_address = hj['customer_address']
             hail.customer_phone_number = hj['customer_phone_number']
             db.session.commit()
+        
         return {"data": [hail]}
 
 
