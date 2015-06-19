@@ -39,7 +39,7 @@ class Skeleton(TestCase):
             else:
                 self.assertEqual(v, req[k])
 
-    def call(self, url, role, user, fun, data=None, envelope_data=None):
+    def call(self, url, role, user, fun, data=None, envelope_data=None, version=1):
         if not role:
             role = self.__class__.role
         if not user:
@@ -54,18 +54,19 @@ class Skeleton(TestCase):
                                 headers={
                                     "Authorization": authorization,
                                     "Accept": "application/json",
-                                    "X-VERSION": 1
-                                },
+                                    "X-VERSION": version},
                    content_type='application/json')
 
-    def get(self, url, role=None, user=None):
-        return self.call(url, role, user, self.client.get)
+    def get(self, url, role=None, user=None, version=1):
+        return self.call(url, role, user, self.client.get, version=version)
 
-    def post(self, data, url=None, envelope_data=True, role=None, user=None):
-        return self.call(url, role, user, self.client.post, data, envelope_data)
+    def post(self, data, url=None, envelope_data=True, role=None, user=None, version=1):
+        return self.call(url, role, user, self.client.post, data, envelope_data,
+            version=version)
 
-    def put(self, data, url=None, envelope_data=True, role=None, user=None):
-        return self.call(url, role, user, self.client.put, data, envelope_data)
+    def put(self, data, url=None, envelope_data=True, role=None, user=None, version=1):
+        return self.call(url, role, user, self.client.put, data, envelope_data,
+            version=version)
 
     def init_dep(self):
         dep = Departement()
