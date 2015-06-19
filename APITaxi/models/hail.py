@@ -61,7 +61,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 
 
     def status_changed(self):
-        self.last_status_change = datetime.now().isoformat()
+        self.last_status_change = datetime.now()
 
     def check_last_status(self, status_required):
         if self.status != status_required:

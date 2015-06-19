@@ -45,7 +45,6 @@ class Skeleton(TestCase):
         if not user:
             user = 'user_{}'.format(role)
         authorization = "{}:{}".format(user, role)
-        print('authorization: {}'.format(authorization))
         if envelope_data:
             data = {"data": data}
         data = dumps(data) if data else data

@@ -152,21 +152,23 @@ class TestHailPut(HailMixin):
 
     def test_received_by_taxi_ok(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
-        r = self.send_hail(deepcopy(dict_hail))
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
         self.assert201(r)
         dict_hail['taxi_phone_number'] = '000000'
-        r = self.put([dict_])
-        self.assert201(r)
+        dict_hail['status'] = 'received_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
+        print r.json
+        self.assert200(r)
         self.app.config['ENV'] = prev_env
 
     def test_received_by_taxi_no_phone_number(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
-        r = self.send_hail(deepcopy(dict_hail))
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
         self.assert201(r)
-        dict_hail['taxi_phone_number'] = '000000'
-        r = self.put([dict_])
+        dict_hail['status'] = 'received_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
         self.assert400(r)
         self.app.config['ENV'] = prev_env
 
