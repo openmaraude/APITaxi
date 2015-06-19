@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import request, redirect, url_for, current_app
+from flask import request, redirect, url_for, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
@@ -64,11 +64,14 @@ class HailId(Resource):
         hail = HailModel.query.get_or_404(hail_id)
         #We change the status
         if hasattr(hail, hj['status']):
-            if hj['status'] == 'received_by_taxi':
-                if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
-                    abort(400, message='Taxi phone number is needed')
-                else:
-                    hail.taxi_phone_number = hj['taxi_phone_number']
+            if hj['status'] == 'accepted_by_taxi':
+                if g.version == 1:
+                    hail.taxi_phone_number = '00'
+                elif g.version == 2:
+                    if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
+                        abort(400, message='Taxi phone number is needed')
+                    else:
+                        hail.taxi_phone_number = hj['taxi_phone_number']
             getattr(hail, hj['status'])()
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']
