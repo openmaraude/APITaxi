@@ -5,7 +5,7 @@ __contact__ = "vincent.lara@data.gouv.fr"
 __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
 
-from flask import Flask, request_started, request, abort, request_finished
+from flask import Flask, request_started, request, abort, request_finished, g
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask_bootstrap import Bootstrap
 import os
@@ -22,13 +22,16 @@ from slacker import Slacker
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 
+valid_versions = ['1', '2']
 def check_version(sender, **extra):
     if len(request.accept_mimetypes) == 0 or\
         request.accept_mimetypes[0][0] != 'application/json':
         return
     version = request.headers.get('X-VERSION', None)
-    if version != '1':
+    if version not in valid_versions:
         abort(404)
+    g.version = int(version)
+
 
 
 def add_version_header(sender, response, **extra):
