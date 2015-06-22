@@ -24,7 +24,7 @@ def zupc():
         return zupc_list()
     #elif request.method == "POST":
     #    return zupc_create()
-    abort(405)
+    abort(405, message="method now allowed")
 
 
 @mod.route('/zupc/form', methods=['GET', 'POST'])
@@ -35,7 +35,7 @@ def zupc_form():
     if request.args.get("id"):
         zupc = administrative_models.ZUPC.query.get(request.args.get("id"))
         if not zupc:
-            abort(404)
+            abort(404, message="Unable to find ZUPC")
         form = ZUPCUpdateForm(obj=zupc)
     else:
         form = ZUPCreateForm()
@@ -61,10 +61,10 @@ def zupc_form():
 @roles_accepted('admin', 'mairie', 'prefecture')
 def zupc_delete():
     if not request.args.get("id"):
-        abort(404)
+        abort(404, message="id is required")
     zupc = administrative_models.ZUPC.query.get(request.args.get("id"))
     if not zupc:
-        abort(404)
+        abort(404, message="Unable to find the ZUPC")
     db.session.delete(zupc)
     db.session.commit()
     return redirect(url_for("zupc.zupc"))

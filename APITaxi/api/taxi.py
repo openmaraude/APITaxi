@@ -49,7 +49,7 @@ class TaxiId(Resource):
         json = request.get_json()
         status = json['data'][0]['status']
         if status not in taxis_models.VehicleDescription.__table__.columns.status.type.enums:
-            abort(400)
+            abort(400, message="Invalid taxi status")
         taxi = taxis_models.Taxi.query.get(taxi_id)
         taxi.status = status
         db.session.commit()
@@ -122,7 +122,7 @@ class Taxis(Resource):
         if 'data' not in json:
             abort(400, message="data is required")
         if len(json['data']) > 1:
-            abort(413)
+            abort(413, message="You can only post one taxi at a time")
         taxi_json = json['data'][0]
         if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
             abort(400, message="bad taxi description")

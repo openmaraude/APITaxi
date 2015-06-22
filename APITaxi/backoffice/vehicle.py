@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, abort, Blueprint
+from flask import request, Blueprint
 from ..models import vehicle as vehicle_models
 from .. import db
 from ..api import api
 from . import ns_administrative
-from flask.ext.restplus import fields, Resource, reqparse
+from flask.ext.restplus import fields, Resource, reqparse, abort
 from ..utils.make_model import make_model
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 
@@ -25,9 +25,9 @@ class Vehicle(Resource):
     def post(self):
         json = request.get_json()
         if "data" not in json:
-            abort(400)
+            abort(400, message="data is required")
         if len(json['data']) > 250:
-            abort(413)
+            abort(413, message="You can only post 250 vehicles at a time")
         new_vehicle = []
         for vehicle in json['data']:
             form = VehicleForm.from_json(vehicle)

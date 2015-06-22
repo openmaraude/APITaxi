@@ -5,7 +5,7 @@ __contact__ = "vincent.lara@data.gouv.fr"
 __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
 
-from flask import Flask, request_started, request, abort, request_finished, g
+from flask import Flask, request_started, request, request_finished, g
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask_bootstrap import Bootstrap
 import os
@@ -29,7 +29,7 @@ def check_version(sender, **extra):
         return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:
-        abort(404)
+        abort(404, message="Invalid version, valid versions are: {}".format(valid_versions))
     g.version = int(version)
 
 

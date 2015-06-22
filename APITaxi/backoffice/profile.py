@@ -86,15 +86,15 @@ class ProfileDetail(Resource):
     def get(self, user_id):
         user = security_models.User.query.get(user_id)
         if not user:
-            abort(404)
+            abort(404, message="Unable to find user")
         return {"data": [user]}, 200
 
 @mod.route('/user/<int:user_id>/images/<src>')
 def image(user_id, src):
     logo = security_models.Logo.query.get(src)
     if not logo:
-        abort(404)
+        abort(404, message="Unable to find the logo")
     if not logo.user_id == user_id:
-        abort(404)
+        abort(404, message="Unable to find the logo")
     return send_file(os.path.join(current_app.config['UPLOADED_IMAGES_DEST'],
         logo.id))
