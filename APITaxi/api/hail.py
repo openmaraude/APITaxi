@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import request, redirect, url_for, current_app
+from flask import request, redirect, url_for, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import login_required, roles_required,\
         roles_accepted, current_user
@@ -30,6 +30,8 @@ parser_put.add_argument('status', type=str, required=True,
                                  'incident_taxi',
                                  'incident_customer'],
                         location='hail')
+parser_put.add_argument('taxi_phone_number', type=str, required=False,
+        location='hail')
 argument_names = [f.name for f in parser_put.args]
 dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
 dict_hail['operateur'] = fields.String(attribute='operateur.email')
@@ -55,12 +57,21 @@ class HailId(Resource):
         to_parse = req['data'][0]
         hj = {}
         for arg in parser_put.args:
-            if arg.name not in to_parse.keys():
-                abort(400)
-            hj[arg.name] = arg.convert(to_parse[arg.name], '=')
+            if arg.required and arg.name not in to_parse.keys():
+                abort(400, message="Field {} is needed".format(arg.name))
+            elif arg.name in to_parse.keys():
+                hj[arg.name] = arg.convert(to_parse[arg.name], '=')
         hail = HailModel.query.get_or_404(hail_id)
         #We change the status
         if hasattr(hail, hj['status']):
+            if hj['status'] == 'accepted_by_taxi':
+                if g.version == 1:
+                    hail.taxi_phone_number = ''
+                elif g.version == 2:
+                    if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
+                        abort(400, message='Taxi phone number is needed')
+                    else:
+                        hail.taxi_phone_number = hj['taxi_phone_number']
             getattr(hail, hj['status'])()
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']

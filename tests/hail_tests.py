@@ -18,8 +18,51 @@ dict_ = {
     'taxi_id': 1,
     'operateur': 'user_operateur'
 }
-class TestHailPost(Skeleton):
+class HailMixin(Skeleton):
     url = '/hails/'
+
+    def set_env(self, env, url):
+        prev_env = self.app.config['ENV']
+        self.app.config['ENV'] = env
+        u = User.query.filter_by(email='user_operateur').first()
+        if env == 'PROD':
+            u.hail_endpoint_production = url
+        elif env == 'DEV':
+            u.hail_endpoint_testing = url
+        elif env == 'STAGING':
+            u.hail_endpoint_staging = url
+        return prev_env
+
+    def send_hail(self, dict_hail, method="post", role=None):
+        taxi = self.post_taxi()
+        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
+            lon=1, status='free', device='d1', version=1)
+        redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
+                formatted_value)
+        dict_hail['taxi_id'] = taxi['id']
+        r = None
+        try:
+            r = self.post([dict_hail], role='moteur')
+        except ServiceUnavailable:
+            pass
+        return r
+
+    def post_taxi(self, role=None):
+        post = partial(self.post, role='operateur')
+        self.init_dep()
+        post([dict_driver], url='/drivers/')
+        r = post([dict_vehicle], url='/vehicles/')
+        self.assert201(r)
+        vehicle_id = r.json['data'][0]['id']
+        dict_ads_ = deepcopy(dict_ads)
+        dict_ads_['vehicle_id'] = vehicle_id
+        post([dict_ads_], url='/ads/')
+        r = post([dict_taxi], url='/taxis/')
+        self.assert201(r)
+        taxi = r.json['data'][0]
+        return taxi
+
+class TestHailPost(HailMixin):
     role = 'moteur'
 
     def test_no_data(self):
@@ -52,33 +95,6 @@ class TestHailPost(Skeleton):
         dict_hail['taxi_id'] = taxi['id']
         r = self.post([dict_hail])
         self.assert403(r)
-
-    def set_env(self, env, url):
-        prev_env = self.app.config['ENV']
-        self.app.config['ENV'] = env
-        u = User.query.filter_by(email='user_operateur').first()
-        if env == 'PROD':
-            u.hail_endpoint_production = url
-        elif env == 'DEV':
-            u.hail_endpoint_testing = url
-        elif env == 'STAGING':
-            u.hail_endpoint_staging = url
-        return prev_env
-
-    def send_hail(self, dict_hail):
-        taxi = self.post_taxi()
-        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
-            lon=1, status='free', device='d1', version=1)
-        redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
-                formatted_value)
-        dict_hail['taxi_id'] = taxi['id']
-        r = None
-        try:
-            r = self.post([dict_hail])
-        except ServiceUnavailable:
-            pass
-        return r
-
 
     def received_by_operator(self, env):
         prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
@@ -131,17 +147,59 @@ class TestHailPost(Skeleton):
         r = self.send_hail(hail)
         self.assert400(r)
 
-    def post_taxi(self):
-        post = partial(self.post, role='operateur')
-        self.init_dep()
-        post([dict_driver], url='/drivers/')
-        r = post([dict_vehicle], url='/vehicles/')
+class TestHailPut(HailMixin):
+    role = 'operateur'
+
+    def test_received_by_taxi_ok_version_1(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
         self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        post([dict_ads_], url='/ads/')
-        r = post([dict_taxi], url='/taxis/')
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'received_by_taxi'
+        dict_hail['taxi_phone_number'] = '000000'
+        dict_hail['status'] = 'accepted_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
+        print r.json
+        self.assert200(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_received_by_taxi_no_phone_number_version_1(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
         self.assert201(r)
-        taxi = r.json['data'][0]
-        return taxi
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'received_by_taxi'
+        dict_hail['status'] = 'accepted_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
+        self.assert200(r)
+        self.app.config['ENV'] = prev_env
+
+
+    def test_received_by_taxi_ok_version_2(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'received_by_taxi'
+        dict_hail['taxi_phone_number'] = '000000'
+        dict_hail['status'] = 'accepted_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2)
+        self.assert200(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_received_by_taxi_no_phone_number_version_2(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'received_by_taxi'
+        dict_hail['status'] = 'accepted_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2)
+        self.assert400(r)
+        self.app.config['ENV'] = prev_env
