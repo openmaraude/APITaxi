@@ -63,10 +63,6 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     def status_changed(self):
         self.last_status_change = datetime.now()
 
-    def check_last_status(self, status_required):
-        if self.status != status_required:
-            abort(500)
-
     @login_required
     @roles_accepted('moteur', 'admin')
     def received(self):

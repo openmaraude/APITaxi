@@ -112,7 +112,7 @@ class Hail(Resource):
         if 'data' not in req or not isinstance(req['data'], list) or len(req['data']) == 0:
             abort(400, message="data is required")
         if len(req['data']) != 1:
-            abort(413)
+            abort(413, message="You can only post one hail at a time")
         to_parse = req['data'][0]
         hj = {}
         for arg in parser_post.args:

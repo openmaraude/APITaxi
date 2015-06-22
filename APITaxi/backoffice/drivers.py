@@ -43,7 +43,7 @@ class Drivers(Resource):
                     current_user.email, url_for('documents.documents',
                         filename=filename, _external=True)))
             return "OK"
-        abort(400)
+        abort(400, message="Unable to find file")
 
 
     def post_json(self):
@@ -78,7 +78,7 @@ class Drivers(Resource):
     @roles_accepted('admin', 'operateur', 'prefecture')
     def get(self):
         if not taxis_models.Driver.can_be_listed_by(current_user):
-            abort(403)
+            abort(403, message="You can't list drivers")
         page = int(request.args.get('page')) if 'page' in request.args else 1
         q = taxis_models.Driver.query
         if not current_user.has_role('admin') and not current_user.has_role('prefecture'):
@@ -95,9 +95,9 @@ def driver_form():
     if request.args.get("id"):
         driver = taxis_models.Driver.query.get(request.args.get("id"))
         if not driver:
-            abort(404)
+            abort(404, message="Unable to find driver")
         if not driver.can_be_edited_by(current_user):
-            abort(403)
+            abort(403, message="You can't edit this driver")
         form = DriverUpdateForm(obj=driver)
     else:
         form = DriverCreateForm()
@@ -123,12 +123,12 @@ def driver_form():
 @login_required
 def driver_delete():
     if not request.args.get("id"):
-        abort(404)
+        abort(404, message="An id is required")
     driver = taxis_models.Driver.query.get(request.args.get("id"))
     if not driver:
-        abort(404)
+        abort(404, message="Unable to find the driver")
     if not driver.can_be_deleted_by(current_user):
-        abort(403)
+        abort(403, message="You're not allowed to delete this driver")
     db.session.delete(driver)
     db.session.commit()
     return redirect(url_for('api.drivers'))

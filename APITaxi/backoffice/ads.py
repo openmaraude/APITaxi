@@ -95,7 +95,7 @@ class ADS(Resource):
                     current_user.email, url_for('documents.documents',
                         filename=filename, _external=True)))
             return "OK"
-        abort(400)
+        abort(400, message="File is not present!")
 
     def post_json(self):
         json = request.get_json()
