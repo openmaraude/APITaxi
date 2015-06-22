@@ -3,7 +3,7 @@ from . import db
 from .taxis import Taxi as TaxiModel
 from flask.ext.security import login_required, roles_accepted,\
         roles_accepted
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
@@ -103,6 +103,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @roles_accepted('operateur', 'admin')
     def accepted_by_taxi(self):
         self.status_required('received_by_taxi')
+        if not self.check_time_out(30, 'timeout_taxi'):
+            return False
         self.status = 'accepted_by_taxi'
         self.status_changed()
         return True
@@ -132,7 +134,9 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @login_required
     @roles_accepted('moteur', 'admin')
     def accepted_by_customer(self):
-        self.statu_required('accepted_by_taxi')
+        self.status_required('accepted_by_taxi')
+        if not self.check_time_out(20, 'timeout_customer'):
+            return False
         self.status = 'accepted_by_customer'
         self.status_changed()
         return True
@@ -158,8 +162,12 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         self.status = 'failure'
         self.status_changed()
 
-    def check_time_out(self):
-        pass
+    def check_time_out(self, duration, timeout_status):
+        if datetime.now() < (self.last_status_change + timedelta(seconds=duration)):
+            return True
+        self.status = timeout_status
+        return False
+
 
     def to_dict(self):
         self.check_time_out()
