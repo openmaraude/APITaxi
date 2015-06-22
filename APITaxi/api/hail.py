@@ -72,7 +72,8 @@ class HailId(Resource):
                         abort(400, message='Taxi phone number is needed')
                     else:
                         hail.taxi_phone_number = hj['taxi_phone_number']
-            getattr(hail, hj['status'])()
+            if not getattr(hail, hj['status'])():
+                return {"data": [hail]}
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']
             hail.customer_lat = hj['customer_lat']

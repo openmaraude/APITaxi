@@ -8,6 +8,7 @@ from copy import deepcopy
 from functools import partial
 from werkzeug.exceptions import ServiceUnavailable
 import time
+from datetime import datetime, timedelta
 
 dict_ = {
     'customer_id': 'aa',
@@ -160,7 +161,6 @@ class TestHailPut(HailMixin):
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
-        print r.json
         self.assert200(r)
         self.app.config['ENV'] = prev_env
 
@@ -203,3 +203,67 @@ class TestHailPut(HailMixin):
                 version=2)
         self.assert400(r)
         self.app.config['ENV'] = prev_env
+
+    def test_timeout_taxi_ok(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'received_by_taxi'
+        hail.last_status_change -= timedelta(seconds=10)
+        dict_hail['taxi_phone_number'] = '000000'
+        dict_hail['status'] = 'accepted_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2)
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_taxi')
+        self.app.config['ENV'] = prev_env
+
+    def test_timeout_taxi_ko(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'received_by_taxi'
+        hail.last_status_change -= timedelta(seconds=31)
+        dict_hail['taxi_phone_number'] = '000000'
+        dict_hail['status'] = 'accepted_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2)
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'timeout_taxi')
+        self.app.config['ENV'] = prev_env
+
+    def test_timeout_customer_ok(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'accepted_by_taxi'
+        hail.last_status_change -= timedelta(seconds=5)
+        dict_hail['status'] = 'accepted_by_customer'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role="moteur")
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        self.app.config['ENV'] = prev_env
+
+    def test_timeout_customer_ko(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.status = 'accepted_by_taxi'
+        hail.last_status_change -= timedelta(seconds=21)
+        dict_hail['taxi_phone_number'] = '000000'
+        dict_hail['status'] = 'accepted_by_customer'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role="moteur")
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'timeout_customer')
+        self.app.config['ENV'] = prev_env
+
