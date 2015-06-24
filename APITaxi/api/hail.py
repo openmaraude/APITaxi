@@ -163,7 +163,7 @@ class Hail(Resource):
                 headers={'Content-Type': 'application/json'})
         except requests.exceptions.MissingSchema:
             pass
-        if r and r.status_code == 201:
+        if r and r.status_code >= 200:
             hail.received_by_operator()
         else:
             current_app.logger.info("Unable to reach hail's endpoint {} of operator {}".format(
