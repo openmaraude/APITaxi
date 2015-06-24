@@ -124,7 +124,7 @@ class Hail(Resource):
         if not taxi:
             return abort(404, message="Unable to find taxi")
         if not taxi.is_free(redis_store):
-            return abort(403, message="The taxi is not available")
+            abort(403, message="The taxi is not available")
         operateur = security_models.User.query.filter_by(email=hj['operateur']).first()
         if not operateur:
             abort(404, message='Unable to find the taxi\'s operateur')
@@ -166,6 +166,8 @@ class Hail(Resource):
         if r and r.status_code == 201:
             hail.received_by_operator()
         else:
+            current_app.logger.info("Unable to reach hail's endpoint {} of operator {}".format(
+                operateur.hail_endpoint, operateur.email))
             hail.failure()
         db.session.commit()
         return {"data": [hail]}, 201
