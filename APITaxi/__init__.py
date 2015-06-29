@@ -19,6 +19,8 @@ from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from slacker import Slacker
 from .utils.request_wants_json import request_wants_json
+from sqlalchemy import distinct
+from rtree import index
 
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
@@ -58,6 +60,15 @@ def load_user_from_request(request):
 
 documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
 images = UploadSet('images', IMAGES)
+
+index_zupc = index.Index()
+
+def create_zupc_index():
+    from .models.taxis import ADS
+    from .models.administrative import ZUPC
+    for zupc in ZUPC.query.filter('insee' in  db.session.query(distinct(ADS.insee))).all():
+        index_zupc.insert(zupc, (zupc.left, zupc.bottom, zupc.right, zupc.top))
+
 
 def create_app(sqlalchemy_uri=None):
     app = Flask(__name__)

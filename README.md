@@ -7,6 +7,7 @@ API and Backoffice for taxis' operators and local authorities.
  * `Alembic` (for the database migration)
  * `Pip`
  * `Postgresql` and `postgresql-dev` (other databases might work)
+ * `libspatialindex-dev`
 
 We also recommend the use of `virtualenv`
 

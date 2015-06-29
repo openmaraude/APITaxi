@@ -12,7 +12,9 @@ def departements():
 
 class ZUPCSimpleForm(ModelForm):
     class Meta:
+        skip_unknown_types = True
         model = administrative.ZUPC
+    exclude = ['shape']
 
 class ZUPCForm(ZUPCSimpleForm):
     departement = QuerySelectField(query_factory=departements, get_label='nom')
