@@ -8,6 +8,7 @@ from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
 from ..models.taxis import  Taxi as TaxiModel
 from ..models import security as security_models
+from datetime import datetime
 import requests, json
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)

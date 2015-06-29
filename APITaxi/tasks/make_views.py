@@ -3,7 +3,6 @@
 from ..extensions import redis_store, user_datastore, db, celery
 from ..models.taxis import Taxi
 from ..models.administrative import ZUPC
-from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
 from time import mktime
 from parse import parse as base_parse
@@ -33,8 +32,8 @@ def get_data(taxi_ids, bound, redis_store):
             pipe.execute())
     pipe.reset()
     filtered_value = map(lambda v: filter_outoftime_values(v, bound), parsed_values)
-    zipped_value = izip(taxi_ids, filtered_value)
-    return ifilter(lambda taxi_operator: len(taxi_operator[1]) > 0, zipped_value)
+    zipped_value = zip(taxi_ids, filtered_value)
+    return filter(lambda taxi_operator: len(taxi_operator[1]) > 0, zipped_value)
 
 def store_active_taxis(frequency):
     bound_time = datetime.now()

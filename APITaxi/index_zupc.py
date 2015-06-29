@@ -17,8 +17,8 @@ class IndexZUPC(object):
         from .models.taxis import ADS
         from .models.administrative import ZUPC
         self.index_zupc = index.Index()
-        insee_list = map(itemgetter(0),
-                db.session.query(distinct(ADS.zupc_id)).all())
+        insee_list = list(map(itemgetter(0),
+                db.session.query(distinct(ADS.zupc_id)).all()))
         if len(insee_list) == 0:
             return
         for zupc in ZUPC.query.filter(ZUPC.id.in_(insee_list)).all():

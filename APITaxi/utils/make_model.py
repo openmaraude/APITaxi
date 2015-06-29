@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..api import api
 import importlib
-from flask.ext.restplus import fields as basefields
+from ..utils import fields
 
 def make_model(filename, model_name, *args, **kwargs):
     module = importlib.import_module(".".join(['APITaxi', 'models', filename]))
@@ -14,10 +14,10 @@ def make_model(filename, model_name, *args, **kwargs):
     details_dict = model.marshall_obj(*args, **kwargs)
     if 'operateur_id' in details_dict:
         del details_dict['operateur_id']
-        details_dict['operateur'] = basefields.String(attribute='operateur.email')
+        details_dict['operateur'] = fields.String(attribute='operateur.email')
     if 'departement_id' in details_dict:
         del details_dict['departement_id']
-        details_dict['departement'] = basefields.String(attribute='departement.numero')
+        details_dict['departement'] = fields.String(attribute='departement.numero')
     details = api.model(register_name + "_details", details_dict)
     return api.model(register_name,
-        {"data": basefields.List(basefields.Nested(details))})
+        {"data": fields.Nested(details, as_list=True)})

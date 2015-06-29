@@ -29,9 +29,9 @@ class ADS(ResourceMetadata):
     model = taxis_models.ADS
 
     parser = reqparse.RequestParser()
-    parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=False,
+    parser.add_argument('numero', type=str, help=u"Numero de l'ADS", required=False,
                         location='values')
-    parser.add_argument('insee', type=unicode,
+    parser.add_argument('insee', type=str,
             help=u"Code INSEE de la commune d\'attribution de l'ADS", required=False,
                         location='values')
 

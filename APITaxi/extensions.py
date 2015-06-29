@@ -1,5 +1,5 @@
 #coding: utf-8
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy as BaseSQLAlchemy
 from sqlalchemy.pool import QueuePool as BaseQueuePool
 
 db = SQLAlchemy(session_options={"autoflush":False})

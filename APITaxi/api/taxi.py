@@ -127,7 +127,7 @@ class Taxis(Resource, ValidatorMixin):
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True, location='values')
     get_parser.add_argument('lat', type=float, required=True, location='values')
-    get_parser.add_argument('favorite_operator', type=unicode, required=False,
+    get_parser.add_argument('favorite_operator', type=str, required=False,
             location='values')
 
     @login_required
@@ -192,10 +192,10 @@ class ActiveTaxisRoute(Resource):
     def get(self):
         frequencies = [f for f, _ in current_app.config['STORE_TAXIS_FREQUENCIES']]
         parser = reqparse.RequestParser()
-        parser.add_argument('zupc', type=unicode, required=False, location='values')
+        parser.add_argument('zupc', type=str, required=False, location='values')
         parser.add_argument('begin', type=float, required=False, location='values')
         parser.add_argument('end', type=float, required=False, location='values')
-        parser.add_argument('operator', type=unicode, required=False, location='values')
+        parser.add_argument('operator', type=str, required=False, location='values')
         parser.add_argument('frequency',
             type=customFields.Integer(frequencies),
             required=False, location='values',
