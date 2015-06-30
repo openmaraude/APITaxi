@@ -79,7 +79,7 @@ class HailId(Resource):
             hail.customer_lat = hj['customer_lat']
             hail.customer_address = hj['customer_address']
             hail.customer_phone_number = hj['customer_phone_number']
-            db.session.commit()
+        db.session.commit()
         return {"data": [hail]}
 
 
