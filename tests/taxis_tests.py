@@ -32,6 +32,7 @@ class TestTaxiGet(Skeleton):
         r = self.get('/taxis/{}/'.format(id_taxi))
         self.assert200(r)
         assert(len(r.json['data']) == 1)
+        assert('nb_seats' in r.json['data'][0]['vehicle'])
 
     def test_get_taxi_other_op(self):
         id_taxi = self.add()

@@ -100,7 +100,8 @@ class Taxis(Resource):
                     "constructor": description.constructor,
                     "color": description.color,
                     "characteristics": description.characteristics,
-                    "licence_plate": taxi_db.vehicle.licence_plate
+                    "licence_plate": taxi_db.vehicle.licence_plate,
+                    "nb_seats": description.nb_seats
                 },
                 "last_update": timestamp,
                 "crowfly_distance": float(distance)

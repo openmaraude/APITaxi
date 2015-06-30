@@ -11,6 +11,7 @@ vehicle_descriptor = api.model('vehicle_descriptor',
         "color": fields.String,
         "licence_plate": fields.String,
         "characteristics": fields.List(fields.String),
+        "nb_seats": fields.Integer
     })
 ads_descriptor = api.model('ads_descriptor', {
         "numero": fields.String,
