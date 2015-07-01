@@ -12,6 +12,7 @@ class TestTaxiGet(Skeleton):
     role = 'operateur'
 
     def add(self):
+        self.init_zupc()
         self.init_dep()
         self.post([dict_driver], url='/drivers/')
         r = self.post([dict_vehicle], url='/vehicles/')
@@ -109,6 +110,7 @@ class TestTaxiPost(Skeleton):
         self.assert404(r)
 
     def test_add_taxi(self):
+        self.init_zupc()
         self.init_dep()
         self.post([dict_driver], url='/drivers/')
         r = self.post([dict_vehicle], url='/vehicles/')

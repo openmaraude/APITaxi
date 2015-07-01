@@ -4,7 +4,8 @@ from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
-from ..models import taxis as taxis_models, vehicle as vehicle_models
+from ..models import (taxis as taxis_models, vehicle as vehicle_models,
+        administrative as administrative_models)
 from ..utils import create_obj_from_json, request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    render_template, request, redirect, url_for, abort, jsonify,
@@ -85,7 +86,7 @@ class ADS(Resource):
         if request_wants_json():
             return self.post_json()
         elif 'file' in request.files:
-            filename = "ads-{}-{}.csv".format(current_user.email,
+            filename = "ads-{}-{}.csv".format-1(current_user.email,
                     str(datetime.now()))
             documents.save(request.files['file'], name=filename)
             slacker = slack()
@@ -113,9 +114,12 @@ class ADS(Resource):
                 new_ads.append(create_obj_from_json(taxis_models.ADS, ads))
             except KeyError as e:
                 abort(400, message="Missing key: "+str(e))
+            zupc = administrative_models.ZUPC.query.filter_by(insee=new_ads[-1].insee).first()
+            if zupc is None:
+                abort(400, message="Unable to find a ZUPC for insee: {}".format(new_ads[-1].insee))
+            new_ads[-1].zupc_id = zupc.parent_id
             db.session.add(new_ads[-1])
         db.session.commit()
-
         return marshal({"data": new_ads}, ads_post), 201
 
 

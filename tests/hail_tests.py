@@ -51,6 +51,7 @@ class HailMixin(Skeleton):
         return r
 
     def post_taxi(self, role=None):
+        self.init_zupc()
         post = partial(self.post, role='operateur')
         self.init_dep()
         post([dict_driver], url='/drivers/')

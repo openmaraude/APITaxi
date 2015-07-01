@@ -31,6 +31,8 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
             label=u'Type Propriétaire')
     owner_name = Column(db.String, label=u'Nom du propriétaire')
     category = Column(db.String, label=u'Catégorie de l\'ADS')
+    zupc_id = Column(db.Integer)
+
 
     @classmethod
     def can_be_listed_by(cls, user):

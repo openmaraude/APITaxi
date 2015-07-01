@@ -5,7 +5,7 @@ from json import dumps
 
 from APITaxi import db, create_app, user_datastore
 from APITaxi.api import api
-from APITaxi.models.administrative import Departement
+from APITaxi.models.administrative import Departement, ZUPC
 
 
 class Skeleton(TestCase):
@@ -30,6 +30,21 @@ class Skeleton(TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+
+    def init_zupc(self):
+        zupc = ZUPC()
+        zupc.insee = '75056'
+        zupc.nom = 'Paris'
+        db.session.add(zupc)
+        db.session.commit()
+        zupc.parent_id = zupc.id
+
+        zupc2 = ZUPC()
+        zupc2.insee = '93048'
+        zupc2.nom = 'Montreuil'
+        zupc2.parent_id = zupc.id
+        db.session.add(zupc2)
+        db.session.commit()
 
     def check_req_vs_dict(self, req, dict_):
         for k, v in dict_.items():
