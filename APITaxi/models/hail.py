@@ -140,7 +140,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @login_required
     @roles_accepted('moteur', 'admin')
     def declined_by_customer(self):
-        self.statu_required('accepted_by_taxi')
+        self.status_required('accepted_by_taxi')
         self.status = 'declined_by_customer'
         self.status_changed()
         return True
@@ -148,7 +148,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @login_required
     @roles_accepted('moteur', 'admin')
     def timeout_customer(self):
-        self.statu_required('accepted_by_taxi')
+        self.status_required('accepted_by_taxi')
         self.status = 'timeout_customer'
         self.status_changed()
         return True
