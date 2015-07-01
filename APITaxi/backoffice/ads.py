@@ -151,6 +151,10 @@ def ads_form():
             ads.vehicle.descriptions.append(vehicle_models.VehicleDescription())
         else:
             ads.last_update_at = datetime.now().isoformat()
+        zupc = administrative_models.ZUPC.query.filter_by(insee=ads[-1].insee).first()
+        if zupc is None:
+            abort(400, message="Unable to find a ZUPC for insee: {}".format(new_ads[-1].insee))
+        ads.zupc = zupc.parent_id
         form.ads.form.populate_obj(ads)
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)
