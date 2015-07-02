@@ -7,19 +7,21 @@ from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi import redis_store, db
 import time
 
-class TestTaxiGet(Skeleton):
+class TaxiGet(Skeleton):
     url = '/taxis/'
-    role = 'operateur'
 
-    def add(self):
+    def add(self, lat=2, lon=49):
         self.init_zupc()
         self.init_dep()
-        taxi = self.post_taxi_and_locate(lat=2, lon=49)
+        taxi = self.post_taxi_and_locate(lat=lat, lon=lon)
         id_taxi = taxi['id']
         taxi_db = Taxi.query.get(id_taxi)
         taxi_db.set_free()
         db.session.commit()
         return id_taxi
+
+class TestTaxiGet(TaxiGet):
+    role = 'operateur'
 
     def test_get_taxi(self):
         id_taxi = self.add()
@@ -33,15 +35,21 @@ class TestTaxiGet(Skeleton):
         r = self.get('/taxis/{}/'.format(id_taxi), user='user_operateur_2')
         self.assert403(r)
 
+
+class TestTaxisGet(TaxiGet):
+    role = 'moteur'
+
     def test_get_taxis_lonlat(self):
         self.add()
-        r = self.get('/taxis/?lat=2&lon=49', role='moteur')
+        r = self.get('/taxis/?lat=2&lon=49')
         self.assert200(r)
         assert len(r.json['data']) == 1
 
-class TestTaxisGet(Skeleton):
-    url = '/taxis/'
-    role = 'moteur'
+    def test_get_taxi_out_of_zupc(self):
+        self.add(1, 1)
+        r = self.get('/taxis/?lat=1&lon=1')
+        self.assert200(r)
+        assert len(r.json['data']) == 0
 
     def test_one_taxi_one_desc(self):
         pass
