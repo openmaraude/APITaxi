@@ -4,7 +4,8 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import db, redis_store, user_datastore, index_zupc, create_zupc_index
+from .. import (db, redis_store, user_datastore, index_zupc, index_zupc_init,
+        create_zupc_index)
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
@@ -67,11 +68,12 @@ dict_taxi_expect = \
           'status': fields.String
          }
 
-def generate_taxi_dict(min_time, favorite_operator):
+def generate_taxi_dict(zupc_list, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
         taxi_db = taxis_models.Taxi.query.get(taxi_id)
-        if not taxi_db or not taxi_db.is_free(redis_store):
+        if not taxi_db or not taxi_db.is_free(redis_store) or\
+                taxi_db.ads.zupc_id not in zupc_list:
             return None
         operator, timestamp = taxi_db.get_operator(redis_store,
                 user_datastore, min_time, favorite_operator)
@@ -113,6 +115,11 @@ class Taxis(Resource):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
+        if len(r) == 0:
+            return {'data': []}
+        if not index_zupc_init:
+            create_zupc_index()
+        zupc_list = index_zupc.intersection((lon, lat, lon, lat))
         taxis = []
         min_time = int(time.time()) - 60*60
         for taxi_id, distance, coords in r:

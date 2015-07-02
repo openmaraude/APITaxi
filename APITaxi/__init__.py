@@ -61,10 +61,11 @@ def load_user_from_request(request):
 documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
 images = UploadSet('images', IMAGES)
 
-index_zupc = None
+index_zupc = index.Index()
+index_zupc_init = False
 
 def create_zupc_index():
-    index_zupc = index.Index()
+    index_zupc_init = True
     from .models.taxis import ADS
     from .models.administrative import ZUPC
     insee_list = db.session.query(distinct(ADS.insee)).all()
