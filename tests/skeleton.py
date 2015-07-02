@@ -2,10 +2,16 @@
 
 from flask.ext.testing import TestCase
 from json import dumps
-
-from APITaxi import db, create_app, user_datastore
+from APITaxi import db, create_app, user_datastore, redis_store
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
+from APITaxi.models.taxis import Taxi
+from functools import partial
+from .fake_data import dict_driver, dict_vehicle, dict_ads, dict_taxi
+from copy import deepcopy
+import time
+from shapely.geometry import Polygon, MultiPolygon
+from geoalchemy2.shape import from_shape
 
 
 class Skeleton(TestCase):
@@ -25,16 +31,49 @@ class Skeleton(TestCase):
             u = user_datastore.create_user(email='user_'+role+'_2',
                                            password=role)
             user_datastore.add_role_to_user(u, r)
-            db.session.commit()
+        db.session.commit()
 
     def tearDown(self):
+        ids = []
+        for taxi in Taxi.query.all():
+            redis_store.delete('taxi:{}'.format(taxi.id))
+            ids.append(taxi.id)
+        redis_store.zrem('geoindex', ids)
+
         db.session.remove()
         db.drop_all()
+
+    def post_taxi(self, role=None):
+        self.init_zupc()
+        post = partial(self.post, role='operateur')
+        self.init_dep()
+        post([dict_driver], url='/drivers/')
+        r = post([dict_vehicle], url='/vehicles/')
+        self.assert201(r)
+        vehicle_id = r.json['data'][0]['id']
+        dict_ads_ = deepcopy(dict_ads)
+        dict_ads_['vehicle_id'] = vehicle_id
+        post([dict_ads_], url='/ads/')
+        r = post([dict_taxi], url='/taxis/')
+        self.assert201(r)
+        taxi = r.json['data'][0]
+        return taxi
+
+    def post_taxi_and_locate(self, lat=1, lon=1):
+        taxi = self.post_taxi()
+        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()),
+                lat=lat, lon=lon, status='free', device='d1', version=1)
+        redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
+                formatted_value)
+        redis_store.geoadd('geoindex', lat, lon, taxi['id'])
+        return taxi
 
     def init_zupc(self):
         zupc = ZUPC()
         zupc.insee = '75056'
         zupc.nom = 'Paris'
+        poly = Polygon([(48,2), (49,2), (49,3), (48,3)])
+        zupc.shape = from_shape(MultiPolygon([poly]), srid=4326)
         db.session.add(zupc)
         db.session.commit()
         zupc.parent_id = zupc.id

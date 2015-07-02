@@ -4,7 +4,7 @@ from APITaxi.models.administrative import Departement
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
-from APITaxi import redis_store
+from APITaxi import redis_store, db
 import time
 
 class TestTaxiGet(Skeleton):
@@ -14,18 +14,11 @@ class TestTaxiGet(Skeleton):
     def add(self):
         self.init_zupc()
         self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
-        r = self.post([dict_taxi])
-        id_taxi = r.json['data'][0]['id']
-        redis_store.hset('taxi:{}'.format(id_taxi), 'user_operateur',
-                Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()),
-                    lat=2, lon=49, status='free', device='mobile'))
+        taxi = self.post_taxi_and_locate(lat=2, lon=49)
+        id_taxi = taxi['id']
+        taxi_db = Taxi.query.get(id_taxi)
+        taxi_db.set_free()
+        db.session.commit()
         return id_taxi
 
     def test_get_taxi(self):
@@ -39,6 +32,12 @@ class TestTaxiGet(Skeleton):
         id_taxi = self.add()
         r = self.get('/taxis/{}/'.format(id_taxi), user='user_operateur_2')
         self.assert403(r)
+
+    def test_get_taxis_lonlat(self):
+        self.add()
+        r = self.get('/taxis/?lat=2&lon=49', role='moteur')
+        self.assert200(r)
+        assert len(r.json['data']) == 1
 
 class TestTaxisGet(Skeleton):
     url = '/taxis/'
@@ -64,7 +63,6 @@ class TestTaxisGet(Skeleton):
 
     def test_one_taxi_two_desc_one_non_free_but_timeout(self):
         pass
-
 
 
 class TestTaxiPost(Skeleton):

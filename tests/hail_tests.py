@@ -5,7 +5,6 @@ from APITaxi.models.taxis import Taxi
 from APITaxi.models.security import User
 from APITaxi import redis_store
 from copy import deepcopy
-from functools import partial
 from werkzeug.exceptions import ServiceUnavailable
 import time
 from datetime import datetime, timedelta
@@ -37,11 +36,7 @@ class HailMixin(Skeleton):
         return prev_env
 
     def send_hail(self, dict_hail, method="post", role=None):
-        taxi = self.post_taxi()
-        formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()), lat=1,
-            lon=1, status='free', device='d1', version=1)
-        redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
-                formatted_value)
+        taxi = self.post_taxi_and_locate()
         dict_hail['taxi_id'] = taxi['id']
         r = None
         try:
@@ -49,22 +44,6 @@ class HailMixin(Skeleton):
         except ServiceUnavailable:
             pass
         return r
-
-    def post_taxi(self, role=None):
-        self.init_zupc()
-        post = partial(self.post, role='operateur')
-        self.init_dep()
-        post([dict_driver], url='/drivers/')
-        r = post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        post([dict_ads_], url='/ads/')
-        r = post([dict_taxi], url='/taxis/')
-        self.assert201(r)
-        taxi = r.json['data'][0]
-        return taxi
 
 class TestHailPost(HailMixin):
     role = 'moteur'
@@ -91,7 +70,8 @@ class TestHailPost(HailMixin):
 
     def test_taxi_non_free(self):
         dict_hail = deepcopy(dict_)
-        taxi = self.post_taxi()
+        taxi = self.post_taxi_and_locate()
+        dict_hail['taxi_id'] = taxi['id']
         taxi['status'] = 'off'
         r = self.put([taxi], url='/taxis/{}/'.format(taxi['id']),
             role='operateur')
