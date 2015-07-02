@@ -161,6 +161,11 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         p = parse(self._FORMAT_OPERATOR, v.decode())
         return p['timestamp'] > min_time
 
+    def set_free(self):
+#For debugging purposes
+        for desc in self.vehicle.descriptions:
+            desc.status = 'free'
+
     def get_operator(self, redis_store, user_datastore, min_time=None,
             favorite_operator=None):
         if not min_time:
