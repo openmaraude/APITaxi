@@ -39,6 +39,32 @@ class TestTaxiGet(Skeleton):
         r = self.get('/taxis/{}/'.format(id_taxi), user='user_operateur_2')
         self.assert403(r)
 
+class TestTaxisGet(Skeleton):
+    url = '/taxis/'
+    role = 'moteur'
+
+    def test_one_taxi_one_desc(self):
+        pass
+
+    def test_two_taxis_one_desc(self):
+        pass
+
+    def test_one_taxi_out_of_the_scope(self):
+        pass
+
+    def test_one_taxi_timeout(self):
+        pass
+
+    def test_one_taxi_two_desc_ok(self):
+        pass
+
+    def test_one_taxi_two_desc_one_non_free(self):
+        pass
+
+    def test_one_taxi_two_desc_one_non_free_but_timeout(self):
+        pass
+
+
 
 class TestTaxiPost(Skeleton):
     url = '/taxis/'

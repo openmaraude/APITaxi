@@ -149,7 +149,9 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(redis_store, min_time)
         users = map(lambda u: User.query.filter_by(email=u[0]).first().id, caracs)
-        return all(map(lambda desc: desc.added_by in users and desc.status == 'free',
+#If the description is not in users it's ok it means the taxi is not connected to the system
+#If the taxi is connected we want it to be free. (As in free bear).
+        return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
                 self.vehicle.descriptions))
 
     def get_operator(self, redis_store, user_datastore, min_time=None,
