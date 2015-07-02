@@ -61,13 +61,17 @@ def load_user_from_request(request):
 documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
 images = UploadSet('images', IMAGES)
 
-index_zupc = index.Index()
+index_zupc = None
 
 def create_zupc_index():
+    index_zupc = index.Index()
     from .models.taxis import ADS
     from .models.administrative import ZUPC
-    for zupc in ZUPC.query.filter('insee' in  db.session.query(distinct(ADS.insee))).all():
-        index_zupc.insert(zupc, (zupc.left, zupc.bottom, zupc.right, zupc.top))
+    insee_list = db.session.query(distinct(ADS.insee)).all()
+    for zupc in ZUPC.query.filter(ZUPC.insee.in_(insee_list)).all():
+        if zupc.shape is None:
+            continue
+        index_zupc.insert(zupc.id, (zupc.left, zupc.bottom, zupc.right, zupc.top))
 
 
 def create_app(sqlalchemy_uri=None):
