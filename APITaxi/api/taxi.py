@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import db, redis_store, user_datastore
+from .. import db, redis_store, user_datastore, index_zupc, create_zupc_index
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
@@ -66,12 +66,41 @@ dict_taxi_expect = \
                      'departement': fields.String})),
           'status': fields.String
          }
+
+def generate_taxi_dict(min_time, favorite_operator):
+    def wrapped(taxi):
+        taxi_id, distance, coords = taxi
+        taxi_db = taxis_models.Taxi.query.get(taxi_id)
+        if not taxi_db or not taxi_db.is_free(redis_store):
+            return None
+        operator, timestamp = taxi_db.get_operator(redis_store,
+                user_datastore, min_time, favorite_operator)
+        if not operator:
+            return None
+        description = taxi_db.vehicle.get_description(operator)
+        return {
+            "id": taxi_id,
+            "operator": operator.email,
+            "position": {"lat": coords[0], "lon": coords[1]},
+            "vehicle": {
+                "model": description.model,
+                "constructor": description.constructor,
+                "color": description.color,
+                "characteristics": description.characteristics,
+                "licence_plate": taxi_db.vehicle.licence_plate,
+                "nb_seats": description.nb_seats
+            },
+            "last_update": timestamp,
+            "crowfly_distance": float(distance)
+        }
+    return wrapped
+
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
     get_parser = reqparse.RequestParser()
-    get_parser.add_argument('lon', type=float, required=True)
-    get_parser.add_argument('lat', type=float, required=True)
-    get_parser.add_argument('favorite_operator', type=unicode, required=False)
+    get_parser.add_argument('lon', type=float, required=True, location='values')
+    get_parser.add_argument('lat', type=float, required=True, location='values')
+    get_parser.add_argument('favorite_operator', type=unicode, required=False, location='values')
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -79,6 +108,8 @@ class Taxis(Resource):
     @api.marshal_with(taxi_model)
     @json_mimetype_required
     def get(self):
+        if not index_zupc:
+            create_zupc_index()
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
@@ -123,7 +154,6 @@ class Taxis(Resource):
                               api.model('taxi_expect_details',
                                         dict_taxi_expect)))}))
     @api.marshal_with(taxi_model)
-    @json_mimetype_required
     def post(self):
         json = request.get_json()
         if 'data' not in json:
