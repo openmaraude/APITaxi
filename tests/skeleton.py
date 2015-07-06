@@ -2,7 +2,7 @@
 
 from flask.ext.testing import TestCase
 from json import dumps
-from APITaxi import db, create_app, user_datastore, redis_store
+from APITaxi import db, create_app, user_datastore, redis_store, index_zupc
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
 from APITaxi.models.taxis import Taxi
@@ -21,6 +21,7 @@ class Skeleton(TestCase):
         return create_app()
 
     def setUp(self):
+        print "setup"
         db.drop_all()
         db.create_all()
         for role in ['admin', 'operateur', 'moteur']:
@@ -34,14 +35,17 @@ class Skeleton(TestCase):
         db.session.commit()
 
     def tearDown(self):
+        print "teardown"
         ids = []
         for taxi in Taxi.query.all():
             redis_store.delete('taxi:{}'.format(taxi.id))
             ids.append(taxi.id)
-        redis_store.zrem('geoindex', ids)
-
+        print "teardown", ids
+        for i in ids:
+            redis_store.zrem('geoindex', i)
         db.session.remove()
         db.drop_all()
+        index_zupc.index_zupc = None
 
     def post_taxi(self, role=None):
         self.init_zupc()

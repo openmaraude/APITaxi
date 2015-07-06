@@ -10,7 +10,7 @@ import time
 class TaxiGet(Skeleton):
     url = '/taxis/'
 
-    def add(self, lat=2, lon=49):
+    def add(self, lat=2.1, lon=48.5):
         self.init_zupc()
         self.init_dep()
         taxi = self.post_taxi_and_locate(lat=lat, lon=lon)
@@ -41,13 +41,13 @@ class TestTaxisGet(TaxiGet):
 
     def test_get_taxis_lonlat(self):
         self.add()
-        r = self.get('/taxis/?lat=2&lon=49')
+        r = self.get('/taxis/?lat=2.3&lon=48.7')
         self.assert200(r)
         assert len(r.json['data']) == 1
 
     def test_get_taxi_out_of_zupc(self):
         self.add(1, 1)
-        r = self.get('/taxis/?lat=1&lon=1')
+        r = self.get('/taxis/?lat=2.2&lon=48.7')
         self.assert200(r)
         assert len(r.json['data']) == 0
 

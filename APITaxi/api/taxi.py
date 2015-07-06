@@ -61,24 +61,36 @@ class TaxiId(Resource):
 
 
 dict_taxi_expect = \
-         {'vehicle': fields.Nested(api.model('vehicle_expect', {'licence_plate': fields.String})),
-          'ads': fields.Nested(api.model('ads_expect', {'numero': fields.String, 'insee': fields.String})),
-          'driver': fields.Nested(api.model('driver_expect', {'professional_licence': fields.String,
-                     'departement': fields.String})),
+         {'vehicle': fields.Nested(api.model('vehicle_expect',
+            {'licence_plate': fields.String})),
+          'ads': fields.Nested(api.model('ads_expect',
+              {'numero': fields.String, 'insee': fields.String})),
+          'driver': fields.Nested(api.model('driver_expect',
+              {'professional_licence': fields.String,
+                'departement': fields.String})),
           'status': fields.String
          }
 
-def generate_taxi_dict(zupc_list, min_time, favorite_operator):
+def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
         taxi_db = taxis_models.Taxi.query.get(taxi_id)
         if not taxi_db or not taxi_db.is_free(redis_store) or\
-                taxi_db.ads.zupc_id not in zupc_list:
+            taxi_db.ads.zupc_id not in zupc_customer:
+            print "a",list(zupc_customer), taxi_db.ads.zupc_id if taxi_db else None
             return None
         operator, timestamp = taxi_db.get_operator(redis_store,
                 user_datastore, min_time, favorite_operator)
         if not operator:
             return None
+#Check if the taxi is operating in its ZUPC
+        lat, lon = float(coords[0]), float(coords[1])
+        zupc_list = index_zupc.intersection(lon, lat)
+        if taxi_db.ads.zupc_id not in zupc_list:
+            print "b", taxi_db.ads.zupc_id, zupc_list
+            return None
+        print "c"
+
         description = taxi_db.vehicle.get_description(operator)
         return {
             "id": taxi_id,
@@ -122,33 +134,11 @@ class Taxis(Resource):
         zupc_list = index_zupc.intersection((lon, lat, lon, lat))
         taxis = []
         min_time = int(time.time()) - 60*60
-        for taxi_id, distance, coords in r:
-            taxi_db = taxis_models.Taxi.query.get(taxi_id)
-            if not taxi_db or not taxi_db.is_free(redis_store):
-                continue
-            operator, timestamp = taxi_db.get_operator(redis_store,
-                    user_datastore, min_time, p['favorite_operator'])
-            if not operator:
-                current_app.logger.info("no operator")
-                continue
-            description = taxi_db.vehicle.get_description(operator)
-            if not description:
-                continue
-            taxis.append({
-                "id": taxi_id,
-                "operator": operator.email,
-                "position": {"lat": coords[0], "lon": coords[1]},
-                "vehicle": {
-                    "model": description.model,
-                    "constructor": description.constructor,
-                    "color": description.color,
-                    "characteristics": description.characteristics,
-                    "licence_plate": taxi_db.vehicle.licence_plate,
-                    "nb_seats": description.nb_seats
-                },
-                "last_update": timestamp,
-                "crowfly_distance": float(distance)
-                })
+        favorite_operator = p['favorite_operator']
+        zupc_customer = index_zupc.intersection(lon, lat)
+        print "len", len(r)
+        taxis = filter(lambda t: t is not None,
+                map(generate_taxi_dict(zupc_customer, min_time, favorite_operator), r))
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
         return {'data': taxis}
 

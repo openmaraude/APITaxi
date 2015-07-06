@@ -26,11 +26,8 @@ class ZUPC(db.Model, MarshalMixin):
             backref=db.backref('departements', lazy='dynamic'))
     parent_id = Column(db.Integer, db.ForeignKey('ZUPC.id'))
     parent = db.relationship('ZUPC', remote_side=[id])
-    __left = None
-    __right = None
-    __top = None
-    __bottom = None
     __geom = None
+    __bounds = None
 
     def __repr__(self):
         return '<ZUPC %r>' % str(self.id)
@@ -43,29 +40,25 @@ class ZUPC(db.Model, MarshalMixin):
         if self.__geom is None:
             self.__geom = to_shape(self.shape)
         return self.__geom
-
+    
     @property
-    def left(self):
-        if self.__left is None:
-            self.__left = min([min(geom.exterior.coords, key=itemgetter(0)) for geom in self.geom.geoms])[0]
-        return self.__left
-
-    @property
-    def right(self):
-        if self.__right is None:
-            self.__right = max([max(geom.exterior.coords, key=itemgetter(0)) for geom in self.geom.geoms])[0]
-        return self.__right
-
+    def bounds(self):
+        if not self.__bounds:
+            self.__bounds = self.geom.bounds
+        return self.__bounds
 
     @property
     def bottom(self):
-        if self.__bottom is None:
-            self.__bottom = min([min(geom.exterior.coords, key=itemgetter(1)) for geom in self.geom.geoms])[1]
-        return self.__bottom
+        return self.bounds[1]
+
+    @property
+    def left(self):
+        return self.bounds[0]
 
     @property
     def top(self):
-        if self.__top is None:
-            self.__top = max([max(geom.exterior.coords, key=itemgetter(1)) for geom in self.geom.geoms])[1]
-        return self.__top
+        return self.bounds[3]
 
+    @property
+    def right(self):
+        return self.bounds[2]
