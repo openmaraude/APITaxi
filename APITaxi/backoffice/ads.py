@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .. import db, documents
+from .. import db, documents, index_zupc
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
@@ -82,6 +82,7 @@ class ADS(Resource):
         403:'You\'re not authorized to view it'})
     @api.expect(ads_expect)
     @api.response(200, 'Success', ads_post)
+    @index_zupc.reinit()
     def post(self):
         if request_wants_json():
             return self.post_json()
@@ -127,6 +128,7 @@ class ADS(Resource):
 @mod.route('/ads/form', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
+@index_zupc.reinit()
 def ads_form():
     ads = form = None
     if request.args.get("id"):
@@ -167,6 +169,7 @@ def ads_form():
 @mod.route('/ads/delete')
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
+@index_zupc.reinit()
 def ads_delete():
     if not request.args.get("id"):
         abort(404, message="You need to specify an id")

@@ -5,6 +5,7 @@ from APITaxi import db
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_ads, dict_vehicle
+from APITaxi import index_zupc
 
 
 class TestADSPost(Skeleton):
@@ -25,6 +26,7 @@ class TestADSPost(Skeleton):
         self.assert400(r)
 
     def test_simple(self):
+        assert(index_zupc.size == 0)
         self.init_zupc()
         dict_ = dict_ads
         dict_['vehicle_id'] = None
@@ -34,6 +36,7 @@ class TestADSPost(Skeleton):
         ads = r.json['data'][0]
         self.check_req_vs_dict(ads, dict_)
         self.assertEqual(len(ADS.query.all()), 1)
+        assert(index_zupc.size == 1)
 
     def test_vehicle(self):
         self.init_zupc()
