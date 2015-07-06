@@ -87,7 +87,7 @@ class ADS(Resource):
         if request_wants_json():
             return self.post_json()
         elif 'file' in request.files:
-            filename = "ads-{}-{}.csv".format-1(current_user.email,
+            filename = "ads-{}-{}.csv".format(current_user.email,
                     str(datetime.now()))
             documents.save(request.files['file'], name=filename)
             slacker = slack()

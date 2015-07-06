@@ -77,7 +77,6 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         taxi_db = taxis_models.Taxi.query.get(taxi_id)
         if not taxi_db or not taxi_db.is_free(redis_store) or\
             taxi_db.ads.zupc_id not in zupc_customer:
-            print "a",list(zupc_customer), taxi_db.ads.zupc_id if taxi_db else None
             return None
         operator, timestamp = taxi_db.get_operator(redis_store,
                 user_datastore, min_time, favorite_operator)
@@ -87,9 +86,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         lat, lon = float(coords[0]), float(coords[1])
         zupc_list = index_zupc.intersection(lon, lat)
         if taxi_db.ads.zupc_id not in zupc_list:
-            print "b", taxi_db.ads.zupc_id, zupc_list
             return None
-        print "c"
 
         description = taxi_db.vehicle.get_description(operator)
         return {
@@ -136,7 +133,6 @@ class Taxis(Resource):
         min_time = int(time.time()) - 60*60
         favorite_operator = p['favorite_operator']
         zupc_customer = index_zupc.intersection(lon, lat)
-        print "len", len(r)
         taxis = filter(lambda t: t is not None,
                 map(generate_taxi_dict(zupc_customer, min_time, favorite_operator), r))
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
