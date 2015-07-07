@@ -4,9 +4,14 @@
 <meta charset=utf-8 />
 <title>Marker movement</title>
 <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-<script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
 <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-<link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.0/css/font-awesome.css" rel="stylesheet">
+<link rel="stylesheet" href="../static/css/leaflet.awesome-markers.css">
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+<script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
+<script src="../static/js/leaflet.awesome-markers.js"></script>
+<script src="../static/js/AnimatedMarker.js"></script>
+<script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
 <style>
   body { margin:0; padding:0; }
   #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -17,35 +22,32 @@
 <div id='map'></div>
 
 <script>
+var layer = new L.StamenTileLayer("toner");
+var map = new L.Map("map", {
+    center: new L.LatLng(48.85, 2.34),
+    zoom: 13
+});
+map.addLayer(layer);
+var defaultIcon = L.AwesomeMarkers.icon({icon: 'taxi',
+    prefix:'ta', markerColor: 'blue'});
 
-
-L.mapbox.accessToken = 'pk.eyJ1IjoibC12aW5jZW50LWwiLCJhIjoiaDJfM05UMCJ9.l9oR075SSzJY9hXEqaRvoQ';
-var map = L.mapbox.map('map', 'mapbox.light')
-  .setView([48.85, 2.34], 13);
-
-function makeMarker(taxi) {
+function usefullInfo(taxi) {
     return {
         'last_update': taxi['last_update'],
         'position': taxi['position'],
     }
 }
 
-function moveMarker(taxi_id) {
-    var m = markers[taxi_id];
-    var prev = m['prev']['position'];
-    var cur = m['current']['position'];
-    var nb_ticks = (m['current']['last_update'] - m['prev']['last_update'])/0.5;
-    var coeff = Math.floor(m['t'] / nb_ticks);
-    var new_lat = prev['lat'] + (Math.abs(prev['lat']-cur['lat']) / nb_ticks) * coeff,
-        new_lon = prev['lon'] + (Math.abs(prev['lon']-cur['lon']) / nb_ticks) * coeff;
+function getPositionTuple(taxi) {
+    return [taxi['position']['lat'], taxi['position']['lon']];
+}
 
-    m['marker'].setLatLng(L.latLng(new_lat, new_lon));
-    markers[taxi_id]['t'] = markers[taxi_id]['t'] + 1;
+function makeLine(t1, t2) {
+    return L.polyline([getPositionTuple(t1), getPositionTuple(t2)]);
 }
 
 function updateMarkers(markers) {
-    $.ajax({
-    url:"http://127.0.0.1:5000/taxis/?lat=48.85&lon=2.34",
+    $.ajax({url:"/taxis/?lat=48.85&lon=2.34",
     type: 'GET',
     dataType: 'json',
     success: function(data){
@@ -53,30 +55,22 @@ function updateMarkers(markers) {
         data['data'].map(function(taxi) {
             var p = taxi['position'];
             if (!(taxi['id'] in markers)) {
-                markers[taxi['id']] = {'current': makeMarker(taxi),
-                    'prev': null, 't': 0,
-                    'marker': L.marker([taxi['position']['lat'],
-                                       taxi['position']['lon']], {
-                        icon: L.mapbox.marker.icon({'marker-color': '#f86767'})
-                    }),
+                markers[taxi.id] = {
+                    prev: usefullInfo(taxi),
+                    marker: null
                 };
             }
             var m = markers[taxi['id']];
-            if (m['current']['last_update'] != taxi['last_update']) {
-                if (!markers[taxi['id']]['prev']) {
-                    markers[taxi['id']]['marker'].addTo(map);
+            if (m['prev']['last_update'] != taxi['last_update']) {
+                if (m['marker']) {
+                    map.removeLayer(m['marker']);
                 }
-                m['prev'] = {};
-                m['prev']['position'] = {};
-                m['prev']['position']['lat'] = m['current']['position']['lat'];
-                m['prev']['position']['lon'] = m['current']['position']['lon'];
-                m['prev']['last_update'] = m['current']['last_update'];
-                m['current']['last_update'] = taxi['last_update'];
-                m['current']['position']['lat'] = taxi['position']['lat'];
-                m['current']['position']['lon'] = taxi['position']['lon'];
-                m['interval'] = setInterval(moveMarker, 500,
-                        taxi['id']);
-
+                var line = makeLine(m['prev'], taxi);
+                m.marker = L.AnimatedMarker(line.getLatLngs(), {
+                    icon: defaultIcon
+                });
+                map.addLayer(m.marker);
+                m['prev'] = usefullInfo(taxi);
             }
             taxi_ids.push(taxi['id']);
         });
@@ -86,8 +80,7 @@ function updateMarkers(markers) {
                 to_delete.push(k);
             }
         }
-        to_delete.map(function(i) {markers[i]['interval'].clearInterval();
-            delete markers[i];});
+        to_delete.map(function(i) {map.removeLayer(markers[i]['marker']);delete markers[i];});
     },
     failure: function(){alert('Error');},
     beforeSend: function(xhr) {
