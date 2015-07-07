@@ -74,7 +74,7 @@ function updateMarkers(markers) {
                     b = new L.LatLng(taxi['position']['lat'],
                             taxi['position']['lon']);
 
-                m.marker = L.AnimatedMarker(line.getLatLngs(), {
+                m.marker = new L.AnimatedMarker(line.getLatLngs(), {
                     icon: defaultIcon,
                     distance: Math.floor(a.distanceTo(b)/nbSteps),
                     interval: defaultStep
