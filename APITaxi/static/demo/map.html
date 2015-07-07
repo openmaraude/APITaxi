@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Marker movement</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+</style>
+</head>
+<body>
+
+<div id='map'></div>
+
+<script>
+
+
+L.mapbox.accessToken = 'pk.eyJ1IjoibC12aW5jZW50LWwiLCJhIjoiaDJfM05UMCJ9.l9oR075SSzJY9hXEqaRvoQ';
+var map = L.mapbox.map('map', 'mapbox.light')
+  .setView([48.85, 2.34], 13);
+
+function makeMarker(taxi) {
+    return {
+        'last_update': taxi['last_update'],
+        'position': taxi['position'],
+    }
+}
+
+function moveMarker(taxi_id) {
+    var m = markers[taxi_id];
+    var prev = m['prev']['position'];
+    var cur = m['current']['position'];
+    var nb_ticks = (m['current']['last_update'] - m['prev']['last_update'])/0.5;
+    var coeff = Math.floor(m['t'] / nb_ticks);
+    var new_lat = prev['lat'] + (Math.abs(prev['lat']-cur['lat']) / nb_ticks) * coeff,
+        new_lon = prev['lon'] + (Math.abs(prev['lon']-cur['lon']) / nb_ticks) * coeff;
+
+    m['marker'].setLatLng(L.latLng(new_lat, new_lon));
+    markers[taxi_id]['t'] = markers[taxi_id]['t'] + 1;
+}
+
+function updateMarkers(markers) {
+    $.ajax({
+    url:"http://127.0.0.1:5000/taxis/?lat=48.85&lon=2.34",
+    type: 'GET',
+    dataType: 'json',
+    success: function(data){
+        taxi_ids = new Array();
+        data['data'].map(function(taxi) {
+            var p = taxi['position'];
+            if (!(taxi['id'] in markers)) {
+                markers[taxi['id']] = {'current': makeMarker(taxi),
+                    'prev': null, 't': 0,
+                    'marker': L.marker([taxi['position']['lat'],
+                                       taxi['position']['lon']], {
+                        icon: L.mapbox.marker.icon({'marker-color': '#f86767'})
+                    }),
+                };
+            }
+            var m = markers[taxi['id']];
+            if (m['current']['last_update'] != taxi['last_update']) {
+                if (!markers[taxi['id']]['prev']) {
+                    markers[taxi['id']]['marker'].addTo(map);
+                }
+                m['prev'] = {};
+                m['prev']['position'] = {};
+                m['prev']['position']['lat'] = m['current']['position']['lat'];
+                m['prev']['position']['lon'] = m['current']['position']['lon'];
+                m['prev']['last_update'] = m['current']['last_update'];
+                m['current']['last_update'] = taxi['last_update'];
+                m['current']['position']['lat'] = taxi['position']['lat'];
+                m['current']['position']['lon'] = taxi['position']['lon'];
+                m['interval'] = setInterval(moveMarker, 500,
+                        taxi['id']);
+
+            }
+            taxi_ids.push(taxi['id']);
+        });
+        to_delete = new Array();
+        for (var k in markers) {
+            if (taxi_ids.indexOf(k) ==-1) {
+                to_delete.push(k);
+            }
+        }
+        to_delete.map(function(i) {markers[i]['interval'].clearInterval();
+            delete markers[i];});
+    },
+    failure: function(){alert('Error');},
+    beforeSend: function(xhr) {
+        xhr.setRequestHeader('X-VERSION', 2);
+        xhr.setRequestHeader('X-API-KEY', '816da271-f5fc-48cb-a696-ca735efb977a');
+        xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+        }
+    }
+    );
+}
+var markers = new Array();
+window.setInterval(function(){updateMarkers(markers)}, 1000);
+</script>
+
+</body>
+</html>
+
+

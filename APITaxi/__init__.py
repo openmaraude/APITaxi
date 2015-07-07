@@ -91,5 +91,6 @@ def create_app(sqlalchemy_uri=None):
     configure_uploads(app, (documents, images))
 
     app.login_manager.request_loader(load_user_from_request)
-    
+    from . import demo
+    demo.create_app(app)
     return app
