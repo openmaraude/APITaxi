@@ -91,6 +91,8 @@ class Taxis(Resource):
                 curreent_app.logger.info("no operator")
                 continue
             description = taxi_db.vehicle.get_description(operator)
+            if not description:
+                continue
             taxis.append({
                 "id": taxi_id,
                 "operator": operator.email,
