@@ -83,12 +83,13 @@ class Taxis(Resource):
         for taxi_id, distance, coords in r:
             taxi_db = taxis_models.Taxi.query.get(taxi_id)
             if not taxi_db or not taxi_db.is_free(redis_store):
-                current_app.logger.info("taxi_db {}, is_free {}".format(taxi_db, taxi_db.is_free(redis_store)))
+                current_app.logger.info("taxi_db {}, is_free {}".format(taxi_db,
+                    taxi_db.is_free(redis_store)))
                 continue
             operator, timestamp = taxi_db.get_operator(redis_store,
                     user_datastore, min_time, p['favorite_operator'])
             if not operator:
-                curreent_app.logger.info("no operator")
+                current_app.logger.info("no operator")
                 continue
             description = taxi_db.vehicle.get_description(operator)
             taxis.append({
