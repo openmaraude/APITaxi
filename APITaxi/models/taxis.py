@@ -138,8 +138,6 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         return [(k, v) for k, v in scan\
                 if int(v['timestamp']) > min_time or k == favorite_operator]
 
-
-
     def caracs(self, redis_store, min_time, favorite_operator=None):
         return self.__class__.retrieve_caracs(self.id, redis_store, min_time,
                 favorite_operator)
@@ -148,9 +146,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(redis_store, min_time)
-        users = map(lambda u: User.query.filter_by(email=u[0]).first().id, caracs)
-        return all(map(lambda desc: desc.added_by in users and desc.status == 'free',
-                self.vehicle.descriptions))
+        return all(map(lambda desc: desc.status == 'free', self.vehicle.descriptions))
 
     def get_operator(self, redis_store, user_datastore, min_time=None,
             favorite_operator=None):
