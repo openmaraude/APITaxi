@@ -130,23 +130,34 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         self.vehicle.description.status = status
 
     @classmethod
-    def retrieve_caracs(cls, id_, redis_store, min_time, favorite_operator):
+    def retrieve_caracs(cls, id_, redis_store, min_time):
         _, scan = redis_store.hscan("taxi:{}".format(id_))
         if len(scan) == 0:
             return []
-        scan = [(k.decode(), parse(cls._FORMAT_OPERATOR, v.decode())) for k, v in scan.items()]
+        scan = [(k.decode(), parse(cls._FORMAT_OPERATOR, v.decode()))\
+                for k, v in scan.items()]
         return [(k, v) for k, v in scan\
-                if int(v['timestamp']) > min_time or k == favorite_operator]
+                if int(v['timestamp']) > min_time]
 
-    def caracs(self, redis_store, min_time, favorite_operator=None):
-        return self.__class__.retrieve_caracs(self.id, redis_store, min_time,
-                favorite_operator)
+    def caracs(self, redis_store, min_time):
+        return self.__class__.retrieve_caracs(self.id, redis_store, min_time)
 
-    def is_free(self, redis_store, min_time=None):
+    def is_free(self, redis_store, min_time=None, operateur=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(redis_store, min_time)
-        return all(map(lambda desc: desc.status == 'free', self.vehicle.descriptions))
+        users = map(lambda (email, _): User.query.filter_by(email=email).first().id,
+                caracs)
+        return all(map(lambda desc: desc.added_by in users and desc.status == 'free',
+            self.vehicle.descriptions))
+
+    def is_fresh(self, redis_store, operateur):
+        v = redis_store.hget('taxi:{}'.format(self.id), operateur)
+        if not v:
+            return False
+        min_time = int(time.time() - self._DISPONIBILITY_DURATION)
+        p = parse(self._FORMAT_OPERATOR, v.decode())
+        return p['timestamp'] > min_time
 
     def get_operator(self, redis_store, user_datastore, min_time=None,
             favorite_operator=None):

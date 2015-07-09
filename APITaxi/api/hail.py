@@ -109,7 +109,8 @@ class Hail(Resource):
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('data', type=list, location='json')
         req = root_parser.parse_args()
-        if 'data' not in req or not isinstance(req['data'], list) or len(req['data']) == 0:
+        if 'data' not in req or not isinstance(req['data'], list) or\
+                len(req['data']) == 0:
             abort(400, message="data is required")
         if len(req['data']) != 1:
             abort(413, message="You can only post one hail at a time")
@@ -123,12 +124,17 @@ class Hail(Resource):
         taxi = TaxiModel.query.get(hj['taxi_id'])
         if not taxi:
             return abort(404, message="Unable to find taxi")
-        if not taxi.is_free(redis_store):
+        if not taxi.is_free(redis_store) or\
+                not taxi.is_fresh(redis_store, hj['operateur']):
             abort(403, message="The taxi is not available")
-        operateur = security_models.User.query.filter_by(email=hj['operateur']).first()
+        operateur = security_models.User.query.filter_by(email=hj['operateur'])\
+                .first()
         if not operateur:
             abort(404, message='Unable to find the taxi\'s operateur')
-        taxi.vehicle.get_description(operateur).status = 'answering'
+        desc = taxi.vehicle.get_description(operateur)
+        if not desc:
+            abort(404, message='Unable to find taxi\'s description')
+        desc.status = 'answering'
         db.session.commit()
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from . import db
-from .taxis import Taxi as TaxiModel
+from .taxis import Taxi as TaxiM
 from flask.ext.security import login_required, roles_accepted,\
         roles_accepted
 from datetime import datetime, timedelta
@@ -171,16 +171,13 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 
     @property
     def taxi(self):
-        caracs = TaxiModel.retrieve_caracs(self.taxi_id, redis_store, 0,
-                self.operateur.email)
-        for operator, carac in caracs:
-            if operator != self.operateur.email:
-                continue
-            return {
-                    'position': {'lon': carac['lon'],
-                                 'lat' : carac['lat']
-                                 },
-                    'last_update' : carac['timestamp']
-                    }
+        for operator, carac in TaxiM.retrieve_caracs(self.taxi_id, redis_store, 0):
+            if operator == self.operateur.email:
+                return {
+                        'position': {'lon': carac['lon'],
+                                     'lat' : carac['lat']
+                                     },
+                        'last_update' : carac['timestamp']
+                        }
         return {}
 
