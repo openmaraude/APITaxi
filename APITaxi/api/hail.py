@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from flask import request, redirect, url_for, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
-from flask.ext.security import login_required, roles_required,\
-        roles_accepted, current_user
+from flask.ext.security import (login_required, roles_required,
+        roles_accepted, current_user)
 from .. import db, redis_store, user_datastore
 from ..api import api
 from ..models import (Hail as HailModel, Customer as CustomerModel,
@@ -159,7 +159,7 @@ class Hail(Resource):
         r = None
         try:
             r = requests.post(operateur.hail_endpoint,
-                    data=json.dumps({"data": [marshal(hail, hail_model)]}),
+                    data=json.dumps(marshal({"data": [hail]}, hail_model)),
                 headers={'Content-Type': 'application/json'})
         except requests.exceptions.MissingSchema:
             pass
