@@ -19,9 +19,9 @@ parser_put.add_argument('customer_lon', type=float, required=True,
         location='hail')
 parser_put.add_argument('customer_lat', type=float, required=True,
         location='hail')
-parser_put.add_argument('customer_address', type=str, required=True,
+parser_put.add_argument('customer_address', type=unicode, required=True,
         location='hail')
-parser_put.add_argument('customer_phone_number', type=str, required=True,
+parser_put.add_argument('customer_phone_number', type=unicode, required=True,
         location='hail')
 parser_put.add_argument('status', type=str, required=True,
                         choices=['received_by_taxi',
@@ -30,7 +30,7 @@ parser_put.add_argument('status', type=str, required=True,
                                  'incident_taxi',
                                  'incident_customer'],
                         location='hail')
-parser_put.add_argument('taxi_phone_number', type=str, required=False,
+parser_put.add_argument('taxi_phone_number', type=unicode, required=False,
         location='hail')
 argument_names = [f.name for f in parser_put.args]
 dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
@@ -84,13 +84,13 @@ class HailId(Resource):
 
 
 parser_post = reqparse.RequestParser()
-parser_post.add_argument('customer_id', type=str, required=True)
+parser_post.add_argument('customer_id', type=unicode, required=True)
 parser_post.add_argument('customer_lon', type=float, required=True)
 parser_post.add_argument('customer_lat', type=float, required=True)
-parser_post.add_argument('customer_address', type=str, required=True)
-parser_post.add_argument('customer_phone_number', type=str, required=True)
-parser_post.add_argument('taxi_id', type=str, required=True)
-parser_post.add_argument('operateur', type=str, required=True)
+parser_post.add_argument('customer_address', type=unicode, required=True)
+parser_post.add_argument('customer_phone_number', type=unicode, required=True)
+parser_post.add_argument('taxi_id', type=unicode, required=True)
+parser_post.add_argument('operateur', type=unicode, required=True)
 argument_names = map(lambda f: f.name, parser_post.args)
 dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
 dict_hail['operateur'] = fields.String(attribute='operateur.email')

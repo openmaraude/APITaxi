@@ -26,8 +26,8 @@ ads_post = make_model('taxis', 'ADS', True)
 class ADS(Resource):
 
     parser = reqparse.RequestParser()
-    parser.add_argument('numero', type=str, help=u"Numero de l'ADS")
-    parser.add_argument('insee', type=str,
+    parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS")
+    parser.add_argument('insee', type=unicode,
             help=u"Code INSEE de la commune d\'attribution de l'ADS")
 
     @login_required
