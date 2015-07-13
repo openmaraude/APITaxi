@@ -68,7 +68,7 @@ class Taxis(Resource):
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True)
     get_parser.add_argument('lat', type=float, required=True)
-    get_parser.add_argument('favorite_operator', type=str, required=False)
+    get_parser.add_argument('favorite_operator', type=unicode, required=False)
 
     @login_required
     @roles_accepted('admin', 'moteur')
