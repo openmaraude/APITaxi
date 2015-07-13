@@ -11,7 +11,7 @@ from ..utils import fields as custom_fields
 from ..api import api
 from flask.ext.restplus.fields import Nested as fields_Nested
 
-class AsDictMixin:
+class AsDictMixin(object):
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 

@@ -148,6 +148,26 @@ class TestHailPost(HailMixin):
         r = self.send_hail(hail)
         self.assert400(r)
 
+class  TestHailGet(HailMixin):
+
+    def test_access_moteur(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.get('/hails/{}/'.format(r.json['data'][0]['id']), role='moteur')
+        self.assert200(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_access_operateur(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.get('/hails/{}/'.format(r.json['data'][0]['id']), role='operateur')
+        self.assert200(r)
+        self.app.config['ENV'] = prev_env
+
 class TestHailPut(HailMixin):
     role = 'operateur'
 

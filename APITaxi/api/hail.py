@@ -43,14 +43,24 @@ hail_expect_put = api.model('hail_expect_put',
 @ns_hail.route('/<int:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
+    @classmethod
+    def filter_access(cls, hail):
+        if not current_user.id in (hail.operateur_id, hail.added_by) and\
+                not current_user.has_role('admin'):
+            abort(403, message="You don't have the authorization to view this hail")
+
+
     @api.marshal_with(hail_model)
     def get(self, hail_id):
         hail = HailModel.query.get_or_404(hail_id)
+        self.filter_access(hail)
         return {"data": [hail]}
 
     @api.marshal_with(hail_model)
     @api.expect(hail_expect_put)
     def put(self, hail_id):
+        hail = HailModel.query.get_or_404(hail_id)
+        self.filter_access(hail)
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('data', type=list, location='json')
         req = root_parser.parse_args()
@@ -61,7 +71,6 @@ class HailId(Resource):
                 abort(400, message="Field {} is needed".format(arg.name))
             elif arg.name in to_parse.keys():
                 hj[arg.name] = arg.convert(to_parse[arg.name], '=')
-        hail = HailModel.query.get_or_404(hail_id)
         #We change the status
         if hasattr(hail, hj['status']):
             if hj['status'] == 'accepted_by_taxi':
