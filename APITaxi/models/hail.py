@@ -47,6 +47,10 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         )
     taxi_phone_number = db.Column(db.String, nullable=True)
 
+    def __init__(self):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
+
     @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
         if level >=2:
