@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from .. import db, documents
+from .. import db, documents, index_zupc
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
-from ..models import taxis as taxis_models, vehicle as vehicle_models
+from ..models import (taxis as taxis_models, vehicle as vehicle_models,
+        administrative as administrative_models)
 from ..utils import create_obj_from_json, request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    render_template, request, redirect, url_for, abort, jsonify,
@@ -81,6 +82,7 @@ class ADS(Resource):
         403:'You\'re not authorized to view it'})
     @api.expect(ads_expect)
     @api.response(200, 'Success', ads_post)
+    @index_zupc.reinit()
     def post(self):
         if request_wants_json():
             return self.post_json()
@@ -113,9 +115,12 @@ class ADS(Resource):
                 new_ads.append(create_obj_from_json(taxis_models.ADS, ads))
             except KeyError as e:
                 abort(400, message="Missing key: "+str(e))
+            zupc = administrative_models.ZUPC.query.filter_by(insee=new_ads[-1].insee).first()
+            if zupc is None:
+                abort(400, message="Unable to find a ZUPC for insee: {}".format(new_ads[-1].insee))
+            new_ads[-1].zupc_id = zupc.parent_id
             db.session.add(new_ads[-1])
         db.session.commit()
-
         return marshal({"data": new_ads}, ads_post), 201
 
 
@@ -123,6 +128,7 @@ class ADS(Resource):
 @mod.route('/ads/form', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
+@index_zupc.reinit()
 def ads_form():
     ads = form = None
     if request.args.get("id"):
@@ -147,6 +153,10 @@ def ads_form():
             ads.vehicle.descriptions.append(vehicle_models.VehicleDescription())
         else:
             ads.last_update_at = datetime.now().isoformat()
+        zupc = administrative_models.ZUPC.query.filter_by(insee=ads[-1].insee).first()
+        if zupc is None:
+            abort(400, message="Unable to find a ZUPC for insee: {}".format(new_ads[-1].insee))
+        ads.zupc = zupc.parent_id
         form.ads.form.populate_obj(ads)
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)
@@ -159,6 +169,7 @@ def ads_form():
 @mod.route('/ads/delete')
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
+@index_zupc.reinit()
 def ads_delete():
     if not request.args.get("id"):
         abort(404, message="You need to specify an id")

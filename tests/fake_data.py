@@ -36,7 +36,7 @@ dict_vehicle = {
 dict_ads = {
     "category": "c1",
     "doublage": True,
-    "insee": "75000",
+    "insee": "75056",
     "numero": "1",
     "owner_name": "name",
     "owner_type": "company",
@@ -55,6 +55,6 @@ dict_driver = {
 dict_taxi = {
     "vehicle": {"licence_plate": "DF-118-FG"},
     "driver": {"professional_licence": "ppkkpp", "departement":"53"},
-    "ads": {"insee": "75000", "numero": "1"},
+    "ads": {"insee": "75056", "numero": "1"},
     "status": "free"
 }

@@ -10,4 +10,5 @@ def register_commands(manager):
               create_mairie)
     manager.add_command('db', MigrateCommand)
     manager.add_command('urls', ShowUrls)
+    from .load_zupc import load_zupc
 

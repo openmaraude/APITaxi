@@ -19,18 +19,21 @@ from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from slacker import Slacker
 from .utils.request_wants_json import request_wants_json
+from sqlalchemy import distinct
+from rtree import index
+from .index_zupc import IndexZUPC
 
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
 
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
-    if not request_wants_json():
+    if len(request.accept_mimetypes) == 0 or\
+        request.accept_mimetypes[0][0] != 'application/json':
         return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:
-        abort(404, message="Invalid version, valid versions are: {}".format(
-            valid_versions))
+        abort(404, message="Invalid version, valid versions are: {}".format(valid_versions))
     g.version = int(version)
 
 
@@ -58,6 +61,9 @@ def load_user_from_request(request):
 
 documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
 images = UploadSet('images', IMAGES)
+
+index_zupc = IndexZUPC()
+
 
 def create_app(sqlalchemy_uri=None):
     app = Flask(__name__)
