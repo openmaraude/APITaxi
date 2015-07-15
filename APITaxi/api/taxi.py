@@ -4,8 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import (db, redis_store, user_datastore, index_zupc, index_zupc_init,
-        create_zupc_index)
+from .. import (db, redis_store, user_datastore, index_zupc)
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
@@ -119,16 +118,12 @@ class Taxis(Resource):
     @api.marshal_with(taxi_model)
     @json_mimetype_required
     def get(self):
-        if not index_zupc:
-            create_zupc_index()
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
         if len(r) == 0:
             return {'data': []}
-        if not index_zupc_init:
-            create_zupc_index()
-        zupc_list = index_zupc.intersection((lon, lat, lon, lat))
+        zupc_list = index_zupc.intersection(lon, lat)
         taxis = []
         min_time = int(time.time()) - 60*60
         favorite_operator = p['favorite_operator']
