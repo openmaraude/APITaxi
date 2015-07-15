@@ -2,7 +2,7 @@
 from . import db
 from .taxis import Taxi as TaxiM
 from flask.ext.security import login_required, roles_accepted,\
-        roles_accepted
+        roles_accepted, current_user
 from datetime import datetime, timedelta
 from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
@@ -21,12 +21,16 @@ status_enum_list = [ 'emitted', 'received',
     'timeout_customer', 'timeout_taxi',
     'outdated_customer', 'outdated_taxi', 'failure']#This may be redundant
 
+
 class Customer(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.String, primary_key=True)
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                              primary_key=True)
     nb_sanctions = db.Column(db.Integer, default=0)
 
+
+reason_rating_ride_enum = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
+reason_incident_customer_enum = ['late', 'aggressive', 'no_show']
 class Hail(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.Integer, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
@@ -47,6 +51,38 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         ['customer.operateur_id', 'customer.id'],
         )
     taxi_phone_number = db.Column(db.String, nullable=True)
+    rating_ride = db.Column(db.Integer)
+    rating_ride_reason = db.Column(db.Enum(*reason_rating_ride_enum,
+      name='reason_ride_enum'), nullable=True)
+    incident_customer_reason = db.Column(db.Enum(*reason_incident_customer_enum,
+        name='reason_incident_customer_enum'), nullable=True)
+
+
+    @validates('rating_ride_reason')
+    def validate_rating_ride_reason(self, key, value):
+#We need to restrict this to a subset of statuses
+        assert value is None or value in reason_rating_ride_enum,\
+            'Bad rating_ride_reason\'s value. It can be: {}'.format(
+                    reason_rating_ride_enum)
+        if current_user.id != self.added_by:
+            raise RuntimeError()
+        return value
+
+    @validates('incident_customer_reason')
+    def validate_incident_customer_reason(self, key, value):
+        assert self.status == 'incident_customer', 'Bad status'
+        assert value is None or value in reason_incident_customer_enum,\
+            'Bad rating_ride_reason\'s value. It can be: {}'.format(
+                    reason_incident_customer_enum)
+        if current_user.id != self.operateur_id:
+            raise RuntimeError()
+        return value
+
+    @validates('rating_ride')
+    def validate_rating_taxi(self, key, value):
+#We need to restrict this to a subset of statuses
+        assert 1 <= value <= 5, 'Rating value has to be 1 <= value <= 5'
+        return value
 
     def __init__(self):
         db.Model.__init__(self)
@@ -88,13 +124,15 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @status.setter
     def status(self, value):
         assert value in status_enum_list
+        if value == self.__status:
+            return True
         roles_accepted = self.roles_accepted.get(value, None)
         if roles_accepted:
             perm = Permission(*[RoleNeed(role) for role in roles_accepted])
             if not perm.can():
                 raise RuntimeError("You're not authorized to set this status")
         status_required = self.status_required.get(value, None)
-        if status_required and self.status != status_required:
+        if status_required and self.__status != status_required:
             raise ValueError("You cannot set status from {} to {}".format(self.__status, value))
         self.status_changed()
         self.__status = value
