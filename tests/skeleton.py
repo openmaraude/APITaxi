@@ -39,7 +39,8 @@ class Skeleton(TestCase):
             else:
                 self.assertEqual(v, req[k])
 
-    def call(self, url, role, user, fun, data=None, envelope_data=None, version=1):
+    def call(self, url, role, user, fun, data=None, envelope_data=None,
+            version=1, accept="application/json"):
         if not role:
             role = self.__class__.role
         if not user:
@@ -51,20 +52,24 @@ class Skeleton(TestCase):
         if not url:
             url = self.__class__.url
         return fun(url, data=data,
-                                headers={
-                                    "Authorization": authorization,
-                                    "Accept": "application/json",
-                                    "X-VERSION": version},
-                   content_type='application/json')
+                            headers={
+                                "Authorization": authorization,
+                                "Accept": accept,
+                                "X-VERSION": version},
+                            content_type='application/json')
 
-    def get(self, url, role=None, user=None, version=1):
-        return self.call(url, role, user, self.client.get, version=version)
+    def get(self, url, role=None, user=None, version=1,
+            accept="application/json"):
+        return self.call(url, role, user, self.client.get, version=version,
+                accept=accept)
 
-    def post(self, data, url=None, envelope_data=True, role=None, user=None, version=1):
+    def post(self, data, url=None, envelope_data=True, role=None, user=None,
+            version=1):
         return self.call(url, role, user, self.client.post, data, envelope_data,
             version=version)
 
-    def put(self, data, url=None, envelope_data=True, role=None, user=None, version=1):
+    def put(self, data, url=None, envelope_data=True, role=None, user=None,
+            version=1):
         return self.call(url, role, user, self.client.put, data, envelope_data,
             version=version)
 

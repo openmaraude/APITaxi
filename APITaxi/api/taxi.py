@@ -7,6 +7,7 @@ from ..models import taxis as taxis_models, administrative as administrative_mod
 from .. import db, redis_store, user_datastore
 from ..api import api
 from ..descriptors.taxi import taxi_model
+from ..utils.request_wants_json import json_mimetype_required
 
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
@@ -19,6 +20,7 @@ class TaxiId(Resource):
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
+    @json_mimetype_required
     def get(self, taxi_id):
         taxi = taxis_models.Taxi.query.get(taxi_id)
         if not taxi:
@@ -45,6 +47,7 @@ class TaxiId(Resource):
     @api.expect(api.model('taxi_put_expect',
           {'data': fields.List(fields.Nested(api.model('api_expect_status',
                 {'status': fields.String})))}))
+    @json_mimetype_required
     def put(self, taxi_id):
         json = request.get_json()
         status = json['data'][0]['status']
@@ -74,6 +77,7 @@ class Taxis(Resource):
     @roles_accepted('admin', 'moteur')
     @api.doc(responses={403:'You\'re not authorized to view it'}, parser=get_parser)
     @api.marshal_with(taxi_model)
+    @json_mimetype_required
     def get(self):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
@@ -119,6 +123,7 @@ class Taxis(Resource):
                               api.model('taxi_expect_details',
                                         dict_taxi_expect)))}))
     @api.marshal_with(taxi_model)
+    @json_mimetype_required
     def post(self):
         json = request.get_json()
         if 'data' not in json:

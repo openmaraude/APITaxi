@@ -19,6 +19,8 @@ dict_ = {
     'taxi_id': 1,
     'operateur': 'user_operateur'
 }
+
+
 class HailMixin(Skeleton):
     url = '/hails/'
 
@@ -187,6 +189,11 @@ class  TestHailGet(HailMixin):
                 role='operateur', user='user_operateur_2')
         self.assert403(r)
         self.app.config['ENV'] = prev_env
+
+    def test_bad_http_accept(self):
+        r = self.get('/hails/1/', role='operateur',
+        accept='application/json; charset=utf-8')
+        self.assert400(r)
 
 class TestHailPut(HailMixin):
     role = 'operateur'

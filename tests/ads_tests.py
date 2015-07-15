@@ -13,6 +13,7 @@ class TestADSPost(Skeleton):
 
     def test_empty_post(self):
         r = self.post([])
+        print r.json
         self.assert201(r)
         assert r.headers.get('Content-Type', None) == 'application/json'
         assert r.json['data'] == []
