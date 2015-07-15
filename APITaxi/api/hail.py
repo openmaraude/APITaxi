@@ -10,6 +10,7 @@ from ..models import (Hail as HailModel, Customer as CustomerModel,
 from datetime import datetime
 import requests, json
 from ..descriptors.hail import hail_model
+from ..utils.request_wants_json import json_mimetype_required
 
 ns_hail = api.namespace('hails', description="Hail API")
 
@@ -51,6 +52,7 @@ class HailId(Resource):
 
 
     @api.marshal_with(hail_model)
+    @json_mimetype_required
     def get(self, hail_id):
         hail = HailModel.query.get_or_404(hail_id)
         self.filter_access(hail)
@@ -58,6 +60,7 @@ class HailId(Resource):
 
     @api.marshal_with(hail_model)
     @api.expect(hail_expect_put)
+    @json_mimetype_required
     def put(self, hail_id):
         hail = HailModel.query.get_or_404(hail_id)
         self.filter_access(hail)
@@ -114,6 +117,7 @@ class Hail(Resource):
     @roles_accepted('admin', 'moteur')
     @api.marshal_with(hail_model)
     @api.expect(hail_expect)
+    @json_mimetype_required
     def post(self):
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('data', type=list, location='json')
