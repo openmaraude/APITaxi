@@ -64,6 +64,8 @@ class HailId(Resource):
     def put(self, hail_id):
         hail = HailModel.query.get_or_404(hail_id)
         self.filter_access(hail)
+        if hail.status.startswith("timeout"):
+            return {"data": [hail]}
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('data', type=list, location='json')
         req = root_parser.parse_args()
@@ -75,17 +77,15 @@ class HailId(Resource):
             elif arg.name in to_parse.keys():
                 hj[arg.name] = arg.convert(to_parse[arg.name], '=')
         #We change the status
-        if hasattr(hail, hj['status']):
-            if hj['status'] == 'accepted_by_taxi':
-                if g.version == 1:
-                    hail.taxi_phone_number = ''
-                elif g.version == 2:
-                    if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
-                        abort(400, message='Taxi phone number is needed')
-                    else:
-                        hail.taxi_phone_number = hj['taxi_phone_number']
-            if not getattr(hail, hj['status'])():
-                return {"data": [hail]}
+        if hj['status'] == 'accepted_by_taxi':
+            if g.version == 1:
+                hail.taxi_phone_number = ''
+            elif g.version == 2:
+                if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
+                    abort(400, message='Taxi phone number is needed')
+                else:
+                    hail.taxi_phone_number = hj['taxi_phone_number']
+        hail.status = hj['status']
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']
             hail.customer_lat = hj['customer_lat']
@@ -172,8 +172,8 @@ class Hail(Resource):
         hail.status = 'emitted'
         db.session.add(hail)
         db.session.commit()
-        hail.received()
-        hail.sent_to_operator()
+        hail.status = 'received'
+        hail.status = 'sent_to_operator'
         db.session.commit()
         r = None
         try:
@@ -183,11 +183,11 @@ class Hail(Resource):
         except requests.exceptions.MissingSchema:
             pass
         if r and 200 <= r.status_code < 300:
-            hail.received_by_operator()
+            hail.status = 'received_by_operator'
         else:
             current_app.logger.info("Unable to reach hail's endpoint {} of operator {}".format(
                 operateur.hail_endpoint, operateur.email))
-            hail.failure()
+            hail.status  = 'failure'
         db.session.commit()
         return {"data": [hail]}, 201
 

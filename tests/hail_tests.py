@@ -19,8 +19,6 @@ dict_ = {
     'taxi_id': 1,
     'operateur': 'user_operateur'
 }
-
-
 class HailMixin(Skeleton):
     url = '/hails/'
 
@@ -195,6 +193,34 @@ class  TestHailGet(HailMixin):
         accept='application/json; charset=utf-8')
         self.assert400(r)
 
+    def test_customer_timeout(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('accepted_by_taxi')
+        hail.last_status_change -= timedelta(seconds=31)
+        r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'timeout_customer')
+        self.app.config['ENV'] = prev_env
+
+    def test_taxi_timeout(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('received_by_taxi')
+        hail.last_status_change -= timedelta(seconds=31)
+        r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'timeout_taxi')
+        self.app.config['ENV'] = prev_env
+
 class TestHailPut(HailMixin):
     role = 'operateur'
 
@@ -204,7 +230,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'received_by_taxi'
+        hail.__status_set_no_check('received_by_taxi')
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
@@ -217,7 +243,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'received_by_taxi'
+        hail.__status_set_no_check('received_by_taxi')
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
         self.assert200(r)
@@ -230,7 +256,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'received_by_taxi'
+        hail.__status_set_no_check('received_by_taxi')
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -244,7 +270,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'received_by_taxi'
+        hail.__status_set_no_check('received_by_taxi')
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2)
@@ -257,7 +283,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'received_by_taxi'
+        hail.__status_set_no_check('received_by_taxi')
         hail.last_status_change -= timedelta(seconds=10)
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
@@ -273,7 +299,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'received_by_taxi'
+        hail.__status_set_no_check('received_by_taxi')
         hail.last_status_change -= timedelta(seconds=31)
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
@@ -289,7 +315,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'accepted_by_taxi'
+        hail.__status_set_no_check('accepted_by_taxi')
         hail.last_status_change -= timedelta(seconds=5)
         dict_hail['status'] = 'accepted_by_customer'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -304,7 +330,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.status = 'accepted_by_taxi'
+        hail.__status_set_no_check('accepted_by_taxi')
         hail.last_status_change -= timedelta(seconds=21)
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_customer'
