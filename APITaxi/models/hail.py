@@ -10,6 +10,7 @@ from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
 from .. import redis_store
+from flask_principal import RoleNeed, Permission
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -39,8 +40,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     customer_address = db.Column(db.String, nullable=False)
     customer_phone_number = db.Column(db.String, nullable=False)
     taxi_id = db.Column(db.String, nullable=False)
-    status = db.Column(db.Enum(*status_enum_list,
-        name='hail_status'), default='emitted', nullable=False)
+    __status = db.Column(db.Enum(*status_enum_list,
+        name='hail_status'), default='emitted', nullable=False, name='status')
     last_status_change = db.Column(db.DateTime)
     db.ForeignKeyConstraint(['operateur_id', 'customer_id'],
         ['customer.operateur_id', 'customer.id'],
@@ -50,6 +51,64 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
+
+    timeouts = {
+            'received_by_taxi': (30, 'timeout_taxi'),
+            'accepted_by_taxi': (20, 'timeout_customer')
+    }
+
+    roles_accepted = {
+            'received': ['moteur', 'admin'],
+            'received_by_taxi': ['operateur', 'admin'],
+            'accepted_by_taxi': ['operateur', 'admin'],
+            'declined_by_taxi': ['operateur', 'admin'],
+            'incident_taxi': ['operateur', 'admin'],
+            'incident_customer': ['moteur', 'admin'],
+            'accepted_by_customer': ['moteur', 'admin'],
+            'declined_by_customer': ['moteur', 'admin'],
+    }
+
+    status_required = {
+            'sent_to_operator': 'received',
+            'received_by_operator': 'sent_to_operator',
+            'received_by_taxi': 'received_by_operator',
+            'accepted_by_taxi': 'received_by_taxi',
+            'declined_by_taxi': 'received_by_taxi',
+            'accepted_by_customer': 'accepted_by_taxi',
+            'declined_by_customer': 'accepted_by_taxi',
+    }
+
+    @property
+    def status(self):
+        time, next_status = self.timeouts.get(self.__status, (None, None))
+        if time:
+            self.check_time_out(time, next_status)
+        return self.__status
+
+    @status.setter
+    def status(self, value):
+        if not value in status_enum_list:
+            abort(400, message="Unknown status")
+        roles_accepted = self.roles_accepted.get(value, None)
+        if roles_accepted:
+            perm = Permission(*[RoleNeed(role) for role in roles_accepted])
+            if not perm.can():
+                abort(403, message="You're not authorized to set this status")
+        status_required = self.status_required.get(value, None)
+        if status_required and self.status != status_required:
+            abort(400, message="You cannot set status from {} to {}".format(
+                self.__status, value))
+        self.status_changed()
+        self.__status = value
+
+    def _TestHailPut__status_set_no_check(self, value):
+#Used for testing purposes
+        self.__status = value
+        self.status_changed()
+
+    def _TestHailGet__status_set_no_check(self, value):
+#Used for testing purposes
+        self._TestHailPut__status_set_no_check(value)
 
     @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
@@ -63,111 +122,15 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
                  'last_update': fields.Integer()}))
         return return_
 
-
     def status_changed(self):
         self.last_status_change = datetime.now()
-
-    @login_required
-    @roles_accepted('moteur', 'admin')
-    def received(self):
-        self.status = 'received'
-        self.status_changed()
-        return True
-
-    def sent_to_operator(self):
-        self.status_required('received')
-        self.status = 'sent_to_operator'
-        self.status_changed()
-        return True
-
-    def received_by_operator(self):
-        self.status_required('sent_to_operator')
-        self.status = 'received_by_operator'
-        self.status_changed()
-        return True
-
-    def status_required(self, status_required):
-        if self.status != status_required:
-            abort(400, message="Bad status")
-        return True
-
-    @login_required
-    @roles_accepted('operateur', 'admin')
-    def received_by_taxi(self):
-        self.status_required('received_by_operator')
-        self.status = 'received_by_taxi'
-        self.status_changed()
-        return True
-
-    @login_required
-    @roles_accepted('operateur', 'admin')
-    def accepted_by_taxi(self):
-        self.status_required('received_by_taxi')
-        if not self.check_time_out(30, 'timeout_taxi'):
-            return False
-        self.status = 'accepted_by_taxi'
-        self.status_changed()
-        return True
-
-    @login_required
-    @roles_accepted('operateur', 'admin')
-    def declined_by_taxi(self):
-        self.status_required('received_by_taxi')
-        self.status = 'declined_by_taxi'
-        self.status_changed()
-        return True
-
-    @login_required
-    @roles_accepted('operateur', 'admin')
-    def incident_taxi(self):
-        self.status = 'incident_taxi'
-        self.status_changed()
-        return True
-
-    @login_required
-    @roles_accepted('moteur', 'admin')
-    def incident_customer(self):
-        self.status = 'incident_customer'
-        self.status_changed()
-        return True
-
-    @login_required
-    @roles_accepted('moteur', 'admin')
-    def accepted_by_customer(self):
-        self.status_required('accepted_by_taxi')
-        if not self.check_time_out(20, 'timeout_customer'):
-            return False
-        self.status = 'accepted_by_customer'
-        self.status_changed()
-        return True
-
-    @login_required
-    @roles_accepted('moteur', 'admin')
-    def declined_by_customer(self):
-        self.status_required('accepted_by_taxi')
-        self.status = 'declined_by_customer'
-        self.status_changed()
-        return True
-
-    @login_required
-    @roles_accepted('moteur', 'admin')
-    def timeout_customer(self):
-        self.status_required('accepted_by_taxi')
-        self.status = 'timeout_customer'
-        self.status_changed()
-        return True
-
-    @login_required
-    def failure(self):
-        self.status = 'failure'
-        self.status_changed()
 
     def check_time_out(self, duration, timeout_status):
         if datetime.now() < (self.last_status_change + timedelta(seconds=duration)):
             return True
         self.status = timeout_status
+        db.session.commit()
         return False
-
 
     def to_dict(self):
         self.check_time_out()
