@@ -31,7 +31,8 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
             label=u'Type Propriétaire')
     owner_name = Column(db.String, label=u'Nom du propriétaire')
     category = Column(db.String, label=u'Catégorie de l\'ADS')
-    zupc_id = Column(db.Integer)
+    zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'), nullable=True)
+    zupc = db.relationship('ZUPC', backref='ZUPC')
 
 
     @classmethod

@@ -8,7 +8,7 @@ from .. import (db, redis_store, user_datastore, index_zupc)
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
-
+from shapely.geometry import Point
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -82,9 +82,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         if not operator:
             return None
 #Check if the taxi is operating in its ZUPC
-        lat, lon = float(coords[0]), float(coords[1])
-        zupc_list = index_zupc.intersection(lon, lat)
-        if taxi_db.ads.zupc_id not in zupc_list:
+        if not Point(float(coords[1]), float(coords[0])).intersects(taxi_db.ads.zupc.geom):
             return None
 
         description = taxi_db.vehicle.get_description(operator)
@@ -120,7 +118,7 @@ class Taxis(Resource):
     def get(self):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
-        zupc_customer = list(index_zupc.intersection(lon, lat))
+        zupc_customer = index_zupc.intersection(lon, lat)
         if len(zupc_customer) == 0:
             current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
@@ -128,7 +126,6 @@ class Taxis(Resource):
         if len(r) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        taxis = []
         min_time = int(time.time()) - 60*60
         favorite_operator = p['favorite_operator']
         taxis = filter(lambda t: t is not None,
