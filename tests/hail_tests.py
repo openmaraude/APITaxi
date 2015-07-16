@@ -321,3 +321,31 @@ class TestHailPut(HailMixin):
         assert(r.json['data'][0]['status'] == 'timeout_customer')
         self.app.config['ENV'] = prev_env
 
+    def test_accepted_by_customer(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('accepted_by_taxi')
+        dict_hail['status'] = 'accepted_by_customer'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role="moteur")
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        self.app.config['ENV'] = prev_env
+
+    def test_declined_by_customer(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('accepted_by_taxi')
+        dict_hail['status'] = 'declined_by_customer'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role="moteur")
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'declined_by_customer')
+        self.app.config['ENV'] = prev_env
+
