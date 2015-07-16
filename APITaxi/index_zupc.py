@@ -4,6 +4,7 @@ from rtree import index
 from sqlalchemy import distinct
 from . import db
 from functools import wraps
+from werkzeug.wrappers import Response
 
 class IndexZUPC(object):
     def __init__(self):
@@ -35,11 +36,17 @@ class IndexZUPC(object):
         def decorator(f):
             @wraps(f)
             def wrapper(*args, **kwargs):
-                print args, kwargs
-                resp, status_code = f(*args, **kwargs)
-                if status_code == 201:
-                    self.__init_zupc()
-                return resp, status_code
+                resp = f(*args, **kwargs)
+                t = type(resp)
+                if t is tuple:
+                    resp, status_code = resp
+                    if status_code == 201 or status_code == 302:
+                        self.__init_zupc()
+                    return resp, status_code
+                elif t is Response:
+                    if resp.status_code == 302:
+                        self.__init_zupc()
+                return resp
             return wrapper
         return decorator
 
