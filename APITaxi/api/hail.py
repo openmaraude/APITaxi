@@ -39,8 +39,6 @@ dict_hail['operateur'] = fields.String(attribute='operateur.email')
 hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
 hail_expect_put = api.model('hail_expect_put',
         {'data': fields.List(fields.Nested(hail_expect_put_details))})
-@login_required
-@roles_accepted('admin', 'moteur', 'operateur')
 @ns_hail.route('/<int:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
@@ -51,6 +49,8 @@ class HailId(Resource):
             abort(403, message="You don't have the authorization to view this hail")
 
 
+    @login_required
+    @roles_accepted('admin', 'moteur', 'operateur')
     @api.marshal_with(hail_model)
     @json_mimetype_required
     def get(self, hail_id):
@@ -58,6 +58,8 @@ class HailId(Resource):
         self.filter_access(hail)
         return {"data": [hail]}
 
+    @login_required
+    @roles_accepted('admin', 'moteur', 'operateur')
     @api.marshal_with(hail_model)
     @api.expect(hail_expect_put)
     @json_mimetype_required
