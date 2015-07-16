@@ -40,7 +40,7 @@ class ZUPC(db.Model, MarshalMixin):
         if self.__geom is None:
             self.__geom = to_shape(self.shape)
         return self.__geom
-    
+
     @property
     def bounds(self):
         if not self.__bounds:
