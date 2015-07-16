@@ -120,14 +120,17 @@ class Taxis(Resource):
     def get(self):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
+        zupc_customer = list(index_zupc.intersection(lon, lat))
+        if len(zupc_customer) == 0:
+            current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
+            return {'data': []}
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
         if len(r) == 0:
+            current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        zupc_list = index_zupc.intersection(lon, lat)
         taxis = []
         min_time = int(time.time()) - 60*60
         favorite_operator = p['favorite_operator']
-        zupc_customer = index_zupc.intersection(lon, lat)
         taxis = filter(lambda t: t is not None,
                 map(generate_taxi_dict(zupc_customer, min_time, favorite_operator), r))
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
