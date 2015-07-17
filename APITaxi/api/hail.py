@@ -87,7 +87,10 @@ class HailId(Resource):
                     abort(400, message='Taxi phone number is needed')
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
-        hail.status = hj['status']
+        try:
+            hail.status = hj['status']
+        except AssertionError:
+            abort(400, message='Invalid status')
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']
             hail.customer_lat = hj['customer_lat']

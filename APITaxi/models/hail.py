@@ -11,6 +11,7 @@ from ..descriptors.common import coordinates_descriptor
 from ..api import api
 from .. import redis_store
 from flask_principal import RoleNeed, Permission
+from sqlalchemy.orm import validates
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -87,8 +88,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 
     @status.setter
     def status(self, value):
-        if not value in status_enum_list:
-            abort(400, message="Unknown status")
+        assert value in status_enum_list
         roles_accepted = self.roles_accepted.get(value, None)
         if roles_accepted:
             perm = Permission(*[RoleNeed(role) for role in roles_accepted])
