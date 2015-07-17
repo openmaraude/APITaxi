@@ -150,7 +150,8 @@ def ads_form():
         if not ads:
             ads = taxis_models.ADS(form.vehicle.form.data['licence_plate'])
         if not ads.vehicle.description:
-            ads.vehicle.descriptions.append(vehicle_models.VehicleDescription())
+            ads.vehicle.descriptions.append(vehicle_models.VehicleDescription(
+                vehicle_id=ads.vehicle.id, added_by=current_user.id))
         else:
             ads.last_update_at = datetime.now().isoformat()
         zupc = administrative_models.ZUPC.query\
@@ -158,7 +159,7 @@ def ads_form():
         if zupc is None:
             abort(400, message="Unable to find a ZUPC for insee: {}".format(
                 ads.insee))
-        ads.zupc = zupc.parent_id
+        ads.zupc = administrative_models.ZUPC.query.get(zupc.parent_id)
         form.ads.form.populate_obj(ads)
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)

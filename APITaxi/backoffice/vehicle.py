@@ -32,7 +32,8 @@ class Vehicle(Resource):
         for vehicle in json['data']:
             form = VehicleForm.from_json(vehicle)
             v = vehicle_models.Vehicle(form.data['licence_plate'])
-            v_description = vehicle_models.VehicleDescription()
+            v_description = vehicle_models.VehicleDescription(vehicle_id=v.id,
+                    added_by=current_user.id)
             v.descriptions.append(v_description)
             form.populate_obj(v)
             form_description = VehicleDescriptionForm.from_json(vehicle)
