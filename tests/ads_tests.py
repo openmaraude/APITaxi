@@ -35,7 +35,9 @@ class TestADSPost(Skeleton):
         self.assertEqual(len(r.json['data']), 1)
         ads = r.json['data'][0]
         self.check_req_vs_dict(ads, dict_)
-        self.assertEqual(len(ADS.query.all()), 1)
+        list_ads = ADS.query.all()
+        self.assertEqual(len(list_ads), 1)
+        assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
         assert(index_zupc.size == 1)
 
     def test_vehicle(self):
@@ -54,7 +56,9 @@ class TestADSPost(Skeleton):
         ads = r.json['data'][0]
         self.check_req_vs_dict(ads, dict_a)
 
-        self.assertEquals(len(ADS.query.all()), 1)
+        list_ads = ADS.query.all()
+        self.assertEqual(len(list_ads), 1)
+        assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
         self.assertEquals(len(Vehicle.query.all()), 1)
 
     def test_two_ads(self):
@@ -64,7 +68,9 @@ class TestADSPost(Skeleton):
         r = self.post([dict_, dict_])
         self.assert201(r)
         self.assertEqual(len(r.json['data']), 2)
-        self.assertEqual(len(ADS.query.all()), 2)
+        list_ads = ADS.query.all()
+        self.assertEqual(len(list_ads), 2)
+        assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
 
     def test_too_many_ads(self):
         dict_ = dict_ads

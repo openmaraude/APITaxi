@@ -160,6 +160,7 @@ def ads_form():
             abort(400, message="Unable to find a ZUPC for insee: {}".format(
                 ads.insee))
         ads.zupc = administrative_models.ZUPC.query.get(zupc.parent_id)
+        ads.zupc_id = ads.zupc.id
         form.ads.form.populate_obj(ads)
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)
