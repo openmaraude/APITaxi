@@ -51,10 +51,11 @@ class TaxiId(Resource):
     def put(self, taxi_id):
         json = request.get_json()
         status = json['data'][0]['status']
-        if status not in taxis_models.VehicleDescription.__table__.columns.status.type.enums:
-            abort(400, message="Invalid taxi status")
         taxi = taxis_models.Taxi.query.get(taxi_id)
-        taxi.status = status
+        try:
+            taxi.status = status
+        except AssertionError:
+            abort(400, message='Invalid status taxi status')
         db.session.commit()
         return {'data': [taxi]}
 
@@ -178,6 +179,9 @@ class Taxis(Resource):
             taxi.ads = ads
             db.session.add(taxi)
         if 'status' in taxi_json:
-            taxi.status = taxi_json['status']
+            try:
+                taxi.status = taxi_json['status']
+            except AssertionError:
+                abort(400, message='Invalid status')
         db.session.commit()
         return {'data':[taxi]}, 201
