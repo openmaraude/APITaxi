@@ -33,6 +33,19 @@ class TestVehiclePost(Skeleton):
         self.assertEqual(len(json['data']), 2)
         self.assertEqual(len(Vehicle.query.all()), 1)
 
+    def test_same_vehicle_twice_two_requests(self):
+        dict_ = dict_vehicle
+        r = self.post([dict_])
+        self.assert201(r)
+        json = r.json
+        self.assertEqual(len(json['data']), 1)
+        self.assertEqual(len(Vehicle.query.all()), 1)
+        r = self.post([dict_])
+        self.assert201(r)
+        json = r.json
+        self.assertEqual(len(json['data']), 1)
+        self.assertEqual(len(Vehicle.query.all()), 1)
+
     def test_too_many_vehicles(self):
         dict_ = dict_vehicle
         r = self.post([dict_ for x in range(0, 251)])
@@ -42,4 +55,3 @@ class TestVehiclePost(Skeleton):
     def test_no_data(self):
         r = self.post({"d": None}, envelope_data=False)
         self.assert400(r)
-
