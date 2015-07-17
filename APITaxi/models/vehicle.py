@@ -6,6 +6,7 @@ from sqlalchemy.types import Enum
 from sqlalchemy import UniqueConstraint, and_
 from flask.ext.login import current_user
 from itertools import compress
+from sqlalchemy.orm import validates
 
 @unique_constructor(db.session,
                     lambda name: name,
@@ -58,21 +59,20 @@ class Model(db.Model, AsDictMixin, MarshalMixin):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-
+status_vehicle_description_enum = ['free', 'answering', 'occupied', 'oncoming', 'off']
 @unique_constructor(db.session,
-                    lambda vehicle_id, added_by: '{}, {}'.format(vehicle_id, added_by),
-                    lambda query, vehicle_id, added_by:\
-                            query.filter(and_(\
-                                VehicleDescription.vehicle_id == vehicle_id,
-                                VehicleDescription.added_by == added_by)))
+           lambda vehicle_id, added_by: '{}, {}'.format(vehicle_id, added_by),
+           lambda query, vehicle_id, added_by:\
+                   query.filter(and_(\
+                       VehicleDescription.vehicle_id == vehicle_id,
+                       VehicleDescription.added_by == added_by)))
 class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
 
-    def __init__(self, vehicle_id=None, added_by=None):
+    def __init__(self, vehicle_id, added_by):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
-        self.added_by = added_by
         self.vehicle_id = vehicle_id
-
+        self.added_by = added_by
 
     id = Column(db.Integer, primary_key=True)
     model_id = Column(db.Integer, db.ForeignKey("model.id"))
@@ -138,13 +138,19 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
     color = Column(db.String(255), name='color', label='Couleur : ',
             nullable=True)
     vehicle_id = Column(db.Integer, db.ForeignKey('vehicle.id'))
-    status = Column(Enum('free', 'answering', 'occupied', 'oncoming', 'off',
+    UniqueConstraint('vehicle_id', 'added_by', name="uq_vehicle_description")
+    status = Column(Enum(*status_vehicle_description_enum,
         name='status_taxi_enum'), nullable=True, default='free')
     nb_seats = Column(db.Integer, name='nb_seats',
             description=u'Nombre de places assises disponibles pour les voyageurs',
             label=u'Nombre de places')
     __table_args__ = (db.UniqueConstraint('vehicle_id', 'added_by',
         name="_uq_vehicle_description"),)
+
+    @validates('status')
+    def validate_status(self, key, value):
+        assert value is None or value == 'None' or value in status_vehicle_description_enum
+        return value
 
     @classmethod
     def to_exclude(cls):

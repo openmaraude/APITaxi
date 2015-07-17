@@ -213,3 +213,20 @@ class TestTaxiPost(Skeleton):
         dict_taxi_d['vehicle']['licence_plate'] = 'bad'
         r = self.post([dict_taxi_d])
         self.assert404(r)
+
+    def test_bad_status(self):
+        self.init_zupc()
+        self.init_dep()
+        self.post([dict_driver], url='/drivers/')
+        r = self.post([dict_vehicle], url='/vehicles/')
+        self.assert201(r)
+        vehicle_id = r.json['data'][0]['id']
+        dict_ads_ = deepcopy(dict_ads)
+        dict_ads_['vehicle_id'] = vehicle_id
+        self.post([dict_ads_], url='/ads/')
+        dict_ = deepcopy(dict_taxi)
+        dict_['status'] = 'string'
+        r = self.post([dict_])
+        self.assert400(r)
+        assert('Invalid status' in r.json['message'])
+
