@@ -4,7 +4,6 @@ from .taxis import Taxi as TaxiM
 from flask.ext.security import login_required, roles_accepted,\
         roles_accepted
 from datetime import datetime, timedelta
-from flask.ext.restplus import abort
 from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
 from ..descriptors.common import coordinates_descriptor
@@ -93,11 +92,10 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         if roles_accepted:
             perm = Permission(*[RoleNeed(role) for role in roles_accepted])
             if not perm.can():
-                abort(403, message="You're not authorized to set this status")
+                raise RuntimeError("You're not authorized to set this status")
         status_required = self.status_required.get(value, None)
         if status_required and self.status != status_required:
-            abort(400, message="You cannot set status from {} to {}".format(
-                self.__status, value))
+            raise ValueError("You cannot set status from {} to {}".format(self.__status, value))
         self.status_changed()
         self.__status = value
 
