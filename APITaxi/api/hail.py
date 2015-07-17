@@ -91,6 +91,10 @@ class HailId(Resource):
             hail.status = hj['status']
         except AssertionError:
             abort(400, message='Invalid status')
+        except ValueError, e:
+            abort(400, message=e.args[0])
+        except RuntimeError, e:
+            abort(403, message=e.args[0])
         if current_user.has_role('moteur'):
             hail.customer_lon = hj['customer_lon']
             hail.customer_lat = hj['customer_lat']
