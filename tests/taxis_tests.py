@@ -230,3 +230,22 @@ class TestTaxiPost(Skeleton):
         self.assert400(r)
         assert('Invalid status' in r.json['message'])
 
+    def test_add_taxi_twice(self):
+        self.init_zupc()
+        self.init_dep()
+        self.post([dict_driver], url='/drivers/')
+        r = self.post([dict_vehicle], url='/vehicles/')
+        self.assert201(r)
+        vehicle_id = r.json['data'][0]['id']
+        dict_ads_ = deepcopy(dict_ads)
+        dict_ads_['vehicle_id'] = vehicle_id
+        self.post([dict_ads_], url='/ads/')
+        r = self.post([dict_taxi])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        self.assertEqual(len(Taxi.query.all()), 1)
+        r = self.post([dict_taxi])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        self.assertEqual(len(Taxi.query.all()), 1)
+
