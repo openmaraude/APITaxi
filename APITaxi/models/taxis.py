@@ -3,6 +3,7 @@ from APITaxi.models import vehicle
 from ..models import db, Vehicle, VehicleDescription, User
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
+from sqlalchemy.orm import validates
 from ..utils import AsDictMixin, HistoryMixin, fields
 from uuid import uuid4
 from six import string_types
@@ -10,6 +11,7 @@ from itertools import compress
 from parse import parse
 import time, operator
 
+owner_type_enum = ['company', 'individual']
 class ADS(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self, licence_plate=None):
         db.Model.__init__(self)
@@ -27,13 +29,17 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
                    description=u'Code INSEE de la commune d\'attribution')
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
     __vehicle = db.relationship('Vehicle', backref='vehicle')
-    owner_type = Column(Enum('company', 'individual', name='owner_type_enum'),
+    owner_type = Column(Enum(*owner_type_enum, name='owner_type_enum'),
             label=u'Type Propriétaire')
     owner_name = Column(db.String, label=u'Nom du propriétaire')
     category = Column(db.String, label=u'Catégorie de l\'ADS')
     zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'), nullable=True)
     zupc = db.relationship('ZUPC', backref='ZUPC')
 
+    @validates('owner_type')
+    def validate_owner_type(self, key, value):
+        assert value in owner_type_enum
+        return value
 
     @classmethod
     def can_be_listed_by(cls, user):

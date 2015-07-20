@@ -14,13 +14,12 @@ class TestADSPost(Skeleton):
 
     def test_empty_post(self):
         r = self.post([])
-        print r.json
         self.assert201(r)
         assert r.headers.get('Content-Type', None) == 'application/json'
         assert r.json['data'] == []
 
     def test_no_zupc(self):
-        dict_ = dict_ads
+        dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = None
         r = self.post([dict_])
         self.assert400(r)
@@ -28,7 +27,7 @@ class TestADSPost(Skeleton):
     def test_simple(self):
         assert(index_zupc.size == 0)
         self.init_zupc()
-        dict_ = dict_ads
+        dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = None
         r = self.post([dict_])
         self.assert201(r)
@@ -63,7 +62,7 @@ class TestADSPost(Skeleton):
 
     def test_two_ads(self):
         self.init_zupc()
-        dict_ = dict_ads
+        dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = None
         r = self.post([dict_, dict_])
         self.assert201(r)
@@ -73,7 +72,7 @@ class TestADSPost(Skeleton):
         assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
 
     def test_too_many_ads(self):
-        dict_ = dict_ads
+        dict_ = deepcopy(dict_ads)
         r = self.post([dict_ for x in range(0, 251)])
         self.assertEqual(r.status_code, 413)
         self.assertEqual(len(ADS.query.all()), 0)
@@ -83,10 +82,28 @@ class TestADSPost(Skeleton):
         self.assert400(r)
 
     def test_bad_vehicle_id(self):
-        dict_ = dict_ads
+        dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = 1
         r = self.post([dict_])
         self.assert400(r)
 
+    def test_bad_owner_type(self):
+        assert(index_zupc.size == 0)
+        self.init_zupc()
+        dict_ = deepcopy(dict_ads)
+        dict_['vehicle_id'] = None
+        dict_['owner_type'] = 'string'
+        r = self.post([dict_])
+        self.assert400(r)
+        assert 'Bad owner_type' in r.json['message']
 
+    def test_no_owner_type(self):
+        assert(index_zupc.size == 0)
+        self.init_zupc()
+        dict_ = deepcopy(dict_ads)
+        dict_['vehicle_id'] = None
+        dict_['owner_type'] = None
+        r = self.post([dict_])
+        self.assert400(r)
+        assert 'Bad owner_type' in r.json['message']
 
