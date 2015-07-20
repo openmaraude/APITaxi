@@ -115,9 +115,14 @@ class ADS(Resource):
                 new_ads.append(create_obj_from_json(taxis_models.ADS, ads))
             except KeyError as e:
                 abort(400, message="Missing key: "+str(e))
+            except AssertionError as e:
+                abort(400, message='Bad owner_type value, can be: {}'.format(
+                    taxis_models.owner_type_enum
+                    ))
             zupc = administrative_models.ZUPC.query.filter_by(insee=new_ads[-1].insee).first()
             if zupc is None:
-                abort(400, message="Unable to find a ZUPC for insee: {}".format(new_ads[-1].insee))
+                abort(400, message="Unable to find a ZUPC for insee: {}".format(
+                    new_ads[-1].insee))
             new_ads[-1].zupc_id = zupc.parent_id
             db.session.add(new_ads[-1])
         db.session.commit()
@@ -161,7 +166,10 @@ def ads_form():
                 ads.insee))
         ads.zupc = administrative_models.ZUPC.query.get(zupc.parent_id)
         ads.zupc_id = ads.zupc.id
-        form.ads.form.populate_obj(ads)
+        try:
+            form.ads.form.populate_obj(ads)
+        except AssertionError:
+            abort(400, message='Bad owner type')
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)
         db.session.add(ads)
