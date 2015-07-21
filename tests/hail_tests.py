@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
-from APITaxi.models.hail import (Customer, Hail, reason_rating_ride_enum,
-        reason_incident_customer_enum)
+from APITaxi.models.hail import (Customer, Hail, rating_ride_reason_enum,
+        incident_customer_reason_enum, incident_taxi_reason_enum,
+        reporting_customer_reason_enum)
 from APITaxi.models.taxis import Taxi
 from APITaxi.models.security import User
 from APITaxi import redis_store
@@ -365,7 +366,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_reason_all_valid_values(self):
         valid_values = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
-        assert sorted(valid_values) == sorted(reason_rating_ride_enum)
+        assert sorted(valid_values) == sorted(rating_ride_reason_enum)
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
@@ -512,8 +513,8 @@ class TestHailPut(HailMixin):
         self.app.config['ENV'] = prev_env
 
     def test_incident_customer_reason_all_valid_values(self):
-        valid_values = ['late', 'aggressive', 'no_show']
-        assert sorted(valid_values) == sorted(reason_incident_customer_enum)
+        valid_values = ['mud_river', 'parade', 'earthquake']
+        assert sorted(valid_values) == sorted(incident_customer_reason_enum)
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
@@ -524,7 +525,7 @@ class TestHailPut(HailMixin):
             dict_hail['status'] = 'incident_customer'
             dict_hail['incident_customer_reason'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
-                    version=2, role='operateur')
+                    version=2, role='moteur')
             self.assert200(r)
             assert u'incident_customer_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_customer_reason'] == v
@@ -559,7 +560,7 @@ class TestHailPut(HailMixin):
         self.app.config['ENV'] = prev_env
 
 
-    def test_incident_customer_by_non_operateur(self):
+    def test_incident_customer_by_non_moteur(self):
         dict_hail = deepcopy(dict_)
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
@@ -567,7 +568,157 @@ class TestHailPut(HailMixin):
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('incident_customer')
         dict_hail['status'] = 'incident_customer'
-        dict_hail['incident_customer_reason'] = 'late'
+        dict_hail['incident_customer_reason'] = 'mud_river'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert403(r)
+
+    def test_incident_taxi_reason_all_valid_values(self):
+        valid_values = ['traffic_jam', 'garbage_truck']
+        assert sorted(valid_values) == sorted(incident_taxi_reason_enum)
+        for v in valid_values:
+            dict_hail = deepcopy(dict_)
+            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            r = self.send_hail(dict_hail)
+            self.assert201(r)
+            hail = Hail.query.get(r.json['data'][0]['id'])
+            hail.__status_set_no_check('incident_taxi')
+            dict_hail['status'] = 'incident_taxi'
+            dict_hail['incident_taxi_reason'] = v
+            r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                    version=2, role='operateur')
+            self.assert200(r)
+            assert u'incident_taxi_reason' in r.json['data'][0]
+            assert r.json['data'][0]['incident_taxi_reason'] == v
+            self.app.config['ENV'] = prev_env
+
+    def test_incident_taxi_reason_bad_value(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('incident_taxi')
+        dict_hail['status'] = 'incident_taxi'
+        dict_hail['incident_taxi_reason'] = 'Une evaluation'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert400(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_incident_taxi_reason_bad_value_with_accent(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('incident_taxi')
+        dict_hail['status'] = 'incident_taxi'
+        dict_hail['incident_taxi_reason'] = 'Une évaluation'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert400(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_incident_taxi_by_non_operateur(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('incident_taxi')
+        dict_hail['status'] = 'incident_taxi'
+        dict_hail['incident_taxi_reason'] = 'traffic_jam'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert403(r)
+
+    def test_reporting_customer(self):
+        for v in [True, False]:
+            dict_hail = deepcopy(dict_)
+            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            r = self.send_hail(dict_hail)
+            self.assert201(r)
+            hail = Hail.query.get(r.json['data'][0]['id'])
+            hail.__status_set_no_check('accepted_by_customer')
+            dict_hail['status'] = 'accepted_by_customer'
+            dict_hail['reporting_customer'] = v
+            r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                    version=2, role='operateur')
+            self.assert200(r)
+            assert u'reporting_customer' in r.json['data'][0]
+            assert r.json['data'][0]['reporting_customer'] == v
+            self.app.config['ENV'] = prev_env
+
+    def test_reporting_customer_by_non_operateur(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('accepted_by_customer')
+        dict_hail['status'] = 'accepted_by_customer'
+        dict_hail['reporting_customer'] = True
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert403(r)
+
+    def test_reporting_customer_reason_all_valid_values(self):
+        valid_values = ['late', 'aggressive', 'no_show']
+        assert sorted(valid_values) == sorted(reporting_customer_reason_enum)
+        for v in valid_values:
+            dict_hail = deepcopy(dict_)
+            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            r = self.send_hail(dict_hail)
+            self.assert201(r)
+            hail = Hail.query.get(r.json['data'][0]['id'])
+            hail.__status_set_no_check('accepted_by_customer')
+            dict_hail['status'] = 'accepted_by_customer'
+            dict_hail['reporting_customer_reason'] = v
+            r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                    version=2, role='operateur')
+            self.assert200(r)
+            assert u'reporting_customer_reason' in r.json['data'][0]
+            assert r.json['data'][0]['reporting_customer_reason'] == v
+            self.app.config['ENV'] = prev_env
+
+    def test_reporting_customer_reason_bad_value(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('reporting_customer')
+        dict_hail['status'] = 'reporting_customer'
+        dict_hail['reporting_customer_reason'] = 'Une evaluation'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert400(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_reporting_customer_reason_bad_value_with_accent(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('reporting_customer')
+        dict_hail['status'] = 'reporting_customer'
+        dict_hail['reporting_customer_reason'] = 'Une évaluation'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert400(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_reporting_customer_reason_by_non_operateur(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('accepted_by_customer')
+        dict_hail['status'] = 'accepted_by_customer'
+        dict_hail['reporting_customer_reason'] = 'no_show'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
         self.assert403(r)

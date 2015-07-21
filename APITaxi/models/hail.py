@@ -29,8 +29,10 @@ class Customer(db.Model, AsDictMixin, HistoryMixin):
     nb_sanctions = db.Column(db.Integer, default=0)
 
 
-reason_rating_ride_enum = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
-reason_incident_customer_enum = ['late', 'aggressive', 'no_show']
+rating_ride_reason_enum = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
+reporting_customer_reason_enum = ['late', 'aggressive', 'no_show']
+incident_customer_reason_enum = ['mud_river', 'parade', 'earthquake']
+incident_taxi_reason_enum = ['traffic_jam', 'garbage_truck']
 class Hail(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.Integer, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
@@ -52,18 +54,24 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         )
     taxi_phone_number = db.Column(db.String, nullable=True)
     rating_ride = db.Column(db.Integer)
-    rating_ride_reason = db.Column(db.Enum(*reason_rating_ride_enum,
+    rating_ride_reason = db.Column(db.Enum(*rating_ride_reason_enum,
       name='reason_ride_enum'), nullable=True)
-    incident_customer_reason = db.Column(db.Enum(*reason_incident_customer_enum,
-        name='reason_incident_customer_enum'), nullable=True)
+    incident_customer_reason = db.Column(db.Enum(*incident_customer_reason_enum,
+        name='incident_customer_reason_enum'), nullable=True)
+    incident_taxi_reason = db.Column(db.Enum(*incident_taxi_reason_enum,
+        name='incident_taxi_reason_enum'), nullable=True)
+# Reporting of the customer by the taxi
+    reporting_customer = db.Column(db.Boolean, nullable=True)
+    reporting_customer_reason = db.Column(db.Enum(*reporting_customer_reason_enum,
+        name='reporting_customer_reason_enum'), nullable=True)
 
 
     @validates('rating_ride_reason')
     def validate_rating_ride_reason(self, key, value):
 #We need to restrict this to a subset of statuses
-        assert value is None or value in reason_rating_ride_enum,\
+        assert value is None or value in rating_ride_reason_enum,\
             'Bad rating_ride_reason\'s value. It can be: {}'.format(
-                    reason_rating_ride_enum)
+                    rating_ride_reason_enum)
         if current_user.id != self.added_by:
             raise RuntimeError()
         return value
@@ -71,9 +79,34 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @validates('incident_customer_reason')
     def validate_incident_customer_reason(self, key, value):
         assert self.status == 'incident_customer', 'Bad status'
-        assert value is None or value in reason_incident_customer_enum,\
+        assert value is None or value in incident_customer_reason_enum,\
             'Bad rating_ride_reason\'s value. It can be: {}'.format(
-                    reason_incident_customer_enum)
+                    incident_customer_reason_enum)
+        if current_user.id != self.added_by:
+            raise RuntimeError()
+        return value
+
+    @validates('incident_taxi_reason')
+    def validate_incident_taxi_reason(self, key, value):
+        assert self.status == 'incident_taxi', 'Bad status'
+        assert value is None or value in incident_taxi_reason_enum,\
+            'Bad rating_ride_reason\'s value. It can be: {}'.format(
+                    incident_taxi_reason_enum)
+        if current_user.id != self.operateur_id:
+            raise RuntimeError()
+        return value
+
+    @validates('reporting_customer_reason')
+    def validate_reporting_customer_reason(self, key, value):
+        assert value is None or value in reporting_customer_reason_enum,\
+            'Bad reporting_customer_reason\'s value. It can be: {}'.format(
+                    reporting_customer_reason_enum)
+        if current_user.id != self.operateur_id:
+            raise RuntimeError()
+        return value
+
+    @validates('reporting_customer')
+    def validate_reporting_customer(self, key, value):
         if current_user.id != self.operateur_id:
             raise RuntimeError()
         return value
@@ -130,6 +163,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         if roles_accepted:
             perm = Permission(*[RoleNeed(role) for role in roles_accepted])
             if not perm.can():
+                print 'setter status'
                 raise RuntimeError("You're not authorized to set this status")
         status_required = self.status_required.get(value, None)
         if status_required and self.__status != status_required:

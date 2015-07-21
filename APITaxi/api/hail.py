@@ -39,6 +39,12 @@ parser_put.add_argument('rating_ride', type=int, required=False,
         location='hail')
 parser_put.add_argument('incident_customer_reason', type=unicode, required=False,
         location='hail')
+parser_put.add_argument('incident_taxi_reason', type=unicode, required=False,
+        location='hail')
+parser_put.add_argument('reporting_customer', type=bool, required=False,
+        location='hail')
+parser_put.add_argument('reporting_customer_reason', type=unicode, required=False,
+        location='hail')
 argument_names = [f.name for f in parser_put.args]
 dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
 dict_hail['operateur'] = fields.String(attribute='operateur.email')
@@ -109,9 +115,13 @@ class HailId(Resource):
             hail.customer_lat = hj['customer_lat']
             hail.customer_address = hj['customer_address']
             hail.customer_phone_number = hj['customer_phone_number']
-        for ev in ['rating_ride', 'rating_ride_reason', 'incident_customer_reason']:
+        for ev in ['rating_ride', 'rating_ride_reason',
+                'incident_customer_reason', 'incident_taxi_reason',
+                'reporting_customer', 'reporting_customer_reason']:
             value = hj.get(ev, None)
-            if value:
+            if ev == 'reason_reporting_customer':
+                print value, hj
+            if value is not None:
                 try:
                     setattr(hail, ev, value)
                 except AssertionError, e:
