@@ -13,3 +13,10 @@ UPLOADS_DOCUMENTS_DEST = 'uploads'
 UPLOADS_DOCUMENTS_URL = '/documents/<path:filename>'
 
 SLACK_API_KEY = None
+
+DOGPILE_CACHE_URLS = ''
+DOGPILE_CACHE_REGIONS = [
+    ('taxis', None)
+]
+
+DOGPILE_CACHE_BACKEND = 'dogpile.cache.memory'

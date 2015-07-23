@@ -5,6 +5,7 @@ __contact__ = "vincent.lara@data.gouv.fr"
 __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
 
+
 from flask import Flask, request_started, request, request_finished, g
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask_bootstrap import Bootstrap
@@ -17,6 +18,7 @@ from flask.ext.restplus import abort
 from flask.ext.security.utils import verify_and_update_password
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
+from dogpile.cache import make_region
 from slacker import Slacker
 from .utils.request_wants_json import request_wants_json
 from sqlalchemy import distinct
@@ -25,6 +27,7 @@ from .index_zupc import IndexZUPC
 
 user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
                             security_models.Role)
+region_taxi = make_region('taxis')
 
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
@@ -64,7 +67,6 @@ images = UploadSet('images', IMAGES)
 
 index_zupc = IndexZUPC()
 
-
 def create_app(sqlalchemy_uri=None):
     app = Flask(__name__)
     app.config.from_object('default_settings')
@@ -100,4 +102,7 @@ def create_app(sqlalchemy_uri=None):
     app.login_manager.request_loader(load_user_from_request)
     from . import demo
     demo.create_app(app)
+    if not region_taxi.is_configured:
+        region_taxi.configure('dogpile.cache.memory')
+    from .models.taxis import Taxi
     return app

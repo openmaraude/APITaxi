@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-from APITaxi.models import vehicle
-from ..models import db, Vehicle, VehicleDescription, User
+from ..models import vehicle
+from .. import region_taxi
+from ..models import db
+from ..models.vehicle import Vehicle, VehicleDescription
+from ..models.security import User
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
@@ -108,6 +111,7 @@ class Driver(db.Model, AsDictMixin, HistoryMixin):
         return '<drivers %r>' % str(self.id)
 
 class Taxi(db.Model, AsDictMixin, HistoryMixin):
+
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
@@ -210,3 +214,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     @property
     def driver_departement(self):
         return self.driver.departement
+
+@region_taxi.cache_on_arguments()
+def get_taxi(id_):
+    print 'generate'
+    return Taxi.query.get(id_)
