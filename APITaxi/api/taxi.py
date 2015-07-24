@@ -22,7 +22,7 @@ class TaxiId(Resource):
         403:'You\'re not authorized to view it'})
     @json_mimetype_required
     def get(self, taxi_id):
-        taxi = taxis_models.Taxi.query.get(taxi_id)
+        taxi = taxis_models.get_taxi(taxi_id)
         if not taxi:
             abort(404, message="Unable to find this taxi")
         operator = None
@@ -74,7 +74,7 @@ dict_taxi_expect = \
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
-        taxi_db = taxis_models.Taxi.query.get(taxi_id)
+        taxi_db = taxis_models.get_taxi(taxi_id)
         if not taxi_db or not taxi_db.is_free(redis_store) or\
             taxi_db.ads.zupc_id not in zupc_customer:
             return None
@@ -87,6 +87,8 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
             return None
 
         description = taxi_db.vehicle.get_description(operator)
+        if not description:
+            return None
         return {
             "id": taxi_id,
             "operator": operator.email,

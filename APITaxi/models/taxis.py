@@ -8,6 +8,7 @@ from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
 from ..utils import AsDictMixin, HistoryMixin, fields
+from ..utils.refresh_db import cache_refresh
 from uuid import uuid4
 from six import string_types
 from itertools import compress
@@ -150,7 +151,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         scan = [(k.decode(), parse(cls._FORMAT_OPERATOR, v.decode()))\
                 for k, v in scan.items()]
         return [(k, v) for k, v in scan\
-                if int(v['timestamp']) > min_time]
+                if int(v['timestamp']) >= min_time]
 
     def caracs(self, redis_store, min_time):
         return self.__class__.retrieve_caracs(self.id, redis_store, min_time)
@@ -161,7 +162,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         caracs = self.caracs(redis_store, min_time)
         users = map(lambda (email, _): User.query.filter_by(email=email).first().id,
                 caracs)
-        return all(map(lambda desc: desc.added_by in users and desc.status == 'free',
+        return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
             self.vehicle.descriptions))
 
     def is_fresh(self, redis_store, operateur):
@@ -217,5 +218,17 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
 @region_taxi.cache_on_arguments()
 def get_taxi(id_):
-    print 'generate'
     return Taxi.query.get(id_)
+
+def refresh_taxi(session, ads=None, vehicle=None, driver=None):
+    filters = {}
+    if ads:
+        filters['ads_id'] = ads
+    if vehicle:
+        filters['vehicle_id'] = vehicle
+    if driver:
+        filters['driver_id'] = driver
+    if not filters:
+        return
+    for taxi in Taxi.query.filter_by(**filters):
+        cache_refresh(session.session_factory(), get_taxi, taxi.id)
