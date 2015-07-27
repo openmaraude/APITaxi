@@ -8,9 +8,9 @@ from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
-from .. import redis_store
+from .. import redis_store, region_hails
 from flask_principal import RoleNeed, Permission
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, joinedload
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -215,3 +215,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
                         }
         return {}
 
+
+@region_hails.cache_on_arguments(expiration_time=3600*2)
+def get_hail(id_):
+    return Hail.query.options(joinedload("operateur")).get(id_)
