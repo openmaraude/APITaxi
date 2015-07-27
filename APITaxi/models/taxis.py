@@ -221,7 +221,9 @@ def get_taxi(id_):
     return Taxi.query.options(joinedload("ads.zupc"),
             joinedload("vehicle.descriptions")).get(id_)
 
-def refresh_taxi(session, ads=None, vehicle=None, driver=None):
+def refresh_taxi(session, ads=None, vehicle=None, driver=None, id_=None):
+    if id_:
+        cache_refresh(session.session_factory(), get_taxi, id_)
     filters = {}
     if ads:
         filters['ads_id'] = ads
