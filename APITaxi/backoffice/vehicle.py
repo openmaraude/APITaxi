@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, Blueprint
-from ..models import vehicle as vehicle_models
+from ..models import vehicle as vehicle_models, taxis as taxis_models
 from .. import db
 from ..api import api
 from . import ns_administrative
 from flask.ext.restplus import fields, Resource, reqparse, abort
 from ..utils.make_model import make_model
+from ..utils.refresh_db import cache_refresh
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 
 mod = Blueprint('vehicle', __name__)
@@ -40,6 +41,7 @@ class Vehicle(Resource):
             form_description.populate_obj(v_description)
             v_description.status = 'off'
             db.session.add(v)
+            taxis_models.refresh_taxi(db.session, vehicle=v.id)
             new_vehicle.append(v)
         db.session.commit()
         return {"data": new_vehicle}, 201

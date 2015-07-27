@@ -5,8 +5,9 @@ from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
 from .. import db, redis_store, user_datastore
 from ..api import api
-from ..models import (Hail as HailModel, Customer as CustomerModel,
-    Taxi as TaxiModel, security as security_models)
+from ..models.hail import Hail as HailModel, Customer as CustomerModel
+from ..models.taxis import  Taxi as TaxiModel
+from ..models import security as security_models
 from datetime import datetime
 import requests, json
 from ..descriptors.hail import hail_model
