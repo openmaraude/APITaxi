@@ -76,9 +76,9 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
 
     id = Column(db.Integer, primary_key=True)
     model_id = Column(db.Integer, db.ForeignKey("model.id"))
-    __model = db.relationship('Model')
+    __model = db.relationship('Model', lazy='joined')
     constructor_id = Column(db.Integer, db.ForeignKey("constructor.id"))
-    __constructor = db.relationship('Constructor')
+    __constructor = db.relationship('Constructor', lazy='joined')
     model_year = Column(db.Integer, label=u'Année', nullable=True,
             description=u'Année de mise en production du véhicule')
     engine = Column(db.String(80), label=u'Motorisation', nullable=True,
