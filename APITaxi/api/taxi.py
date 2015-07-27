@@ -177,10 +177,10 @@ class Taxis(Resource):
                 vehicle_id=vehicle.id, ads_id=ads.id).first()
         if not taxi:
             taxi = taxis_models.Taxi()
-            taxi.driver = driver
-            taxi.vehicle = vehicle
-            taxi.ads = ads
-            db.session.add(taxi)
+        taxi.driver = driver
+        taxi.vehicle = vehicle
+        taxi.ads = ads
+        db.session.add(taxi)
         if 'status' in taxi_json:
             try:
                 taxi.status = taxi_json['status']
