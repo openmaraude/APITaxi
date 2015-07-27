@@ -76,8 +76,8 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
         taxi_db = taxis_models.get_taxi(taxi_id)
-        if not taxi_db or not taxi_db.is_free(redis_store) or\
-            taxi_db.ads.zupc_id not in zupc_customer:
+        if not taxi_db or not taxi_db.ads or not taxi_db.is_free(redis_store)\
+            or taxi_db.ads.zupc_id not in zupc_customer:
             return None
         operator, timestamp = taxi_db.get_operator(redis_store,
                 min_time, favorite_operator)
