@@ -24,6 +24,7 @@ from sqlalchemy import distinct
 from rtree import index
 from .index_zupc import IndexZUPC
 region_taxi = make_region('taxis')
+region_hails = make_region('hails')
 
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
@@ -81,6 +82,8 @@ def create_app(sqlalchemy_uri=None):
     demo.create_app(app)
     if not region_taxi.is_configured:
         region_taxi.configure('dogpile.cache.memory')
+    if not region_hails.is_configured:
+        region_hails.configure('dogpile.cache.memory')
     if not region_users.is_configured:
         region_users.configure('dogpile.cache.memory')
     return app

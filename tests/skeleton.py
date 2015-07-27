@@ -13,6 +13,7 @@ from copy import deepcopy
 import time
 from shapely.geometry import Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
+from APITaxi import region_taxi, region_hails, region_users
 
 
 class Skeleton(TestCase):
@@ -44,6 +45,9 @@ class Skeleton(TestCase):
             redis_store.zrem('geoindex', i)
         db.session.remove()
         db.drop_all()
+        region_taxi.invalidate()
+        region_hails.invalidate()
+        region_users.invalidate()
         index_zupc.index_zupc = None
 
     def post_taxi(self, role=None):

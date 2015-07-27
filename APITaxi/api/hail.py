@@ -5,13 +5,14 @@ from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
 from .. import db, redis_store
 from ..api import api
-from ..models.hail import Hail as HailModel, Customer as CustomerModel
+from ..models.hail import Hail as HailModel, Customer as CustomerModel, get_hail
 from ..models.taxis import  Taxi as TaxiModel
 from ..models import security as security_models
 from datetime import datetime
 import requests, json
 from ..descriptors.hail import hail_model
 from ..utils.request_wants_json import json_mimetype_required
+from ..utils.refresh_db import cache_refresh
 
 ns_hail = api.namespace('hails', description="Hail API")
 
@@ -67,7 +68,9 @@ class HailId(Resource):
     @api.marshal_with(hail_model)
     @json_mimetype_required
     def get(self, hail_id):
-        hail = HailModel.query.get_or_404(hail_id)
+        hail = get_hail(hail_id)
+        if not hail:
+            abort(404, message="Unable to find hail: {}".format(hail_id))
         self.filter_access(hail)
         return {"data": [hail]}
 
@@ -129,6 +132,7 @@ class HailId(Resource):
                     abort(403)
                 except ValueError, e:
                     abort(400, e.args[0])
+        cache_refresh(db.session.session_factory(), get_hail, hail_id)
         db.session.commit()
         return {"data": [hail]}
 
