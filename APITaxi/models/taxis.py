@@ -6,7 +6,7 @@ from ..models.vehicle import Vehicle, VehicleDescription
 from ..models.security import get_user_from_email
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, joinedload
 from ..utils import AsDictMixin, HistoryMixin, fields
 from ..utils.refresh_db import cache_refresh
 from uuid import uuid4
@@ -218,7 +218,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
 @region_taxi.cache_on_arguments()
 def get_taxi(id_):
-    return Taxi.query.get(id_)
+    return Taxi.query.options(joinedload("ads.zupc"),
+            joinedload("vehicle.descriptions")).get(id_)
 
 def refresh_taxi(session, ads=None, vehicle=None, driver=None):
     filters = {}
