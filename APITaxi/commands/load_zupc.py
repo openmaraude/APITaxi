@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from .. import user_datastore
 from ..models import db
 from ..models.administrative import ZUPC, Departement
 from flask.ext.script import prompt_pass

@@ -163,7 +163,6 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         if roles_accepted:
             perm = Permission(*[RoleNeed(role) for role in roles_accepted])
             if not perm.can():
-                print 'setter status'
                 raise RuntimeError("You're not authorized to set this status")
         status_required = self.status_required.get(value, None)
         if status_required and self.__status != status_required:

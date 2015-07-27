@@ -3,7 +3,7 @@ from flask import request, redirect, url_for, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
-from .. import db, redis_store, user_datastore
+from .. import db, redis_store
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
 from ..models.taxis import  Taxi as TaxiModel
@@ -120,8 +120,6 @@ class HailId(Resource):
                 'incident_customer_reason', 'incident_taxi_reason',
                 'reporting_customer', 'reporting_customer_reason']:
             value = hj.get(ev, None)
-            if ev == 'reason_reporting_customer':
-                print value, hj
             if value is not None:
                 try:
                     setattr(hail, ev, value)
