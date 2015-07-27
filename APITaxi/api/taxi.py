@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import taxis as taxis_models, administrative as administrative_models
-from .. import (db, redis_store, user_datastore, index_zupc)
+from .. import (db, redis_store, index_zupc)
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
@@ -35,7 +35,7 @@ class TaxiId(Resource):
         taxi_m = marshal({'data':[taxi]}, taxi_model)
         taxi_m['data'][0]['operator'] = operator.email
         op, timestamp = taxi.get_operator(redis_store,
-                user_datastore, favorite_operator=current_user.email)
+                favorite_operator=current_user.email)
         taxi_m['data'][0]['last_update'] = timestamp if op == current_user else None
         return taxi_m
 
@@ -79,7 +79,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
             taxi_db.ads.zupc_id not in zupc_customer:
             return None
         operator, timestamp = taxi_db.get_operator(redis_store,
-                user_datastore, min_time, favorite_operator)
+                min_time, favorite_operator)
         if not operator:
             return None
 #Check if the taxi is operating in its ZUPC

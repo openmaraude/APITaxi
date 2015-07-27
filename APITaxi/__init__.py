@@ -7,26 +7,22 @@ __version__ = ".".join(map(str, VERSION))
 
 
 from flask import Flask, request_started, request, request_finished, g
-from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask_bootstrap import Bootstrap
 import os
 from flask.ext.redis import FlaskRedis
 from .utils.redis_geo import GeoRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
-from .models import db, security as security_models
+from dogpile.cache import make_region
+region_users = make_region('users')
+from .models import db
 from flask.ext.restplus import abort
-from flask.ext.security.utils import verify_and_update_password
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
-from dogpile.cache import make_region
 from slacker import Slacker
 from .utils.request_wants_json import request_wants_json
 from sqlalchemy import distinct
 from rtree import index
 from .index_zupc import IndexZUPC
-
-user_datastore = SQLAlchemyUserDatastore(db, security_models.User,
-                            security_models.Role)
 region_taxi = make_region('taxis')
 
 valid_versions = ['1', '2']
@@ -43,24 +39,6 @@ def check_version(sender, **extra):
 
 def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
-
-def load_user_from_request(request):
-    apikey = request.headers.environ.get('HTTP_X_API_KEY', None)
-    if apikey:
-        u = security_models.User.query.filter_by(apikey=apikey)
-        return u.first() or None
-    auth = request.headers.get('Authorization')
-    if not auth or auth.count(':') != 1:
-        return None
-    login, password = auth.split(':')
-    user = user_datastore.get_user(login.strip())
-    if user is None:
-        return None
-    if not verify_and_update_password(password.strip(), user):
-        return None
-    if not user.is_active():
-        return None
-    return user
 
 documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
 images = UploadSet('images', IMAGES)
@@ -83,7 +61,6 @@ def create_app(sqlalchemy_uri=None):
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
     db.init_app(app)
-    security = Security(app, user_datastore)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()
     from . import backoffice
@@ -98,11 +75,12 @@ def create_app(sqlalchemy_uri=None):
     request_finished.connect(add_version_header, app)
 
     configure_uploads(app, (documents, images))
-
-    app.login_manager.request_loader(load_user_from_request)
+    from .utils.login_manager import init_app as init_login_manager
+    init_login_manager(app)
     from . import demo
     demo.create_app(app)
     if not region_taxi.is_configured:
         region_taxi.configure('dogpile.cache.memory')
-    from .models.taxis import Taxi
+    if not region_users.is_configured:
+        region_users.configure('dogpile.cache.memory')
     return app

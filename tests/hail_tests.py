@@ -5,7 +5,6 @@ from APITaxi.models.hail import (Customer, Hail, rating_ride_reason_enum,
         incident_customer_reason_enum, incident_taxi_reason_enum,
         reporting_customer_reason_enum)
 from APITaxi.models.taxis import Taxi
-from APITaxi.models.security import User
 from APITaxi import redis_store
 from copy import deepcopy
 from werkzeug.exceptions import ServiceUnavailable
@@ -25,6 +24,7 @@ class HailMixin(Skeleton):
     url = '/hails/'
 
     def set_env(self, env, url):
+        from APITaxi.models.security import User
         prev_env = self.app.config['ENV']
         self.app.config['ENV'] = env
         u = User.query.filter_by(email='user_operateur').first()

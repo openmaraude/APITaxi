@@ -3,12 +3,14 @@ from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
 from ..models import db
 from ..utils import MarshalMixin
+from .. import region_users
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from flask import current_app
+from dogpile.cache import make_region
 
-
+print 'roles_users'
 roles_users = db.Table('roles_users',
         db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
         db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
@@ -70,9 +72,6 @@ class User(db.Model, UserMixin, MarshalMixin):
             return self.hail_endpoint_testing
         return None
 
-    def get_user_from_api_key(self, apikey):
-        user = self.user_model.query.filter_by(apikey=apikey)
-        return user.get() or None
 
 
 class Logo(db.Model):
@@ -81,3 +80,15 @@ class Logo(db.Model):
     format_=db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
+
+@region_users.cache_on_arguments()
+def get_user(id_):
+    return User.query.get(id_)
+
+@region_users.cache_on_arguments()
+def get_user_from_email(email):
+    return User.query.filter_by(email=email).first()
+
+@region_users.cache_on_arguments()
+def get_user_from_api_key(apikey):
+    return User.query.filter_by(apikey=apikey)
