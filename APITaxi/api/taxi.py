@@ -9,7 +9,6 @@ from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
 from shapely.geometry import Point
-from ..utils.refresh_db import refresh_taxi
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -57,7 +56,7 @@ class TaxiId(Resource):
             taxi.status = status
         except AssertionError:
             abort(400, message='nvalid status taxi status')
-        refresh_taxi(db.session, id_=taxi_id)
+        taxis_models.refresh_taxi(db.session, id_=taxi_id)
         db.session.commit()
         return {'data': [taxi]}
 
