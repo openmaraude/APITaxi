@@ -216,7 +216,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def driver_departement(self):
         return self.driver.departement
 
-@region_taxi.cache_on_arguments()
+@region_taxi.cache_on_arguments(expiration_time=13*3600)
 def get_taxi(id_):
     return Taxi.query.options(joinedload("ads.zupc"),
             joinedload("vehicle.descriptions")).get(id_)
