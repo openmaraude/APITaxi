@@ -120,8 +120,6 @@ class HailId(Resource):
                 'incident_customer_reason', 'incident_taxi_reason',
                 'reporting_customer', 'reporting_customer_reason']:
             value = hj.get(ev, None)
-            if ev == 'reason_reporting_customer':
-                print value, hj
             if value is not None:
                 try:
                     setattr(hail, ev, value)

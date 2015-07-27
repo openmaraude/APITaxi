@@ -10,7 +10,6 @@ import uuid
 from flask import current_app
 from dogpile.cache import make_region
 
-print 'roles_users'
 roles_users = db.Table('roles_users',
         db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
         db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
