@@ -13,7 +13,12 @@ from flask.ext.redis import FlaskRedis
 from .utils.redis_geo import GeoRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 from dogpile.cache import make_region
-region_users = make_region('users')
+def user_key_generator(namespace, fn, **kw):
+    def generate_key(*args):
+        print namespace, fn.__name__
+        return fn.__name__ + "_".join(str(s) for s in args)
+    return generate_key
+region_users = make_region('users', function_key_generator=user_key_generator)
 from .models import db
 from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
