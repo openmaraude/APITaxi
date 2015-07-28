@@ -50,12 +50,22 @@ class TaxiId(Resource):
     @json_mimetype_required
     def put(self, taxi_id):
         json = request.get_json()
+        if 'data' not in json:
+            abort(400, message="data is needed")
+        if len(json['data']) != 1:
+            abort(413, message="You can only PUT one taxi")
+        if 'status' not in json['data'][0]:
+            abort(400, message="a status is needed")
         status = json['data'][0]['status']
+        if status == 'answering':
+            abort(400, message='Setting status to answering is not authorized')
         taxi = taxis_models.Taxi.query.get(taxi_id)
+        if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
+            abort(403, message='You\'re not authorized to PUT this taxi')
         try:
             taxi.status = status
-        except AssertionError:
-            abort(400, message='nvalid status taxi status')
+        except AssertionError as e:
+            abort(400, message=str(e))
         taxis_models.get_taxi.invalidate(taxi_id)
         db.session.commit()
         return {'data': [taxi]}
