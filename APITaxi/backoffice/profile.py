@@ -7,7 +7,6 @@ from flask.ext.security import login_required, roles_accepted, current_user
 from flask import (Blueprint, request, render_template, redirect, jsonify,
                    url_for, abort, current_app, send_file)
 from ..utils import fields
-from ..utils.refresh_db import cache_refresh
 from flask.ext.restplus import fields as basefields, marshal_with, Resource
 from werkzeug import secure_filename
 import os
@@ -54,12 +53,9 @@ def profile_form():
                 db.session.add(logo_db)
                 operateur.logos.append(logo_db)
         form.populate_obj(operateur)
-        cache_refresh(db.session.session_factory(),
-                security_models.User.get_user, id_)
-        cache_refresh(db.session.session_factory(),
-                security_models.User.get_user_from_email, operateur.email)
-        cache_refresh(db.session.session_factory(),
-                security_models.User.get_user_from_api_key, operateur.api_key)
+        security_models.User.get_user.invalidate(id_)
+        security_models.User.get_user_from_email(operateur.email)
+        security_models.User.get_user_from_api_key.invalidate(operateur.api_key)
         db.session.commit()
         return redirect(url_for('profile.profile_form'))
     return render_template('forms/profile.html', form=form,

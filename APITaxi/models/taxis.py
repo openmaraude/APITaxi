@@ -8,7 +8,6 @@ from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates, joinedload
 from ..utils import AsDictMixin, HistoryMixin, fields
-from ..utils.refresh_db import cache_refresh
 from uuid import uuid4
 from six import string_types
 from itertools import compress
@@ -223,9 +222,7 @@ def get_taxi(id_):
             joinedload("vehicle.descriptions"),
             joinedload("driver")).get(id_)
 
-def refresh_taxi(session, ads=None, vehicle=None, driver=None, id_=None):
-    if id_:
-        cache_refresh(session.session_factory(), get_taxi, id_)
+def invalidate_taxi(ads=None, vehicle=None, driver=None, id_=None):
     filters = {}
     if ads:
         filters['ads_id'] = ads
@@ -236,4 +233,4 @@ def refresh_taxi(session, ads=None, vehicle=None, driver=None, id_=None):
     if not filters:
         return
     for taxi in Taxi.query.filter_by(**filters):
-        cache_refresh(session.session_factory(), get_taxi, taxi.id)
+        get_taxi.invalidate(taxi.id)
