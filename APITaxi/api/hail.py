@@ -12,7 +12,6 @@ from datetime import datetime
 import requests, json
 from ..descriptors.hail import hail_model
 from ..utils.request_wants_json import json_mimetype_required
-from ..utils.refresh_db import cache_refresh
 
 ns_hail = api.namespace('hails', description="Hail API")
 
@@ -131,9 +130,9 @@ class HailId(Resource):
                 except RuntimeError, e:
                     abort(403)
                 except ValueError, e:
-                    abort(400, e.args[0])
-        cache_refresh(db.session.session_factory(), get_hail, hail_id)
+                    abort(400, e.args[0])   
         db.session.commit()
+        get_hail.invalidate(hail_id)
         return {"data": [hail]}
 
 

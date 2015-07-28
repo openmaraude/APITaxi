@@ -125,7 +125,7 @@ class ADS(Resource):
                     new_ads[-1].insee))
             new_ads[-1].zupc_id = zupc.parent_id
             db.session.add(new_ads[-1])
-            taxis_models.refresh_taxi(db.session, ads=new_ads[-1].id)
+            taxis_models.invalidate_taxi(ads=new_ads[-1].id)
         db.session.commit()
         return marshal({"data": new_ads}, ads_post), 201
 
@@ -174,7 +174,7 @@ def ads_form():
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)
         db.session.add(ads)
-        taxis_models.refresh_taxi(db.session, ads=ads.id)
+        taxis_models.invalidate_taxi(ads=ads.id)
         db.session.commit()
         return redirect(url_for('api.ads'))
     return render_template('forms/ads.html', form=form)

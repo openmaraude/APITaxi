@@ -70,7 +70,7 @@ class Drivers(Resource):
             except KeyError as e:
                 abort(400, message="Key error")
             db.session.add(new_drivers[-1])
-            taxis_models.refresh_taxi(db.session, driver=driver_obj.id)
+            taxis_models.invalidate_taxi(driver=driver_obj.id)
         db.session.commit()
         return marshal({'data': new_drivers}, driver_fields), 201
 
@@ -107,7 +107,7 @@ def driver_form():
             driver.last_update_at = datetime.now().isoformat()
             form.populate_obj(driver)
             if form.validate():
-                taxis_models.refresh_taxi(db.session, driver=driver.id)
+                taxis_models.invalidate_taxi(driver=driver.id)
                 db.session.commit()
                 return redirect(url_for('api.drivers'))
         else:

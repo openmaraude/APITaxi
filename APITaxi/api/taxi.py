@@ -56,7 +56,7 @@ class TaxiId(Resource):
             taxi.status = status
         except AssertionError:
             abort(400, message='nvalid status taxi status')
-        taxis_models.refresh_taxi(db.session, id_=taxi_id)
+        taxis_models.get_taxi.invalidate(taxi_id)
         db.session.commit()
         return {'data': [taxi]}
 
