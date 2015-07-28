@@ -191,7 +191,8 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin):
     licence_plate = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule',
             unique=True)
-    descriptions = db.relationship("VehicleDescription", backref="Vehicle")
+    descriptions = db.relationship("VehicleDescription", backref="Vehicle",
+            lazy='joined')
 
     def __init__(self, licence_plate=None):
         if isinstance(licence_plate, self.__class__):
