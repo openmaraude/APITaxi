@@ -96,7 +96,8 @@ class Driver(db.Model, AsDictMixin, HistoryMixin):
 
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'),
             nullable=True)
-    departement = db.relationship('Departement', backref='vehicle')
+    departement = db.relationship('Departement', backref='vehicle',
+            lazy="joined")
 
     @classmethod
     def can_be_listed_by(cls, user):
@@ -219,7 +220,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 @region_taxi.cache_on_arguments(expiration_time=13*3600)
 def get_taxi(id_):
     return Taxi.query.options(joinedload("ads.zupc"),
-            joinedload("vehicle.descriptions")).get(id_)
+            joinedload("vehicle.descriptions"),
+            joinedload("driver")).get(id_)
 
 def refresh_taxi(session, ads=None, vehicle=None, driver=None, id_=None):
     if id_:
