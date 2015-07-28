@@ -10,7 +10,7 @@ from ..descriptors.common import coordinates_descriptor
 from ..api import api
 from .. import redis_store, region_hails
 from flask_principal import RoleNeed, Permission
-from sqlalchemy.orm import validates, joinedload
+from sqlalchemy.orm import validates
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -36,9 +36,10 @@ incident_taxi_reason_enum = ['traffic_jam', 'garbage_truck']
 class Hail(db.Model, AsDictMixin, HistoryMixin):
     id = db.Column(db.Integer, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
-    operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+            nullable=True)
     operateur = db.relationship('User', backref='user_operateur',
-        primaryjoin=(operateur_id==User.id))
+        primaryjoin=(operateur_id==User.id), lazy='joined')
     customer_id = db.Column(db.String,
                             nullable=False)
     customer_lon = db.Column(db.Float, nullable=False)
@@ -218,4 +219,4 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 
 @region_hails.cache_on_arguments(expiration_time=3600*2)
 def get_hail(id_):
-    return Hail.query.options(joinedload("operateur")).get(id_)
+    return Hail.query.get(id_)

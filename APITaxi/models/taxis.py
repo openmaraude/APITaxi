@@ -6,7 +6,7 @@ from ..models.vehicle import Vehicle, VehicleDescription
 from ..models.security import get_user_from_email
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
-from sqlalchemy.orm import validates, joinedload
+from sqlalchemy.orm import validates
 from ..utils import AsDictMixin, HistoryMixin, fields
 from uuid import uuid4
 from six import string_types
@@ -37,7 +37,7 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
     owner_name = Column(db.String, label=u'Nom du propriétaire')
     category = Column(db.String, label=u'Catégorie de l\'ADS')
     zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'), nullable=True)
-    zupc = db.relationship('ZUPC', backref='ZUPC')
+    zupc = db.relationship('ZUPC', backref='ZUPC', lazy='joined')
 
     @validates('owner_type')
     def validate_owner_type(self, key, value):
@@ -120,12 +120,12 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
-    vehicle = db.relationship('Vehicle', backref='vehicle_taxi')
+    vehicle = db.relationship('Vehicle', backref='vehicle_taxi', lazy='joined')
     ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
-    ads = db.relationship('ADS', backref='ads')
+    ads = db.relationship('ADS', backref='ads', lazy='joined')
     driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'),
             nullable=True)
-    driver = db.relationship('Driver', backref='driver')
+    driver = db.relationship('Driver', backref='driver', lazy='joined')
 
     _FORMAT_OPERATOR = '{timestamp:d} {lat} {lon} {status} {device}'
     _DISPONIBILITY_DURATION = 60*60
@@ -218,9 +218,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
 @region_taxi.cache_on_arguments(expiration_time=13*3600)
 def get_taxi(id_):
-    return Taxi.query.options(joinedload("ads.zupc"),
-            joinedload("vehicle.descriptions"),
-            joinedload("driver")).get(id_)
+    return Taxi.query.get(id_)
 
 def invalidate_taxi(ads=None, vehicle=None, driver=None, id_=None):
     filters = {}
