@@ -7,7 +7,7 @@ from sqlalchemy.schema import ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import inspect
 from datetime import datetime
-from ..utils import fields as custom_fields
+from . import fields as custom_fields
 from ..api import api
 from flask.ext.restplus.fields import Nested as fields_Nested
 
