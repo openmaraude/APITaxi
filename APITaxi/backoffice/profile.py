@@ -15,6 +15,7 @@ from flask_wtf.file import FileField
 import uuid
 from PIL import Image
 from . import ns_administrative
+from ..utils.cache_user_datastore import CacheUserDatastore
 
 mod = Blueprint('profile', __name__)
 @mod.route('/user/form', methods=['GET', 'POST'])
@@ -53,9 +54,9 @@ def profile_form():
                 db.session.add(logo_db)
                 operateur.logos.append(logo_db)
         form.populate_obj(operateur)
-        security_models.User.get_user.invalidate(id_)
-        security_models.User.get_user_from_email(operateur.email)
-        security_models.User.get_user_from_api_key.invalidate(operateur.api_key)
+        CacheUserDatastore.find_user.invalidate(email=operateur.email)
+        CacheUserDatastore.find_user.invalidate(apikey=operateur.apikey)
+        CacheUserDatastore.get_user.invalidate(id_)
         db.session.commit()
         return redirect(url_for('profile.profile_form'))
     return render_template('forms/profile.html', form=form,

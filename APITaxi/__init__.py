@@ -13,7 +13,13 @@ from flask.ext.redis import FlaskRedis
 from .utils.redis_geo import GeoRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 from dogpile.cache import make_region
-region_users = make_region('users')
+def user_key_generator(namespace, fn, **kw):
+    def generate_key(*args, **kwargs):
+        return fn.__name__ +\
+             "_".join(str(s) for s in args) +\
+             "_".join(k+"_"+str(v) for k,v in kwargs.iteritems())
+    return generate_key
+region_users = make_region('users', function_key_generator=user_key_generator)
 from .models import db
 from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
@@ -23,13 +29,13 @@ from .utils.request_wants_json import request_wants_json
 from sqlalchemy import distinct
 from rtree import index
 from .index_zupc import IndexZUPC
+from .utils.request_wants_json import request_wants_json
 region_taxi = make_region('taxis')
 region_hails = make_region('hails')
 
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
-    if len(request.accept_mimetypes) == 0 or\
-        request.accept_mimetypes[0][0] != 'application/json':
+    if not request_wants_json():
         return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:

@@ -3,11 +3,11 @@ from ..models import vehicle
 from .. import region_taxi
 from ..models import db
 from ..models.vehicle import Vehicle, VehicleDescription
-from ..models.security import get_user_from_email
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
 from ..utils import AsDictMixin, HistoryMixin, fields
+from ..utils.login_manager import user_datastore
 from uuid import uuid4
 from six import string_types
 from itertools import compress
@@ -160,7 +160,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(redis_store, min_time)
-        users = map(lambda (email, _): get_user_from_email(email).id,
+        users = map(lambda (email, _): user_datastore.find_user(email=email).id,
                 caracs)
         return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
             self.vehicle.descriptions))
@@ -187,13 +187,13 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         if caracs:
             for operator_name, carac in caracs:
                 if operator_name == favorite_operator:
-                    operator = get_user_from_email(operator_name)
+                    operator = user_datastore.find_user(email=operator_name)
                     return (operator, carac['timestamp'])
                 if int(carac['timestamp']) > min_return[1]:
                     min_return = (operator_name, carac['timestamp'])
         if min_return[0] is None:
             return (None, None)
-        operator = get_user_from_email(min_return[0])
+        operator = user_datastore.find_user(email=min_return[0])
         return (operator, min_return[1])
 
     @property

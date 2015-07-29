@@ -27,7 +27,8 @@ class User(db.Model, UserMixin, MarshalMixin):
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
+                            backref=db.backref('users', lazy='joined'),
+                            lazy='joined')
     apikey = db.Column(db.String(36), nullable=False)
     hail_endpoint_production = Column(db.String, nullable=True,
             label=u'Hail endpoint production',
@@ -72,22 +73,8 @@ class User(db.Model, UserMixin, MarshalMixin):
         return None
 
 
-
 class Logo(db.Model):
     id = db.Column(UUID, primary_key=True)
     size=db.Column(db.String)
     format_=db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-
-
-@region_users.cache_on_arguments()
-def get_user(id_):
-    return User.query.get(id_)
-
-@region_users.cache_on_arguments()
-def get_user_from_email(email):
-    return User.query.filter_by(email=email).first()
-
-@region_users.cache_on_arguments()
-def get_user_from_api_key(apikey):
-    return User.query.filter_by(apikey=apikey)

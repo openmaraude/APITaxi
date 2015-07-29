@@ -3,27 +3,28 @@ from .. import db
 from ..models import security
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.security.utils import verify_and_update_password
+from .cache_user_datastore import CacheUserDatastore
 
-user_datastore = SQLAlchemyUserDatastore(db, security.User,
+user_datastore = CacheUserDatastore(db, security.User,
                             security.Role)
 
 def load_user_from_request(request):
     apikey = request.headers.environ.get('HTTP_X_API_KEY', None)
     if apikey:
-        u = security.get_user_from_api_key(apikey)
-        return u.first() or None
-    auth = request.headers.get('Authorization')
-    if not auth or auth.count(':') != 1:
-        return None
-    login, password = auth.split(':')
-    user = user_datastore.get_user(login.strip())
-    if user is None:
-        return None
-    if not verify_and_update_password(password.strip(), user):
-        return None
-    if not user.is_active():
-        return None
-    return user
+        user = user_datastore.find_user(apikey=apikey)
+        if not user:
+            return None
+    else:
+        auth = request.headers.get('Authorization')
+        if not auth or auth.count(':') != 1:
+            return None
+        login, password = auth.split(':')
+        user = user_datastore.find_user(email=login.strip())
+        if user is None:
+            return None
+        if not verify_and_update_password(password.strip(), user):
+            return None
+    return user if user.is_active() else None
 
 def init_app(app):
     security = Security()
