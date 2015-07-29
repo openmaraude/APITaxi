@@ -6,7 +6,7 @@ from flask.ext.security import (login_required, roles_required,
 from .. import db, redis_store
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel, get_hail
-from ..models.taxis import  Taxi as TaxiModel
+from ..models.taxis import  Taxi as TaxiModel, get_taxi
 from ..models import security as security_models
 from datetime import datetime
 import requests, json
@@ -133,6 +133,7 @@ class HailId(Resource):
                     abort(400, e.args[0])   
         db.session.commit()
         get_hail.invalidate(hail_id)
+        get_taxi.invalidate(hail.taxi_id)
         return {"data": [hail]}
 
 
@@ -230,5 +231,6 @@ class Hail(Resource):
                 operateur.hail_endpoint, operateur.email))
             hail.status  = 'failure'
         db.session.commit()
+        get_taxi.invalidate(hail.taxi_id)
         return {"data": [hail]}, 201
 
