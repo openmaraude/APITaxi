@@ -37,6 +37,8 @@ valid_versions = ['1', '2']
 def check_version(sender, **extra):
     if not request_wants_json():
         return
+    if request.url_rule.endpoint == 'api.specs':
+        return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:
         abort(404, message="Invalid version, valid versions are: {}".format(valid_versions))
