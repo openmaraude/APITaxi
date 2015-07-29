@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask.ext.restplus import Api, apidoc
 from flask import Blueprint, make_response, render_template
+from json import dumps
 
 api_blueprint = Blueprint('api', __name__)
 api = Api(api_blueprint, ui=False, catch_all_404s=True, title='API version 1.0')
@@ -13,6 +14,8 @@ def swagger_ui():
 
 @api.representation('text/html')
 def output_html(data, code=200, headers=None):
+    if type(data) is dict:
+        data = dumps(data)
     resp = make_response(data, code)
     resp.headers.extend(headers or {})
     resp.headers['Content-Type'] = 'text/html; charset=utf-8'
