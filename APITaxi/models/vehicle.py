@@ -149,13 +149,14 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
 
     @validates('status')
     def validate_status(self, key, value):
-        assert value is None or value == 'None' or value in status_vehicle_description_enum
+        assert value is None or value == 'None' or value in status_vehicle_description_enum,\
+                '{} is not a valid status, (valid statuses are {})'\
+                    .format(value, status_vehicle_description_enum)
         return value
 
     @classmethod
     def to_exclude(cls):
         return list(HistoryMixin.to_exclude()) + ['status']
-
 
     @property
     def constructor(self):

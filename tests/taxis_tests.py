@@ -72,6 +72,88 @@ class TestTaxisGet(TaxiGet):
     def test_one_taxi_two_desc_one_non_free_but_timeout(self):
         pass
 
+class TestTaxiPut(Skeleton):
+    url = '/taxis/'
+    role = 'operateur'
+
+    def post_taxi(self):
+        self.init_zupc()
+        self.init_dep()
+        self.post([dict_driver], url='/drivers/')
+        r = self.post([dict_vehicle], url='/vehicles/')
+        self.assert201(r)
+        vehicle_id = r.json['data'][0]['id']
+        dict_ads_ = deepcopy(dict_ads)
+        dict_ads_['vehicle_id'] = vehicle_id
+        self.post([dict_ads_], url='/ads/')
+        r = self.post([dict_taxi])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        self.assertEqual(len(Taxi.query.all()), 1)
+        self.url = '{}{}/'.format(self.__class__.url, r.json['data'][0]['id'])
+        return r.json['data'][0]['id']
+
+    def test_no_data(self):
+        self.post_taxi()
+        r = self.put({}, self.url, envelope_data=False)
+        self.assert400(r)
+
+    def test_no_status(self):
+        self.post_taxi()
+        r = self.put({'data':[{'nostatus':None}]}, self.url,
+                envelope_data=False)
+        self.assert400(r)
+
+    def test_too_many(self):
+        self.post_taxi()
+        r = self.put([{}, {}], self.url)
+        self.assertEqual(r.status_code, 413)
+
+    def good_taxi(self, status):
+        id_ = self.post_taxi()
+        dict_ = {'status': status}
+        r = self.put([dict_], self.url)
+        self.assert200(r)
+        taxi = r.json['data'][0]
+        assert taxi['id'] == id_
+        assert taxi['status'] == status
+        statuses = [desc.status for desc in Taxi.query.get(id_).vehicle.descriptions]
+        assert all(map(lambda st: st == status, statuses))
+        r = self.get(self.url)
+        assert r.json['data'][0]['status'] == status
+
+    def test_good_statuses(self):
+        for status in ['free', 'occupied', 'oncoming', 'off']:
+            self.good_taxi(status)
+
+    def test_set_answering(self):
+        self.post_taxi()
+        dict_ = {'status': 'answering'}
+        r = self.put([dict_], self.url)
+        self.assert400(r)
+
+    def test_bad_user(self):
+        self.post_taxi()
+        dict_ = {'status': 'free'}
+        r = self.put([dict_], self.url, user='user_operateur_2')
+        self.assert403(r)
+
+    def test_two_descriptions(self):
+        r = self.post([dict_vehicle], url='/vehicles/', user='user_operateur_2')
+        id_ = self.post_taxi()
+        dict_ = {'status': 'off'}
+        r = self.put([dict_], self.url, user='user_operateur_2')
+        self.assert200(r)
+        statuses = [desc.status for desc in Taxi.query.get(id_).vehicle.descriptions]
+        assert any(map(lambda st: st == 'free', statuses))
+        assert any(map(lambda st: st == 'off', statuses))
+        r = self.get(self.url)
+        self.assert200(r)
+        assert r.json['data'][0]['status'] == 'free'
+        r = self.get(self.url, user='user_operateur_2')
+        self.assert200(r)
+        assert r.json['data'][0]['status'] == 'off'
+
 
 class TestTaxiPost(Skeleton):
     url = '/taxis/'
