@@ -53,7 +53,7 @@ class User(db.Model, UserMixin, MarshalMixin):
     email_technical = Column(db.String, nullable=True,
             label=u'Email du contact technique',
             description=u'Email du contact technique')
-    logos = db.relationship('Logo', backref="user")
+    logos = db.relationship('Logo', backref="user", lazy='joined')
 
     def __init__(self, *args, **kwargs):
         kwargs['apikey'] = str(uuid.uuid4())
