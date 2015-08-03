@@ -31,7 +31,7 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
     insee = Column(db.String, label=u'Code INSEE de la commune d\'attribution',
                    description=u'Code INSEE de la commune d\'attribution')
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
-    __vehicle = db.relationship('Vehicle', backref='vehicle')
+    __vehicle = db.relationship('Vehicle', backref='vehicle', lazy='joined')
     owner_type = Column(Enum(*owner_type_enum, name='owner_type_enum'),
             label=u'Type Propriétaire')
     owner_name = Column(db.String, label=u'Nom du propriétaire')

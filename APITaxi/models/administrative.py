@@ -23,9 +23,9 @@ class ZUPC(db.Model, MarshalMixin):
     shape = Column(Geography(geometry_type='MULTIPOLYGON', srid=4326,
         spatial_index=False), label='Geography of the shape')
     departement = db.relationship('Departement',
-            backref=db.backref('departements', lazy='dynamic'))
+            backref=db.backref('departements'), lazy='joined')
     parent_id = Column(db.Integer, db.ForeignKey('ZUPC.id'))
-    parent = db.relationship('ZUPC', remote_side=[id])
+    parent = db.relationship('ZUPC', remote_side=[id], lazy='joined')
     __geom = None
     __bounds = None
 
