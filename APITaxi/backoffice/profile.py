@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .. import db
+from .. import db, region_users
 from ..api import api
 from ..models import security as security_models
 from ..forms.user import UserForm
@@ -15,7 +15,6 @@ from flask_wtf.file import FileField
 import uuid
 from PIL import Image
 from . import ns_administrative
-from ..utils.cache_user_datastore import CacheUserDatastore
 
 mod = Blueprint('profile', __name__)
 @mod.route('/user/form', methods=['GET', 'POST'])
@@ -54,10 +53,8 @@ def profile_form():
                 db.session.add(logo_db)
                 user.logos.append(logo_db)
         form.populate_obj(user)
-        CacheUserDatastore.find_user.invalidate(email=user.email)
-        CacheUserDatastore.find_user.invalidate(apikey=user.apikey)
-        CacheUserDatastore.get_user.invalidate(id_)
         db.session.commit()
+        region_users.invalidate(user)
         return redirect(url_for('profile.profile_form'))
     return render_template('forms/profile.html', form=form,
         form_method="POST", logos=current_user.logos, submit_value="Modifier",

@@ -10,6 +10,7 @@ from flask import Flask, request_started, request, request_finished, g
 from flask_bootstrap import Bootstrap
 import os
 from flask.ext.redis import FlaskRedis
+from flask.ext.login import user_logged_out
 from .utils.redis_geo import GeoRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 from dogpile.cache import make_region
@@ -48,6 +49,10 @@ def check_version(sender, **extra):
 
 def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
+
+def invalidate_user(sender, user, **extra):
+    region_users.invalidate(user)
+
 
 documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
 images = UploadSet('images', IMAGES)
@@ -94,4 +99,6 @@ def create_app(sqlalchemy_uri=None):
         region_hails.configure('dogpile.cache.memory')
     if not region_users.is_configured:
         region_users.configure('dogpile.cache.memory')
+    user_logged_out.connect(invalidate_user)
+
     return app
