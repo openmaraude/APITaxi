@@ -40,9 +40,9 @@ def profile_form():
                 form._fields['phone_number_customer'].description
 
     if request.method == "POST" and form.validate():
+        user = security_models.User.query.get(current_user.id)
         if current_user.has_role('operateur'):
             logo = form.logo
-            operateur = security_models.User.query.get(current_user.id)
             if logo and logo.has_file():
                 id_ = str(uuid.uuid4())
                 file_dest = os.path.join(current_app.config['UPLOADED_IMAGES_DEST'],
@@ -50,12 +50,12 @@ def profile_form():
                 logo.data.save(file_dest)
                 image = Image.open(file_dest)
                 logo_db = security_models.Logo(id=id_, size=image.size,
-                    format_=image.format, user_id=current_user.id)
+                    format_=image.format, user_id=user.id)
                 db.session.add(logo_db)
-                operateur.logos.append(logo_db)
-        form.populate_obj(operateur)
-        CacheUserDatastore.find_user.invalidate(email=operateur.email)
-        CacheUserDatastore.find_user.invalidate(apikey=operateur.apikey)
+                user.logos.append(logo_db)
+        form.populate_obj(user)
+        CacheUserDatastore.find_user.invalidate(email=user.email)
+        CacheUserDatastore.find_user.invalidate(apikey=user.apikey)
         CacheUserDatastore.get_user.invalidate(id_)
         db.session.commit()
         return redirect(url_for('profile.profile_form'))
