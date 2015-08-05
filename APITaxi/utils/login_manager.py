@@ -4,6 +4,7 @@ from ..models import security
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.security.utils import verify_and_update_password
 from .cache_user_datastore import CacheUserDatastore
+from flask.ext.login import login_user
 
 
 user_datastore = CacheUserDatastore(db, security.User,
