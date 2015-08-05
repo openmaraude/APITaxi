@@ -8,6 +8,12 @@ from .caching_query import FromCache, RelationshipCache
 from sqlalchemy.orm import joinedload
 
 class CacheUserDatastore(SQLAlchemyUserDatastore):
+    def invalidate_user(self, user):
+        self.get_user.invalidate(user.id)
+        self.get_user.invalidate(user.email)
+        self.find_user.invalidate(id=user.id)
+        self.find_user.invalidate(email=user.email)
+        self.find_user.invalidate(apikey=user.apikey)
 
     @region_users.cache_on_arguments()
     def get_user(self, identifier):

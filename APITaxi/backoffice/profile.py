@@ -53,7 +53,7 @@ def profile_form():
                 user.logos.append(logo_db)
         form.populate_obj(user)
         db.session.commit()
-        region_users.invalidate(user)
+        user_datastore.invalidate_user(user=user)
         return redirect(url_for('profile.profile_form'))
     return render_template('forms/profile.html', form=form,
         form_method="POST", logos=current_user.logos, submit_value="Modifier",
