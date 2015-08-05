@@ -3,7 +3,6 @@ from ..models import vehicle
 from .. import region_taxi
 from ..models import db
 from ..models.vehicle import Vehicle, VehicleDescription
-from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
 from ..utils import AsDictMixin, HistoryMixin, fields
@@ -24,19 +23,19 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
             self.vehicle = licence_plate
 
     public_fields = set(['numero', 'insee'])
-    id = Column(db.Integer, primary_key=True)
-    numero = Column(db.String, label=u'Numéro',
+    id = db.Column(db.Integer, primary_key=True)
+    numero = db.Column(db.String, label=u'Numéro',
             description=u'Numéro de l\'ADS')
-    doublage = Column(db.Boolean, label=u'Doublage', default=False,
+    doublage = db.Column(db.Boolean, label=u'Doublage', default=False,
             nullable=True, description=u'L\'ADS est elle doublée ?')
-    insee = Column(db.String, label=u'Code INSEE de la commune d\'attribution',
+    insee = db.Column(db.String, label=u'Code INSEE de la commune d\'attribution',
                    description=u'Code INSEE de la commune d\'attribution')
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
     __vehicle = db.relationship('Vehicle', backref='vehicle', lazy='joined')
-    owner_type = Column(Enum(*owner_type_enum, name='owner_type_enum'),
+    owner_type = db.Column(Enum(*owner_type_enum, name='owner_type_enum'),
             label=u'Type Propriétaire')
-    owner_name = Column(db.String, label=u'Nom du propriétaire')
-    category = Column(db.String, label=u'Catégorie de l\'ADS')
+    owner_name = db.Column(db.String, label=u'Nom du propriétaire')
+    category = db.Column(db.String, label=u'Catégorie de l\'ADS')
     zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'), nullable=True)
     zupc = db.relationship('ZUPC', backref='ZUPC', lazy='joined')
 
@@ -83,18 +82,18 @@ class Driver(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
-    id = Column(db.Integer, primary_key=True)
-    last_name = Column(db.String(255), label='Nom', description=u'Nom du conducteur')
-    first_name = Column(db.String(255), label=u'Prénom',
+    id = db.Column(db.Integer, primary_key=True)
+    last_name = db.Column(db.String(255), label='Nom', description=u'Nom du conducteur')
+    first_name = db.Column(db.String(255), label=u'Prénom',
             description=u'Prénom du conducteur')
-    birth_date = Column(db.Date(),
+    birth_date = db.Column(db.Date(),
         label=u'Date de naissance (format année-mois-jour)',
         description=u'Date de naissance (format année-mois-jour)')
-    professional_licence = Column(db.String(),
+    professional_licence = db.Column(db.String(),
             label=u'Numéro de la carte professionnelle',
             description=u'Numéro de la carte professionnelle')
 
-    departement_id = Column(db.Integer, db.ForeignKey('departement.id'),
+    departement_id = db.Column(db.Integer, db.ForeignKey('departement.id'),
             nullable=True)
     departement = db.relationship('Departement', backref='vehicle',
             lazy="joined")
@@ -118,7 +117,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
 
-    id = Column(db.String, primary_key=True)
+    id = db.Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
     vehicle = db.relationship('Vehicle', backref='vehicle_taxi', lazy='joined')
