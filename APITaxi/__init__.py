@@ -25,10 +25,7 @@ from .models import db
 from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
-from slacker import Slacker
 from .utils.request_wants_json import request_wants_json
-from sqlalchemy import distinct
-from rtree import index
 from .index_zupc import IndexZUPC
 from .utils.request_wants_json import request_wants_json
 region_taxi = make_region('taxis')
@@ -38,7 +35,9 @@ valid_versions = ['1', '2']
 def check_version(sender, **extra):
     if not request_wants_json():
         return
-    if request.url_rule is None or request.url_rule.endpoint == 'api.specs':
+    rule = request.url_rule
+    endpoint = None if not rule else rule.endpoint
+    if  rule is None or endpoint == 'api.specs' or endpoint == 'static':
         return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:
