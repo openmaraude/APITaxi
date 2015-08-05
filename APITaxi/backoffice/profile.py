@@ -3,15 +3,14 @@ from .. import db, region_users
 from ..api import api
 from ..models import security as security_models
 from ..forms.user import UserForm
+from ..utils.login_manager import user_datastore
+
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask import (Blueprint, request, render_template, redirect, jsonify,
                    url_for, abort, current_app, send_file)
 from ..utils import fields
 from flask.ext.restplus import fields as basefields, marshal_with, Resource
-from werkzeug import secure_filename
 import os
-from flask_wtf import Form
-from flask_wtf.file import FileField
 import uuid
 from PIL import Image
 from . import ns_administrative
@@ -54,7 +53,7 @@ def profile_form():
                 user.logos.append(logo_db)
         form.populate_obj(user)
         db.session.commit()
-        region_users.invalidate(user)
+        user_datastore.invalidate_user(user=user)
         return redirect(url_for('profile.profile_form'))
     return render_template('forms/profile.html', form=form,
         form_method="POST", logos=current_user.logos, submit_value="Modifier",
@@ -85,7 +84,7 @@ model_user = api.model("user", {
 class ProfileDetail(Resource):
     @api.marshal_with(model_user)
     def get(self, user_id):
-        user = security_models.User.query.get(user_id)
+        user = user_datastore.get_user(user_id)
         if not user:
             abort(404, message="Unable to find user")
         return {"data": [user]}, 200

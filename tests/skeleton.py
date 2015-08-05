@@ -2,7 +2,8 @@
 
 from flask.ext.testing import TestCase
 from json import dumps
-from APITaxi import db, create_app, redis_store, index_zupc
+from APITaxi import (db, create_app, redis_store, index_zupc, region_taxi,
+                    region_hails, region_users)
 from APITaxi.utils.login_manager import user_datastore
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
@@ -13,8 +14,7 @@ from copy import deepcopy
 import time
 from shapely.geometry import Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
-from APITaxi import region_taxi, region_hails, region_users
-
+from flask.ext.login import current_user
 
 class Skeleton(TestCase):
     TESTING = True
@@ -23,9 +23,11 @@ class Skeleton(TestCase):
         return create_app()
 
     def setUp(self):
-        print "setup"
         db.drop_all()
         db.create_all()
+        region_taxi.invalidate()
+        region_hails.invalidate()
+        region_users.invalidate()
         for role in ['admin', 'operateur', 'moteur']:
             r = user_datastore.create_role(name=role)
             u = user_datastore.create_user(email='user_'+role,
@@ -112,26 +114,27 @@ class Skeleton(TestCase):
         data = dumps(data) if data else data
         if not url:
             url = self.__class__.url
-        return fun(url, data=data,
-                            headers={
-                                "Authorization": authorization,
-                                "Accept": accept,
-                                "X-VERSION": version},
-                            content_type='application/json')
+        with self.app.test_client() as c:
+            return getattr(c, fun)(url, data=data,
+                        headers={
+                            "Authorization": authorization,
+                            "Accept": accept,
+                            "X-VERSION": version},
+                        content_type='application/json')
 
     def get(self, url, role=None, user=None, version=1,
             accept="application/json"):
-        return self.call(url, role, user, self.client.get, version=version,
+        return self.call(url, role, user, "get", version=version,
                 accept=accept)
 
     def post(self, data, url=None, envelope_data=True, role=None, user=None,
             version=1):
-        return self.call(url, role, user, self.client.post, data, envelope_data,
+        return self.call(url, role, user, "post", data, envelope_data,
             version=version)
 
     def put(self, data, url=None, envelope_data=True, role=None, user=None,
             version=1):
-        return self.call(url, role, user, self.client.put, data, envelope_data,
+        return self.call(url, role, user, "put", data, envelope_data,
             version=version)
 
     def init_dep(self):
