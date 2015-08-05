@@ -10,7 +10,7 @@ from ..descriptors.common import coordinates_descriptor
 from ..api import api
 from .. import redis_store, region_hails
 from flask_principal import RoleNeed, Permission
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, joinedload
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -180,6 +180,9 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 #Used for testing purposes
         self._TestHailPut__status_set_no_check(value)
 
+    def _HailMixin__status_set_no_check(self, value):
+#Used for testing purposes
+        self._TestHailPut__status_set_no_check(value)
     @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
         if level >=2:
@@ -219,4 +222,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 
 @region_hails.cache_on_arguments(expiration_time=3600*2)
 def get_hail(id_):
-    return Hail.query.get(id_)
+    session = db.create_scoped_session()
+    h = session.query(Hail).options(joinedload(Hail.operateur)).\
+        filter_by(id=id_).first()
+    session.close()
+    return h

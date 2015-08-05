@@ -13,6 +13,7 @@ from six import string_types
 from itertools import compress
 from parse import parse
 import time, operator
+from sqlalchemy.orm import joinedload
 
 owner_type_enum = ['company', 'individual']
 class ADS(db.Model, AsDictMixin, HistoryMixin):
@@ -218,7 +219,12 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
 @region_taxi.cache_on_arguments(expiration_time=13*3600)
 def get_taxi(id_):
-    return Taxi.query.get(id_)
+    session = db.create_scoped_session()
+    t = session.query(Taxi).options(joinedload(Taxi.ads),
+                 joinedload(Taxi.driver), joinedload(Taxi.vehicle))\
+                        .filter_by(id=id_).first()
+    session.close()
+    return t
 
 def invalidate_taxi(ads=None, vehicle=None, driver=None, id_=None):
     filters = {}
