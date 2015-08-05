@@ -2,7 +2,8 @@
 
 from flask.ext.testing import TestCase
 from json import dumps
-from APITaxi import db, create_app, redis_store, index_zupc
+from APITaxi import (db, create_app, redis_store, index_zupc, region_taxi,
+                    region_hails, region_users)
 from APITaxi.utils.login_manager import user_datastore
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
@@ -13,7 +14,6 @@ from copy import deepcopy
 import time
 from shapely.geometry import Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
-from APITaxi import region_taxi, region_hails, region_users
 from flask.ext.login import current_user
 
 class Skeleton(TestCase):
