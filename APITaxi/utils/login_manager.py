@@ -28,7 +28,7 @@ def load_user_from_request(request):
             return None
         if not verify_and_update_password(password.strip(), user):
             return None
-    return user if user.is_active() else None
+    return user if login_user(user) else None
 
 def init_app(app):
     security = Security()
