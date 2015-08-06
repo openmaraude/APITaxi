@@ -13,6 +13,8 @@ from flask.ext.redis import FlaskRedis
 from flask.ext.login import user_logged_out
 from flask.ext.restplus import abort
 from .utils.request_wants_json import request_wants_json
+from .utils.cache_refresh import cache_refresh
+from .utils.cache_user_datastore import refresh_user
 
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
@@ -32,8 +34,9 @@ def check_version(sender, **extra):
 def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
+from flask.ext.login import current_user
 def invalidate_user(sender, user, **extra):
-    region_users.invalidate(user)
+    cache_refresh(db.session(), refresh_user, current_user.id)
 
 
 

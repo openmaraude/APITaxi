@@ -4,44 +4,38 @@ from ..extensions import region_users, db
 from __builtin__ import isinstance
 from flask import current_app
 from ..models.security import User, Role
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, scoped_session
 
-@region_users.cache_on_arguments()
-def get_user(identifier):
-    try:
-       filter_ = {"id": int(identifier)}
-    except ValueError:
-       filter_ = {"email": identifier}
-    return find_user(**filter_)
-
-@region_users.cache_on_arguments()
-def find_user(**kwargs):
-    session = db.create_scoped_session()
-    u = session.query(User).\
-            options(joinedload(User.roles)).filter_by(**kwargs).first()
-    session.close()
-    return u
 
 class CacheUserDatastore(SQLAlchemyUserDatastore):
-    def invalidate_user(self, user):
-        get_user.invalidate(user.id)
-        get_user.invalidate(unicode(user.id))
-        get_user.invalidate(user.email)
-        find_user.invalidate(id=user.id)
-        find_user.invalidate(email=user.email)
-        find_user.invalidate(apikey=user.apikey)
 
+    @region_users.cache_on_arguments()
     def get_user(self, identifier):
-        return get_user(identifier)
+        try:
+           filter_ = {"id": int(identifier)}
+        except ValueError:
+           filter_ = {"email": identifier}
+        return self.find_user(**filter_)
 
+    @region_users.cache_on_arguments()
     def find_user(self, **kwargs):
-        return find_user(**kwargs)
-
+        session = db.create_session({})
+        u = session.query(User).options(joinedload(User.roles)).filter_by(**kwargs).first()
+        session.close()
+        return u
 
     @region_users.cache_on_arguments()
     def find_role(self, role):
-        session = db.create_scoped_session()
+        session = db.create_session({})
         r = session.query(Role).filter_by(name=role).first()
         session.close()
         return r
 
+from .login_manager import user_datastore
+def refresh_user(user_id):
+    user = user_datastore.find_user.refresh(id=user_id)
+    user_datastore.get_user.set(user, user.id)
+    user_datastore.get_user.set(user, unicode(user.id))
+    user_datastore.get_user.set(user, user.email)
+    user_datastore.find_user.set(user, email=user.email)
+    user_datastore.find_user.set(user, apikey=user.apikey)
