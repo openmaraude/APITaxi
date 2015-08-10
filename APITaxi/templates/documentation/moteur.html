@@ -1,26 +1,25 @@
 {% extends "documentation/base.html" %}
 {% block documentationcontent %}
-<h1>Moteur</h1>
-Il y a deux interactions principales entre un moteur de recherche et le Registre Géolocalisé des Taxis (RGT) : rechercher des taxis disponibles autour d'un client, et héler un taxi pour un client.<br>
-<b>Important :</b> conformément à la Charte, il n'est possible de rechercher ou héler un taxi <em>que</em> dans le cadre d'une demande interactive d'un vrai client : toute tentative d'automatisation est proscrite.
+<h1>Search Engines</h1>
+There are two main interactions between Taxis Search Engines and the "Registre Géolocalisé des Taxis" (RGT): looking for taxis around a client, and hailing a taxi for a client.<br>
+<b>Warning:</b> conformément à la Charte, il n'est possible de rechercher ou héler un taxi <em>que</em> dans le cadre d'une demande interactive d'un vrai client : toute tentative d'automatisation est proscrite.
 
-<a name="geoloc"></a><h2>Recherche de taxis</h2>
-Afin d'obtenir la liste des taxis autour d'un client, il faut effectuer un appel HTTPS <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis"><span>GET</span> sur l'api <em>taxis</em></a>.<br>
-Cette API retourne les taxis disponibles aux alentours immédiats du client situé à la position <span>(lon,lat)</span>, avec toutes leurs caractéristiques. Seuls les taxis pouvant prendre en charge ce client sont retournés, en tenant compte de leur zone de rattachement.
+<a name="geoloc"></a><h2>Looking for taxis around a client</h2>
+In order to obtain the list of all taxis available around a client, your application does an HTTPS <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis"><span>GET</span> request on the <em>taxis</em> API</a>.<br>
+That API sends back all the available taxis around the  <span>(lon,lat)</span> location of the client with all their characteristics. Only the taxis who can be hailed by the client are returned (the list is filtered according to the French taxis regulation).
 
-<h4>Choix d'un opérateur préféré</h4>
+<h4>Favorite operator<h4>
 Le paramètre <span>favorite_operator</span> permet de spécifier un opérateur préféré. Il permet, pour les taxis ayant recours à plusieurs opérateurs, de privilégier les caractéristiques et la position remontées par l'opérateur spécifié. Si aucune position récente de l'opérateur favori n'est disponible, ou si aucun opérateur favori n'est spécifié, les caractéristiques et la position renvoyées seront celles de l'opérateur ayant positionné le taxi le plus récemment.
 
-<a name"post_hail"></a><h2>Créer une course</h2>
-Après avoir récupéré la liste des taxis disponibles aux alentours immédiats du client, il est possible de héler un de ces taxi. Pour cela, il fauti créer une course en effectuant un appel HTTPS <a href="https://api.opendatataxi.fr/doc/#!/hails/post"><span>POST</span> sur l'api <em>hails</em></a>.
-L'objet JSON <a href="documentation/reference#hail_object"><span>hail</span></a> à créer doit être présent dans la partie data de la requête.<br>
-Le statut de la course doit être <span>emitted</span> lors de sa creation.<br>
-En cas de succès, le retour contient l'objet JSON <a href="documentation/reference#hail_object"><span>hail</span></a> nouvellement créé.
+<a name"post_hail"></a><h2>Hailing a taxi</h2>
+Once you have received the list of all taxis available around a client, you can hail one of those taxis. That Hail is created by doing a <a href="https://api.opendatataxi.fr/doc/#!/hails/post"><span>POST</span> HTTPS request to the  <em>hails</em> API</a>. 
+The JSON object <a href="documentation/reference#hail_object"><span>hail</span></a> to be created has to be in the data section of the request. The initial status of the Hail should be set to <span>emitted</span>.<br>
+In case of success, the response contains the newly created JSON object <a href="documentation/reference#hail_object"><span>hail</span></a>.
 
-<a name="get_hail"></a><h2>Suivre le statut d'une course</h2>
+<a name="get_hail"></a><h2>Querying the status of a hail</h2>
 Le suivi de l'évolution du statut de la course se fait en effectuant un appel HTTPS <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id"><span>GET</span> sur l'api <em>hails</em></a>. L'identifiant de l'objet <a href="https://api.opendatataxi.fr/doc/#!/hails/post"><span>POST</span> sur l'api <em>hails</em></a> se trouve dans la réponse de la requête de création de cet objet (voir <a href="#post_hail">Créer une course</a>).
 
-<a name="put_hail"></a><h2>Mettre à jour une course</h2>
+<a name="put_hail"></a><h2>Updating a hail</h2>
 Afin de finaliser la mise en relation, le client doit reconfirmer la course après qu'elle a été acceptée par le taxi. Pour cela il faut, lorsque le statut de la course est <span>accepted_by_taxi</span> et avant un délai de 30s, effectuer un appel HTTPS <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id"><span>PUT</span> sur l'api <em>hails</em></a>. 
 Le nouveau statut à envoyer doit être en cas de confirmation de la course par le client <span>accepted_by_client</span> ou bien en cas d'abandon de la mise en relation <span>declined_by_client</span>.
 
