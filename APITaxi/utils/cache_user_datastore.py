@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import  SQLAlchemyUserDatastore
 from ..extensions import region_users, db
-from __builtin__ import isinstance
 from flask import current_app
 from ..models.security import User, Role
 from sqlalchemy.orm import joinedload, scoped_session

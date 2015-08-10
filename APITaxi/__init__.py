@@ -16,6 +16,7 @@ from .utils.request_wants_json import request_wants_json
 from .utils.cache_refresh import cache_refresh
 from .utils.cache_user_datastore import refresh_user
 
+
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
     if not request_wants_json():

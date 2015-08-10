@@ -218,11 +218,12 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
                         }
         return {}
 
-
-@region_hails.cache_on_arguments(expiration_time=3600*2)
-def get_hail(id_):
-    session = db.create_scoped_session()
-    h = session.query(Hail).options(joinedload(Hail.operateur)).\
-        filter_by(id=id_).first()
-    session.close()
-    return h
+    @classmethod
+    @region_hails.cache_on_arguments(expiration_time=3600*2, namespace='H')
+    def get(cls, id_):
+        print "get hail"
+        Session = db.create_scoped_session()
+        h = Session().query(Hail).options(joinedload(Hail.operateur)).\
+            filter_by(id=id_).first()
+        Session.remove()
+        return h

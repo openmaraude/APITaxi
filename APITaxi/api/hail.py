@@ -5,13 +5,14 @@ from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
 from ..extensions import db, redis_store
 from ..api import api
-from ..models.hail import Hail as HailModel, Customer as CustomerModel, get_hail
-from ..models.taxis import  Taxi as TaxiModel, get_taxi
+from ..models.hail import Hail as HailModel, Customer as CustomerModel
+from ..models.taxis import  Taxi as TaxiModel
 from ..models import security as security_models
 from datetime import datetime
 import requests, json
 from ..descriptors.hail import hail_model
 from ..utils.request_wants_json import json_mimetype_required
+from ..utils.cache_refresh import cache_refresh
 
 ns_hail = api.namespace('hails', description="Hail API")
 
@@ -67,7 +68,7 @@ class HailId(Resource):
     @api.marshal_with(hail_model)
     @json_mimetype_required
     def get(self, hail_id):
-        hail = get_hail(hail_id)
+        hail = HailModel.get(hail_id)
         if not hail:
             abort(404, message="Unable to find hail: {}".format(hail_id))
         self.filter_access(hail)
@@ -75,7 +76,7 @@ class HailId(Resource):
 
     @login_required
     @roles_accepted('admin', 'moteur', 'operateur')
-    @api.marshal_with(hail_model)
+    @api.marshal_with(hail_model)       
     @api.expect(hail_expect_put)
     @json_mimetype_required
     def put(self, hail_id):
@@ -130,10 +131,10 @@ class HailId(Resource):
                 except RuntimeError, e:
                     abort(403)
                 except ValueError, e:
-                    abort(400, e.args[0])   
+                    abort(400, e.args[0])
+        cache_refresh(db.session(), HailModel.get.refresh, HailModel, hail_id)
+        cache_refresh(db.session(), TaxiModel.get.refresh, TaxiModel, hail.taxi_id)
         db.session.commit()
-        get_hail.invalidate(hail_id)
-        get_taxi.invalidate(hail.taxi_id)
         return {"data": [hail]}
 
 
@@ -190,6 +191,7 @@ class Hail(Resource):
         if not desc:
             abort(404, message='Unable to find taxi\'s description')
         desc.status = 'answering'
+        cache_refresh(db.session(), TaxiModel.get.refresh, TaxiModel, hj['taxi_id'])
         db.session.commit()
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
@@ -231,6 +233,5 @@ class Hail(Resource):
                 operateur.hail_endpoint, operateur.email))
             hail.status  = 'failure'
         db.session.commit()
-        get_taxi.invalidate(hail.taxi_id)
         return {"data": [hail]}, 201
 

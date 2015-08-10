@@ -8,6 +8,7 @@ from ..extensions import (db, redis_store, index_zupc)
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
+from ..utils.cache_refresh import cache_refresh
 from shapely.geometry import Point
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
@@ -22,7 +23,7 @@ class TaxiId(Resource):
         403:'You\'re not authorized to view it'})
     @json_mimetype_required
     def get(self, taxi_id):
-        taxi = taxis_models.get_taxi(taxi_id)
+        taxi = taxis_models.Taxi.get(taxi_id)
         if not taxi:
             abort(404, message="Unable to find this taxi")
         operator = None
@@ -66,8 +67,11 @@ class TaxiId(Resource):
             taxi.status = status
         except AssertionError as e:
             abort(400, message=str(e))
-        taxis_models.get_taxi.invalidate(taxi_id)
+
+        cache_refresh(db.session(), taxis_models.Taxi.get.refresh,
+            taxis_models.Taxi, taxi_id)
         db.session.commit()
+        #taxis_models.Taxi.get.refresh(taxis_models.Taxi, taxi_id)
         return {'data': [taxi]}
 
 
@@ -85,7 +89,7 @@ dict_taxi_expect = \
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
-        taxi_db = taxis_models.get_taxi(taxi_id)
+        taxi_db = taxis_models.Taxi.get(taxi_id)
         if not taxi_db or not taxi_db.ads or not taxi_db.is_free(redis_store)\
             or taxi_db.ads.zupc_id not in zupc_customer:
             return None
