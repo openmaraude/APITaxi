@@ -132,8 +132,9 @@ class HailId(Resource):
                     abort(403)
                 except ValueError, e:
                     abort(400, e.args[0])
-        cache_refresh(db.session(), HailModel.get.refresh, HailModel, hail_id)
-        cache_refresh(db.session(), TaxiModel.get.refresh, TaxiModel, hail.taxi_id)
+        cache_refresh(db.session(),
+            [{'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
+            {'func': TaxiModel.get.refresh, 'args': [TaxiModel, hail.taxi_id]}])
         db.session.commit()
         return {"data": [hail]}
 
@@ -191,7 +192,8 @@ class Hail(Resource):
         if not desc:
             abort(404, message='Unable to find taxi\'s description')
         desc.status = 'answering'
-        cache_refresh(db.session(), TaxiModel.get.refresh, TaxiModel, hj['taxi_id'])
+        cache_refresh(db.session(), [{'func': TaxiModel.get.refresh,
+            'args': [TaxiModel, hj['taxi_id']]}])
         db.session.commit()
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],

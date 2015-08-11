@@ -10,6 +10,7 @@ from ..api import api
 from ..extensions import redis_store, region_hails, db
 from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates, joinedload
+from flask import g
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -221,9 +222,6 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @classmethod
     @region_hails.cache_on_arguments(expiration_time=3600*2, namespace='H')
     def get(cls, id_):
-        print "get hail"
-        Session = db.create_scoped_session()
-        h = Session().query(Hail).options(joinedload(Hail.operateur)).\
+        h = Hail.query.options(joinedload(Hail.operateur)).\
             filter_by(id=id_).first()
-        Session.remove()
         return h

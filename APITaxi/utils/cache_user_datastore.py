@@ -4,6 +4,7 @@ from ..extensions import region_users, db
 from flask import current_app
 from ..models.security import User, Role
 from sqlalchemy.orm import joinedload, scoped_session
+from flask import g
 
 
 class CacheUserDatastore(SQLAlchemyUserDatastore):
@@ -18,16 +19,12 @@ class CacheUserDatastore(SQLAlchemyUserDatastore):
 
     @region_users.cache_on_arguments()
     def find_user(self, **kwargs):
-        session = db.create_session({})
-        u = session.query(User).options(joinedload(User.roles)).filter_by(**kwargs).first()
-        session.close()
+        u = User.query.options(joinedload(User.roles)).filter_by(**kwargs).first()
         return u
 
     @region_users.cache_on_arguments()
     def find_role(self, role):
-        session = db.create_session({})
-        r = session.query(Role).filter_by(name=role).first()
-        session.close()
+        r = db.session.query(Role).filter_by(name=role).first()
         return r
 
 from .login_manager import user_datastore

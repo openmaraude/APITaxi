@@ -11,7 +11,9 @@ from six import string_types
 from itertools import compress
 from parse import parse
 import time, operator
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
+from flask import g
+
 
 owner_type_enum = ['company', 'individual']
 class ADS(db.Model, AsDictMixin, HistoryMixin):

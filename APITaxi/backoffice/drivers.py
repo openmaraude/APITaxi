@@ -14,6 +14,7 @@ from datetime import datetime
 from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
 from ..utils.make_model import make_model
 from ..utils.slack import slack as slacker
+from ..utils.cache_refresh import cache_refresh
 
 
 mod = Blueprint('drivers', __name__)
@@ -51,6 +52,7 @@ class Drivers(Resource):
             abort(400, message="You need data a data object")
         if len(json['data']) > 250:
             abort(413, message="You've reach the limits of 250 objects")
+        edited_drivers_id = []
         new_drivers = []
         for driver in json['data']:
             departement = None
@@ -65,11 +67,15 @@ class Drivers(Resource):
             try:
                 driver_obj = create_obj_from_json(taxis_models.Driver, driver)
                 driver_obj.departement_id = departement.id
-                new_drivers.append(driver_obj)
             except KeyError as e:
                 abort(400, message="Key error")
-            db.session.add(new_drivers[-1])
-            taxis_models.invalidate_taxi(driver=driver_obj.id)
+            db.session.add(driver_obj)
+            if driver_obj.id:
+                edited_drivers_id.append(driver_obj.id)
+            new_drivers.append(driver_obj)
+        if edited_drivers_id:
+            cache_refresh(db.session(), [{'func': taxis_models.refresh_taxi,
+                'kwargs': {'driver': edited_drivers_id}}])
         db.session.commit()
         return marshal({'data': new_drivers}, driver_fields), 201
 
@@ -106,7 +112,8 @@ def driver_form():
             driver.last_update_at = datetime.now().isoformat()
             form.populate_obj(driver)
             if form.validate():
-                taxis_models.invalidate_taxi(driver=driver.id)
+                cache_refresh(db.session(), [{'func': taxis_models.refresh_taxi,
+                    'kwargs': {'driver': driver.id}}])
                 db.session.commit()
                 return redirect(url_for('api.drivers'))
         else:

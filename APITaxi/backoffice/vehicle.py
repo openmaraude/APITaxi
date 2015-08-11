@@ -8,6 +8,7 @@ from . import ns_administrative
 from flask.ext.restplus import fields, Resource, reqparse, abort
 from ..utils.make_model import make_model
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
+from ..utils.cache_refresh import cache_refresh
 
 mod = Blueprint('vehicle', __name__)
 
@@ -28,7 +29,8 @@ class Vehicle(Resource):
             abort(400, message="data is required")
         if len(json['data']) > 250:
             abort(413, message="You can only post 250 vehicles at a time")
-        new_vehicle = []
+        edited_vehicles_id = []
+        new_vehicles = []
         for vehicle in json['data']:
             form = VehicleForm.from_json(vehicle)
             v = vehicle_models.Vehicle(form.data['licence_plate'])
@@ -40,7 +42,11 @@ class Vehicle(Resource):
             form_description.populate_obj(v_description)
             v_description.status = 'off'
             db.session.add(v)
-            taxis_models.invalidate_taxi(vehicle=v.id)
-            new_vehicle.append(v)
+            if v.id:
+                edited_vehicles_id.append(v.id)
+            new_vehicles.append(v)
+        if edited_vehicles_id:
+            cache_refresh(db.session(), [{'func': taxis_models.refresh_taxi,
+                'kwargs': {'vehicle': edited_vehicles_id}}])
         db.session.commit()
-        return {"data": new_vehicle}, 201
+        return {"data": new_vehicles}, 201
