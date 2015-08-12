@@ -4,6 +4,7 @@ from flask.ext.security import login_required, roles_accepted,\
         roles_accepted, current_user
 from datetime import datetime, timedelta
 from ..utils import HistoryMixin, AsDictMixin, fields
+from ..utils.scoped_session import ScopedSession
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
@@ -222,7 +223,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     @classmethod
     @region_hails.cache_on_arguments(expiration_time=3600*2, namespace='H')
     def get(cls, id_):
-        session = g.get('session', db.session)
-        h = session.query(Hail).options(joinedload(Hail.operateur)).\
-        filter_by(id=id_).first()
+        with ScopedSession() as session:
+            h = session.query(Hail).options(joinedload(Hail.operateur)).\
+                filter_by(id=id_).first()
         return h
