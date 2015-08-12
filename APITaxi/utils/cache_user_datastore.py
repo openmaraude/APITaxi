@@ -19,12 +19,14 @@ class CacheUserDatastore(SQLAlchemyUserDatastore):
 
     @region_users.cache_on_arguments()
     def find_user(self, **kwargs):
-        u = User.query.options(joinedload(User.roles)).filter_by(**kwargs).first()
+        session = g.get('session', db.session)
+        u = session.query(User).options(joinedload(User.roles)).filter_by(**kwargs).first()
         return u
 
     @region_users.cache_on_arguments()
     def find_role(self, role):
-        r = db.session.query(Role).filter_by(name=role).first()
+        session = g.get('session', db.session)
+        r = session.query(Role).filter_by(name=role).first()
         return r
 
 from .login_manager import user_datastore

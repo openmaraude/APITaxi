@@ -226,15 +226,10 @@ def get_taxi(id_):
     session.close()
     return t
 
-def invalidate_taxi(ads=None, vehicle=None, driver=None, id_=None):
-    filters = {}
-    if ads:
-        filters['ads_id'] = ads
-    if vehicle:
-        filters['vehicle_id'] = vehicle
-    if driver:
-        filters['driver_id'] = driver
-    if not filters:
+def refresh_taxi(**kwargs):
+    id_ = kwargs.get('id_', None)
+    if id_:
+        Taxi.get.refresh(id_)
         return
     for taxi in Taxi.query.filter_by(**filters):
         get_taxi.invalidate(taxi.id)
