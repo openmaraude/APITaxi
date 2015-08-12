@@ -15,7 +15,7 @@ from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
 from ..utils.make_model import make_model
 from ..utils.slack import slack as slacker
 from ..utils.cache_refresh import cache_refresh
-
+from ..utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('drivers', __name__)
 
@@ -23,7 +23,8 @@ driver_fields = make_model('taxis', 'Driver')
 driver_details_expect = make_model('taxis', 'Driver', filter_id=True)
 
 @ns_administrative.route('drivers/')
-class Drivers(Resource):
+class Drivers(ResourceMetadata):
+    model = taxis_models.Driver
 
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture')
@@ -81,9 +82,11 @@ class Drivers(Resource):
 
     @api.hide
     @login_required
-    @roles_accepted('admin', 'operateur', 'prefecture')
+    @roles_accepted('admin', 'operateur', 'prefecture', 'stats')
     def get(self):
         if not taxis_models.Driver.can_be_listed_by(current_user):
+            if current_user.has_role('stats'):
+                return self.metadata()
             abort(403, message="You can't list drivers")
         page = int(request.args.get('page')) if 'page' in request.args else 1
         q = taxis_models.Driver.query

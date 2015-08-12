@@ -40,7 +40,10 @@ def create_admin(email):
 def create_mairie(email):
     create_user_role(email, 'mairie')
 
-
 @manager.command
 def create_prefecture(email):
     create_user_role(email, 'prefecture')
+
+@manager.command
+def create_stats(email):
+    create_user_role(email, 'stats')
