@@ -16,6 +16,9 @@ from .utils.redis_geo import GeoRedis
 from flask.ext.redis import FlaskRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 
+from flask.ext.celery import Celery
+celery = Celery()
+
 from dogpile.cache import make_region
 region_taxi = make_region('taxis')
 region_hails = make_region('hails')
