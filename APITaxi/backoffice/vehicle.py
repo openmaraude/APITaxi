@@ -2,7 +2,7 @@
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, Blueprint
 from ..models import vehicle as vehicle_models, taxis as taxis_models
-from .. import db
+from ..extensions import db
 from ..api import api
 from . import ns_administrative
 from flask.ext.restplus import fields, Resource, reqparse, abort

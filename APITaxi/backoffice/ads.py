@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .. import db, documents, index_zupc
+from ..extensions import db, documents, index_zupc
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,

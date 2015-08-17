@@ -2,8 +2,9 @@
 
 from flask.ext.testing import TestCase
 from json import dumps
-from APITaxi import (db, create_app, redis_store, index_zupc, region_taxi,
-                    region_hails, region_users)
+from APITaxi import create_app
+from APITaxi.extensions import (db, redis_store, index_zupc, region_taxi,
+                               region_hails, region_users, user_datastore)
 from APITaxi.utils.login_manager import user_datastore
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC

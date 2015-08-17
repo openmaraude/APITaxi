@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from APITaxi.models.taxis import ADS, Vehicle
-from APITaxi import db
+from APITaxi.extensions import db, index_zupc
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_ads, dict_vehicle
-from APITaxi import index_zupc
 
 
 class TestADSPost(Skeleton):

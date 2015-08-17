@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .. import db
+from ..extensions import db, documents
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import DriverCreateForm,\
@@ -13,7 +13,6 @@ from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
 from ..utils.make_model import make_model
-from .. import documents
 from ..utils.slack import slack as slacker
 
 

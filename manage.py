@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from APITaxi import create_app
-from APITaxi.models import db
+from APITaxi.extensions import db
 from flask.ext.migrate import Migrate
 from APITaxi.commands import register_commands, manager
 
