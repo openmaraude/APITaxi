@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..models import db
+from .. import db
 from ..utils import AsDictMixin, HistoryMixin, unique_constructor, MarshalMixin, fields
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum

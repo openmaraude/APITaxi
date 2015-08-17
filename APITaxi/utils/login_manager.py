@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
-from .. import db
-from ..models import security
+from ..extensions import db, user_datastore
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.security.utils import verify_and_update_password
-from .cache_user_datastore import CacheUserDatastore
 from flask.ext.login import login_user
 
 
-user_datastore = CacheUserDatastore(db, security.User,
-                            security.Role)
 
 def load_user(user_id):
     return user_datastore.get_user(user_id)
