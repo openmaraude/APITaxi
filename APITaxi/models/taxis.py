@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from ..models import vehicle
-from .. import region_taxi
-from ..models import db
+from ..extensions import region_taxi, db, user_datastore
 from ..models.vehicle import Vehicle, VehicleDescription
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
 from ..utils import AsDictMixin, HistoryMixin, fields
-from ..utils.login_manager import user_datastore
 from uuid import uuid4
 from six import string_types
 from itertools import compress

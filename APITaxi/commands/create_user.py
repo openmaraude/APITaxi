@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..utils.login_manager import user_datastore
-from ..models import db
+from ..extensions import db, user_datastore
 from flask.ext.script import prompt_pass
 from validate_email import validate_email
 from . import manager
