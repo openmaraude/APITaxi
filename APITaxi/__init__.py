@@ -77,4 +77,7 @@ def create_app(sqlalchemy_uri=None):
     if not region_users.is_configured:
         region_users.configure('dogpile.cache.memory')
 
+    from . import tasks
+    tasks.init_app(app)
+
     return app
