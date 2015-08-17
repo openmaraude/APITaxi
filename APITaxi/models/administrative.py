@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..models import db
+from .. import db
 from sqlalchemy_defaults import Column
 from ..utils import MarshalMixin
 import geojson, shapely
