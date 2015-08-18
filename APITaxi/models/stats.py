@@ -1,5 +1,5 @@
 #coding: utf-8
-from . import db
+from ..extensions import db
 
 class ActiveTaxis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
