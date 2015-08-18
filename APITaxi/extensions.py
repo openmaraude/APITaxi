@@ -1,5 +1,16 @@
 #coding: utf-8
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy as BaseSQLAlchemy
+from sqlalchemy.pool import QueuePool as BaseQueuePool
+
+
+class SQLAlchemy(BaseSQLAlchemy):
+    def apply_driver_hacks(self, app, info, options):
+        BaseSQLAlchemy.apply_driver_hacks(self, app, info, options)
+        class QueuePool(BaseQueuePool):
+            def  __init__(self, creator, pool_size=5, max_overflow=10, timeout=30, **kw):
+                kw['use_threadlocal'] = True
+                BaseQueuePool.__init__(self, creator, pool_size, max_overflow, timeout, **kw)
+        options.setdefault('poolclass', QueuePool)
 db = SQLAlchemy(session_options={"autoflush":False})
 from .utils.redis_geo import GeoRedis
 from flask.ext.redis import FlaskRedis

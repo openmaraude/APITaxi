@@ -1,47 +1,32 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import  SQLAlchemyUserDatastore
 from ..extensions import region_users, db
-from __builtin__ import isinstance
 from flask import current_app
 from ..models.security import User, Role
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, scoped_session
+from flask import g, current_app
+from .scoped_session import ScopedSession
 
-@region_users.cache_on_arguments()
-def get_user(identifier):
-    try:
-       filter_ = {"id": int(identifier)}
-    except ValueError:
-       filter_ = {"email": identifier}
-    return find_user(**filter_)
-
-@region_users.cache_on_arguments()
-def find_user(**kwargs):
-    session = db.create_scoped_session()
-    u = session.query(User).\
-            options(joinedload(User.roles)).filter_by(**kwargs).first()
-    session.close()
-    return u
 
 class CacheUserDatastore(SQLAlchemyUserDatastore):
-    def invalidate_user(self, user):
-        get_user.invalidate(user.id)
-        get_user.invalidate(unicode(user.id))
-        get_user.invalidate(user.email)
-        find_user.invalidate(id=user.id)
-        find_user.invalidate(email=user.email)
-        find_user.invalidate(apikey=user.apikey)
 
+    @region_users.cache_on_arguments()
     def get_user(self, identifier):
-        return get_user(identifier)
+        try:
+           filter_ = {"id": int(identifier)}
+        except ValueError:
+           filter_ = {"email": identifier}
+        return self.find_user(**filter_)
 
+    @region_users.cache_on_arguments()
     def find_user(self, **kwargs):
-        return find_user(**kwargs)
-
+        with ScopedSession() as session:
+            u = session.query(User).options(joinedload(User.roles)).\
+                    filter_by(**kwargs).first()
+        return u
 
     @region_users.cache_on_arguments()
     def find_role(self, role):
-        session = db.create_scoped_session()
-        r = session.query(Role).filter_by(name=role).first()
-        session.close()
+        with ScopedSession() as session:
+            r = session.query(Role).filter_by(name=role).first()
         return r
-

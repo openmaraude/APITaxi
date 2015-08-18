@@ -48,10 +48,12 @@ class Skeleton(TestCase):
             redis_store.zrem('geoindex', i)
         db.session.remove()
         db.drop_all()
+        db.get_engine(self.app).dispose()
         region_taxi.invalidate()
         region_hails.invalidate()
         region_users.invalidate()
         index_zupc.index_zupc = None
+
 
     def post_taxi(self, role=None):
         self.init_zupc()

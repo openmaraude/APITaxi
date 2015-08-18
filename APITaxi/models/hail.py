@@ -4,12 +4,14 @@ from flask.ext.security import login_required, roles_accepted,\
         roles_accepted, current_user
 from datetime import datetime, timedelta
 from ..utils import HistoryMixin, AsDictMixin, fields
+from ..utils.scoped_session import ScopedSession
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
 from ..extensions import redis_store, region_hails, db
 from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates, joinedload
+from flask import g
 
 status_enum_list = [ 'emitted', 'received',
     'sent_to_operator', 'received_by_operator',
@@ -218,11 +220,10 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
                         }
         return {}
 
-
-@region_hails.cache_on_arguments(expiration_time=3600*2)
-def get_hail(id_):
-    session = db.create_scoped_session()
-    h = session.query(Hail).options(joinedload(Hail.operateur)).\
-        filter_by(id=id_).first()
-    session.close()
-    return h
+    @classmethod
+    @region_hails.cache_on_arguments(expiration_time=3600*2, namespace='H')
+    def get(cls, id_):
+        with ScopedSession() as session:
+            h = session.query(Hail).options(joinedload(Hail.operateur)).\
+                filter_by(id=id_).first()
+        return h

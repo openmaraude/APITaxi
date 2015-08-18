@@ -15,6 +15,7 @@ from datetime import datetime
 from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
 from ..utils.make_model import make_model
 from ..utils.slack import slack
+from ..utils.cache_refresh import cache_refresh
 
 mod = Blueprint('ads', __name__)
 
@@ -105,6 +106,7 @@ class ADS(Resource):
             abort(400, message="No data field in request")
         if len(json['data']) > 250:
             abort(413, message="You can only pass 250 objects")
+        edited_ads_id = []
         new_ads = []
         for ads in json['data']:
             if ads['vehicle_id'] and\
@@ -112,20 +114,25 @@ class ADS(Resource):
                 abort(400, message="Unable to find a vehicle with the id: {}"\
                         .format(ads['vehicle_id']))
             try:
-                new_ads.append(create_obj_from_json(taxis_models.ADS, ads))
+                ads_db = create_obj_from_json(taxis_models.ADS, ads)
             except KeyError as e:
                 abort(400, message="Missing key: "+str(e))
             except AssertionError as e:
                 abort(400, message='Bad owner_type value, can be: {}'.format(
                     taxis_models.owner_type_enum
                     ))
-            zupc = administrative_models.ZUPC.query.filter_by(insee=new_ads[-1].insee).first()
+            zupc = administrative_models.ZUPC.query.filter_by(insee=ads_db.insee).first()
             if zupc is None:
                 abort(400, message="Unable to find a ZUPC for insee: {}".format(
-                    new_ads[-1].insee))
-            new_ads[-1].zupc_id = zupc.parent_id
-            db.session.add(new_ads[-1])
-            taxis_models.invalidate_taxi(ads=new_ads[-1].id)
+                    ads_db.insee))
+            ads_db.zupc_id = zupc.parent_id
+            db.session.add(ads_db)
+            if ads_db.id:
+                edited_ads_id.append(ads.id)
+            new_ads.append(ads)
+        if edited_ads_id:
+            cache_refresh(db.session(), [{'func': taxis_models.refresh_taxi,
+                'kwargs': {'ads': edited_ads_id}}])
         db.session.commit()
         return marshal({"data": new_ads}, ads_post), 201
 
@@ -174,7 +181,10 @@ def ads_form():
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)
         db.session.add(ads)
-        taxis_models.invalidate_taxi(ads=ads.id)
+        if ads.id:
+            cache_refresh(db.session(),
+                    [{'func': taxis_models.refresh_taxi,
+                       'kwargs': {'ads':ads.id}}])
         db.session.commit()
         return redirect(url_for('api.ads'))
     return render_template('forms/ads.html', form=form)

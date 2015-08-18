@@ -10,17 +10,20 @@ from flask import Flask, request_started, request, request_finished, g
 from flask_bootstrap import Bootstrap
 import os
 from flask.ext.redis import FlaskRedis
-from flask.ext.login import user_logged_out
 from flask.ext.restplus import abort
+from flask.ext.uploads import (UploadSet, configure_uploads,
+            DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from .utils.request_wants_json import request_wants_json
+
 
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
     if not request_wants_json():
         return
-    rule = request.url_rule
-    endpoint = None if not rule else rule.endpoint
-    if  rule is None or endpoint == 'api.specs' or endpoint == 'static':
+    if request.url_rule is None:
+        return
+    endpoint = request.url_rule.endpoint
+    if endpoint == 'api.specs' or endpoint == 'static':
         return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:
@@ -31,11 +34,6 @@ def check_version(sender, **extra):
 
 def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
-
-def invalidate_user(sender, user, **extra):
-    region_users.invalidate(user)
-
-
 
 def create_app(sqlalchemy_uri=None):
     from .extensions import *
@@ -78,6 +76,5 @@ def create_app(sqlalchemy_uri=None):
         region_hails.configure('dogpile.cache.memory')
     if not region_users.is_configured:
         region_users.configure('dogpile.cache.memory')
-    user_logged_out.connect(invalidate_user)
 
     return app
