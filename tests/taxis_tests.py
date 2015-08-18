@@ -120,7 +120,6 @@ class TestTaxiPut(Skeleton):
         statuses = [desc.status for desc in Taxi.query.get(id_).vehicle.descriptions]
         assert all(map(lambda st: st == status, statuses))
         r = self.get(self.url)
-        print r.json
         assert r.json['data'][0]['status'] == status
 
     def test_good_statuses(self):
