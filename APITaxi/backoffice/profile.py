@@ -53,7 +53,8 @@ def profile_form():
                 db.session.add(logo_db)
                 user.logos.append(logo_db)
         form.populate_obj(user)
-        cache_refresh(db.session(), refresh_user, user.id, True)
+        cache_refresh(db.session(), [{'func': refresh_user,
+                'args': [user.id, True]}])
         db.session.commit()
         return redirect(url_for('profile.profile_form'))
     return render_template('forms/profile.html', form=form,

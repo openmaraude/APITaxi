@@ -30,12 +30,3 @@ class CacheUserDatastore(SQLAlchemyUserDatastore):
         with ScopedSession() as session:
             r = session.query(Role).filter_by(name=role).first()
         return r
-
-def refresh_user(user_id):
-    from ..extensions import user_datastore
-    user = user_datastore.find_user.refresh(id=user_id)
-    user_datastore.get_user.set(user, user.id)
-    user_datastore.get_user.set(user, unicode(user.id))
-    user_datastore.get_user.set(user, user.email)
-    user_datastore.find_user.set(user, email=user.email)
-    user_datastore.find_user.set(user, apikey=user.apikey)
