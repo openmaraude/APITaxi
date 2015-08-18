@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..models import db
+from ..extensions import db
 from ..models.administrative import ZUPC, Departement
 from flask.ext.script import prompt_pass
 from validate_email import validate_email

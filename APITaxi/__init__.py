@@ -11,25 +11,8 @@ from flask_bootstrap import Bootstrap
 import os
 from flask.ext.redis import FlaskRedis
 from flask.ext.login import user_logged_out
-from .utils.redis_geo import GeoRedis
-redis_store = FlaskRedis.from_custom_provider(GeoRedis)
-from dogpile.cache import make_region
-def user_key_generator(namespace, fn, **kw):
-    def generate_key(*args, **kwargs):
-        return fn.__name__ +\
-             "_".join(str(s) for s in args) +\
-             "_".join(k+"_"+str(v) for k,v in kwargs.iteritems())
-    return generate_key
-region_users = make_region('users', function_key_generator=user_key_generator)
-from .models import db
 from flask.ext.restplus import abort
-from flask.ext.uploads import (UploadSet, configure_uploads,
-            DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from .utils.request_wants_json import request_wants_json
-from .index_zupc import IndexZUPC
-from .utils.request_wants_json import request_wants_json
-region_taxi = make_region('taxis')
-region_hails = make_region('hails')
 
 valid_versions = ['1', '2']
 def check_version(sender, **extra):
@@ -53,12 +36,9 @@ def invalidate_user(sender, user, **extra):
     region_users.invalidate(user)
 
 
-documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
-images = UploadSet('images', IMAGES)
-
-index_zupc = IndexZUPC()
 
 def create_app(sqlalchemy_uri=None):
+    from .extensions import *
     app = Flask(__name__)
     app.config.from_object('default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:

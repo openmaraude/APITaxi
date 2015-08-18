@@ -7,7 +7,7 @@ from wtforms_alchemy import ModelFormField
 from wtforms.widgets import ListWidget
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from flask_wtf.file import FileField, FileAllowed
-from .. import images
+from ..extensions import images
 
 
 class UserFormRaw(ModelForm):

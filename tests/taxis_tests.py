@@ -4,7 +4,7 @@ from APITaxi.models.administrative import Departement
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
-from APITaxi import redis_store, db
+from APITaxi.extensions import redis_store, db
 import time
 
 class TaxiGet(Skeleton):

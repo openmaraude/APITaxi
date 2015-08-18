@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .. import db
+from ..extensions import db
 from ..models import administrative as administrative_models
 from ..forms.administrative import ZUPCreateForm, ZUPCUpdateForm
 from flask.ext.security import login_required, roles_accepted
