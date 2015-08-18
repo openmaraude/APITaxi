@@ -13,6 +13,7 @@ from parse import parse
 import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g
+from ..utils.scoped_session import ScopedSession
 
 
 owner_type_enum = ['company', 'individual']
@@ -217,19 +218,32 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def driver_departement(self):
         return self.driver.departement
 
-@region_taxi.cache_on_arguments(expiration_time=13*3600)
-def get_taxi(id_):
-    session = db.create_scoped_session()
-    t = session.query(Taxi).options(joinedload(Taxi.ads),
-                 joinedload(Taxi.driver), joinedload(Taxi.vehicle))\
-                        .filter_by(id=id_).first()
-    session.close()
-    return t
+    @classmethod
+    @region_taxi.cache_on_arguments(expiration_time=13*3600)
+    def get(cls, id_):
+        with ScopedSession() as session:
+            t = session.query(Taxi).options(joinedload(Taxi.ads),
+                         joinedload(Taxi.driver), joinedload(Taxi.vehicle))\
+                                .filter_by(id=id_).first()
+            return t
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)
     if id_:
         Taxi.get.refresh(id_)
         return
-    for taxi in Taxi.query.filter_by(**filters):
-        get_taxi.invalidate(taxi.id)
+    filters = []
+    for k in ('ads', 'vehicle', 'driver'):
+        param = kwargs.get(k, None)
+        if not param:
+            continue
+        filter_k = '{}_id'.format(k)
+        if isinstance(param, list):
+            filters.extend([{filter_k: i} for i in param])
+        elif param:
+            filters.extend([{filter_k: param}])
+    with ScopedSession() as session:
+        for filter_ in filters:
+            for taxi in session.query(Taxi).filter_by(**filter_):
+                Taxi.get.refresh(Taxi, taxi.id)
+

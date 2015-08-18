@@ -76,7 +76,7 @@ class HailId(Resource):
 
     @login_required
     @roles_accepted('admin', 'moteur', 'operateur')
-    @api.marshal_with(hail_model)       
+    @api.marshal_with(hail_model)
     @api.expect(hail_expect_put)
     @json_mimetype_required
     def put(self, hail_id):

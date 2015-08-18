@@ -2,7 +2,7 @@
 from ..extensions import db, user_datastore
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.security.utils import verify_and_update_password
-from flask.ext.login import login_user
+from flask.ext.login import login_user, user_logged_out
 
 
 def load_user(user_id):

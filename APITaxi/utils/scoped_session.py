@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import g
-from .. import db
+from ..extensions import db
 
 
 class ScopedSession(object):
