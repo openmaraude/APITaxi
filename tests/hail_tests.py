@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from APITaxi.models import db
+from APITaxi.extensions import db, redis_store, region_hails
 from .skeleton import Skeleton
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi.models.hail import (Customer, Hail, rating_ride_reason_enum,
         incident_customer_reason_enum, incident_taxi_reason_enum,
         reporting_customer_reason_enum)
 from APITaxi.models.taxis import Taxi
-from APITaxi import redis_store, region_hails
 from copy import deepcopy
 from werkzeug.exceptions import ServiceUnavailable
 from datetime import datetime, timedelta

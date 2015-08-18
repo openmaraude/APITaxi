@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
-from ..models import db
 from ..utils import MarshalMixin
-from .. import region_users
+from ..extensions import region_users, db
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
 import uuid

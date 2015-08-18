@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from . import db
 from .taxis import Taxi as TaxiM
 from flask.ext.security import login_required, roles_accepted,\
         roles_accepted, current_user
@@ -8,7 +7,7 @@ from ..utils import HistoryMixin, AsDictMixin, fields
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
-from .. import redis_store, region_hails
+from ..extensions import redis_store, region_hails, db
 from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates, joinedload
 
