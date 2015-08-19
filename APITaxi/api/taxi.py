@@ -3,13 +3,19 @@ import calendar, time
 from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
-from ..models import taxis as taxis_models, administrative as administrative_models
-from ..extensions import (db, redis_store, index_zupc)
+from ..models import (taxis as taxis_models,
+    administrative as administrative_models, stats as stats_models)
+from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
+from ..utils import arguments
 from shapely.geometry import Point
+from sqlalchemy import distinct
+from sqlalchemy.sql.expression import func as func_sql
+from datetime import datetime, timedelta
+from time import mktime, time
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -121,12 +127,15 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         }
     return wrapped
 
+
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True, location='values')
     get_parser.add_argument('lat', type=float, required=True, location='values')
     get_parser.add_argument('favorite_operator', type=unicode, required=False, location='values')
+
+
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -202,3 +211,69 @@ class Taxis(Resource):
                 abort(400, message='Invalid status')
         db.session.commit()
         return {'data':[taxi]}, 201
+
+@ns_taxis.route('/_views', endpoint="taxi_active")
+class ActiveTaxisRoute(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('zupc', type=int, required=False, location='values')
+        parser.add_argument('operator', type=unicode, required=False, location='values')
+        parser.add_argument('begin', type=float, required=False, location='values')
+        parser.add_argument('end', type=float, required=False, location='values')
+        parser.add_argument('granularity', type=arguments.Integer(15),
+            location='values', default=15)
+        p = parser.parse_args()
+
+        if not p['begin'] and not p['end']:
+            p['end'] = int(time())
+        p['begin'] = p['begin'] or p['end'] - 15 * 60
+        p['end'] = p['end'] or p['begin'] + 15 * 60
+
+        filters = dict()
+
+        if p['operator']:
+            if not current_user.has_role('admin') and p['operator'] != current_user.email:
+                abort(503)
+            filters['operator_id'] = user_datastore.find_user(email=operator).id
+
+        if p['zupc']:
+            zupc = administrative_models.ZUPC.query.filter_by(insee=p['zupc']).first()
+            if not zupc:
+                abort(404, message='Unable to find a zupc for this insee code')
+            filters['zupc_id'] = zupc.parent_id
+
+        lower, upper = map(lambda k: datetime.fromtimestamp(p[k]), ['begin', 'end'])
+        timestamp_sql = stats_models.ActiveTaxis.timestamp
+        #Find upper bound in database
+        max_ = db.session.query(func_sql.min(stats_models.ActiveTaxis.timestamp)).\
+                    filter(timestamp_sql >= upper).first()[0]
+        if not max_ or (max_ - upper) > timedelta(minutes=15):
+            abort(404, message="Unable to find a timestamp for end")
+        #Find lower bound in database
+        opt = func_sql.max(timestamp_sql)
+        min_ = db.session.query(func_sql.max(stats_models.ActiveTaxis.timestamp)).\
+                    filter(timestamp_sql <= upper).first()[0]
+        if not min_ or (lower - min_) > timedelta(minutes=15):
+            abort(404, message="Unable to find a timestamp for begin")
+
+        data = []
+        t_attr = stats_models.ActiveTaxis.timestamp
+        q = stats_models.ActiveTaxis.query.filter_by(**filters)
+        q = q.filter(t_attr >= min_, t_attr <= max_)
+        for v in q.all():
+            bound = v.timestamp
+            minute = (bound.minute/p.granularity) * p.granularity
+            end = datetime(bound.year, bound.month, bound.day, bound.hour, minute)
+            begin = end - timedelta(minutes=15)
+            data.append(
+                {
+                    "operator": user_datastore.find_user(id=v.operator_id).email,
+                    "zupc": administrative_models.ZUPC.query.get(v.zupc_id).insee,
+                    "begin": mktime(begin.timetuple()),
+                    "end": mktime(end.timetuple()),
+                    "nb_taxis": v.nb_taxis
+                }
+            )
+        return {"data": data}
+
+
