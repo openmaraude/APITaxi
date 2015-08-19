@@ -1,22 +1,24 @@
 {% extends "documentation/base.html" %}
+{% block styles %}
+ {{super()}}
+ <style>
+.menu-index ul{
+height:auto;
+}
+ </style>
+{% endblock %}
 {% block documentationcontent %}
 <h2>Introduction</h2>
-
-<a name="overview"><h3>Overview</h3></a>
+<h3 id="overview">Overview</h3>
 The French <em>"Registre Géolocalisé des Taxis"</em> is a <strong>Taxi Exchange Point</strong> (<strong>TXP</strong>) aiming to connect taxis and their clients. Clients can use taxis <strong>search engines</strong> to hail taxis geolocated by <strong>taxis operators</strong>. The RGT mediates between search engines and operators. <br>
-
 <object type="image/svg+xml" data="/static/images/overview.svg">Your browser does not support SVG</object><br>
-
 In order to ensure maximum reliability, communication of the location and availability of taxis must be made directly from an on-board equipment in the taxi to the <abbr title="Taxi Exchange Point">TXP</abbr>. All other interactions with the <abbr title="Taxi Exchange Point">TXP</abbr> can be made from the central infrastructure of taxi operators (resp. search engines).
 
-
-<a name="apis"><h3>APIs implementation</h3></a>
+<h3 id="apis">APIs implementation</h3>
 This documentation provides an overview of the <abbr title="Taxi Exchange Point">TXP</abbr> REST APIs. REST APIs provide access to resources (data entities) via URI paths. To use a REST API, your application will make an HTTPS request and parse the response. Your methods will be the standard HTTP methods like GET, PUT and POST. REST APIs operate over HTTPS making it easy to use with any programming language or framework. The input and output format for the <abbr title="Taxi
 Exchange Point">TXP</abbr> REST APIs is <a href="http://www.json.org" target="_blank">JSON</a>.<br>
 
-
-<a name="headers"><h3>Mandatory HTTP Headers</h3></a>
-
+<h3 id="headers">Mandatory HTTP Headers</h3>
 The following HTTP Headers are mandatory for all requests to the <abbr title="Taxi Exchange Point">TXP</abbr> REST APIs:
 <table class="pure-table pure-table-bordered pure-table-horizontal">
     <thead>
@@ -45,8 +47,8 @@ The following HTTP Headers are mandatory for all requests to the <abbr title="Ta
     </tbody>
 </table>
 
-<a name="authentication"><h3>Authentication</h3></a>
+<h3 id="authentication">Authentication</h3>
 Authentication of your application is done for each query to the <abbr title="Taxi Exchange Point">TXP</abbr> by including a HTTP header X-API-KEY.<br>
-API keys are available for accredited developpers on the <a href="user_key">"Clé" page</a> of the main menu.
+API keys are available for accredited developpers on the <a href="/user_key">"Clé" page</a> of the main menu.
 
 {% endblock %}
