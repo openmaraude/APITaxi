@@ -9,13 +9,13 @@ Il est aussi du rôlé de l'opérateur de <a href="#udp_taxi">positionner les ta
 de les transmettre au taxi, et <a href="#update_hail">les mettre à jour</a> dans le RGT.<br>
 
 <a name="post_vehicle"><h2>Déclarer un véhicule</h2></a>
-    La déclaration d'un véhicule se fait en effetuant une requête HTTPS <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_vehicle">vehicles</a>.
+    La déclaration d'un véhicule se fait en effectuant une requête HTTPS <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_vehicle">vehicles</a>.
     La structure de l'objet <span>vehicle</span> atttendu est détaillée dans la <a href="/documentation/reference#vehicle_object">documentation de référence.</a>
 <a name="post_ads"><h2>Déclarer une ADS</h2></a>
-    La déclaration d'une Autorisaton De Stationner se fait en effetuant une requête HTTPS <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_ads">ads</a>.
+    La déclaration d'une Autorisaton De Stationnement se fait en effectuant une requête HTTPS <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_ads">ads</a>.
     La structure de l'objet <span>ads</span> atttendu est détaillée dans la <a href="/documentation/reference#ads_object">documentation de référence.</a>
 <a name="post_driver"><h2>Déclarer un chauffeur</h2></a>
-    La déclaration d'un chauffeur se fait en effetuant une requête HTTPS <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_drivers">drivers</a>.
+    La déclaration d'un chauffeur se fait en effectuant une requête HTTPS <span>POST</span> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_drivers">drivers</a>.
     La structure de l'objet <span>driver</span> atttendu est détaillée dans la <a href="/documentation/reference#driver_object">documentation de référence.</a>
 
 <a name="post_taxi"><h2>Déclarer un taxi</h2></a>
@@ -32,7 +32,7 @@ de les transmettre au taxi, et <a href="#update_hail">les mettre à jour</a> dan
     La disponibilité d'un taxi est mise à jour en effectuant un appel HTTPS <span>PUT</span> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/put_taxis">taxis</a>.
 
 <a name="udp_taxi"><h2>Positionner un taxi</h2></a>
-La remontée de la géolocalisation d'un taxi se fait en envoyant un datagramme UDP àu serveur de géolocalisation.
+La remontée de la géolocalisation d'un taxi se fait en envoyant un datagramme UDP au serveur de géolocalisation.
 La structure du paquet est détaillée sur <a href="https://wiki.opentaxi.fr/index.php/UDP_geoloc.opendatataxi.fr" target="_blank">cette page</a>. 
 L'id du taxi est l'id qui a été renvoyé lors de la déclaration du taxi (voir <a href="#post_taxi">Déclarer un taxi</a>).
 
