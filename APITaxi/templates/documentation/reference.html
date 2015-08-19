@@ -1,8 +1,11 @@
 {% extends "documentation/base.html" %}
 {% block documentationcontent %}
-<h1>Taxi</h1>
-<a name"=taxi_object"><h2>Objet principal</h2></a>
-<table>
+<h1>Reference Documentation</h1>
+
+<h2>Taxi</h2>
+
+<a name="taxi_object"><h3>Structure</h3></a>
+<table class="table-desc">
     <tr>
         <td>Key</td>
         <td>Value Type</td>
@@ -11,7 +14,7 @@
     <tr>
         <td>vehicle</td>
         <td><a href="#vehicle_object">vehicle</a></td>
-        <td>A partial <a href="#vehicle_object">vehicle</a> with only the fields: characteristics, color, constructors, licence_plate, model. Beware some field may not be returned.</td>
+        <td>A partial <a href="#vehicle_object">vehicle</a> with only the fields: characteristics, color, constructor, licence_plate, model. Beware some of those fields may not be returned if they were not.</td>
     </tr>
     <tr>
         <td>ads</td>
@@ -39,39 +42,41 @@
         <td>Timestamp of the last geolocalization update of the taxi.</td>
     </tr>
 </table>
-<a name="taxi_status"><h2>status</h2></a>
-This table describes the different values this enum can take
-<table>
+<a name="taxi_status"><h3>status</h3></a>
+This table describes the different values the taxi status can take
+<table class="table-desc">
     <tr>
         <td>Value</td>
         <td>Description</td>
     </tr>
     <tr>
         <td>free</td>
-        <td>This taxi can accept hails</td>
+        <td>The taxi can be hailed</td>
     </tr>
     <tr>
         <td>answering</td>
-        <td>This taxi is answering to hail</td>
-    </tr>
-    <tr>
-        <td>occupied</td>
-        <td>This taxi currently has a customer</td>
+        <td>The taxi is currently answering to a hail</td>
     </tr>
     <tr>
         <td>oncoming</td>
-        <td>This taxi is on his way to take a customer</td>
+        <td>The taxi is on its way to meet a customer</td>
+    </tr>
+    <tr>
+        <td>occupied</td>
+        <td>The taxi has a customer on board</td>
     </tr>
     <tr>
         <td>off</td>
-        <td>This taxi is not logged in</td>
+        <td>The taxi is not logged in</td>
     </tr>
 </table>
+<a name="taxi_post_reponses"><h3>Error codes on a POST /taxis/</h3></a>
+TODO (in Swagger ?)
 
-<a name="taxi_post_reponses"><h2>Réponses possibles à un post</h2></a>
-<h1>ADS</h1>
-<a name="ads_object"><h2>ADS object</h2></a>
-<table>
+<h2>ADS</h2>
+
+<a name="ads_object"><h3>Structure</h3></a>
+<table class="table-desc">
     <tr>
         <td>Key</td>
         <td>Value Type</td>
@@ -114,9 +119,10 @@ This table describes the different values this enum can take
     </tr>
 </table>
 
-<h1>Driver</h1>
-<a name="driver_object"><h2>Driver object</h2></a>
-<table>
+<h2>Driver</h2>
+
+<a name="driver_object"><h3>Structure</h3></a>
+<table class="table-desc">
     <tr>
         <td>Key</td>
         <td>Value Type</td>
@@ -148,113 +154,11 @@ This table describes the different values this enum can take
         <td></td>
     </tr>
 </table>
-<h1>Hail</h1>
-<a name="hail_object"><h2>Hail Object</h2></a>
-<table>
-    <tr>
-        <td>Key</td>
-        <td>Value Type</td>
-        <td>Description</td>
-    </tr>
-    <tr>
-        <td>operateur</td>
-        <td>string</td>
-        <td>identifier of the operateur</td>
-    </tr>
-    <tr>
-        <td>customer_id</td>
-        <td>string</td>
-        <td>identifier of the customer</td>
-    </tr>
-    <tr>
-        <td>customer_lon</td>
-        <td>float</td>
-        <td>Longitude of the position of the customer</td>
-    </tr>
-    <tr>
-        <td>customer_lat</td>
-        <td>float</td>
-        <td>Latitude of the position of the customer</td>
-    </tr>
-    <tr>
-        <td>customer_address</td>
-        <td>string</td>
-        <td>Address of the position of the customer</td>
-    </tr>
-    <tr>
-        <td>taxi_id</td>
-        <td>string</td>
-        <td>Identifier of the taxi</td>
-    </tr>
-    <tr>
-        <td>status</td>
-        <td>string</td>
-        <td>status of the hail. All possible values are described <a href="#hail_status">here</a></td>
-    </tr>
-</table>
-<a name="hail_status"><h2>Hail status</h2></a>
-This section describes the different values a hail status can take.
-<table>
-    <tr>
-        <td>Value</td>
-        <td>Description</td>
-    </tr>
-    <tr>
-        <td>emitted</td>
-        <td>The first status of hail</td>
-    </tr>
-    <tr>
-        <td>received</td>
-        <td>The hail is received by the ODT</td>
-    </tr>
-    <tr>
-        <td>sent_to_operator</td>
-        <td>The hail has been sent to the operator</td>
-    </tr>
-    <tr>
-        <td>received_by_operator</td>
-        <td>We know the operator received the hail</td>
-    </tr>
-    <tr>
-        <td>received_by_taxi</td>
-        <td>The hail has been received by the taxi</td>
-    </tr>
-    <tr>
-        <td>accepted_by_taxi</td>
-        <td>The hail has been accepted by the taxi</td>
-    </tr>
-    <tr>
-        <td>declined_by_taxi</td>
-        <td>The hail has been declined by the taxi</td>
-    </tr>
-    <tr>
-        <td>incident_customer</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>incident_taxi</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>timeout_customer</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>timeout_taxi</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>failure</td>
-        <td></td>
-    </tr>
-</table>
-<br>
-<img src="/static/images/enums_hails.png">
 
-<h1>Véhicule</h1>
+<h2>Vehicle</h2>
 
-<h2>Characteristics</h2>
-<table>
+<h3>Characteristics</h3>
+<table class="table-desc">
     <tr>
         <td>Value</td>
         <td>Desription</td>
@@ -328,4 +232,111 @@ This section describes the different values a hail status can take.
         <td>This is a luxury vehicle</td>
     </tr>
 </table>
+
+
+
+<h2>Hail</h2>
+
+<a name="hail_object"><h3>Structure</h3></a>
+<table class="table-desc">
+    <tr>
+        <td>Key</td>
+        <td>Value Type</td>
+        <td>Description</td>
+    </tr>
+    <tr>
+        <td>operateur</td>
+        <td>string</td>
+        <td>identifier of the operateur</td>
+    </tr>
+    <tr>
+        <td>customer_id</td>
+        <td>string</td>
+        <td>identifier of the customer</td>
+    </tr>
+    <tr>
+        <td>customer_lon</td>
+        <td>float</td>
+        <td>Longitude of the position of the customer</td>
+    </tr>
+    <tr>
+        <td>customer_lat</td>
+        <td>float</td>
+        <td>Latitude of the position of the customer</td>
+    </tr>
+    <tr>
+        <td>customer_address</td>
+        <td>string</td>
+        <td>Address of the position of the customer</td>
+    </tr>
+    <tr>
+        <td>taxi_id</td>
+        <td>string</td>
+        <td>Identifier of the taxi</td>
+    </tr>
+    <tr>
+        <td>status</td>
+        <td>string</td>
+        <td>status of the hail. All possible values are described <a href="#hail_status">here</a></td>
+    </tr>
+</table>
+<a name="hail_status"><h3>Hail status</h3></a>
+This section describes the different values a hail status can take.
+<table class="table-desc">
+    <tr>
+        <td>Value</td>
+        <td>Description</td>
+    </tr>
+    <tr>
+        <td>emitted</td>
+        <td>The first status of hail</td>
+    </tr>
+    <tr>
+        <td>received</td>
+        <td>The hail is received by the ODT</td>
+    </tr>
+    <tr>
+        <td>sent_to_operator</td>
+        <td>The hail has been sent to the operator</td>
+    </tr>
+    <tr>
+        <td>received_by_operator</td>
+        <td>We know the operator received the hail</td>
+    </tr>
+    <tr>
+        <td>received_by_taxi</td>
+        <td>The hail has been received by the taxi</td>
+    </tr>
+    <tr>
+        <td>accepted_by_taxi</td>
+        <td>The hail has been accepted by the taxi</td>
+    </tr>
+    <tr>
+        <td>declined_by_taxi</td>
+        <td>The hail has been declined by the taxi</td>
+    </tr>
+    <tr>
+        <td>incident_customer</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>incident_taxi</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>timeout_customer</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>timeout_taxi</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>failure</td>
+        <td></td>
+    </tr>
+</table>
+<br>
+<img src="/static/images/enums_hails.png">
+
 {% endblock %}

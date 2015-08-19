@@ -4,6 +4,8 @@
 {{super()}}
 <link rel="stylesheet"
       href="{{url_for('static', filename='css/simple-sidebar.css')}}">
+<link rel="stylesheet"
+       href="{{url_for('static', filename='css/pure-tables.css')}}">
 <style>
 .navbar{
 margin-bottom: 0;
@@ -16,9 +18,16 @@ margin-bottom: 0;
      <div id="sidebar-wrapper">
                 <ul class="sidebar-nav">
                 <li class="sidebar-brand">
-                    <a href="/documentation/index">Overview</a>
+                    <a href="/documentation/index">Introduction</a>
                 </li>
+                <li style="list-style-type:none">
                 <ul>
+                <li>
+                   <a href="/documentation/index#overview">Overview</a>
+                </li>
+                <li>
+                   <a href="/documentation/index#apis">APIs implementation</a>
+                </li>
                 <li>
                     <a href="/documentation/index#headers">Mandatory HTTP headers</a>
                 </li>
@@ -26,9 +35,11 @@ margin-bottom: 0;
                     <a href="/documentation/index#authentication">Authentication</a>
                 </li>
                 </ul>
+                </li>
                 <li class="sidebar-brand">
                     <a href="moteur">Search engine</a>
                 </li>
+                <li style="list-style-type:none">
                 <ul>
                 <li>
                     <a href="/documentation/moteur#geoloc">Looking for taxis</a>
@@ -43,43 +54,46 @@ margin-bottom: 0;
                     <a href="/documentation/moteur#put_hail">Updating a Hail</a>
                 </li>
                 </ul>
-                <li class="sidebar-brand">
-                    <a href="/documentation/operateur">Opérateur</a>
                 </li>
+                <li class="sidebar-brand">
+                    <a href="/documentation/operateur">Operator</a>
+                </li>
+                <li style="list-style-type:none">
                 <ul>
                 <li>
-                    <a href="/documentation/operateur#post_vehicle">Déclarer un véhicule</a>
+                    <a href="/documentation/operateur#post_vehicle">Declaring a vehicle</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#post_driver">Déclarer un chauffeur</a>
+                    <a href="/documentation/operateur#post_driver">Declaring a driver</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#post_ads">Déclarer une ADS</a>
+                    <a href="/documentation/operateur#post_ads">Declaring a licence (ADS)</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#post_taxi">Déclarer un taxi</a>
+                    <a href="/documentation/operateur#post_taxi">Declaring a taxi</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#udp_taxi">Positionner un taxi</a>
+                    <a href="/documentation/operateur#udp_taxi">Updating the location of a taxi</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#put_taxi">Mettre à jour un taxi</a>
+                    <a href="/documentation/operateur#put_taxi">Updating the status of a taxi</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#get_taxi">Vérifier l'état d'un taxi</a>
+                    <a href="/documentation/operateur#get_taxi">Querying the status of a taxi</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#udp_taxi">Recevoir une course</a>
+                    <a href="/documentation/operateur#post_hail">Receiving a hail</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#get_hail">Suivre le statut d'une course</a>
+                    <a href="/documentation/operateur#get_hail">Querying the status of a hail</a>
                 </li>
                 <li>
-                    <a href="/documentation/operateur#put_hail">Mettre à jour une course</a>
+                    <a href="/documentation/operateur#put_hail">Querying the status of a hail</a>
                 </li>
                 </ul>
-                <li>
-                    <a href="/documentation/reference">Réference</a>
+                </li>
+                <li class="sidebar-brand">
+                    <a href="/documentation/reference">Reference</a><br>
                 </li>
             </ul>
         </div>

@@ -1,47 +1,52 @@
 {% extends "documentation/base.html" %}
 {% block documentationcontent %}
-<h1>Overview</h1>
+<h2>Introduction</h2>
 
-<h2>client &#8644; search engine &#8644; RGT &#8644; operator &#8644; taxi</h2>
-The French "<b>Registre Géolocalisé des Taxis</b>" (RGT) aims to connect taxis and their clients. Clients can use taxis <b>search engines</b> to hail taxis geolocated by taxis <b>operators</b>. The RGT mediates between search engines and operators. <br>
-In order to ensure maximum reliability, communication of the location and availability of taxis must be made directly from an on-board equipment in the taxi to the RGT. All other interactions with the RGT can be made from the central infrastructure of taxi operators (resp. search engines).
+<a name="overview"><h3>Overview</h3></a>
+The French <em>"Registre Géolocalisé des Taxis"</em> is a <strong>Taxi Exchange Point</strong> (<strong>TXP</strong>) aiming to connect taxis and their clients. Clients can use taxis <strong>search engines</strong> to hail taxis geolocated by <strong>taxis operators</strong>. The RGT mediates between search engines and operators. <br>
+
+<object type="image/svg+xml" data="/static/images/overview.svg">Your browser does not support SVG</object><br>
+
+In order to ensure maximum reliability, communication of the location and availability of taxis must be made directly from an on-board equipment in the taxi to the <abbr title="Taxi Exchange Point">TXP</abbr>. All other interactions with the <abbr title="Taxi Exchange Point">TXP</abbr> can be made from the central infrastructure of taxi operators (resp. search engines).
 
 
-<h2>APIs implementation</h2>
-This documentation provides an overview of the RGT REST APIs. REST APIs provide access to resources (data entities) via URI paths. To use a REST API, your application will make an HTTPS request and parse the response. Your methods will be the standard HTTP methods like GET, PUT and POST. REST APIs operate over HTTPS making it easy to use with any programming language or framework. The input and output format for the RGT REST APIs is <a href="http://www.json.org" target="_blank">JSON</a>.<br>
+<a name="apis"><h3>APIs implementation</h3></a>
+This documentation provides an overview of the <abbr title="Taxi Exchange Point">TXP</abbr> REST APIs. REST APIs provide access to resources (data entities) via URI paths. To use a REST API, your application will make an HTTPS request and parse the response. Your methods will be the standard HTTP methods like GET, PUT and POST. REST APIs operate over HTTPS making it easy to use with any programming language or framework. The input and output format for the <abbr title="Taxi
+Exchange Point">TXP</abbr> REST APIs is <a href="http://www.json.org" target="_blank">JSON</a>.<br>
 
 
-<a name="headers"><h2>Mandatory HTTP Headers</h2></a>
+<a name="headers"><h3>Mandatory HTTP Headers</h3></a>
 
-The following HTTP Headers are mandatory for all requests to the RGT REST APIs:
-<table class="table-desc">
-    <th>
-        <td><h4>Name</h3></td>
-        <td><h4>Description</h3></td>
-        <td><h4>Value</h3></td>
-    </th>
+The following HTTP Headers are mandatory for all requests to the <abbr title="Taxi Exchange Point">TXP</abbr> REST APIs:
+<table class="pure-table pure-table-bordered pure-table-horizontal">
+    <thead>
     <tr>
-        <td></td>
+        <td>Name</td>
+        <td>Value</td>
+        <td>Description</td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
         <td>Accept</td>
-        <td>media types which are acceptable for the response</td>
         <td>application/json</td>
+        <td><em>media types which are acceptable for the response</em></td>
     </tr>
     <tr>
-        <td></td>
         <td>X-VERSION</td>
-        <td>Version of the APIs</td>
         <td>2</td>
+        <td><em>Version of the API</em></td>
     </tr>
     <tr>
-        <td></td>
         <td>X-API-KEY</td>
-        <td>API Key</td>
         <td>{{ apikey }}</td>
+        <td><em>API Key</em></td>
     </tr>
+    </tbody>
 </table>
 
-<a name="authentication"><h2>Authentication</h2></a>
-Authentication of your application is done for each query to the RGT by including a HTTP header X-API-KEY.<br>
+<a name="authentication"><h3>Authentication</h3></a>
+Authentication of your application is done for each query to the <abbr title="Taxi Exchange Point">TXP</abbr> by including a HTTP header X-API-KEY.<br>
 API keys are available for accredited developpers on the <a href="user_key">"Clé" page</a> of the main menu.
 
 {% endblock %}
