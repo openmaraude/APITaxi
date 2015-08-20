@@ -38,7 +38,7 @@ def get_data(taxi_ids, bound, redis_store):
 
 def store_active_taxis():
     current_app.logger.info('store_active_taxis')
-    bound_time = datetime.now() - timedelta(minutes=15)
+    bound_time = datetime.now() - timedelta(minutes=current_app.config['STORE_TAXIS_FREQUENCY'])
     bound = mktime(bound_time.timetuple())
     map_operateur_zupc_nb_active = dict()
     for l in scan_as_list('taxi:*', redis_store):

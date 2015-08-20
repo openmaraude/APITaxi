@@ -22,10 +22,11 @@ DOGPILE_CACHE_REGIONS = [
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.memory'
 SQLALCHEMY_POOL_SIZE = 15
 
+STORE_TAXIS_FREQUENCY = 15
 CELERYBEAT_SCHEDULE = {
     'store_active_taxis': {
         'task': 'APITaxi.tasks.store_active_taxis',
-        'schedule': crontab(minute='*/15'),
+        'schedule': crontab(minute='*/{}'.format(STORE_TAXIS_FREQUENCY)),
     }
 }
 
