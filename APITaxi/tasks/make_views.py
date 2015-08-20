@@ -1,6 +1,5 @@
 #coding: utf-8
 
-from ..models.stats import ActiveTaxis
 from ..extensions import redis_store, user_datastore, db, celery
 from ..models.taxis import Taxi
 from ..models.stats import ActiveTaxis
@@ -9,6 +8,8 @@ from datetime import datetime, timedelta
 from time import mktime
 from parse import parse as base_parse
 from flask import current_app
+from influxdb import InfluxDBClient
+from influxdb.exceptions import InfluxDBClientError
 
 def scan_as_list(match, redis_store):
     cursor = ''
@@ -58,14 +59,27 @@ def store_active_taxis():
                 if taxi_db.ads.zupc_id not in map_operateur_zupc_nb_active[u.id]:
                     map_operateur_zupc_nb_active[u.id][taxi_db.ads.zupc_id] = 0
                 map_operateur_zupc_nb_active[u.id][taxi_db.ads.zupc_id] += 1
-
+    client = InfluxDBClient('localhost', 8086, 'root', 'root', 'taxis')
+    #try:
+    #    client.create_database('taxis')
+    #except InfluxDBClientError as e:
+    #    if e['content'] != u'database already exists':
+    #        raise e
+    to_insert = []
     for operator, zupc_active in map_operateur_zupc_nb_active.iteritems():
         for zupc, active in zupc_active.iteritems():
-            a = ActiveTaxis()
-            a.nb_taxis = active
-            a.operator_id = operator
-            a.zupc_id = zupc
-            a.timestamp = bound_time
-            db.session.add(a)
-    db.session.commit()
-
+            to_insert.append(
+                {
+                    "measurement": "nb_taxis",
+                    "tags": {
+                        "operator": user_datastore.get_user(operator).email,
+                        "zupc": zupc
+                    },
+                    "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
+                    "fields": {
+                        "value": active
+                    }
+                }
+            )
+    current_app.logger.info('To insert: {}'.format(to_insert))
+    client.write_points(to_insert)
