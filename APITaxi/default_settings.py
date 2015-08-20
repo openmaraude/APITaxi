@@ -21,3 +21,16 @@ DOGPILE_CACHE_REGIONS = [
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.memory'
 SQLALCHEMY_POOL_SIZE = 15
+
+CELERYBEAT_SCHEDULE = {
+    'store_active_taxis': {
+        'task': 'APITaxi.tasks.store_active_taxis',
+        'schedule': crontab(minute='*/15'),
+    }
+}
+
+INFLUXDB_HOST = 'localhost'
+INFLUXDB_PORT = 8086
+INFLUXDB_USER = ''
+INFLUXDB_PASSWORD = ''
+INFLUXDB_TAXIS_DB = ''
