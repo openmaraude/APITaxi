@@ -8,8 +8,7 @@ from datetime import datetime, timedelta
 from time import mktime
 from parse import parse as base_parse
 from flask import current_app
-from influxdb import InfluxDBClient
-from influxdb.exceptions import InfluxDBClientError
+from ..utils import influx_db
 
 def scan_as_list(match, redis_store):
     cursor = ''
@@ -59,13 +58,10 @@ def store_active_taxis():
                 if taxi_db.ads.zupc_id not in map_operateur_zupc_nb_active[u.id]:
                     map_operateur_zupc_nb_active[u.id][taxi_db.ads.zupc_id] = 0
                 map_operateur_zupc_nb_active[u.id][taxi_db.ads.zupc_id] += 1
-    client = InfluxDBClient('localhost', 8086, 'root', 'root', 'taxis')
-    #try:
-    #    client.create_database('taxis')
-    #except InfluxDBClientError as e:
-    #    if e['content'] != u'database already exists':
-    #        raise e
+
+    client = influx_db.get_client('taxis')
     to_insert = []
+    bucket_size = 100
     for operator, zupc_active in map_operateur_zupc_nb_active.iteritems():
         for zupc, active in zupc_active.iteritems():
             to_insert.append(
@@ -81,5 +77,9 @@ def store_active_taxis():
                     }
                 }
             )
+            if len(to_insert) == 100:
+                current_app.logger.info('To insert: {}'.format(to_insert))
+                client.write_points(to_insert)
+                to_insert = []
     current_app.logger.info('To insert: {}'.format(to_insert))
     client.write_points(to_insert)
