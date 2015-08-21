@@ -155,7 +155,7 @@ class Taxis(Resource):
         if len(r) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        min_time = int(time()) - 60*60
+        min_time = int(time()) - Taxi._ACTIVITY_TIMEOUT
         favorite_operator = p['favorite_operator']
         taxis = filter(lambda t: t is not None,
                 map(generate_taxi_dict(zupc_customer, min_time, favorite_operator), r))
