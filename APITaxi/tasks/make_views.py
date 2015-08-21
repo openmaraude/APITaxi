@@ -49,17 +49,18 @@ def store_active_taxis():
                 current_app.logger.error('Taxi: {}, not found in database'.format(taxi_id))
                 continue
             for operator, result in v:
-                u = user_datastore.find_user(email=operator)
-                if not u:
-                    current_app.logger.error('User: {} not found'.format(operator))
-                    continue
-                if u.id not in map_operateur_zupc_nb_active:
-                    map_operateur_zupc_nb_active[u.id] = dict()
-                if taxi_db.ads.zupc_id not in map_operateur_zupc_nb_active[u.id]:
-                    map_operateur_zupc_nb_active[u.id][taxi_db.ads.zupc_id] = 0
-                map_operateur_zupc_nb_active[u.id][taxi_db.ads.zupc_id] += 1
+                if operator not in map_operateur_zupc_nb_active:
+                    u = user_datastore.find_user(email=operator)
+                    if not u:
+                        current_app.logger.error('User: {} not found'.format(operator))
+                        continue
+                    map_operateur_zupc_nb_active[operator] = dict()
+                zupc = taxi_db.ads.zupc.parent.insee
+                if zupc not in map_operateur_zupc_nb_active[operator]:
+                    map_operateur_zupc_nb_active[operator][zupc] = 0
+                map_operateur_zupc_nb_active[operator][zupc] += 1
 
-    client = influx_db.get_client('taxis')
+    client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
     to_insert = []
     bucket_size = 100
     for operator, zupc_active in map_operateur_zupc_nb_active.iteritems():
@@ -68,7 +69,7 @@ def store_active_taxis():
                 {
                     "measurement": "nb_taxis",
                     "tags": {
-                        "operator": user_datastore.get_user(operator).email,
+                        "operator": operator,
                         "zupc": zupc
                     },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
