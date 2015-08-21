@@ -46,7 +46,8 @@ def store_active_taxis():
             taxi_id = taxi_id[5:] #We cut the "taxi:" part
             taxi_db = Taxi.get(taxi_id)
             if taxi_db is None:
-                current_app.logger.error('Taxi: {}, not found in database'.format(taxi_id))
+                current_app.logger.error('Taxi: {}, not found in database'.format(
+                    taxi_id))
                 continue
             for operator, result in v:
                 if operator not in map_operateur_zupc_nb_active:

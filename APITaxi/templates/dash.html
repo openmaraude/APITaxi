@@ -4,34 +4,40 @@
 {% block styles %}
 {{super()}}
 <link rel="stylesheet" href="{{url_for('static', filename='css/rickshaw.min.css')}}">
+<link rel="stylesheet" href="{{url_for('static', filename='css/dash.css')}}">
 {% endblock %}
 
 {% block scripts %}
 {{super()}}
+<script src="{{url_for('static', filename='js/jquery-2.1.4.min.js')}}"></script>
 <script src="{{url_for('static', filename='js/d3.min.js')}}"></script>
 <script src="{{url_for('static', filename='js/d3.layout.min.js')}}"></script>
-<script src="{{url_for('static', filename='js/rickshaw.min.js')}}"></script>
+<script src="{{url_for('static', filename='js/rickshaw.js')}}"></script>
 <script src="{{url_for('static', filename='js/ajax_graph.js')}}"></script>
 <script>
 new AjaxGraph( {
     apikey: "{{apikey}}",
-    element: document.getElementById("chart"),
-    width: 235,
-    height: 85,
-    renderer: 'line',
     dataURL: '{{url_for("api.taxis_active")}}',
-    onData: function(d) { return [{name: "taxis", data: d.data}]; },
-    onComplete: function(transport) {
-        var graph = transport.graph;
-        var axes = new Rickshaw.Graph.Axis.Time({graph: graph});
-        graph.render();
-    },
-    series: [{name: "taxis", color: '#000000'}]
+    renderer: 'area',
+    series: [{name: "taxis", color: '#97a2b2'}],
+    zupc_insee: "0",
+    zupc_name: "France",
 } );
+{% for zupc in zupc_list %}
+new AjaxGraph( {
+    apikey: "{{apikey}}",
+    dataURL: '{{url_for("api.taxis_active")}}',
+    renderer: 'area',
+    series: [{name: "taxis", color: '#97a2b2'}],
+    zupc_insee: "{{zupc.insee}}",
+    zupc_name: "{{zupc.name}}",
+} );
+{% endfor %}
 
 </script>
 {% endblock %}
 
 {% block content %}
-<div id="chart"></div>
+<div id="main_chart_container">
+</div>
 {% endblock %}

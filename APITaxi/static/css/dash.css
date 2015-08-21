@@ -1,0 +1,27 @@
+.chart_container {
+    float:left;
+    width: 400px;
+}
+.row_chart {
+    width:100%;
+}
+.phantom_chart {
+    float: left;
+}
+
+.ville_chart {
+    font-size: 70px;
+    margin: 0 auto;
+    width: 235px;
+}
+
+.nb_taxis {
+    float: left;
+    font-size: 50px;
+    padding: 30px;
+    padding-top: 15px;
+}
+
+.chart {
+    float: left;
+}
