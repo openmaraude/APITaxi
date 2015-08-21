@@ -21,14 +21,20 @@ DOGPILE_CACHE_REGIONS = [
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.memory'
 SQLALCHEMY_POOL_SIZE = 15
-
-STORE_TAXIS_FREQUENCY = 15
-CELERYBEAT_SCHEDULE = {
-    'store_active_taxis': {
-        'task': 'APITaxi.tasks.store_active_taxis',
-        'schedule': crontab(minute='*/{}'.format(STORE_TAXIS_FREQUENCY)),
+from celery.schedules import crontab
+#List of tuples of the form
+# (frequency in minute, kwargs) where kwargs in passed to crontab
+STORE_TAXIS_FREQUENCIES = [(1, {'minute': '*/1'}),
+    (60,{'minute': 0, 'hour': '*/1'}), (24*60, {'minute': 0, 'hour': 0})]
+CELERYBEAT_SCHEDULE = dict()
+for frequency, cron_kwargs in STORE_TAXIS_FREQUENCIES:
+    print frequency, cron_kwargs
+    print map(lambda v: v, cron_kwargs)
+    CELERYBEAT_SCHEDULE['store_active_taxis_every_{}'.format(frequency)] =  {
+            'task': 'APITaxi.tasks.store_active_taxis',
+            'schedule': crontab(**cron_kwargs),
+            'args': [frequency]
     }
-}
 
 INFLUXDB_HOST = 'localhost'
 INFLUXDB_PORT = 8086

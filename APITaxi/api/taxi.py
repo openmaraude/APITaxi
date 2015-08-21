@@ -12,6 +12,7 @@ from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import arguments
 from ..utils import influx_db
+from ..utils import fields as customFields
 from shapely.geometry import Point
 from sqlalchemy import distinct
 from sqlalchemy.sql.expression import func as func_sql
@@ -220,36 +221,41 @@ class ActiveTaxisRoute(Resource):
     @login_required
     @roles_accepted('admin', 'operateur')
     def get(self):
+        frequencies = [f for f, _ in current_app.config['STORE_TAXIS_FREQUENCIES']]
         parser = reqparse.RequestParser()
         parser.add_argument('zupc', type=unicode, required=False, location='values')
         parser.add_argument('begin', type=float, required=False, location='values')
         parser.add_argument('end', type=float, required=False, location='values')
         parser.add_argument('operator', type=unicode, required=False, location='values')
+        parser.add_argument('frequency',
+            type=customFields.Integer(frequencies),
+            required=False, location='values',
+            default=frequencies[0])
         p = parser.parse_args()
 
         if not p['begin'] and not p['end']:
             p['end'] = int(time())
-        taxi_frequency = current_app.config['STORE_TAXIS_FREQUENCY']
-        p['begin'] = p['begin'] or p['end'] - taxi_frequency * 60
-        p['end'] = p['end'] or p['begin'] + taxi_frequency * 60
+        view_window = (taxis_models.Taxi._ACTIVITY_TIMEOUT + p['frequency'] * 60)
+        p['begin'] = p['begin'] or p['end'] - view_window
+        p['end'] = p['end'] or p['begin'] + view_window
 
         filters = []
         if current_user.has_role('admin'):
             if p['operator']:
-                filters.append(('operator', p['operator']))
+                filters.append("operator = {}".format(p['operator']))
         else:
-            filters.append(('operator', current_user.email))
+            filters.append('operator = {}'.format(current_user.email))
 
         if p['zupc']:
-            filters['zupc'] = p['zupc']
-            if not administrative_models.ZUPC.query.filter_by(insee=p['zupc']).get():
+            if not administrative_models.ZUPC.query.filter_by(insee=p['zupc']).all():
                 abort(404, message="Unknown zupc")
+            filters.append("zupc = '{}'".format(p['zupc']))
+        filters.append('time >= {}s'.format(p['begin']))
+        filters.append('time <= {}s'.format(p['end']))
 
-        query = 'SELECT value FROM nb_taxis WHERE {}'.format(
-                " AND ".join(["{} = '{}'".format(k, v) for k, v in filters]))
-        if len(filters) >0:
-            query += " AND "
-        query += 'time >= {}s AND time <= {}s'.format(p['begin'], p['end'])
+        measurement_name = "nb_taxis_every_{}".format(p['frequency'])
+        query = 'SELECT value FROM {} WHERE {}'.format(measurement_name,
+                " AND ".join(filters))
 
 
         c = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])

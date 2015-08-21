@@ -8,5 +8,5 @@ def init_app(app):
 from .make_views import store_active_taxis as f
 
 @celery.task()
-def store_active_taxis():
-    return f()
+def store_active_taxis(frequency):
+    return f(frequency)

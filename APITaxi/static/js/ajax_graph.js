@@ -26,7 +26,11 @@ AjaxGraph = Rickshaw.Class.create(Rickshaw.Graph.Ajax, {
         graph.render();
     },
     onData: function(d) {
-        this.element_nb_taxis.text(d.data[d.data.length-1]['y']);
+        nb_taxis = 0;
+        if (d.data.length > 0) {
+            nb_taxis = d.data[d.data.length-1]['y'];
+        }
+        this.element_nb_taxis.text(nb_taxis);
         return [{name: "taxis", data: d.data}]; 
     },
     beforeSend: function(request) {
@@ -36,7 +40,7 @@ AjaxGraph = Rickshaw.Class.create(Rickshaw.Graph.Ajax, {
     request: function() {
         var url = this.args.dataURL;
         if (this.args.zupc_insee != "0") {
-            url += '?zupc_insee=' + this.args.zupc;
+            url += '?zupc=' + this.args.zupc_insee;
         }
         jQuery.ajax({
             url: url,

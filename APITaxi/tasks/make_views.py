@@ -2,6 +2,7 @@
 
 from ..extensions import redis_store, user_datastore, db, celery
 from ..models.taxis import Taxi
+from ..models.administrative import ZUPC
 from ..models.stats import ActiveTaxis
 from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
@@ -36,9 +37,9 @@ def get_data(taxi_ids, bound, redis_store):
     zipped_value = izip(taxi_ids, filtered_value)
     return ifilter(lambda taxi_operator: len(taxi_operator[1]) > 0, zipped_value)
 
-def store_active_taxis():
-    current_app.logger.info('store_active_taxis')
-    bound_time = datetime.now() - timedelta(seconds=Taxi._ACTIVITY_TIMEOUT)
+def store_active_taxis(frequency):
+    bound_time = datetime.now()
+    bound_time -= timedelta(seconds=Taxi._ACTIVITY_TIMEOUT + frequency * 60)
     bound = mktime(bound_time.timetuple())
     map_operateur_zupc_nb_active = dict()
     for l in scan_as_list('taxi:*', redis_store):
@@ -56,7 +57,7 @@ def store_active_taxis():
                         current_app.logger.error('User: {} not found'.format(operator))
                         continue
                     map_operateur_zupc_nb_active[operator] = dict()
-                zupc = taxi_db.ads.zupc.parent.insee
+                zupc = ZUPC.get(taxi_db.ads.zupc_id).parent.insee
                 if zupc not in map_operateur_zupc_nb_active[operator]:
                     map_operateur_zupc_nb_active[operator][zupc] = 0
                 map_operateur_zupc_nb_active[operator][zupc] += 1
@@ -64,11 +65,12 @@ def store_active_taxis():
     client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
     to_insert = []
     bucket_size = 100
+    measurement_name = "nb_taxis_every_{}".format(frequency)
     for operator, zupc_active in map_operateur_zupc_nb_active.iteritems():
         for zupc, active in zupc_active.iteritems():
             to_insert.append(
                 {
-                    "measurement": "nb_taxis",
+                    "measurement": measurement_name,
                     "tags": {
                         "operator": operator,
                         "zupc": zupc
