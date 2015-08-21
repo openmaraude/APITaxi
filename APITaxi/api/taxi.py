@@ -221,7 +221,7 @@ class ActiveTaxisRoute(Resource):
     @roles_accepted('admin', 'operateur')
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('zupc', type=int, required=False, location='values')
+        parser.add_argument('zupc', type=unicode, required=False, location='values')
         parser.add_argument('begin', type=float, required=False, location='values')
         parser.add_argument('end', type=float, required=False, location='values')
         parser.add_argument('operator', type=unicode, required=False, location='values')
