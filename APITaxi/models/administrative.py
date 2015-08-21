@@ -69,6 +69,6 @@ class ZUPC(db.Model, MarshalMixin):
     @region_zupc.cache_on_arguments(namespace='Z')
     def get(cls, id_):
         with ScopedSession() as session:
-            h = session.query(ZUPC).options(joinedload(ZUPC.parent)).\
+            z = session.query(ZUPC).options(joinedload(ZUPC.parent)).\
                 filter_by(id=id_).first()
-        return h
+        return z
