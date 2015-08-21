@@ -131,6 +131,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
     _FORMAT_OPERATOR = '{timestamp:d} {lat} {lon} {status} {device}'
     _DISPONIBILITY_DURATION = 60*60
+    _ACTIVITY_TIMEOUT = 15*60
 
     def __init__(self, *args, **kwargs):
         kwargs['id'] = str(uuid4())

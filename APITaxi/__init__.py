@@ -23,7 +23,7 @@ def check_version(sender, **extra):
     if request.url_rule is None:
         return
     endpoint = request.url_rule.endpoint
-    if endpoint == 'api.specs' or endpoint == 'static':
+    if endpoint == 'api.specs' or endpoint == 'static' or endpoint.startswith('js_bo'):
         return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:
