@@ -22,6 +22,7 @@ celery = Celery()
 from dogpile.cache import make_region
 region_taxi = make_region('taxis')
 region_hails = make_region('hails')
+region_zupc = make_region('zupc')
 def user_key_generator(namespace, fn, **kw):
     def generate_key(*args, **kwargs):
         return fn.__name__ +\

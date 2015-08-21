@@ -37,7 +37,7 @@ def add_version_header(sender, response, **extra):
 
 def create_app(sqlalchemy_uri=None):
     from .extensions import (db, redis_store, region_taxi, region_hails,
-            region_users, configure_uploads, documents, images)
+            region_users, region_zupc, configure_uploads, documents, images)
     app = Flask(__name__)
     app.config.from_object('default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
@@ -77,6 +77,8 @@ def create_app(sqlalchemy_uri=None):
         region_hails.configure('dogpile.cache.memory')
     if not region_users.is_configured:
         region_users.configure('dogpile.cache.memory')
+    if not region_zupc.is_configured:
+        region_zupc.configure('dogpile.cache.memory')
 
     from . import tasks
     tasks.init_app(app)
