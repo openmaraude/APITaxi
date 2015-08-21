@@ -36,7 +36,8 @@ def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
 def create_app(sqlalchemy_uri=None):
-    from .extensions import *
+    from .extensions import (db, redis_store, region_taxi, region_hails,
+            region_users, configure_uploads, documents, images)
     app = Flask(__name__)
     app.config.from_object('default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
