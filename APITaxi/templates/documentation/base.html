@@ -5,98 +5,130 @@
 <link rel="stylesheet"
       href="{{url_for('static', filename='css/simple-sidebar.css')}}">
 <link rel="stylesheet"
-       href="{{url_for('static', filename='css/pure-tables.css')}}">
-<style>
-.navbar{
-margin-bottom: 0;
-}
-</style>
+      href="{{url_for('static', filename='css/pure-tables.css')}}">
+<link rel="stylesheet"
+      href="{{url_for('static', filename='css/vertical-nav.css')}}">
+<link rel="stylesheet" 
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
 {% endblock %}
 {% from "bootstrap/pagination.html" import render_pagination %}
 {% block content %}
 <div id="wrapper">
      <div id="sidebar-wrapper">
-                <ul class="sidebar-nav">
-                <li class="sidebar-brand">
-                    <a href="/documentation/index">Introduction</a>
-                </li>
-                <li style="list-style-type:none">
-                <ul>
+         <div class="menu-nav">
+
+            <div class="menu-item menu-index">
+                <h4><a href="/documentation/index">Introduction</a></h4>
+              <ul>
                 <li>
-                   <a href="/documentation/index#overview">Overview</a>
-                </li>
+                    <a href="/documentation/index#overview">Overview</a>
+                 </li>
+                 <li>
+                    <a href="/documentation/index#apis">APIs implementation</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/index#headers">Mandatory HTTP headers</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/index#authentication">Authentication</a>
+                 </li>
+              </ul>
+            </div>
+              
+            <div class="menu-item menu-moteur">
+              <h4><a href="/documentation/moteur">Search engine</a></h4>
+              <ul>
                 <li>
-                   <a href="/documentation/index#apis">APIs implementation</a>
-                </li>
+                     <a href="/documentation/moteur#geoloc">Looking for taxis</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/moteur#post_hail">Creating a Hail</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/moteur#get_hail">Querying a Hail status</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/moteur#put_hail">Updating a Hail</a>
+                 </li>
+              </ul>
+            </div>
+              
+            <div class="menu-item menu-operateur">
+          <h4><a href="/documentation/operateur">Operator</a></h4>
+              <ul>
                 <li>
-                    <a href="/documentation/index#headers">Mandatory HTTP headers</a>
-                </li>
+                     <a href="/documentation/operateur#post_vehicle">Declaring a vehicle</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#post_driver">Declaring a driver</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#post_ads">Declaring a licence (ADS)</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#post_taxi">Declaring a taxi</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#udp_taxi">Updating the location of a taxi</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#put_taxi">Updating the status of a taxi</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#get_taxi">Querying the status of a taxi</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#post_hail">Receiving a hail</a>
+                 </li>
                 <li>
-                    <a href="/documentation/index#authentication">Authentication</a>
-                </li>
-                </ul>
-                </li>
-                <li class="sidebar-brand">
-                    <a href="moteur">Search engine</a>
-                </li>
-                <li style="list-style-type:none">
-                <ul>
-                <li>
-                    <a href="/documentation/moteur#geoloc">Looking for taxis</a>
-                </li>
-                <li>
-                    <a href="/documentation/moteur#post_hail">Creating a Hail</a>
-                </li>
-                <li>
-                    <a href="/documentation/moteur#get_hail">Querying a Hail status</a>
-                </li>
-                <li>
-                    <a href="/documentation/moteur#put_hail">Updating a Hail</a>
-                </li>
-                </ul>
-                </li>
-                <li class="sidebar-brand">
-                    <a href="/documentation/operateur">Operator</a>
-                </li>
-                <li style="list-style-type:none">
-                <ul>
-                <li>
-                    <a href="/documentation/operateur#post_vehicle">Declaring a vehicle</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#post_driver">Declaring a driver</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#post_ads">Declaring a licence (ADS)</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#post_taxi">Declaring a taxi</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#udp_taxi">Updating the location of a taxi</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#put_taxi">Updating the status of a taxi</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#get_taxi">Querying the status of a taxi</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#post_hail">Receiving a hail</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#get_hail">Querying the status of a hail</a>
-                </li>
-                <li>
-                    <a href="/documentation/operateur#put_hail">Querying the status of a hail</a>
-                </li>
-                </ul>
-                </li>
-                <li class="sidebar-brand">
-                    <a href="/documentation/reference">Reference</a><br>
-                </li>
-            </ul>
+                     <a href="/documentation/operateur#get_hail">Querying the status of a hail</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/operateur#put_hail">Querying the status of a hail</a>
+                 </li>
+              </ul>
+            </div>
+            <div class="menu-item menu-interactive">
+                <h4><a href="/doc/" target="_blank">Interactive Documentation</a></h4>
+            </div>
+            <div class="menu-item menu-reference">
+               <h4><a href="/documentation/reference">Reference Documentation</a></h4>
+               <ul>
+                 <li>
+                    <a href="/documentation/reference#taxi">Taxi</a>
+                 <li>
+                 <li>
+                    <a href="/documentation/reference#taxi_object">Taxi Structure</a>
+                 </li>
+                 <li>
+                    <a href="/documentation/reference#taxi_status">Taxi Statuses</a>
+                 </li>
+                 <li>
+                    <a href="/documentation/reference#ads">License (ADS)</a>
+                 </li>
+                 <li>
+                     <a href="/documentation/reference#driver">Driver</a>
+                  </li>
+                 <li>
+                     <a href="/documentation/reference#vehicle">Vehicle</a>
+                  </li>
+                 <li>
+                     <a href="/documentation/reference#hail">Hail</a>
+                  </li>
+                 <li>
+                     <a href="/documentation/reference#hail_object">Hail Structure</a>
+                  </li>
+                 <li>
+                     <a href="/documentation/reference#hail_status">Hail Statuses</a>
+                  </li>
+               </ul>
+            </div>
+
         </div>
+
+     </div>
 <div id="page-content-wrapper">
     <div id="container-fluid">
         <div class="row">
