@@ -11,11 +11,13 @@ from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import arguments
+from ..utils import influx_db
 from shapely.geometry import Point
 from sqlalchemy import distinct
 from sqlalchemy.sql.expression import func as func_sql
 from datetime import datetime, timedelta
 from time import mktime, time
+from functools import partial
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -212,68 +214,52 @@ class Taxis(Resource):
         db.session.commit()
         return {'data':[taxi]}, 201
 
-@ns_taxis.route('/_views', endpoint="taxi_active")
+@ns_taxis.route('/_active', endpoint="taxis_active")
 class ActiveTaxisRoute(Resource):
+
+    @login_required
+    @roles_accepted('admin', 'operateur')
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('zupc', type=int, required=False, location='values')
-        parser.add_argument('operator', type=unicode, required=False, location='values')
         parser.add_argument('begin', type=float, required=False, location='values')
         parser.add_argument('end', type=float, required=False, location='values')
-        parser.add_argument('granularity', type=arguments.Integer(15),
-            location='values', default=15)
+        parser.add_argument('operator', type=unicode, required=False, location='values')
         p = parser.parse_args()
 
         if not p['begin'] and not p['end']:
             p['end'] = int(time())
-        p['begin'] = p['begin'] or p['end'] - 15 * 60
-        p['end'] = p['end'] or p['begin'] + 15 * 60
+        taxi_frequency = current_app.config['STORE_TAXIS_FREQUENCY']
+        p['begin'] = p['begin'] or p['end'] - taxi_frequency * 60
+        p['end'] = p['end'] or p['begin'] + taxi_frequency * 60
 
-        filters = dict()
-
-        if p['operator']:
-            if not current_user.has_role('admin') and p['operator'] != current_user.email:
-                abort(503)
-            filters['operator_id'] = user_datastore.find_user(email=operator).id
+        filters = []
+        if current_user.has_role('admin'):
+            if p['operator']:
+                filters.append(('operator', p['operator']))
+        else:
+            filters.append(('operator', current_user.email))
 
         if p['zupc']:
-            zupc = administrative_models.ZUPC.query.filter_by(insee=p['zupc']).first()
-            if not zupc:
-                abort(404, message='Unable to find a zupc for this insee code')
-            filters['zupc_id'] = zupc.parent_id
+            filters['zupc'] = p['zupc']
+            if not administrative_models.ZUPC.query.filter_by(insee=p['zupc']).get():
+                abort(404, message="Unknown zupc")
 
-        lower, upper = map(lambda k: datetime.fromtimestamp(p[k]), ['begin', 'end'])
-        timestamp_sql = stats_models.ActiveTaxis.timestamp
-        #Find upper bound in database
-        max_ = db.session.query(func_sql.min(stats_models.ActiveTaxis.timestamp)).\
-                    filter(timestamp_sql >= upper).first()[0]
-        if not max_ or (max_ - upper) > timedelta(minutes=15):
-            abort(404, message="Unable to find a timestamp for end")
-        #Find lower bound in database
-        opt = func_sql.max(timestamp_sql)
-        min_ = db.session.query(func_sql.max(stats_models.ActiveTaxis.timestamp)).\
-                    filter(timestamp_sql <= upper).first()[0]
-        if not min_ or (lower - min_) > timedelta(minutes=15):
-            abort(404, message="Unable to find a timestamp for begin")
+        query = 'SELECT value FROM nb_taxis WHERE {}'.format(
+                " AND ".join(["{} = '{}'".format(k, v) for k, v in filters]))
+        if len(filters) >0:
+            query += " AND "
+        query += 'time >= {}s AND time <= {}s'.format(p['begin'], p['end'])
 
+
+        c = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
         data = []
-        t_attr = stats_models.ActiveTaxis.timestamp
-        q = stats_models.ActiveTaxis.query.filter_by(**filters)
-        q = q.filter(t_attr >= min_, t_attr <= max_)
-        for v in q.all():
-            bound = v.timestamp
-            minute = (bound.minute/p.granularity) * p.granularity
-            end = datetime(bound.year, bound.month, bound.day, bound.hour, minute)
-            begin = end - timedelta(minutes=15)
-            data.append(
-                {
-                    "operator": user_datastore.find_user(id=v.operator_id).email,
-                    "zupc": administrative_models.ZUPC.query.get(v.zupc_id).insee,
-                    "begin": mktime(begin.timetuple()),
-                    "end": mktime(end.timetuple()),
-                    "nb_taxis": v.nb_taxis
-                }
-            )
-        return {"data": data}
-
-
+        strptime = lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%SZ')
+        current_app.logger.info('Query: {}'.format(query))
+        for result_set in c.query(query):
+            for v in result_set:
+                data.append({
+                  "x": int(mktime(strptime(v['time']).timetuple())),
+                  "y": v['value']
+                  })
+        return jsonify({"data": data})
