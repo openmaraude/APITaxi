@@ -5,7 +5,8 @@ ns_administrative = api.namespace('administrative',
         description="Administrative APIs", path='/')
 
 def init_app(app):
-    from . import ads, drivers, home, user_key, vehicle, zupc, profile, documents
+    from . import (ads, drivers, home, user_key, vehicle, zupc, profile,
+            documents, dash, js)
     app.register_blueprint(ads.mod)
     app.register_blueprint(drivers.mod)
     app.register_blueprint(home.mod)
@@ -14,3 +15,4 @@ def init_app(app):
     app.register_blueprint(zupc.mod)
     app.register_blueprint(profile.mod)
     app.register_blueprint(documents.mod)
+    app.register_blueprint(dash.mod)
