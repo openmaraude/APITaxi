@@ -5,9 +5,13 @@
 <link rel="stylesheet"
       href="{{url_for('static', filename='css/simple-sidebar.css')}}">
 <link rel="stylesheet"
-       href="{{url_for('static', filename='css/pure-tables.css')}}">
- <link rel="stylesheet"
-         href="{{url_for('static', filename='css/vertical-nav.css')}}">
+      href="{{url_for('static', filename='css/pure-tables.css')}}">
+<link rel="stylesheet"
+      href="{{url_for('static', filename='css/vertical-nav.css')}}">
+<link rel="stylesheet" 
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
 {% endblock %}
 {% from "bootstrap/pagination.html" import render_pagination %}
 {% block content %}

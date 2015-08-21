@@ -4,6 +4,9 @@
    left:0;
    width:100%;
    position:fixed;
+   -webkit-box-shadow: 2px 2px 2px rgba(200,200,200,0.5);
+   -moz-box-shadow:    2px 2px 2px rgba(200,200,200,0.5);
+   box-shadow:         2px 2px 2px rgba(200,200,200,0.5);
    z-index: 99;
 }
 
