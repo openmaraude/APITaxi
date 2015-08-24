@@ -60,7 +60,6 @@ slacker==0.6.2
 SQLAlchemy==0.9.9
 SQLAlchemy-Defaults==0.4.4
 SQLAlchemy-Utils==0.29.8
-Twisted==15.3.0
 txAMQP==0.6.2
 validate-email==1.3
 validators==0.7
