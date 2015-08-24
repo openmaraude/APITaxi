@@ -8,6 +8,8 @@ API and Backoffice for taxis' operators and local authorities.
  * `Pip`
  * `Postgresql` and `postgresql-dev` (other databases might work)
  * `libspatialindex-dev`
+ * `Rabbit-MQ` or `redis`: To queue asynchronous tasks
+ * `InfluxDB`: To store views of the taxis activity
 
 We also recommend the use of `virtualenv`
 
@@ -24,6 +26,10 @@ edited accordingly (SQLALCHEMY_DATABASE_URI field) and renamed `dev_settings.py`
 ### Initialize the database ###
 In order to populate the database with the tables and default data, run:
 `APITAXI_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py db upgrade head`
+
+### Initialize the InfluxDB database ###
+To initialize this database you need to run this command:
+`APITAXI_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py create_influx_db
 
 ### Add an administrator ###
 Just run this command
