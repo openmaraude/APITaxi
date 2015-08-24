@@ -40,12 +40,29 @@ type a password.
 
 `APITAXI_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py runserver`
 
-## Run taxi's activity storage ##
-You can configure in your settings the storage.
-`APITAXI_CONFIG_FILE=dev_settings.py celery worker -A celery_worker.celery -B -l info`
-
 you can then access:
 * the backoffice here: `http://127.0.0.1:5000/`
 * and the API doc here: `http://127.0.0.1:5000/doc`
 
 A wsgi file is also provided if a webserver is required (Apache has been tested, Nginx should work). 
+
+
+## Run taxi's activity storage ##
+ There are two unix services to install & run to store taxis' activity, one sending beats,
+ another waiting for beats and interpreting them. This worker will also be able to run
+ asynchronous tasks.
+
+ To install these services you need to copy:
+  * scripts/celeryd in /etc/init.d/taxis_worker
+  * scripts/celerybeat in /etc/init.d/activity_beat
+
+Then you need to edit scripts/example/conf to stick with your configuration (you might
+need to create a celery user).
+Copy this file in:
+  * /etc/default/taxis_worker
+  * /etc/default/activity_beat
+
+ Now you should be able to run services with:
+  * service taxis_worker start
+  * service activity_beat start
+
