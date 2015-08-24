@@ -15,23 +15,24 @@
 <script src="{{url_for('static', filename='js/rickshaw.js')}}"></script>
 <script src="{{url_for('static', filename='js/ajax_graph.js')}}"></script>
 <script>
-new AjaxGraph( {
+var graphs = [];
+graphs.push(new AjaxGraph( {
     apikey: "{{apikey}}",
     dataURL: '{{url_for("api.taxis_active")}}',
     renderer: 'area',
     series: [{name: "taxis", color: '#97a2b2'}],
     zupc_insee: "0",
     zupc_name: "France",
-} );
+} ));
 {% for zupc in zupc_list %}
-new AjaxGraph( {
+graphs.push(new AjaxGraph( {
     apikey: "{{apikey}}",
     dataURL: '{{url_for("api.taxis_active")}}',
     renderer: 'area',
     series: [{name: "taxis", color: '#97a2b2'}],
     zupc_insee: "{{zupc.insee}}",
     zupc_name: "{{zupc.name}}",
-} );
+} ));
 {% endfor %}
 
 </script>

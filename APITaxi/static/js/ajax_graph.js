@@ -13,6 +13,7 @@ AjaxGraph = Rickshaw.Class.create(Rickshaw.Graph.Ajax, {
         this.element_nb_taxis = $('#'+nb_id);
         args.width = 235;
         args.height = 85;
+        args.is_init = false;
         this.args = args; // pass through to Rickshaw.Graph
 
         this.onError = args.onError || function() {};
@@ -20,10 +21,20 @@ AjaxGraph = Rickshaw.Class.create(Rickshaw.Graph.Ajax, {
     },
     onComplete: function(transport) {
         var graph = transport.graph;
-        var axes = new Rickshaw.Graph.Axis.Time({graph: graph,
-            ticksTreatment: 'glow',
-        });
-        graph.render();
+        if (!this.args.is_init) {
+            var axes = new Rickshaw.Graph.Axis.Time({graph: graph,
+                ticksTreatment: 'glow',
+            });
+            var yAxis = new Rickshaw.Graph.Axis.Y({
+                graph: graph
+            });
+            graph.render();
+            this.args.is_init = true;
+        } else {
+            graph.update();
+        }
+        var _this = this;
+        setTimeout(function() {_this.request();}, 15000);
     },
     onData: function(d) {
         nb_taxis = 0;
