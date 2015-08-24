@@ -40,6 +40,10 @@ type a password.
 
 `APITAXI_CONFIG_FILE=APITaxi/dev_settings.py PYTHON_PATH=. manage.py runserver`
 
+## Run taxi's activity storage ##
+You can configure in your settings the storage.
+`APITAXI_CONFIG_FILE=dev_settings.py celery worker -A celery_worker.celery -B -l info`
+
 you can then access:
 * the backoffice here: `http://127.0.0.1:5000/`
 * and the API doc here: `http://127.0.0.1:5000/doc`
