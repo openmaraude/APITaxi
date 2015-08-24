@@ -28,8 +28,6 @@ STORE_TAXIS_FREQUENCIES = [(1, {'minute': '*/1'}),
     (60,{'minute': 0, 'hour': '*/1'}), (24*60, {'minute': 0, 'hour': 0})]
 CELERYBEAT_SCHEDULE = dict()
 for frequency, cron_kwargs in STORE_TAXIS_FREQUENCIES:
-    print frequency, cron_kwargs
-    print map(lambda v: v, cron_kwargs)
     CELERYBEAT_SCHEDULE['store_active_taxis_every_{}'.format(frequency)] =  {
             'task': 'APITaxi.tasks.store_active_taxis',
             'schedule': crontab(**cron_kwargs),
