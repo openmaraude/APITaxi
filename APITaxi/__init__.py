@@ -23,7 +23,7 @@ def check_version(sender, **extra):
     if request.url_rule is None:
         return
     endpoint = request.url_rule.endpoint
-    if endpoint == 'api.specs' or endpoint == 'static':
+    if endpoint == 'api.specs' or endpoint == 'static' or endpoint.startswith('js_bo'):
         return
     version = request.headers.get('X-VERSION', None)
     if version not in valid_versions:
@@ -36,7 +36,8 @@ def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
 def create_app(sqlalchemy_uri=None):
-    from .extensions import *
+    from .extensions import (db, redis_store, region_taxi, region_hails,
+            region_users, region_zupc, configure_uploads, documents, images)
     app = Flask(__name__)
     app.config.from_object('default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
@@ -76,5 +77,10 @@ def create_app(sqlalchemy_uri=None):
         region_hails.configure('dogpile.cache.memory')
     if not region_users.is_configured:
         region_users.configure('dogpile.cache.memory')
+    if not region_zupc.is_configured:
+        region_zupc.configure('dogpile.cache.memory')
+
+    from . import tasks
+    tasks.init_app(app)
 
     return app

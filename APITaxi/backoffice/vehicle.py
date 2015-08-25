@@ -5,17 +5,18 @@ from ..models import vehicle as vehicle_models, taxis as taxis_models
 from ..extensions import db
 from ..api import api
 from . import ns_administrative
-from flask.ext.restplus import fields, Resource, reqparse, abort
+from flask.ext.restplus import fields, reqparse, abort
 from ..utils.make_model import make_model
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 from ..utils.cache_refresh import cache_refresh
-
+from ..utils.resource_metadata import ResourceMetadata
 mod = Blueprint('vehicle', __name__)
 
 vehicle_model = make_model('taxis', 'Vehicle')
 vehicle_expect = make_model('taxis', 'Vehicle', filter_id=True)
 @ns_administrative.route('vehicles/', endpoint="vehicle")
-class Vehicle(Resource):
+class Vehicle(ResourceMetadata):
+    model = vehicle_models.Vehicle
 
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture')
@@ -50,3 +51,9 @@ class Vehicle(Resource):
                 'kwargs': {'vehicle': edited_vehicles_id}})
         db.session.commit()
         return {"data": new_vehicles}, 201
+
+    @login_required
+    @roles_accepted('stats')
+    def get(self):
+        return self.metadata()
+        

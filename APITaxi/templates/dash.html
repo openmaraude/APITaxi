@@ -1,0 +1,44 @@
+{% set active_page = 'dash' %}
+{% extends "base.html" %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="{{url_for('static', filename='css/rickshaw.min.css')}}">
+<link rel="stylesheet" href="{{url_for('static', filename='css/dash.css')}}">
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script src="{{url_for('static', filename='js/jquery-2.1.4.min.js')}}"></script>
+<script src="{{url_for('static', filename='js/d3.min.js')}}"></script>
+<script src="{{url_for('static', filename='js/d3.layout.min.js')}}"></script>
+<script src="{{url_for('static', filename='js/rickshaw.js')}}"></script>
+<script src="{{url_for('static', filename='js/ajax_graph.js')}}"></script>
+<script>
+var graphs = [];
+graphs.push(new AjaxGraph( {
+    apikey: "{{apikey}}",
+    dataURL: '{{url_for("api.taxis_active")}}',
+    renderer: 'area',
+    series: [{name: "taxis", color: '#97a2b2'}],
+    zupc_insee: "0",
+    zupc_name: "France",
+} ));
+{% for zupc in zupc_list %}
+graphs.push(new AjaxGraph( {
+    apikey: "{{apikey}}",
+    dataURL: '{{url_for("api.taxis_active")}}',
+    renderer: 'area',
+    series: [{name: "taxis", color: '#97a2b2'}],
+    zupc_insee: "{{zupc.insee}}",
+    zupc_name: "{{zupc.name}}",
+} ));
+{% endfor %}
+
+</script>
+{% endblock %}
+
+{% block content %}
+<div id="main_chart_container">
+</div>
+{% endblock %}

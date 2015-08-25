@@ -16,6 +16,7 @@ from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
 from ..utils.make_model import make_model
 from ..utils.slack import slack
 from ..utils.cache_refresh import cache_refresh
+from ..utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('ads', __name__)
 
@@ -25,28 +26,36 @@ ads_post = make_model('taxis', 'ADS', True)
 
 
 @ns_administrative.route('ads/', endpoint="ads")
-class ADS(Resource):
+class ADS(ResourceMetadata):
+    model = taxis_models.ADS
 
     parser = reqparse.RequestParser()
-    parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS")
+    parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=False,
+                        location='values')
     parser.add_argument('insee', type=unicode,
-            help=u"Code INSEE de la commune d\'attribution de l'ADS")
+            help=u"Code INSEE de la commune d\'attribution de l'ADS", required=False,
+                        location='values')
 
     @login_required
-    @roles_accepted('admin', 'operateur', 'prefecture')
+    @roles_accepted('admin', 'operateur', 'prefecture', 'stats')
     @api.hide
     @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     def get(self):
-        args = self.__class__.parser.parse_args()
+        current_app.logger.debug('before')
+        args = self.parser.parse_args()
         if args["numero"] and args["insee"]:
+            current_app.logger.debug('get if')
             return self.ads_details(args.get("numero"), args.get("insee"))
         else:
+            current_app.logger.debug('get else')
             return self.ads_list()
 
     def ads_list(self):
-        if request_wants_json():
+        if not request_wants_json():
             abort(501, message="You need to ask for JSON")
         if not taxis_models.ADS.can_be_listed_by(current_user):
+            if current_user.has_role('stats'):
+                return self.metadata()
             abort(403, message="You're not allowed to see this page")
         q = taxis_models.ADS.query
         if not current_user.has_role('admin') and not current_user.has_role('prefecture'):

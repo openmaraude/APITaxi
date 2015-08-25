@@ -3,13 +3,22 @@ import calendar, time
 from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
-from ..models import taxis as taxis_models, administrative as administrative_models
-from ..extensions import (db, redis_store, index_zupc)
+from ..models import (taxis as taxis_models,
+    administrative as administrative_models, stats as stats_models)
+from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
 from ..descriptors.taxi import taxi_model
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
+from ..utils import arguments
+from ..utils import influx_db
+from ..utils import fields as customFields
 from shapely.geometry import Point
+from sqlalchemy import distinct
+from sqlalchemy.sql.expression import func as func_sql
+from datetime import datetime, timedelta
+from time import mktime, time
+from functools import partial
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -121,12 +130,15 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         }
     return wrapped
 
+
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True, location='values')
     get_parser.add_argument('lat', type=float, required=True, location='values')
     get_parser.add_argument('favorite_operator', type=unicode, required=False, location='values')
+
+
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -144,7 +156,7 @@ class Taxis(Resource):
         if len(r) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        min_time = int(time.time()) - 60*60
+        min_time = int(time()) - taxis_models.Taxi._ACTIVITY_TIMEOUT
         favorite_operator = p['favorite_operator']
         taxis = filter(lambda t: t is not None,
                 map(generate_taxi_dict(zupc_customer, min_time, favorite_operator), r))
@@ -202,3 +214,58 @@ class Taxis(Resource):
                 abort(400, message='Invalid status')
         db.session.commit()
         return {'data':[taxi]}, 201
+
+@ns_taxis.route('/_active', endpoint="taxis_active")
+class ActiveTaxisRoute(Resource):
+
+    @login_required
+    @roles_accepted('admin', 'operateur')
+    def get(self):
+        frequencies = [f for f, _ in current_app.config['STORE_TAXIS_FREQUENCIES']]
+        parser = reqparse.RequestParser()
+        parser.add_argument('zupc', type=unicode, required=False, location='values')
+        parser.add_argument('begin', type=float, required=False, location='values')
+        parser.add_argument('end', type=float, required=False, location='values')
+        parser.add_argument('operator', type=unicode, required=False, location='values')
+        parser.add_argument('frequency',
+            type=customFields.Integer(frequencies),
+            required=False, location='values',
+            default=frequencies[0])
+        p = parser.parse_args()
+
+        if not p['begin'] and not p['end']:
+            p['end'] = int(time())
+        view_window = (taxis_models.Taxi._ACTIVITY_TIMEOUT + p['frequency'] * 60)
+        p['begin'] = p['begin'] or p['end'] - view_window
+        p['end'] = p['end'] or p['begin'] + view_window
+
+        filters = []
+        if current_user.has_role('admin'):
+            if p['operator']:
+                filters.append("operator = {}".format(p['operator']))
+        else:
+            filters.append('operator = {}'.format(current_user.email))
+
+        if p['zupc']:
+            if not administrative_models.ZUPC.query.filter_by(insee=p['zupc']).all():
+                abort(404, message="Unknown zupc")
+            filters.append("zupc = '{}'".format(p['zupc']))
+        filters.append('time >= {}s'.format(p['begin']))
+        filters.append('time <= {}s'.format(p['end']))
+
+        measurement_name = "nb_taxis_every_{}".format(p['frequency'])
+        query = 'SELECT value FROM {} WHERE {}'.format(measurement_name,
+                " AND ".join(filters))
+
+
+        c = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
+        data = []
+        strptime = lambda d: datetime.strptime(d, '%Y-%m-%dT%H:%M:%SZ')
+        current_app.logger.info('Query: {}'.format(query))
+        for result_set in c.query(query):
+            for v in result_set:
+                data.append({
+                  "x": int(mktime(strptime(v['time']).timetuple())),
+                  "y": v['value']
+                  })
+        return jsonify({"data": data})

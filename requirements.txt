@@ -1,6 +1,10 @@
 alembic==0.7.5.post2
+amqp==1.4.6
 aniso8601==1.0.0
+anyjson==0.3.3
+billiard==3.3.0.20
 blinker==1.3
+celery==3.1.18
 colorama==0.3.3
 dbgp==1.1
 decorator==3.4.2
@@ -9,6 +13,7 @@ dogpile.cache==0.5.6
 dogpile.core==0.4.1
 Flask==0.10.1
 Flask-Bootstrap==3.3.2.1
+Flask-Celery-Helper==1.1.0
 Flask-Cors==2.0.1
 Flask-Dogpile-Cache==0.2
 Flask-JqueryUiBootstrap==0.5.0.4
@@ -28,9 +33,11 @@ Flask-WTF==0.11
 GeoAlchemy2==0.2.5
 geojson==1.2.0
 infinity==1.3
+influxdb==2.8.0
 intervals==0.3.1
 itsdangerous==0.24
 Jinja2==2.7.3
+kombu==3.0.26
 Mako==1.0.1
 MarkupSafe==0.23
 mock==1.0.1
@@ -40,6 +47,7 @@ passlib==1.6.2
 Pillow==2.8.1
 psycopg2==2.6
 py-bcrypt==0.4
+python-dateutil==2.4.2
 python-memcached==1.54
 python-termstyle==0.1.10
 pytz==2015.4
@@ -52,6 +60,7 @@ slacker==0.6.2
 SQLAlchemy==0.9.9
 SQLAlchemy-Defaults==0.4.4
 SQLAlchemy-Utils==0.29.8
+txAMQP==0.6.2
 validate-email==1.3
 validators==0.7
 Werkzeug==0.10.4
