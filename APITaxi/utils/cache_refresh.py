@@ -26,8 +26,8 @@ def invalidate_user(sender, user, **extra):
 
 def refresh_user(user_id, thread=False):
     user = user_datastore.find_user.refresh(user_datastore, id=user_id)
-    user_datastore.get_user.set(user, user.id)
-    user_datastore.get_user.set(user, unicode(user.id))
-    user_datastore.get_user.set(user, user.email)
-    user_datastore.find_user.set(user, email=user.email)
-    user_datastore.find_user.set(user, apikey=user.apikey)
+    user_datastore.get_user.set(user, user_datastore, user.id)
+    user_datastore.get_user.set(user, user_datastore, unicode(user.id))
+    user_datastore.get_user.set(user, user_datastore, user.email)
+    user_datastore.find_user.set(user, user_datastore, email=user.email)
+    user_datastore.find_user.set(user, user_datastore, apikey=user.apikey)
