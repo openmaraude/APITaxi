@@ -184,15 +184,12 @@ class Hail(Resource):
                 .first()
         if not operateur:
             abort(404, message='Unable to find the taxi\'s operateur')
-        if not taxi.is_free(redis_store) or\
-                not taxi.is_fresh(redis_store, hj['operateur']):
-            abort(403, message="The taxi is not available")
         desc = taxi.vehicle.get_description(operateur)
         if not desc:
             abort(404, message='Unable to find taxi\'s description')
-        desc.status = 'answering'
-        cache_refresh(db.session(), [{'func': TaxiModel.get.refresh,
-            'args': [TaxiModel, hj['taxi_id']]}])
+        if not taxi.is_free(redis_store) or\
+                not taxi.is_fresh(redis_store, hj['operateur']):
+            abort(403, message="The taxi is not available")
         db.session.commit()
         #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
@@ -214,9 +211,9 @@ class Hail(Resource):
         hail.operateur_id = operateur.id
         hail.added_via = 'api'
         hail.taxi_id = hj['taxi_id']
-        hail.status = 'emitted'
         db.session.add(hail)
         db.session.commit()
+        hail.status = 'emitted'
         hail.status = 'received'
         hail.status = 'sent_to_operator'
         db.session.commit()
