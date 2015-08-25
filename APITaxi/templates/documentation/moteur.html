@@ -14,10 +14,10 @@ There are two main interactions between <strong>Taxis Search Engines</strong> an
 
 <h3 id="geoloc">Looking for taxis around a client</h3>
 In order to obtain the list of all taxis available around a client, your application does an HTTPS <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis" target="_blank"><code>GET</code> request on the <em>taxis</em> API</a>.<br>
-That API sends back all the available taxis around the  <code>(lon,lat)</code> location of the client with all their characteristics. Only the taxis that are available and can be hailed by the client are returned (the list is already filtered according to the French taxis regulation).
+That API sends back all the available taxis around the  <code>{lon,lat}</code> location of the client with all their characteristics. Only the taxis that are available and can be hailed by the client are returned (the list is already filtered according to the French taxis regulation).
 
 <h4>Favorite operator</h4>
-The optional <em>favorite_operator</em> parameter allows to specify a prefered operator. It is useful for taxis using several operators at the same time (which is expressly allowed by the French law). In that case, it is the description of the taxi and the location recently updated by that <em>favorite_operator</em> that will be returned. If no recent position has been updated by the <em>favorite_operator</em>, or if no favorite_operator is specified in the request, the description of the taxi and location returned are those of the operator who updated the position of the
+The optional <code>favorite_operator</code> parameter allows to specify a prefered operator. It is useful for taxis geolocated by several operators at the same time (which is expressly allowed by the French law). In that case, it is the description of the taxi and the location recently updated by that <code>favorite_operator</code> that will be returned. If no recent position has been updated by the <code>favorite_operator</code>, or if no <code>favorite_operator</code> is specified in the request, the description of the taxi and location returned are those of the operator who updated the position of the
 taxi most recently.
 
 <h3 id="post_hail">Hailing a taxi</h3>
