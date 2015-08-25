@@ -194,7 +194,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         return_['id'] = fields.String()
         return_['taxi'] = fields.Nested(api.model('hail_taxi',
                 {'position': fields.Nested(coordinates_descriptor),
-                 'last_update': fields.Integer()}))
+                 'last_update': fields.Integer(),
+                 'id': fields.String()}))
         return return_
 
     def status_changed(self):
@@ -217,7 +218,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
             if operator == self.operateur.email:
                 return {
                         'position': {'lon': carac['lon'],'lat' : carac['lat']},
-                        'last_update' : carac['timestamp']
+                        'last_update' : carac['timestamp'],
+                        'id': self.taxi_id
                         }
         return {}
 
