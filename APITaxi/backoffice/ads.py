@@ -44,15 +44,13 @@ class ADS(ResourceMetadata):
         current_app.logger.debug('before')
         args = self.parser.parse_args()
         if args["numero"] and args["insee"]:
-            current_app.logger.debug('get if')
             return self.ads_details(args.get("numero"), args.get("insee"))
         else:
-            current_app.logger.debug('get else')
             return self.ads_list()
 
     def ads_list(self):
-        if not request_wants_json():
-            abort(501, message="You need to ask for JSON")
+        if request_wants_json():
+            abort(501, message="You can't ask for JSON")
         if not taxis_models.ADS.can_be_listed_by(current_user):
             if current_user.has_role('stats'):
                 return self.metadata()
