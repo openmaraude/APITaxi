@@ -244,7 +244,7 @@ class ActiveTaxisRoute(Resource):
             if p['operator']:
                 filters.append("operator = {}".format(p['operator']))
         else:
-            filters.append('operator = {}'.format(current_user.email))
+            filters.append("operator = '{}'".format(current_user.email))
 
         if p['zupc']:
             if not administrative_models.ZUPC.query.filter_by(insee=p['zupc']).all():
