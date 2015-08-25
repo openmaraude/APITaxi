@@ -74,8 +74,8 @@ class Drivers(Resource):
                 edited_drivers_id.append(driver_obj.id)
             new_drivers.append(driver_obj)
         if edited_drivers_id:
-            cache_refresh(db.session(), [{'func': taxis_models.refresh_taxi,
-                'kwargs': {'driver': edited_drivers_id}}])
+            cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
+                'kwargs': {'driver': edited_drivers_id}})
         db.session.commit()
         return marshal({'data': new_drivers}, driver_fields), 201
 
@@ -112,8 +112,8 @@ def driver_form():
             driver.last_update_at = datetime.now().isoformat()
             form.populate_obj(driver)
             if form.validate():
-                cache_refresh(db.session(), [{'func': taxis_models.refresh_taxi,
-                    'kwargs': {'driver': driver.id}}])
+                cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
+                    'kwargs': {'driver': driver.id}})
                 db.session.commit()
                 return redirect(url_for('api.drivers'))
         else:

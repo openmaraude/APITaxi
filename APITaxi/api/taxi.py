@@ -68,8 +68,8 @@ class TaxiId(Resource):
         except AssertionError as e:
             abort(400, message=str(e))
 
-        cache_refresh(db.session(), [{'func': taxis_models.Taxi.get.refresh,
-            'args': [taxis_models.Taxi, taxi_id]}])
+        cache_refresh(db.session(), {'func': taxis_models.Taxi.get.refresh,
+            'args': [taxis_models.Taxi, taxi_id]})
         db.session.commit()
         #taxis_models.Taxi.get.refresh(taxis_models.Taxi, taxi_id)
         return {'data': [taxi]}

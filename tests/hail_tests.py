@@ -96,6 +96,10 @@ class TestHailPost(HailMixin):
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
         self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
+        r = self.get('taxis/{}/'.format(r.json['data'][0]['taxi']['id']),
+                role='operateur')
+        self.assert200(r)
+        self.assertEqual(r.json['data'][0]['status'], 'answering')
         self.app.config['ENV'] = prev_env
 
     def test_received_by_operator_prod(self):

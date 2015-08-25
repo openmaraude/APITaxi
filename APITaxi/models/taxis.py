@@ -2,10 +2,12 @@
 from ..models import vehicle
 from ..extensions import region_taxi, db, user_datastore
 from ..models.vehicle import Vehicle, VehicleDescription
+from ..utils import AsDictMixin, HistoryMixin, fields
+from ..utils.scoped_session import ScopedSession
+from ..utils.cache_refresh import cache_refresh
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
-from ..utils import AsDictMixin, HistoryMixin, fields
 from uuid import uuid4
 from six import string_types
 from itertools import compress
@@ -13,7 +15,6 @@ from parse import parse
 import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g
-from ..utils.scoped_session import ScopedSession
 
 
 owner_type_enum = ['company', 'individual']
@@ -226,6 +227,32 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
                          joinedload(Taxi.driver), joinedload(Taxi.vehicle))\
                                 .filter_by(id=id_).first()
             return t
+
+    map_hail_status_taxi_status = {'emitted': 'free',
+            'received': 'answering',
+            'sent_to_operator': 'answering',
+            'received_by_operator': 'answering',
+            'received_by_taxi': 'answering',
+            'accepted_by_taxi': 'answering',
+            'accepted_by_customer': 'oncoming',
+            'declined_by_taxi': 'free',
+            'declined_by_customer': 'free',
+            'incident_customer': 'free',
+            'incident_taxi': 'free',
+            'timeout_customer': 'free',
+            'timeout_taxi': 'free',
+            'outdated_customer': 'free',
+            'outdated_taxi': 'free',
+                'failure': 'free'}
+
+    def synchronize_status_with_hail(self, hail):
+        description = self.vehicle.get_description(hail.operateur)
+        description.status = self.map_hail_status_taxi_status[hail.status]
+        #db.session.add(self)
+        cache_refresh(db.session(),
+            [{'func': self.__class__, 'args': [self.__class__, self.id]}])
+
+
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)

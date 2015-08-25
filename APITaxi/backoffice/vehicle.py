@@ -46,7 +46,7 @@ class Vehicle(Resource):
                 edited_vehicles_id.append(v.id)
             new_vehicles.append(v)
         if edited_vehicles_id:
-            cache_refresh(db.session(), [{'func': taxis_models.refresh_taxi,
-                'kwargs': {'vehicle': edited_vehicles_id}}])
+            cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
+                'kwargs': {'vehicle': edited_vehicles_id}})
         db.session.commit()
         return {"data": new_vehicles}, 201

@@ -9,17 +9,24 @@ def cache_refresh(session, refresher, *args, **kwargs):
     @event.listens_for(session, "after_commit")
     def do_refresh(session):
         @copy_current_request_context
-        def execute_function(refreshers):
+        def execute_function(*refreshers):
             s = db.create_scoped_session()
             setattr(g, 'session', s())
-            for refresher in refreshers:
-                kwargs = refresher.get('kwargs', {})
-                args = refresher.get('args', [])
-                refresher['func'](*args, **kwargs)
+            for r in refreshers:
+                kwargs = r.get('kwargs', {})
+                args = r.get('args', [])
+                r['func'](*args, **kwargs)
             s.close()
-        t = Thread(target=execute_function, args=[refresher])
+        refreshers = g.get('refreshers', [])
+        setattr(g, 'refreshers', [])
+        if len(refreshers) == 0:
+            return
+        t = Thread(target=execute_function, args=refreshers)
         t.daemon = True
         t.start()
+    refresher_list = g.get('refreshers', [])
+    refresher_list.append(refresher)
+    setattr(g, 'refreshers', refresher_list)
 
 def invalidate_user(sender, user, **extra):
     cache_refresh(db.session(), refresh_user, current_user.id, thread=True)

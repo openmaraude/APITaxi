@@ -47,7 +47,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     customer_lat = db.Column(db.Float, nullable=False)
     customer_address = db.Column(db.String, nullable=False)
     customer_phone_number = db.Column(db.String, nullable=False)
-    taxi_id = db.Column(db.String, nullable=False)
+    taxi_id = db.Column(db.String, db.ForeignKey('taxi.id'), nullable=False)
+    taxi_relation = db.relationship('Taxi', backref="taxi", lazy="joined")
     __status = db.Column(db.Enum(*status_enum_list,
         name='hail_status'), default='emitted', nullable=False, name='status')
     last_status_change = db.Column(db.DateTime)
@@ -170,6 +171,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         if status_required and self.__status != status_required:
             raise ValueError("You cannot set status from {} to {}".format(self.__status, value))
         self.status_changed()
+        self.taxi_relation.synchronize_status_with_hail(self)
         self.__status = value
 
     def _TestHailPut__status_set_no_check(self, value):
@@ -193,7 +195,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         return_['id'] = fields.String()
         return_['taxi'] = fields.Nested(api.model('hail_taxi',
                 {'position': fields.Nested(coordinates_descriptor),
-                 'last_update': fields.Integer()}))
+                 'last_update': fields.Integer(),
+                 'id': fields.String()}))
         return return_
 
     def status_changed(self):
@@ -216,7 +219,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
             if operator == self.operateur.email:
                 return {
                         'position': {'lon': carac['lon'],'lat' : carac['lat']},
-                        'last_update' : carac['timestamp']
+                        'last_update' : carac['timestamp'],
+                        'id': self.taxi_id
                         }
         return {}
 
