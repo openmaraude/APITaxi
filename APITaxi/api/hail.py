@@ -133,8 +133,7 @@ class HailId(Resource):
                 except ValueError, e:
                     abort(400, e.args[0])
         cache_refresh(db.session(),
-            [{'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
-            {'func': TaxiModel.get.refresh, 'args': [TaxiModel, hail.taxi_id]}])
+                {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]})
         db.session.commit()
         return {"data": [hail]}
 
