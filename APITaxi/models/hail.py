@@ -171,6 +171,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         if status_required and self.__status != status_required:
             raise ValueError("You cannot set status from {} to {}".format(self.__status, value))
         self.status_changed()
+        self.taxi_relation.synchronize_status_with_hail(self)
         self.__status = value
 
     def _TestHailPut__status_set_no_check(self, value):
