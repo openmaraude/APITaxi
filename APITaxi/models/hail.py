@@ -47,7 +47,8 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     customer_lat = db.Column(db.Float, nullable=False)
     customer_address = db.Column(db.String, nullable=False)
     customer_phone_number = db.Column(db.String, nullable=False)
-    taxi_id = db.Column(db.String, nullable=False)
+    taxi_id = db.Column(db.String, db.ForeignKey('taxi.id'), nullable=False)
+    taxi_relation = db.relationship('Taxi', backref="taxi", lazy="joined")
     __status = db.Column(db.Enum(*status_enum_list,
         name='hail_status'), default='emitted', nullable=False, name='status')
     last_status_change = db.Column(db.DateTime)
