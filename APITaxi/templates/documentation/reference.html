@@ -57,7 +57,8 @@
     <tr>
         <td><code>vehicle</code></td>
         <td><a href="#vehicle_object">vehicle</a></td>
-        <td><em>A partial <a href="#vehicle_object">vehicle</a> with only the fields: <code>characteristics</code>, <code>color</code>, <code>constructor</code>, <code>licence_plate</code>, <code>model</code>, <code>nb_seats</code>. Warning: some of those fields might not be returned (or be returned with a <code>null</code> value) if they were not provided by the taxi operator.</em></td>
+        <td><em>A partial <a href="#vehicle_object">vehicle</a> object with only the fields: <code>characteristics</code>, <code>color</code>, <code>constructor</code>, <code>licence_plate</code>, <code>model</code>, <code>nb_seats</code>.<br>
+                Warning: some of those fields might not be returned (or be returned with a <code>null</code> value) if they were not provided by the taxi operator.</em></td>
     </tr>
     <tr>
         <td><code>ads</code></td>
@@ -72,7 +73,8 @@
     <tr>
         <td><code>id</code></td>
         <td>string</td>
-        <td><em>A long-lived identifier generated for this <code>vehicle</code>/<code>ads</code>/<code>driver</code> triplet by the <abbr title="Taxi Exchange Point">TXP</abbr>. This field should be omitted by operators when declaring a new taxi through a <code>POST</code> request; The newly generated <code>id</code> will be returned in the <code>taxi</code> object sent back as the response.</em></td>
+        <td><em>A long-lived identifier generated for this <code>vehicle</code>/<code>ads</code>/<code>driver</code> triplet by the <abbr title="Taxi Exchange Point">TXP</abbr>.<br>
+                This field should be omitted by operators when declaring a new taxi through a <code>POST</code> request; The newly generated <code>id</code> will be returned in the <code>taxi</code> object sent back as the response.</em></td>
     </tr>
     <tr>
          <td><code>operator</code></td>
@@ -81,13 +83,15 @@
     </tr>
     <tr>
         <td><code>status</code></td>
-        <td><a href="#status_taxi_enum">status</a></td>
-        <td><em>Status of the taxi. The possible values are described in the <a href="#taxi_status">Taxi Status section</a></em></td>
+        <td><a href="#status_taxi">status</a></td>
+        <td><em>Status of the taxi.<br>The possible values are described in the <a href="#taxi_status">Taxi Status section</a></em></td>
     </tr>
     <tr>
          <td><code>position</code></td>
          <td>{lat,lon}</td>
-         <td><em>The latitude and longitude of the taxi. Warning: those values are only returned in the response to a <a href="/doc/#!/taxis/get_taxis" target=_blank><code>GET</code> request on the taxis API</a> looking for taxis around a client. They will be nulled when returned in the response to a <a href="/doc/#!/taxis/get_taxi_id" target=_blank><code>GET</code> request on the taxisi/{taxi_id} API</a> looking for information on a specific taxi.</em></td>
+         <td><em>The latitude and longitude of the taxi.<br>
+                 Warning: those values are only returnedi by the <abbr name="Taxi Exchange Point">TXP</abbr> in the response to a <a href="/doc/#!/taxis/get_taxis" target=_blank><code>GET</code> request on the /taxis/ API</a> looking for taxis around a client. 
+                 They will be nulled when returned in the response to a <a href="/doc/#!/taxis/get_taxi_id" target=_blank><code>GET</code> request on the /taxis/{taxi_id}/ API</a> looking for information on a specific taxi.</em></td>
     </tr>
     <tr>
         <td><code>last_update</code></td>
@@ -97,9 +101,10 @@
     <tr>
          <td><code>crowfly_distance</code></td>
          <td>number</td>
-         <td><em>Distance between the location of the client and the location of the taxi. This value will only be returned in the response to a <a href="/doc/#!/taxis/get_taxis" target=_blank><code>GET</code> request on the taxis API</a> looking for taxis around a client.  It will be nulled when returned in the response to a <a href="/doc/#!/taxis/get_taxi_id" target=_blank><code>GET</code> request on the taxisi/{taxi_id}   API</a> looking for
-                 information on a specific taxi. When not <code>null</code>, the number is in JavaScript double precision floating-point format, with decimal separator ".". It represents the number of km between the client and the taxi measured in a
-                 straight line</em></td>
+         <td><em>Distance between the location of the client and the location of the taxi.<br>
+                 This value will only be returned in the response to a <a href="/doc/#!/taxis/get_taxis" target=_blank><code>GET</code> request on the /taxis/ API</a> looking for taxis around a client.  
+                 It will be nulled when returned in the response to a <a href="/doc/#!/taxis/get_taxi_id" target=_blank><code>GET</code> request on the /taxis/{taxi_id}/   API</a> looking for information on a specific taxi. 
+                 When not <code>null</code>, the number is in JavaScript double precision floating-point format, with decimal separator ".". It represents the number of km between the client and the taxi measured in a straight line</em></td>
      </tr>
 </table>
 
@@ -130,15 +135,33 @@
     </tr>
     <tr>
         <td><code>off</code></td>
-        <td><em>The taxi is not logged in</em></td>
+        <td><em>The taxi is not logged in or did not update its location recently enough.</em></td>
     </tr>
 </table>
 <!-- a name="taxi_post_reponses"><h3>Error codes on a POST /taxis/</h3></a>
     TODO (in Swagger ?) -->
 
-<h2 id="ads">ADS</h2>
+<h2 id="ads">License (ADS)</h2>
+
+The French taxi license are named "<em>Autorisation De Stationner (ADS)</em>". They are attributed by local authorities (usually municipalities, but also in some cases larger areas like <em>départements</em>.)
 
 <h3 id="ads_object">Structure</h3>
+
+<pre><code class="json">{
+  "data": [
+    {
+      "insee": "75056",
+      "numero": "4567",
+      "owner_name": "Jean Dupont",
+      "owner_type": "individual",
+      "category": "perpetual",
+      "doublage": false,
+      "vehicle_id": 0
+    }
+  ]
+}
+</code></pre>
+
 <table class="pure-table pure-table-bordered pure-table-horizontal pure-table-striped">
     <thead>
     <tr>
@@ -148,45 +171,71 @@
     </tr>
     </thead>
     <tr>
-        <td><code>category</code></td>
-        <td>string</td>
-        <td><em></em></td>
-    </tr>
-    <tr>
         <td><code>insee</code></td>
         <td>string</td>
-        <td><em>INSEE code of the entity of which the ADS belongs to.</em></td>
+        <td><em>Identifier of the local authority who attributed the license (ADS).<br>
+                In France, the <em>INSEE code</em> of the entity as specified in the <a href="http://www.insee.fr/fr/methodes/nomenclatures/cog/"i target="_blank"><em>Code Officiel Géographique</em></a> is used. <br>
+                It is composed of 5 characters (usually 5 digits, except for Corsica where the second character can be "A" or "B") and uniquely identify each municipality (or just two digits for the rare special case of license attributed by <em>départements</em> usually for airports). 
+                There are three special cases for Paris (insee code: <code>75056</code>, the codes of the subdivisions -aka arrondissements- are not used), Lyon (insee code: <code>69123</code>, idem) and Marseille (insee code: <code>13055</code>, idem).<br>
+                Warning: the <em>INSEE code</em> is different from the zipcode (there are very often several municipalities in a single zipcode and in some cases several zipcodes in a single municipality.) The zipcode/insee code correspondence can be found in the <a href="https://www.data.gouv.fr/en/datasets/base-officielle-des-codes-postaux/" target="_blank">Base officielle des codes postaux</a>.</em></td>
     </tr>
     <tr>
-        <td><code>doublage</code></td>
-        <td>boolean</td>
-        <td><em>Can this ADS be used by two drivers</em></td>
-    </tr>
-    <tr>
-        <td><code>numero</code></td>
-        <td>string</td>
-        <td><em>identifier of the ADS</em></td>
+          <td><code>numero</code></td>
+          <td>string</td>
+          <td><em>This is the taxi license number (ADS number).<br>
+                  It is often a string of digits but it might for some municipalities contain letters or other characters like dash or slashes.<br>
+                  Warning: This identifier is <em>not</em> unique at the national level: two local authorities can each assign the same number to different licensees.<br>
+                  The couple of this license number (<code>numero</code>) and the licensing authority (<code>insee</code>) is used as the license identifier when declaring a taxi as a vehicle/driver/license triplet.</em></td>
     </tr>
     <tr>
         <td><code>owner_name</code></td>
         <td>string</td>
-        <td><em>Name of the owner</em></td>
+        <td><em>Name of the holder of the license.<br>
+                Warning: It might be either an individual or a company.</em></td>
     </tr>
     <tr>
         <td><code>owner_type</code></td>
         <td>string</td>
-        <td><em>Can be company or individual</em></td>
+        <td><em>The two possible values are <code>company</code> or <code>individual</code>.</em></td>
+    </tr>
+    <tr>
+         <td><code>category</code></td>
+         <td>string</td>
+         <td><em>This field is used for administrative purpose.<br>
+                 When a new license (aka ADS) is created by an Operator, an empty string  has to be passed (<em>not</em> a <code>null</code> value)</em></td>
+    </tr>
+    <tr>
+         <td><code>doublage</code></td>
+         <td>boolean</td>
+         <td><em>Some regulation specific to the Paris area limits the working hours of the driver to 10 hours a day. Some licenses (ADS) can be used for 2 shifts a day (by two different drivers) and this field should then be set to <code>true</code>. Others  can only be operated 10 hours a day and this field should be set to <code>false</code>. When a new license (aka ADS) is       created by an Operator, this field should always be set to <code>false</code> if the local authority in the <code>insee</code> field is not <code>75056</code> (i.e. Paris)</em></td>
     </tr>
     <tr>
         <td><code>vehicle_id</code></td>
-        <td></td>
-        <td><em></em></td>
+        <td>integer</td>
+        <td><em>This field is used for administrative purpose.<br>
+                When a new license (aka ADS) is created by an Operator, a <code>0</code> or <code>null</code> has to be passed</em></td>
     </tr>
 </table>
 
 <h2 id="driver">Driver</h2>
-
+Taxi drivers in France have to be registered. They hold a professional licence issued by a local authority (in France the <em>département</a>). This professional license of taxi driver is <em>different</em> from the taxi license (aka ADS).
 <h3 id="driver_object">Structure</h3>
+<pre><code class="json">{
+  "data": [
+     {
+      "departement": {
+        "numero": "54"
+        "nom": "Meurthe-et-Moselle",
+      },
+      "professional_licence": "234567",
+      "first_name": "Pierre",
+      "last_name": "Durand",
+      "birth_date": "1985-12-24"
+    }
+  ]
+}
+</code></pre>
+
 <table class="pure-table pure-table-bordered pure-table-horizontal pure-table-striped">
     <thead>
     <tr>
@@ -196,6 +245,23 @@
     </tr>
     </thead>
     <tr>
+        <td><code>departement</code></td>
+        <td>department object</td>
+        <td><em>The departement object is constituted of the identifier <code>numero</code> and the name <code>nom</code> of the local authority.<br>
+                For France the list of possible départements is available in the <a href="http://www.insee.fr/fr/methodes/nomenclatures/cog/telechargement/2015/txt/depts2015.txt" target="_blank">Code Officiel Géographique</a> (columns DEP for the identifier and NCCENR for the name)<br>
+                Warning: the identifier <code>numero</code> might contain some non-digits characters (<code>2A</code> or <code>2B</code> for Corsica for instance)
+                When a new driver is created by an Operator, an empty string or <code>null</code> can be passed instead of the name <code>nom</code>: only the identifier <code>numero</code> is used by the <abbr name="Taxi Exchange Point">TXP</abbr>.</em></td>
+    </tr>
+    <tr>
+        <td><code>professional_licence</code></td>
+        <td>string</td>
+        <td><em>Professional license number of the driver.<br>
+            It is often a string of digits but it might for some <em>départments</em> contain letters or other characters like dash or  slashes.<br>
+            Warning: This identifier is <em>not</em> unique at the national level: two local authorities can each assign the same number to different drivers.<br>
+            Warning: the typo "licence" (French writing) instead of "license" (English writing) is still in the API (as of version 2).<br>
+            The couple of this professional license number (<code>professional_licence</code>) and the licensing local authority (<code>departement</code>) is used as the driver identifier when declaring a taxi as a vehicle/driver/license triplet.</em></td>
+    </tr>
+    <tr>
         <td><code>last_name</code></td>
         <td>string</td>
         <td><em>Last name of the driver</em></td>
@@ -203,102 +269,191 @@
     <tr>
         <td><code>first_name</code></td>
         <td>string</td>
-        <td><em>Last name of the driver</em></td>
+        <td><em>First name of the driver</em></td>
     </tr>
     <tr>
         <td><code>birth_date</code></td>
-        <td>string, format: YYYY-MM-DD</td>
-        <td><em>Birth date of the driver</em></td>
-    </tr>
-    <tr>
-        <td><code>profesionnal_licence</code></td>
-        <td>string</td>
-        <td><em>Professional licence identifier of the driver</em></td>
-    </tr>
-    <tr>
-        <td><code>departement</code></td>
-        <td><a href="#department_object">department</a> object</td>
-        <td><em></em></td>
+        <td>string, <a href="https://tools.ietf.org/html/rfc3339">RFC3339</a></td>
+        <td><em>Birth date of the driver in "YYYY-MM-DD" format.</em></td>
     </tr>
 </table>
 
 <h2 id="vehicle">Vehicle</h2>
-
+<pre><code language="json">{
+  "data": [
+    {
+      "licence_plate": "WM-220-VP",
+      "constructor": "Toyota",
+      "model": "string",
+      "color": "orange",
+      "type_": "sedan",
+      "nb_seats": 0,
+      "air_con": true,
+      "amex_accepted": true,
+      "baby_seat": true,
+      "bank_check_accepted": true,
+      "bike_accepted": true,
+      "cpam_conventionne": true,
+      "credit_card_accepted": true,
+      "dvd_player": true,
+      "electronic_toll": true,
+      "every_destination": true,
+      "fresh_drink": true,
+      "gps": true,
+      "luxury": true,
+      "nfc_cc_accepted": true,
+      "pet_accepted": true,
+      "relais": true,
+      "special_need_vehicle": true,
+      "tablet": true,
+      "wifi": true,
+      "date_dernier_ct": "2015-12-23",
+      "date_validite_ct": "2017-12-23",
+      "engine": "string",
+      "horse_power": 0,
+      "model_year": 0,      
+      "taximetre": "string",
+      "horodateur": "string",
+      "id": 0,
+    }
+  ]
+}
+</code></pre>
 <h3 id="vehicle_characteristics">Characteristics</h3>
 <table class="pure-table pure-table-bordered pure-table-horizontal pure-table-striped">
     <thead>
     <tr>
-        <td>Value</td>
-        <td>Desription</td>
+        <td>Key</td>
+        <td>Value Type</td>
+        <td>Description</td>
     </tr>
     </thead>
     <tr>
-        <td><code>special_need_vehicle</code></td>
-        <td><em>This vehicle accepts people with special needs</em></td>
+         <td><code>licence_plate</code></td>
+         <td>string</td>
+         <td><em>License plate of the vehicle.<br>
+                  Warning: the typo "licence" (French writing) instead of "license" (English writing) is still in the API (as of version 2).  <br>
+                  The <code>licence_plate</code> is used as the vehicle identifier to declare a taxi as a vehicle/driver/license triplet.<br>
+             </em></td>
     </tr>
     <tr>
-        <td><code>every_destination</code></td>
-        <td><em>This taxi accepts to go everywhere</em></td>
+         <td><code>constructor</code></td>
+         <td>string</td>
+         <td><em>Constructor of the vehicle</em></td>
     </tr>
     <tr>
-        <td><code>gps</code></td>
-        <td><em>This taxi has a GPS</em></td>
+         <td><code>model</code></td>
+         <td>string</td>
+         <td><em>Model of the vehicle</em></td>
     </tr>
     <tr>
-        <td><code>eletronic_tool</code></td>
-        <td><em>This vehicle has an eletronic tool device</em></td>
+         <td><code>color</code></td>
+         <td>string</td>
+         <td><em>Color of the vehicle</em></td>
+    </tr>
+    <tr>
+         <td><code>type_</code></td>
+         <td>string</td>
+         <td><em>Type of the vehicle<br>
+                 Warning: the name of this key <em>is</em> <code>type_</code> with the final underscore.</em></td>
+    </tr>
+    <tr>
+         <td><code>nb_seats</code></td>
+         <td>integer</td>
+         <td><em>Number of seats available for passengers in the vehicle (not counting the seat of the driver).<br>
+              When available, the area intended for an occupied wheelchair shall be regarded as one seating position.</em></td>
     </tr>
     <tr>
         <td><code>air_con</code></td>
-        <td><em>This vehicle has air conditionnedd</em></td>
-    </tr>
-    <tr>
-        <td><code>pet_accepted</code></td>
-        <td><em>This vehicle accepts pets</em></td>
-    </tr>
-    <tr>
-        <td><code>bike_accepted</code></td>
-        <td><em>This vehicle accepts bikes</em></td>
-    </tr>
-    <tr>
-        <td><code>baby_seat</code></td>
-        <td><em>This vehicle has a baby seat</em></td>
-    </tr>
-    <tr>
-        <td><code>wifi</code></td>
-        <td><em>This vehicle has wifi aboard</em></td>
-    </tr>
-    <tr>
-        <td><code>tablet</code></td>
-        <td><em>This vehicle has a tablet which can be used by the customer</em></td>
-    </tr>
-    <tr>
-        <td><code>dvd_player</code></td>
-        <td><em>This vehicle has a dvd player which can be used by the customer</em></td>
-    </tr>
-    <tr>
-        <td><code>fresh_drink</code></td>
-        <td><em>This vehicle offers a fresh drink to the client</em></td>
+        <td>boolean</td>
+        <td><em>This vehicle is equipped with air conditioning</em></td>
     </tr>
     <tr>
         <td><code>amex_accepted</code></td>
-        <td><em>This vehicle accepts american express card</em></td>
+        <td>boolean</td>
+        <td><em>This vehicle accepts American Express card.</em></td>
+    </tr>
+    <tr>
+        <td><code>baby_seat</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle is equipped with a baby seat</em></td>
     </tr>
     <tr>
         <td><code>bank_check_accepted</code></td>
-        <td><em>This vehicle accepts bank checks</em></td>
+        <td>boolean</td>
+        <td><em>This vehicle accepts national bank checks (foreign bank checks might still be refused).</em></td>
     </tr>
     <tr>
-        <td><code>nfc_cc_accepted</code></td>
-        <td><em>This vehicle accepts nfc credit card payments</em></td>
+        <td><code>bike_accepted</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle can transport a bicycle</em></td>
     </tr>
+    <tr>
+         <td><code>cpam_conventionne</code></td>
+         <td>boolean</td>
+         <td><em>This vehicle has a convention with social security to transport patients</em></td>
+     </tr>
     <tr>
         <td><code>credit_card_accepted</code></td>
-        <td><em>This vehicle accepts credit card payments</em></td>
+        <td>boolean</td>
+        <td><em>This vehicle accepts credit card payments.<br>
+                This should be <code>true</code> for vehicle accepting at least Visa and MasterCard. There is a different boolean <code>amex_accepted</code> for American Express.</em></td>
+     </tr>
+    <tr>
+        <td><code>dvd_player</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle has a dvd player at the disposal of the clients during the ride</em></td>
+    </tr>
+    <tr>
+        <td><code>electronic_toll</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle is equipped with an electronic device letting them use express toll booths on toll roads.</em></td>
+    </tr>
+    <tr>
+        <td><code>every_destination</code></td>
+        <td>boolean</td>
+        <td><em>As per the French regulation, taxis can refuse service to clients whose destination is not within their zone. Some taxis do accept any destination outside of their zone. The <code>every_destination</code> boolean should be <code>false</code> by default, and <code>true</code> for taxis who renounce their right to refuse service to clients depending on their destination.</em></td>
+    </tr>
+    <tr>
+        <td><code>fresh_drink</code></td>
+        <td>boolean</td>
+        <td><em>This taxi offers refreshments</em></td>
+    </tr>
+    <tr>
+        <td><code>gps</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle is equipped with GPS navigation.</em></td>
     </tr>
     <tr>
         <td><code>luxury</code></td>
+        <td>boolean</td>
         <td><em>This is a luxury vehicle</em></td>
+    </tr>
+    <tr>
+        <td><code>nfc_cc_accepted</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle accepts NFC credit card payments.<br></em></td>
+    </tr>
+    <tr>
+        <td><code>pet_accepted</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle can accommodate pets (understood as cats or small dogs ; other large or exotic pets might still be refused)</em></td>
+    </tr>
+    <tr>
+        <td><code>special_need_vehicle</code></td>
+        <td>boolean</td>
+        <td><em>Wheelchair accessible vehicle as defined in <a href="http://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32011R0678" target="_blank">EU/678/2011</a> (which amends <a href="http://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32007L0046" target="_blank">2007/46/EC</a>).<br>
+                Vehicle constructed or converted specifically so that they accommodate one or more persons seated in their wheelchairs when travelling on the road.</em></td>
+    </tr>
+    <tr>
+        <td><code>tablet</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle has a digital tablet at the disposal of the clients during the ride</em></td>
+    </tr>
+    <tr>
+        <td><code>wifi</code></td>
+        <td>boolean</td>
+        <td><em>This vehicle has complimentary WiFi aboard</em></td>
     </tr>
 </table>
 
