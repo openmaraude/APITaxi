@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
 from ..models import (taxis as taxis_models,
-    administrative as administrative_models, stats as stats_models)
+    administrative as administrative_models)
 from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
 from ..descriptors.taxi import taxi_model

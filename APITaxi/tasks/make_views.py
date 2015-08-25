@@ -3,7 +3,6 @@
 from ..extensions import redis_store, user_datastore, db, celery
 from ..models.taxis import Taxi
 from ..models.administrative import ZUPC
-from ..models.stats import ActiveTaxis
 from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
 from time import mktime
