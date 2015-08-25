@@ -22,6 +22,6 @@ def dashboard():
         if not zupc or zupc.parent.id in zupc_parent_id:
             continue
         zupc_parent.append({"insee": zupc.parent.insee, "name": zupc.parent.nom})
-        zupc_parent_id.append(zupc.parent.id)
+        zupc_parent_id.add(zupc.parent.id)
 
     return render_template('dash.html', apikey=current_user.apikey, zupc_list=zupc_parent)
