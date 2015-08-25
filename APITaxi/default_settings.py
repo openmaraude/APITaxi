@@ -21,6 +21,10 @@ DOGPILE_CACHE_REGIONS = [
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.memory'
 SQLALCHEMY_POOL_SIZE = 15
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
 from celery.schedules import crontab
 #List of tuples of the form
 # (frequency in minute, kwargs) where kwargs in passed to crontab
