@@ -251,7 +251,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         description.status = self.map_hail_status_taxi_status[hail.status]
         #db.session.add(self)
         cache_refresh(db.session(),
-            [{'func': self.__class__, 'args': [self.__class__, self.id]}])
+            {'func': self.__class__, 'args': [self.__class__, self.id]})
 
 
 
