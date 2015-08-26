@@ -247,7 +247,8 @@ class ActiveTaxisRoute(Resource):
             filters.append("operator = '{}'".format(current_user.email))
 
         if p['zupc']:
-            if not administrative_models.ZUPC.query.filter_by(insee=p['zupc']).all():
+            z = db.session.query(func_sql.count(administrative_models.ZUPC.id)).first()
+            if z == 0:
                 abort(404, message="Unknown zupc")
             filters.append("zupc = '{}'".format(p['zupc']))
         filters.append('time >= {}s'.format(p['begin']))
