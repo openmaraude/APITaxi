@@ -17,7 +17,25 @@
   "data": [
     {
      "vehicle": {
-        "characteristics": null,
+        "characteristics": [
+          "air_con",
+          "amex_accepted",
+          "baby_seat",
+          "bank_check_accepted",
+          "bike_accepted",
+          "credit_card_accepted",
+          "dvd_player"
+          "electronic_toll",
+          "every_destination",
+          "fresh_drink",
+          "gps",
+          "luxury"
+          "nfc_cc_accepted",
+          "pet_accepted",
+          "special_need_vehicle",
+          "tablet",
+          "wifi"
+        ],
         "color": "orange",
         "constructor": "Toyota",
         "licence_plate": "WM-220-VP",
@@ -68,7 +86,7 @@
     <tr>
         <td><code>driver</code></td>
         <td><a href="#driver_object">driver</a></td>
-        <td><em>A partial <a href="#driver_object">driver</a> object with only the fields: <code>departement</code>, <code>profesionnal_licence</code>.</em></td>
+        <td><em>A partial <a href="#driver_object">driver</a> object with only the fields: <code>departement</code>, <code>professionnal_licence</code>.</em></td>
     </tr>
     <tr>
         <td><code>id</code></td>
@@ -83,14 +101,14 @@
     </tr>
     <tr>
         <td><code>status</code></td>
-        <td><a href="#status_taxi">status</a></td>
+        <td><a href="#taxi_status">status</a></td>
         <td><em>Status of the taxi.<br>The possible values are described in the <a href="#taxi_status">Taxi Status section</a></em></td>
     </tr>
     <tr>
          <td><code>position</code></td>
          <td>{lat,lon}</td>
          <td><em>The latitude and longitude of the taxi.<br>
-                 Warning: those values are only returnedi by the <abbr name="Taxi Exchange Point">TXP</abbr> in the response to a <a href="/doc/#!/taxis/get_taxis" target=_blank><code>GET</code> request on the /taxis/ API</a> looking for taxis around a client. 
+                 Warning: those values are only returnedi by the <abbr title="Taxi Exchange Point">TXP</abbr> in the response to a <a href="/doc/#!/taxis/get_taxis" target=_blank><code>GET</code> request on the /taxis/ API</a> looking for taxis around a client. 
                  They will be nulled when returned in the response to a <a href="/doc/#!/taxis/get_taxi_id" target=_blank><code>GET</code> request on the /taxis/{taxi_id}/ API</a> looking for information on a specific taxi.</em></td>
     </tr>
     <tr>
@@ -100,7 +118,7 @@
     </tr>
     <tr>
          <td><code>crowfly_distance</code></td>
-         <td>number</td>
+         <td>float</td>
          <td><em>Distance between the location of the client and the location of the taxi.<br>
                  This value will only be returned in the response to a <a href="/doc/#!/taxis/get_taxis" target=_blank><code>GET</code> request on the /taxis/ API</a> looking for taxis around a client.  
                  It will be nulled when returned in the response to a <a href="/doc/#!/taxis/get_taxi_id" target=_blank><code>GET</code> request on the /taxis/{taxi_id}/   API</a> looking for information on a specific taxi. 
@@ -207,7 +225,8 @@ The French taxi license are named "<em>Autorisation De Stationner (ADS)</em>". T
     <tr>
          <td><code>doublage</code></td>
          <td>boolean</td>
-         <td><em>Some regulation specific to the Paris area limits the working hours of the driver to 10 hours a day. Some licenses (ADS) can be used for 2 shifts a day (by two different drivers) and this field should then be set to <code>true</code>. Others  can only be operated 10 hours a day and this field should be set to <code>false</code>. When a new license (aka ADS) is       created by an Operator, this field should always be set to <code>false</code> if the local authority in the <code>insee</code> field is not <code>75056</code> (i.e. Paris)</em></td>
+         <td><em>Some regulation specific to the Paris area limits the working hours of the driver to 10 hours a day. Some licenses (ADS) can be used for 2 shifts a day (by two different drivers) and this field should then be set to <code>true</code>. Others  can only be operated 10 hours a day and this field should be set to <code>false</code>.<br>
+                 When a new license (aka ADS) is created by an Operator, this field should always be set to <code>false</code> if the local authority in the <code>insee</code> field is not <code>75056</code> (i.e. Paris)</em></td>
     </tr>
     <tr>
         <td><code>vehicle_id</code></td>
@@ -218,7 +237,7 @@ The French taxi license are named "<em>Autorisation De Stationner (ADS)</em>". T
 </table>
 
 <h2 id="driver">Driver</h2>
-Taxi drivers in France have to be registered. They hold a professional licence issued by a local authority (in France the <em>département</a>). This professional license of taxi driver is <em>different</em> from the taxi license (aka ADS).
+Taxi drivers in France have to be registered. They hold a professional licence issued by a local authority (in France the <em>département</em>). This professional license of taxi driver is <em>different</em> from the taxi license (aka ADS).
 <h3 id="driver_object">Structure</h3>
 <pre><code class="json">{
   "data": [
@@ -279,6 +298,10 @@ Taxi drivers in France have to be registered. They hold a professional licence i
 </table>
 
 <h2 id="vehicle">Vehicle</h2>
+ Vehicles are identified by their license plate. License plates are unique at the national level. License plates are different from the taxi license (aka ADS) and the driver professional license.
+
+<h3 id="vehicle_object">Structure</h3>
+
 <pre><code language="json">{
   "data": [
     {
@@ -303,7 +326,6 @@ Taxi drivers in France have to be registered. They hold a professional licence i
       "luxury": true,
       "nfc_cc_accepted": true,
       "pet_accepted": true,
-      "relais": true,
       "special_need_vehicle": true,
       "tablet": true,
       "wifi": true,
@@ -312,6 +334,7 @@ Taxi drivers in France have to be registered. They hold a professional licence i
       "engine": "string",
       "horse_power": 0,
       "model_year": 0,      
+      "relais": true,
       "taximetre": "string",
       "horodateur": "string",
       "id": 0,
@@ -319,7 +342,6 @@ Taxi drivers in France have to be registered. They hold a professional licence i
   ]
 }
 </code></pre>
-<h3 id="vehicle_characteristics">Characteristics</h3>
 <table class="pure-table pure-table-bordered pure-table-horizontal pure-table-striped">
     <thead>
     <tr>
@@ -355,12 +377,19 @@ Taxi drivers in France have to be registered. They hold a professional licence i
          <td><code>type_</code></td>
          <td>string</td>
          <td><em>Type of the vehicle<br>
+                 The possible values are <code>sedan</code>, <code>station_wagon</code> or <code>mpv</code><br>
                  Warning: the name of this key <em>is</em> <code>type_</code> with the final underscore.</em></td>
     </tr>
     <tr>
          <td><code>nb_seats</code></td>
          <td>integer</td>
-         <td><em>Number of seats available for passengers in the vehicle (not counting the seat of the driver).<br>
+         <td><em>Number of seating positions available for passengers in the vehicle (not counting the seat of the driver).<br>
+                 As per European  Regulation <a href="http://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32011R0678" target="_blank">EU/678/2011</a> the following requirements apply for the counting of the seating positions:<br>
+                 (a) each individual seat shall be counted as one seating position;<br>
+                 (b) in the case of a bench seat, any space having a width of at least 400 mm measured at the seat cushion level shall be counted as one seating position.<br>
+                 (c) however, a space as referred to in point (b) shall not be counted as one seating position where:<br>
+                 (i) the bench seat includes features that prevent the bottom of the manikin from sitting in a natural way - for example: the presence of a fixed console box, an unpadded area or an interior trim interrupting the nominal seating surface;<br>
+                 (ii) the design of the floor pan located immediately in front of a presumed seating position (for example the presence of a tunnel) prevents the feet of the manikin from being positioned in a natural way.<br>
               When available, the area intended for an occupied wheelchair shall be regarded as one seating position.</em></td>
     </tr>
     <tr>
@@ -371,7 +400,7 @@ Taxi drivers in France have to be registered. They hold a professional licence i
     <tr>
         <td><code>amex_accepted</code></td>
         <td>boolean</td>
-        <td><em>This vehicle accepts American Express card.</em></td>
+        <td><em>This vehicle accepts American Express card for any amount (no minimum).</em></td>
     </tr>
     <tr>
         <td><code>baby_seat</code></td>
@@ -389,20 +418,15 @@ Taxi drivers in France have to be registered. They hold a professional licence i
         <td><em>This vehicle can transport a bicycle</em></td>
     </tr>
     <tr>
-         <td><code>cpam_conventionne</code></td>
-         <td>boolean</td>
-         <td><em>This vehicle has a convention with social security to transport patients</em></td>
-     </tr>
-    <tr>
         <td><code>credit_card_accepted</code></td>
         <td>boolean</td>
-        <td><em>This vehicle accepts credit card payments.<br>
+        <td><em>This vehicle accepts credit card payments for any amount (no minimum).<br>
                 This should be <code>true</code> for vehicle accepting at least Visa and MasterCard. There is a different boolean <code>amex_accepted</code> for American Express.</em></td>
      </tr>
     <tr>
         <td><code>dvd_player</code></td>
         <td>boolean</td>
-        <td><em>This vehicle has a dvd player at the disposal of the clients during the ride</em></td>
+        <td><em>This vehicle has a dvd player at the disposal of clients during the ride</em></td>
     </tr>
     <tr>
         <td><code>electronic_toll</code></td>
@@ -437,7 +461,7 @@ Taxi drivers in France have to be registered. They hold a professional licence i
     <tr>
         <td><code>pet_accepted</code></td>
         <td>boolean</td>
-        <td><em>This vehicle can accommodate pets (understood as cats or small dogs ; other large or exotic pets might still be refused)</em></td>
+        <td><em>This vehicle can accommodate pets (understood as cats or small dogs ; other large or unusual pets might still be refused)</em></td>
     </tr>
     <tr>
         <td><code>special_need_vehicle</code></td>
@@ -448,20 +472,127 @@ Taxi drivers in France have to be registered. They hold a professional licence i
     <tr>
         <td><code>tablet</code></td>
         <td>boolean</td>
-        <td><em>This vehicle has a digital tablet at the disposal of the clients during the ride</em></td>
+        <td><em>This vehicle has a digital tablet at the disposal of the clients during the ride.</em></td>
     </tr>
     <tr>
         <td><code>wifi</code></td>
         <td>boolean</td>
-        <td><em>This vehicle has complimentary WiFi aboard</em></td>
+        <td><em>This vehicle has complimentary WiFi aboard.</em></td>
     </tr>
+    <tr>
+         <td><code>cpam_conventionne</code></td>
+         <td>boolean</td>
+         <td><em>This vehicle has a convention with social security to transport patients.<br>
+                 This field is used for administrative purpose only.<br>
+                 When a new vehicle is created by an Operator, this field can be omitted or passed with a null value.</em></td>
+     </tr>
+     <tr>
+         <td><code>date_dernier_ct</code></td>
+         <td>string, <a href="https://tools.ietf.org/html/rfc3339">RFC3339</a></td>
+         <td><em>Date of the latest compulsory roadworthiness tests in "YYYY-MM-DD" format.<br>
+                 This field is used for administrative purpose only.<br>
+                 When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+    </tr>
+    <tr>                                
+          <td><code>date_validite_ct</code></td>
+          <td>string, <a href="https://tools.ietf.org/html/rfc3339">RFC3339</a></td>
+          <td><em>Expiration date of the latest compulsory roadworthiness tests in "YYYY-MM-DD" format.<br>
+                  This field is used for administrative purpose only.<br>
+                  When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+    </tr>
+    <tr>
+           <td><code>engine</code></td>
+           <td>string</td>
+           <td><em>Engine type of the vehicle.<br>
+                   This field is used for administrative purpose only.<br>
+                   When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+    </tr>
+    <tr>
+            <td><code>horse_power</code></td>
+            <td>integer</td>
+            <td><em>Fiscal power of the vehicle.<br>
+                    This field is used for administrative purpose only.<br>
+                    When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+    </tr>
+    <tr>
+             <td><code>model_year</code></td>
+             <td>integer</td>
+             <td><em>Model year of the vehicle.<br>
+                     This field is used for administrative purpose only.<br>
+                     When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+    </tr>
+    <tr>
+              <td><code>relais</code></td>
+              <td>boolean</td>
+              <td><em><code>True</code> if this vehicle is a temporary replacement vehicle for a fully licensed one.<br>
+                      This field is used for administrative purpose only.<br>
+                      When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+    </tr>
+    <tr>
+            <td><code>taximetre</code></td>
+            <td>string</td>
+            <td><em>Brand and model of the taximeter.<br>
+                    This field is used for administrative purpose only.<br>
+                    When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+    </tr>
+     <tr>
+            <td><code>horodateur</code></td>
+            <td>string</td>
+            <td><em>Brand and model of the time clock.<br>
+                    This field is used for administrative purpose only.<br>
+                    When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.</em></td>
+     </tr>
+     <tr>
+              <td><code>id</code></td>
+              <td>integer</td>
+              <td><em>This field is used for administrative purpose only.<br>
+                      When a new vehicle is created by an Operator, this field can be omitted or passed with a <code>null</code> value.<br>
+                      There is no need for Operators or Search Engine to store the value returned by the <abbr title="Taxi Exchange Point">TXP</abbr>: the field used to uniquely identify vehicles in all transactions with the <abbr title="Taxi Exchange Point">TXP</abbr> is the <code>licence_plate</code>.</em></td>
+     </tr>
 </table>
 
 
 
 <h2 id="hail">Hail</h2>
 
+After the taxis available around the client have been retrieved, the chosen taxi can be hailed.
+
 <h3 id="hail_object">Hail Structure</h3>
+
+<pre><code language="json">{
+  "data": [
+    {
+      "customer_lat": 48.83245752348135,
+      "customer_lon": 2.34375347582593,
+      "customer_address": "13 rue des Fossés Saint-Jacques, 75005 Paris",
+      "customer_id": "2ca43f3d5351664b0d80c43367fbd2711e6b4c7c",
+      "customer_phone_number": "+33662228405",
+      "taxi": {
+         "id": "540fd1e0-1cc2-4ada-b9e0-824d5a540927",
+         "last_update": 1440757794,
+         "position": {
+           "lat": 48.8286262,
+           "lon": 2.3263804
+         }
+      },
+      "operateur": "neotaxi",
+      "status": "emitted",
+      "taxi_phone_number": "080001020304",
+      "creation_datetime": "Fri, 28 Aug 2015 12:29:46 -0000",
+      "last_status_change": "Fri, 28 Aug 2015 12:29:54 -0000",
+      "id": "1201",
+      "incident_customer_reason": null,
+      "incident_taxi_reason": null,
+      "rating_ride": null,
+      "rating_ride_reason": null,
+      "reporting_customer": null,
+      "reporting_customer_reason": null
+    }
+  ]
+}
+</code></pre>
+
+
 <table class="pure-table pure-table-bordered pure-table-horizontal pure-table-striped">
     <thead>
     <tr>
@@ -471,39 +602,55 @@ Taxi drivers in France have to be registered. They hold a professional licence i
     </tr>
     </thead>
     <tr>
-        <td><code>operateur</code></td>
-        <td>string</td>
-        <td><em>identifier of the operateur</em></td>
-    </tr>
-    <tr>
-        <td><code>customer_id</code></td>
-        <td>string</td>
-        <td><em>identifier of the customer</em></td>
+         <td><code>customer_lat</code></td>
+         <td>float</td>
+         <td><em>Latitude of the position of the client.<br>
+             This should be in JavaScript double precision floating-point format, with decimal separator "."</em></td>
     </tr>
     <tr>
         <td><code>customer_lon</code></td>
         <td>float</td>
-        <td><em>Longitude of the position of the customer</em></td>
-    </tr>
-    <tr>
-        <td><code>customer_lat</code></td>
-        <td>float</td>
-        <td><em>Latitude of the position of the customer</em></td>
+        <td><em>Longitude of the position of the client.<br>
+            This should be in JavaScript double precision floating-point format, with decimal separator "."</em></td>
     </tr>
     <tr>
         <td><code>customer_address</code></td>
         <td>string</td>
-        <td><em>Address of the position of the customer</em></td>
+        <td><em>Address of the position of the client.<br>
+                This address will be used by the taxi driver to find the client.<br>
+                It should be displayed and validated by the client.<br>
+                Warning: In some cases, a <abbr title="Point of interest">POI</abbr> might be more meaningful than a postal address.</em></td>
+    </tr>
+    <tr>
+        <td><code>customer_id</code></td>
+        <td>string</td>
+        <td><em>identifier of the customer.<br>
+                This identifier is an identifier the Search Engine uses to uniquely identify the client. It can be a database id, an IMEI, a cookie identifier, a hash of a phone number, or any long lived identifier which will  stay the same when the same client comes back.<br>
+                It does not need to carry any signification for the <abbr title="Taxi Exchange Point">TXP</abbr>: the <abbr title="Taxi Exchange Point">TXP</abbr> does not need the identity of the client.</em></td>
+    </tr>
+    <tr>
+         <td><code>customer_phone_number</code></td>
+         <td>string</td>
+         <td><em>Phone number of the client.<br>
+                 This phone number might be used by the Operator of the taxi in case it proves difficult to find the client.</em></td>
     </tr>
     <tr>
         <td><code>taxi_id</code></td>
         <td>string</td>
-        <td><em>Identifier of the taxi</em></td>
+        <td><em>Identifier of the taxi the client is hailing.<br>
+                 This identifier was returned by the <abbr title="Taxi Exchange Point">TXP</abbr> in the <a href="#taxi_object">Taxi</a> object.</em></td>
+    </tr>
+    <tr>
+         <td><code>operateur</code></td>
+         <td>string</td>
+         <td><em>Identifier of the Operator of the taxi the client is hailing.<br>
+                 This identifier was returned by the <abbr title="Taxi Exchange Point">TXP</abbr> in the <a href="#taxi_object">Taxi</a> object.</em></td>
     </tr>
     <tr>
         <td><code>status</code></td>
-        <td>string</td>
-        <td><em>status of the hail. All possible values are described <a href="#hail_status">here</a></em></td>
+        <td><a href="#hail_status">status</a></td>
+        <td><em>status of the hail.<br> 
+                All possible values are described <a href="#hail_status">here</a></em></td>
     </tr>
 </table>
 <h3 id="hail_status">Hail status</h3>
