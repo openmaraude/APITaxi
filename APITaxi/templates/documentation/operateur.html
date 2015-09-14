@@ -8,53 +8,157 @@
   </style>
  {% endblock %}
 {% block documentationcontent %}
-<h1>Opérateur</h1>
+<h2>Operator</h2>
 
-L'opérateur de taxis est l'intermédiaire technique entre un taxi et le Registre Géolocalisé des Taxis (RGT).<br>
-Un taxi est un objet composé d'un vehicule, d'une Autorisation de Stationnemment (ADS), et d'un chauffeur. 
-La déclaration de cet objet est expliquée dans la partie <a href="#declare_taxi">Déclarer un taxi</a>.<br>
-Il est aussi du rôlé de l'opérateur de <a href="#udp_taxi">positionner les taxis</a>,  <a href="#recept_hail">réceptionner les demandes de course</a>, 
-de les transmettre au taxi, et <a href="#update_hail">les mettre à jour</a> dans le RGT.<br>
+<p>The <strong>Taxi Operator</strong> is a technical service provider connecting a taxi to the <strong>Taxi Exchange Point (TXP)</strong>. There are several main interactions between <strong>Operators</strong> and the <strong><abbr title="Taxi Exchange Point">TXP</abbr></strong>: declaring a taxi (including registering the vehicle, driver and license), updating its location and status, receiving a hail issued by a client for a taxi, querying and updating the status of the hail.<br>
+ <strong>Warning:</strong> in accordance with the Terms of Service, you are allowed to declare a taxi and update its location and status <em>only</em> within the context of the real-time journey of a real taxi driver: automation, replay and any other form of mass data gathering is expressly forbidden.<p>
 
-<a name="post_vehicle"><h2>Déclarer un véhicule</h2></a>
-    La déclaration d'un véhicule se fait en effectuant une requête HTTPS <code>POST</code> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_vehicle">vehicles</a>.
-    La structure de l'objet <code>vehicle</code> atttendu est détaillée dans la <a href="/documentation/reference#vehicle_object">documentation de référence.</a>
-<a name="post_ads"><h2>Déclarer une ADS</h2></a>
-    La déclaration d'une Autorisaton De Stationnement se fait en effectuant une requête HTTPS <code>POST</code> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_ads">ads</a>.
-    La structure de l'objet <code>ads</code> atttendu est détaillée dans la <a href="/documentation/reference#ads_object">documentation de référence.</a>
-<a name="post_driver"><h2>Déclarer un chauffeur</h2></a>
-    La déclaration d'un chauffeur se fait en effectuant une requête HTTPS <code>POST</code> à l'API <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_drivers">drivers</a>.
-    La structure de l'objet <code>driver</code> atttendu est détaillée dans la <a href="/documentation/reference#driver_object">documentation de référence.</a>
 
-<a name="post_taxi"><h2>Déclarer un taxi</h2></a>
+<h3 id="post_vehicle">Registering a vehicle</h3>
+Registering a vehicle is done through a <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_vehicle"           target="_blank">HTTPS <code>POST</code> request to the <em>vehicles</em> API</a>.<br>
+The structure of the required <code>vehicle</code> object is described in the  <a href="/documentation/reference#vehicle_object">reference documentation.</a>.<br>
+Calls to this API are idempotent: you can update a vehicle simply by submitting the updated <code>vehicle</code> object. If the <code>licence_plate</code> is different, a new vehicle will be created; if the <code>licence_plate</code> is unchanged, the vehicle will be updated.
 
-    Un taxi est déclaré en effectuant un appel HTTPS <code>POST</code> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/post_taxis">taxis</a>.
-    Les différents statuts possibles du taxi sont décrits <a href="/documentation/reference#taxi_status">ici</a>. Il doit correspondre au statut réel du taxi.
-    <br>
-    En cas de succès l'API retourne l'objet taxi créé. Les autres réponses sont décrites dans la <a href="/documentation/reference#taxi_post_responses">documentation de référence</a>.
+<h3 id="post_driver">Registering a driver</h3>
+Registering a driver is done through a <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_driver"                    target="_blank">HTTPS <code>POST</code> request to the <em>drivers</em> API</a>.<br>
+The structure of the required <code>driver</code> object is described in the  <a href="/documentation/reference#driver_object">reference documentation.</a>.<br>
+    Calls to this API are idempotent: you can update a driver simply by submitting the updated <code>driver</code> object. If the <code>department</code> or <code>professional_licence</code> is different, a new driver will be created; if the <code>department</code> and <code>professional_licence</code> are unchanged, the driver will be updated.
 
-<a name="get_taxi"><h2>Vérifier l'état d'un taxi</h2></a>
-    L'heure de la dernière réception de la position d'un taxi par le RGT est disponible en effectuant un appel HTTPS <code>GET</code> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id">taxis</a>.
 
-<a name="put_taxi"><h2>Mettre à jour la disponibilité d'un taxi</h2></a>
+<h3 id="post_ads">Registering a license (ADS)</h3>
+Registering a license (in French Autorisaton De Stationnement ADS) is done through a <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_ads" target="_blank">HTTPS <code>POST</code> request to the <em>ads</em> API</a>.<br>
+The structure of the required <code>ads</code> object is described in the  <a href="/documentation/reference#ads_object">reference documentation.</a>.<br>
+    Calls to this API are idempotent: you can update a license (ADS) simply by submitting the updated <code>ads</code> object. If the <code>insee</code> or <code>numero</code> is different, a new license (ADS) will be created; if the <code>insee</code> and <code>numero</code> are unchanged, the license (ADS) will be updated.
+
+
+<h3 id="post_taxi">Declaring a taxi</h3>
+ Declaring a taxi is done through a <a href="https://api.opendatataxi.fr/doc/#!/administrative/post_vehicle"                        target="_blank">HTTPS <code>POST</code> request to the <em>taxis</em> API</a>.<br>
+The structure of the required <code>taxi</code> object is a minimalistic version of the one described in the <a href="/documentation/reference#taxi_object">reference documentation</a> containing only the identifiers of the <code>vehicle</code>, <code>driver</code> and <code>ads</code> and the initial <code>status</code> of the taxi. The <code>vehicle</code>, <code>driver</code> and <code>ads</code> used to compose a <code>taxi</code> need to have been registered first through their respective API.
+<h4>Taxi declaration</h4>
+<pre><code class="json">{
+  "data": [
+    {
+      "vehicle": {
+         "licence_plate": "WM-220-VP"
+       },
+      "driver": {
+         "departement": "75",
+         "professional_licence": "091402"
+       },
+      "ads": {
+        "insee": "75056",
+        "numero": "20997"
+      },
+      "status": "free"
+    }
+  ]
+}
+</code></pre>
+If successful, the API returns the complete <code>taxi</code> object as described in the <a href="/documentation/reference#taxi_object">reference documentation</a>, including the characteristics of the vehicle and most importantly the unique identifier <code>id</code> of the <code>taxi</code> that will be used for subsequent communications.<br>
+   Calls to this API are idempotent: if you resubmit the same triplet of <code>vehicle</code>, <code>driver</code> and <code>ads</code>, the <code>taxi</code> returned will have the same <code>id</code>.
+
+
+
+<h3 id="udp_taxi">Updating the location of a taxi</h3>
+ 
+ The location of the taxi is updated through a UDP datagram sent to the geolocation server <code>geoloc.opendatataxi.fr</code> on port 80.<br>
+ 
+The JSON payload of the UDP datagram should be as follows.
+
+<pre><code class="json">{
+    "timestamp":"1430076493",
+    "operator":"neotaxi",
+    "taxi":"9cf0ebfa-dd37-45c4-8a80-60db584535d8",
+    "lat":"2.38852053",
+    "lon":"48.84394873",
+    "device":"phone",
+    "status":"0",
+    "version":"1",
+    "hash":"2fd4e1c67a2d28fced849ee1bb76e7391b93eb12"
+}
+</code></pre>
+<table class="pure-table pure-table-bordered pure-table-horizontal pure-table-striped">
+     <thead>
+     <tr>
+         <td>Key</td>
+         <td>Value&nbsp;Type</td>
+         <td>Description</td>
+     </tr>
+     </thead>
+     <tr>
+         <td><code>timestamp</code></td>
+         <td>string</td>
+         <td><em>Exact time at which the location was determined, formatted as a Unix time (<a href="http://standards.ieee.org/findstds/standard/1003.1-2008.html" target="_blank">IEEE 1003.1-2008 POSIX</a>)<br>
+                Warning: as per the POSIX specification, this should be UTC time without any timezone information<br>
+                Warning: locations in the future (or too old in the past) will be silently discarded.</em></td>
+     </tr>
+     <tr>
+          <td><code>operator</code></td>
+          <td>string</td>
+         <td><em>login of the certified operator</em></td>
+      </tr>
+     <tr>
+           <td><code>taxi</code></td>
+           <td>string</td>
+          <td><em>The <code>id</code> of the taxi is the <code>id</code> that was sent back when the taxi was declared (see <a href="#post_taxi">Déclaring a taxi</a>)</em></td>
+       </tr>
+     <tr>
+           <td><code>lat</code></td>
+           <td>string</td>
+           <td><em>Latitude of the taxi<br>This should be in JavaScript double precision floating-point format, with decimal separator ".".<br>You can truncate the values to 6 decimal places if you want to keep the payload as short as possible (6 decimal       places is worth up to 10 cm).</em></td>
+       </tr>
+     <tr>
+           <td><code>lon</code></td>
+           <td>string</td>
+           <td><em>Longitude of the taxi<br>This should be in JavaScript double precision floating-point format, with decimal separator ".".<br>You can truncate the values to 6 decimal places if you want to keep the payload as short as possible (6 decimal places is worth up to 10 cm). </em></td>
+       </tr>
+     <tr>
+           <td><code>device</code></td>
+           <td>string</td>
+          <td><em><code>phone</code>, <code>tablet</code>, <code>taximeter</code> or <code>otherdevice</code></em></td>
+       </tr>
+     <tr>
+           <td><code>status</code></td>
+           <td>string</td>
+          <td><em>always "0" for now (reserved for future use)</em></td>
+       </tr>
+     <tr>
+           <td><code>version</code></td>
+           <td>string</td>
+          <td><em>either "1" or "2" for now (there is no difference concerning the geolocation between version 1 and 2 of the API)</em></td>
+       </tr>
+     <tr>
+           <td><code>hash</code></td>
+           <td>string</td>
+           <td><em>This field is the SHA-1 message digest of the concatenation (without any separator) of the values of the fields <code>timestamp</code>, <code>operator</code>, <code>taxi</code>, <code>lat</code>, <code>lon</code>, <code>device</code>, <code>status</code> and <code>version</code> (in that order) and the API key of the operator (the same API key used to authenticate the HTTPS REST requests).<br><code>sha1(concat(timestamp, operator, taxi, lat, lon, device, status,
+                   version, api_key))</code> </em></td>
+       </tr>
+</table>
+
+
+</table>
+
+
+<h3 id="get_taxi">Querying the status of a taxi</h3>
+
+
+L'heure de la dernière réception de la position d'un taxi par le RGT est disponible en effectuant un appel HTTPS <code>GET</code> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id">taxis</a>.
+
+<h3 id="put_taxi">Updating the status of a taxi</h3>
     La disponibilité d'un taxi est mise à jour en effectuant un appel HTTPS <code>PUT</code> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/put_taxis">taxis</a>.
 
-<a name="udp_taxi"><h2>Positionner un taxi</h2></a>
-La remontée de la géolocalisation d'un taxi se fait en envoyant un datagramme UDP au serveur de géolocalisation.
-La structure du paquet est détaillée sur <a href="https://wiki.opentaxi.fr/index.php/UDP_geoloc.opendatataxi.fr" target="_blank">cette page</a>. 
-L'id du taxi est l'id qui a été renvoyé lors de la déclaration du taxi (voir <a href="#post_taxi">Déclarer un taxi</a>).
 
-<a name="get_hail"><h2>Réceptionner une course</h2></a>
+<h3 id="get_hail">Receiving a hail</h3>
 Afin de recevoir les courses, les opérateurs doivent mettre à disposition un point d'entrée sur leurs serveurs.<br>
 Ce point d'entrée doit pouvoir recevoir des appels HTTPS <code>POST</code>. L'objet JSON <code>hail</code> qui sera transmis sur ce point d'entrée est détaillé  dans la <a href="/documentation/reference#hail_object">documentation de référence</a>.
 À la suite de la réception d'une demande de mise en relation, l'opérateur doit être capable de transmettre cette demande au taxi désigné.
 
-<a name="#update_hail"><h2>Mettre à jour une course</h2></a>
+<h3 id="#update_hail">Updating the status of a hail</h3>
 Une fois transmise au taxi la demande de mise en relation, sont statut doit etre mis à jour dans le RGT au moyen d'appels HTTPS en <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id"><code>PUT</code> à l'API hails</a>.
 <br>
 Les statuts possibles sont détaillés dans la <a href="/documentation/reference#hail_status">documentation de référence</a>.<br>a
 
-<a name="get_hail"><h2>Suivre le statut d'une course</h2></a>
+<h3 id="get_hail">Querying the status of a hail</h3>
 Le statut de la course peut également être mis à jour dans le RGT par le moteur de recherche. L'opérateur peut donc suivre son statut au moyen d'appels HTTPS en <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id"><code>GET</code> à l'API hails</a>.
 
 
