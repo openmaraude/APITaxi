@@ -1,5 +1,5 @@
 #coding: utf-8
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app
 from flask.ext.login import login_required, current_user
 from APITaxi.models.administrative import ZUPC
 from APITaxi.models.taxis import ADS
