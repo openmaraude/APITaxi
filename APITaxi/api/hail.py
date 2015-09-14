@@ -3,7 +3,7 @@ from flask import request, redirect, url_for, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
-from ..extensions import db, redis_store
+from ..extensions import db, redis_store, get_short_uuid
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
 from ..models.taxis import  Taxi as TaxiModel
@@ -53,7 +53,7 @@ dict_hail['operateur'] = fields.String(attribute='operateur.email')
 hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
 hail_expect_put = api.model('hail_expect_put',
         {'data': fields.List(fields.Nested(hail_expect_put_details))})
-@ns_hail.route('/<int:hail_id>/', endpoint='hailid')
+@ns_hail.route('/<string:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
     @classmethod
@@ -202,6 +202,7 @@ class Hail(Resource):
             customer.added_via = 'api'
             db.session.add(customer)
         hail = HailModel()
+        hail.id = get_short_uuid()
         hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']
         hail.customer_lon = hj['customer_lon']
