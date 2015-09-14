@@ -19,7 +19,7 @@ def dashboard():
         if not zupc_tuple.zupc_id or zupc_tuple.zupc_id in zupc_parent_id:
             continue
         zupc = ZUPC.get(zupc_tuple.zupc_id)
-        if not zupc or zupc.parent.id in zupc_parent_id:
+        if not zupc or not zupc.parent or zupc.parent.id in zupc_parent_id:
             continue
         zupc_parent.append({"insee": zupc.parent.insee, "name": zupc.parent.nom})
         zupc_parent_id.add(zupc.parent.id)
