@@ -13,7 +13,7 @@ There are two main interactions between <strong>Taxis Search Engines</strong> an
 <strong>Warning:</strong> in accordance with the Terms of Service, you are allowed to look for a taxi or hail one <em>only</em> within the context of a real-time interactive demand of a real customer: automation, replay and any other form of mass data gathering is expressly forbidden.
 
 <h3 id="geoloc">Looking for taxis around a client</h3>
-In order to obtain the list of all taxis available around a client, your application does an HTTPS <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis" target="_blank"><code>GET</code> request on the <em>taxis</em> API</a>.<br>
+In order to obtain the list of all taxis available around a client, your application does an <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis" target="_blank">HTTPS <code>GET</code> request on the <em>taxis</em> API</a>.<br>
 That API sends back all the available taxis around the  <code>{lon,lat}</code> location of the client with all their characteristics. Only the taxis that are available and can be hailed by the client are returned (the list is already filtered according to the French taxis regulation).
 
 <h4>Favorite operator</h4>
@@ -21,18 +21,18 @@ The optional <code>favorite_operator</code> parameter allows to specify a prefer
 taxi most recently.
 
 <h3 id="post_hail">Hailing a taxi</h3>
-Once you have received the list of all taxis available around a client, you can hail one of those taxis. That Hail is created by doing a <a href="https://api.opendatataxi.fr/doc/#!/hails/post_hail" target="_blank"><code>POST</code> HTTPS request to the  <em>hails</em> API</a>. 
+Once you have received the list of all taxis available around a client, you can hail one of those taxis. That Hail is created by doing a <a href="https://api.opendatataxi.fr/doc/#!/hails/post_hail" target="_blank">HTTPS <code>POST</code> request to the  <em>hails</em> API</a>. 
 The JSON object <a href="/documentation/reference#hail_object"><code>hail</code></a> to be created has to be in the data section of the request. The initial status of the Hail should be set to <code>emitted</code>.<br>
 In case of success, the response contains the newly created JSON object <a href="/documentation/reference#hail_object"><code>hail</code></a> including its newly created <em>id</em> which will then be used to query and update the status of the hail.
 
-<h3 id="get_hail">Querying the status of a hail</h3>
-In order to keep track of the status of the hail, you can do a <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id" target="_blank"><code>GET</code> HTTPS request to the  <em>hails</em> API</a>.<br>
-The identifier of the hail is the <em>id</em> that was returned in the response of the POST request used to create the hail (see <a href="#post_hail">Hailing a taxi</a>).<br>
+<h3 id="get_hail">Querying the status of a Hail</h3>
+In order to keep track of the status of the hail, you can do a <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id" target="_blank">HTTPS <code>GET</code> request to the  <em>hails</em> API</a>.<br>
+The identifier of the hail is the <em>id</em> that was returned in the response of the <code>POST</code> request used to create the hail (see <a href="#post_hail">Hailing a taxi</a>).<br>
 The list of all possible statuses is available in the <a href="/documentation/reference#hail_status">Reference Documentation</a>.
 
 
-<h3 id="put_hail">Updating a hail</h3>
-In order to finalise the transaction, the client has to reconfirm the hail after it is acknowledged by the taxi. It is done through a call of the <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id" target="_blank"><code>PUT</code> HTTPS request to the  <em>hails</em> API</a>.<br>
+<h3 id="put_hail">Updating a Hail</h3>
+In order to finalise the transaction, the client has to reconfirm the hail after it is acknowledged by the taxi. It is done through a call of the <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id" target="_blank">HTTPS <code>PUT</code> request to the  <em>hails</em> API</a>.<br>
 The status of the hail has to be <code>accepted_by_taxi</code> before the client is asked to reconfirm. If you don't send a PUT request with either the <code>accepted_by_customer</code> or the <code>declined_by_customer</code> status in the next 30 seconds, the hail will automatically be updated to <code>timeout_customer</code> and the whole transaction be considered cancelled. You do have to check when you do a PUT with the status <code>accepted_by_customer</code> that the status in the response is
 <code>accepted_by_taxi</code> (the taxi is arriving) and not <code>timeout_customer</code> (your reconfirmation arrived too late, the whole transaction had to be canceled).
 
