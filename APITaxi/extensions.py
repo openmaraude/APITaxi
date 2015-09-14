@@ -44,3 +44,10 @@ from .utils.cache_user_datastore import CacheUserDatastore
 from .models import security
 user_datastore = CacheUserDatastore(db, security.User,
                             security.Role)
+import shortuuid
+suid = shortuuid.ShortUUID(alphabet=
+    '0123456789abcdefghijklmnopqrstuvwxyzABDEFGHIJKLOMNOPQRSTUVWXYZ')
+
+def get_short_uuid():
+    return suid.uuid()[:7]
+
