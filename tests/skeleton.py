@@ -113,7 +113,7 @@ class Skeleton(TestCase):
                 self.assertEqual(v, req[k])
 
     def call(self, url, role, user, fun, data=None, envelope_data=None,
-            version=1, accept="application/json"):
+            version=2, accept="application/json"):
         if not role:
             role = self.__class__.role
         if not user:
@@ -132,18 +132,18 @@ class Skeleton(TestCase):
                             "X-VERSION": version},
                         content_type='application/json')
 
-    def get(self, url, role=None, user=None, version=1,
+    def get(self, url, role=None, user=None, version=2,
             accept="application/json"):
         return self.call(url, role, user, "get", version=version,
                 accept=accept)
 
     def post(self, data, url=None, envelope_data=True, role=None, user=None,
-            version=1):
+            version=2):
         return self.call(url, role, user, "post", data, envelope_data,
             version=version)
 
     def put(self, data, url=None, envelope_data=True, role=None, user=None,
-            version=1):
+            version=2):
         return self.call(url, role, user, "put", data, envelope_data,
             version=version)
 

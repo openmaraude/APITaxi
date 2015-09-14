@@ -5,7 +5,7 @@ from json import dumps
 from ..utils.api import Api
 
 api_blueprint = Blueprint('api', __name__)
-api = Api(api_blueprint, ui=False, catch_all_404s=True, title='API version 1.0')
+api = Api(api_blueprint, ui=False, catch_all_404s=True, title='API version 2.0')
 
 
 @api_blueprint.route('/doc/', endpoint='doc')
