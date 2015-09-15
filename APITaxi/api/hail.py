@@ -188,8 +188,8 @@ class Hail(Resource):
         desc = taxi.vehicle.get_description(operateur)
         if not desc:
             abort(404, message='Unable to find taxi\'s description')
-        if not taxi.is_free(redis_store) or\
-                not taxi.is_fresh(redis_store, hj['operateur']):
+        if not taxi.is_free() or\
+                not taxi.is_fresh(hj['operateur']):
             abort(403, message="The taxi is not available")
         db.session.commit()
         #@TODO: checker que le status est emitted???

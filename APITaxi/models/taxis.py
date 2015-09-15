@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..models import vehicle
-from ..extensions import region_taxi, db, user_datastore
+from ..extensions import region_taxi, db, user_datastore, redis_store
 from ..models.vehicle import Vehicle, VehicleDescription
 from ..utils import AsDictMixin, HistoryMixin, fields
 from ..utils.scoped_session import ScopedSession
@@ -116,9 +116,13 @@ class Driver(db.Model, AsDictMixin, HistoryMixin):
 
 class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
+        kwargs['id'] = str(uuid4())
+        HistoryMixin.__init__(self)
+        super(self.__class__, self).__init__(**kwargs)
+        self.__caracs = None
 
     id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
@@ -133,11 +137,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     _FORMAT_OPERATOR = '{timestamp:d} {lat} {lon} {status} {device}'
     _DISPONIBILITY_DURATION = 60*60
     _ACTIVITY_TIMEOUT = 15*60
+    __caracs = None
 
-    def __init__(self, *args, **kwargs):
-        kwargs['id'] = str(uuid4())
-        HistoryMixin.__init__(self)
-        super(self.__class__, self).__init__(**kwargs)
 
     @property
     def status(self):
@@ -148,28 +149,29 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         self.vehicle.description.status = status
 
     @classmethod
-    def retrieve_caracs(cls, id_, redis_store, min_time):
+    def retrieve_caracs(cls, id_):
         _, scan = redis_store.hscan("taxi:{}".format(id_))
         if len(scan) == 0:
             return []
         scan = [(k.decode(), parse(cls._FORMAT_OPERATOR, v.decode()))\
                 for k, v in scan.items()]
-        return [(k, v) for k, v in scan\
-                if int(v['timestamp']) >= min_time]
+        return [(k, v) for k, v in scan]
 
-    def caracs(self, redis_store, min_time):
-        return self.__class__.retrieve_caracs(self.id, redis_store, min_time)
+    def caracs(self, min_time):
+        if self.__caracs is None:
+            self.__caracs = self.__class__.retrieve_caracs(self.id)
+        return [i for i in self.__caracs if int(i[1]['timestamp']) >= min_time]
 
-    def is_free(self, redis_store, min_time=None, operateur=None):
+    def is_free(self, min_time=None, operateur=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        caracs = self.caracs(redis_store, min_time)
+        caracs = self.caracs(min_time)
         users = map(lambda (email, _): user_datastore.find_user(email=email).id,
                 caracs)
         return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
             self.vehicle.descriptions))
 
-    def is_fresh(self, redis_store, operateur):
+    def is_fresh(self, operateur):
         v = redis_store.hget('taxi:{}'.format(self.id), operateur)
         if not v:
             return False
@@ -182,12 +184,11 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         for desc in self.vehicle.descriptions:
             desc.status = 'free'
 
-    def get_operator(self, redis_store, min_time=None,
-            favorite_operator=None):
+    def get_operator(self, min_time=None, favorite_operator=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         min_return = (None, min_time)
-        caracs = self.caracs(redis_store, min_time)
+        caracs = self.caracs(min_time)
         if caracs:
             for operator_name, carac in caracs:
                 if operator_name == favorite_operator:
@@ -221,13 +222,20 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         return self.driver.departement
 
     @classmethod
-    @region_taxi.cache_on_arguments(expiration_time=13*3600)
-    def get(cls, id_):
+    @region_taxi.cache_on_arguments(namespace='T', expiration_time=13*3600)
+    def getter_db(cls, id_):
         with ScopedSession() as session:
             t = session.query(Taxi).options(joinedload(Taxi.ads),
                          joinedload(Taxi.driver), joinedload(Taxi.vehicle))\
                                 .filter_by(id=id_).first()
             return t
+
+    @classmethod
+    def get(cls, id_):
+        t = cls.getter_db(id_)
+        t.__caracs = cls.retrieve_caracs(id_)
+        return t
+
 
     map_hail_status_taxi_status = {'emitted': 'free',
             'received': 'answering',
@@ -258,7 +266,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)
     if id_:
-        Taxi.get.refresh(id_)
+        Taxi.getter_db.refresh(id_)
         return
     filters = []
     for k in ('ads', 'vehicle', 'driver'):
@@ -273,5 +281,5 @@ def refresh_taxi(**kwargs):
     with ScopedSession() as session:
         for filter_ in filters:
             for taxi in session.query(Taxi).filter_by(**filter_):
-                Taxi.get.refresh(Taxi, taxi.id)
+                Taxi.getter_db.refresh(Taxi, taxi.id)
 

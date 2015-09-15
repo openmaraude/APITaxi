@@ -215,7 +215,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 
     @property
     def taxi(self):
-        for operator, carac in TaxiM.retrieve_caracs(self.taxi_id, redis_store, 0):
+        for operator, carac in TaxiM.retrieve_caracs(self.taxi_id):
             if operator == self.operateur.email:
                 return {
                         'position': {'lon': carac['lon'],'lat' : carac['lat']},

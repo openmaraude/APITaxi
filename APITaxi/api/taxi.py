@@ -44,8 +44,7 @@ class TaxiId(Resource):
             abort(403, message="You're not authorized to view this taxi")
         taxi_m = marshal({'data':[taxi]}, taxi_model)
         taxi_m['data'][0]['operator'] = operator.email
-        op, timestamp = taxi.get_operator(redis_store,
-                favorite_operator=current_user.email)
+        op, timestamp = taxi.get_operator(favorite_operator=current_user.email)
         taxi_m['data'][0]['last_update'] = timestamp if op == current_user else None
         return taxi_m
 
@@ -77,10 +76,9 @@ class TaxiId(Resource):
         except AssertionError as e:
             abort(400, message=str(e))
 
-        cache_refresh(db.session(), {'func': taxis_models.Taxi.get.refresh,
+        cache_refresh(db.session(), {'func': taxis_models.Taxi.getter_db.refresh,
             'args': [taxis_models.Taxi, taxi_id]})
         db.session.commit()
-        #taxis_models.Taxi.get.refresh(taxis_models.Taxi, taxi_id)
         return {'data': [taxi]}
 
 
@@ -99,11 +97,10 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
         taxi_db = taxis_models.Taxi.get(taxi_id)
-        if not taxi_db or not taxi_db.ads or not taxi_db.is_free(redis_store)\
+        if not taxi_db or not taxi_db.ads or not taxi_db.is_free()\
             or taxi_db.ads.zupc_id not in zupc_customer:
             return None
-        operator, timestamp = taxi_db.get_operator(redis_store,
-                min_time, favorite_operator)
+        operator, timestamp = taxi_db.get_operator(min_time, favorite_operator)
         if not operator:
             return None
 #Check if the taxi is operating in its ZUPC
