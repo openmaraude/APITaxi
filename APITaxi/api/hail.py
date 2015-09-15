@@ -149,6 +149,7 @@ parser_post.add_argument('operateur', type=unicode, required=True)
 argument_names = map(lambda f: f.name, parser_post.args)
 dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
 dict_hail['operateur'] = fields.String(attribute='operateur.email')
+dict_hail['taxi_id'] = fields.String()
 hail_expect_post_details = api.model('hail_expect_post_details', dict_hail)
 hail_expect = api.model('hail_expect_post',
         {'data': fields.List(fields.Nested(hail_expect_post_details))})
