@@ -221,9 +221,12 @@ class Hail(Resource):
         db.session.commit()
         r = None
         try:
+            headers = {'Content-Type': 'application/json'}
+            if operateur.operator_header_name is not None:
+                headers[operateur.operator_header_name] = operateur.operator_api_key
             r = requests.post(operateur.hail_endpoint,
                     data=json.dumps(marshal({"data": [hail]}, hail_model)),
-                headers={'Content-Type': 'application/json'})
+                headers=headers)
         except requests.exceptions.MissingSchema:
             pass
         if r and 200 <= r.status_code < 300:
