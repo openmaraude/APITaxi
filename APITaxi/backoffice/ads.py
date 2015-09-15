@@ -41,7 +41,6 @@ class ADS(ResourceMetadata):
     @api.hide
     @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
     def get(self):
-        current_app.logger.debug('before')
         args = self.parser.parse_args()
         if args["numero"] and args["insee"]:
             return self.ads_details(args.get("numero"), args.get("insee"))
