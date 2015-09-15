@@ -53,6 +53,14 @@ class User(db.Model, UserMixin, MarshalMixin):
             label=u'Email du contact technique',
             description=u'Email du contact technique')
     logos = db.relationship('Logo', backref="user", lazy='joined')
+    operator_header_name = Column(db.String, nullable=True,
+            label=u'Nom du header http pour l\'authentification',
+            description=u"""Cet header sera envoyé lors de la communication
+                de l'ODT vers votre serveur""")
+    operator_api_key = Column(db.String, nullable=True,
+            label=u'Valeur de la clé d\'api',
+            description=u"""Valeur de la clé d'api envoyé par l'ODT
+            à votre serveur pour l'authentification.""")
 
     def __init__(self, *args, **kwargs):
         kwargs['apikey'] = str(uuid.uuid4())
