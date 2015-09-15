@@ -233,6 +233,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     @classmethod
     def get(cls, id_):
         t = cls.getter_db(id_)
+        if t is None:
+            return None
         t.__caracs = cls.retrieve_caracs(id_)
         return t
 
