@@ -22,11 +22,11 @@ dict_ = {
 class HailMixin(Skeleton):
     url = '/hails/'
 
-    def set_env(self, env, url):
+    def set_env(self, env, url, user='user_operateur'):
         from APITaxi.models.security import User
         prev_env = self.app.config['ENV']
         self.app.config['ENV'] = env
-        u = User.query.filter_by(email='user_operateur').first()
+        u = User.query.filter_by(email=user).first()
         if env == 'PROD':
             u.hail_endpoint_production = url
         elif env == 'DEV':
@@ -35,12 +35,13 @@ class HailMixin(Skeleton):
             u.hail_endpoint_staging = url
         return prev_env
 
-    def send_hail(self, dict_hail, method="post", role=None):
-        taxi = self.post_taxi_and_locate()
+    def send_hail(self, dict_hail, method="post", role='moteur', apikey=False):
+        user_operator = 'user_apikey' if apikey else 'user_operateur'
+        taxi = self.post_taxi_and_locate(user=user_operator)
         dict_hail['taxi_id'] = taxi['id']
         r = None
         try:
-            r = self.post([dict_hail], role='moteur')
+            r = self.post([dict_hail], role=role)
         except ServiceUnavailable:
             pass
         return r
@@ -111,6 +112,22 @@ class TestHailPost(HailMixin):
     def test_received_by_operator_staging(self):
         self.received_by_operator('STAGING')
 
+
+    def test_received_by_operator_apikey(self):
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail_apikey/',
+                'user_apikey')
+        dict__ = deepcopy(dict_)
+        dict__['operateur'] = 'user_apikey'
+        r = self.send_hail(deepcopy(dict__), apikey=True)
+        self.assert201(r)
+        self.assertEqual(len(Customer.query.all()), 1)
+        self.assertEqual(len(Hail.query.all()), 1)
+        self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
+        r = self.get('taxis/{}/'.format(r.json['data'][0]['taxi']['id']),
+                user='user_apikey', role='operateur')
+        self.assert200(r)
+        self.assertEqual(r.json['data'][0]['status'], 'answering')
+        self.app.config['ENV'] = prev_env
 
     def failure_operator(self, env):
         prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail_failure/')

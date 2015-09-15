@@ -38,6 +38,13 @@ class Skeleton(TestCase):
                                            password=role)
             user_datastore.add_role_to_user(u, r)
         db.session.commit()
+        r = user_datastore.find_role('operateur')
+        u = user_datastore.create_user(email='user_apikey',
+                password='operateur')
+        u.operator_header_name = 'X-API-KEY'
+        u.operator_api_key = 'xxx'
+        user_datastore.add_role_to_user(u, r)
+        db.session.commit()
 
     def tearDown(self):
         ids = []
@@ -55,11 +62,12 @@ class Skeleton(TestCase):
         index_zupc.index_zupc = None
 
 
-    def post_taxi(self, role=None):
+    def post_taxi(self, role=None, user=None):
         self.init_zupc()
-        post = partial(self.post, role='operateur')
+        post = partial(self.post, role='operateur', user=user)
         self.init_dep()
-        post([dict_driver], url='/drivers/')
+        r = post([dict_driver], url='/drivers/')
+        self.assert201(r)
         r = post([dict_vehicle], url='/vehicles/')
         self.assert201(r)
         vehicle_id = r.json['data'][0]['id']
@@ -71,12 +79,11 @@ class Skeleton(TestCase):
         taxi = r.json['data'][0]
         return taxi
 
-    def post_taxi_and_locate(self, lat=1, lon=1):
-        taxi = self.post_taxi()
+    def post_taxi_and_locate(self, lat=1, lon=1, user=None):
+        taxi = self.post_taxi(user=user)
         formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()),
                 lat=lat, lon=lon, status='free', device='d1', version=1)
-        redis_store.hset('taxi:{}'.format(taxi['id']), 'user_operateur',
-                formatted_value)
+        redis_store.hset('taxi:{}'.format(taxi['id']), user, formatted_value)
         redis_store.geoadd('geoindex', lat, lon, taxi['id'])
         return taxi
 
