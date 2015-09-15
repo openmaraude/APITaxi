@@ -35,7 +35,7 @@ reporting_customer_reason_enum = ['late', 'aggressive', 'no_show']
 incident_customer_reason_enum = ['mud_river', 'parade', 'earthquake']
 incident_taxi_reason_enum = ['traffic_jam', 'garbage_truck']
 class Hail(db.Model, AsDictMixin, HistoryMixin):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
             nullable=True)
