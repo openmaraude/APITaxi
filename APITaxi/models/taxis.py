@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..models import vehicle
-from ..extensions import region_taxi, db, user_datastore, redis_store
+from ..extensions import (region_taxi, db, user_datastore, redis_store,
+        get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription
 from ..utils import AsDictMixin, HistoryMixin, fields
 from ..utils.scoped_session import ScopedSession
@@ -8,7 +9,6 @@ from ..utils.cache_refresh import cache_refresh
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
-from uuid import uuid4
 from six import string_types
 from itertools import compress
 from parse import parse
@@ -119,7 +119,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
-        kwargs['id'] = str(uuid4())
+        kwargs['id'] = str(get_short_uuid())
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
         self.__caracs = None
