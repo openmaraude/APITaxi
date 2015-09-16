@@ -49,8 +49,7 @@ def store_active_taxis(frequency):
                 current_app.logger.error('Taxi: {}, not found in database'.format(
                     taxi_id))
                 continue
-            if taxi_db.ads is None or taxi_db.ads.zupc is None or\
-                    taxi_db.ads.zupc.parent is None:
+            if taxi_db.ads is None:
                 current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
                 continue
             for operator, result in v:
@@ -60,7 +59,15 @@ def store_active_taxis(frequency):
                         current_app.logger.error('User: {} not found'.format(operator))
                         continue
                     map_operateur_zupc_nb_active[operator] = dict()
-                zupc = ZUPC.get(taxi_db.ads.zupc_id).parent.insee
+                zupc = ZUPC.get(taxi_db.ads.zupc_id)
+                if not zupc:
+                    current_app.logger.error('Unable to find zupc: {}'.format(
+                        taxi_db.ads.zupc_id))
+                zupc = zupc.parent
+                if not zupc:
+                    current_app.logger.error('Unable to find zupc: {}'.format(
+                        taxi_db.ads.zupc_id))
+                zupc = zupc.insee
                 if zupc not in map_operateur_zupc_nb_active[operator]:
                     map_operateur_zupc_nb_active[operator][zupc] = 0
                 map_operateur_zupc_nb_active[operator][zupc] += 1
