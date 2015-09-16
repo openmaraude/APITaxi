@@ -79,7 +79,7 @@ class Skeleton(TestCase):
         taxi = r.json['data'][0]
         return taxi
 
-    def post_taxi_and_locate(self, lat=1, lon=1, user=None):
+    def post_taxi_and_locate(self, lat=1, lon=1, user='user_operateur'):
         taxi = self.post_taxi(user=user)
         formatted_value = Taxi._FORMAT_OPERATOR.format(timestamp=int(time.time()),
                 lat=lat, lon=lon, status='free', device='d1', version=1)
