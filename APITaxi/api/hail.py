@@ -153,7 +153,6 @@ dict_hail['taxi_id'] = fields.String()
 hail_expect_post_details = api.model('hail_expect_post_details', dict_hail)
 hail_expect = api.model('hail_expect_post',
         {'data': fields.List(fields.Nested(hail_expect_post_details))})
-
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource):
 
@@ -220,6 +219,13 @@ class Hail(Resource):
         hail.status = 'sent_to_operator'
         db.session.commit()
         r = None
+
+        def finish_and_abort(message):
+            current_app.logger.info(message)
+            hail.status  = 'failure'
+            db.session.commit()
+            return {"data": [hail]}, 201
+
         try:
             headers = {'Content-Type': 'application/json'}
             if operateur.operator_header_name is not None:
@@ -229,12 +235,19 @@ class Hail(Resource):
                 headers=headers)
         except requests.exceptions.MissingSchema:
             pass
-        if r and 200 <= r.status_code < 300:
-            hail.status = 'received_by_operator'
-        else:
-            current_app.logger.info("Unable to reach hail's endpoint {} of operator {}".format(
-                operateur.hail_endpoint, operateur.email))
-            hail.status  = 'failure'
+        if not r or r.status_code < 200 or r.status_code >= 300:
+            return finish_and_abort("Unable to reach hail's endpoint {} of operator {}"\
+                    .format(operateur.hail_endpoint, operateur.email))
+        try:
+            r_json = r.json()
+        except ValueError:
+            return finish_and_abort('Response from endpoint doesn\'t contain json')
+
+        if 'data' not in r_json or len(r_json['data']) != 1:
+            return finish_and_abort('Response is mal formated')
+
+        hail.status = 'received_by_operator'
+        if 'taxi_phone_number' in r_json['data'][0]:
+            hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
         db.session.commit()
         return {"data": [hail]}, 201
-
