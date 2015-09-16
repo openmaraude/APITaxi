@@ -1,6 +1,7 @@
 from .skeleton import Skeleton
-from APITaxi.models.taxis import Taxi
+from APITaxi.models.taxis import Taxi, ADS, Driver
 from APITaxi.models.administrative import Departement
+from APITaxi.models.vehicle import Vehicle
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
@@ -159,6 +160,17 @@ class TestTaxiPost(Skeleton):
     url = '/taxis/'
     role = 'operateur'
 
+    def init_taxi(self):
+        self.init_zupc()
+        self.init_dep()
+        self.post([dict_driver], url='/drivers/')
+        r = self.post([dict_vehicle], url='/vehicles/')
+        self.assert201(r)
+        vehicle_id = r.json['data'][0]['id']
+        dict_ads_ = deepcopy(dict_ads)
+        dict_ads_['vehicle_id'] = vehicle_id
+        self.post([dict_ads_], url='/ads/')
+
     def test_no_data(self):
         r = self.post({}, envelope_data=False)
         self.assert400(r)
@@ -198,114 +210,46 @@ class TestTaxiPost(Skeleton):
         self.assert404(r)
 
     def test_add_taxi(self):
-        self.init_zupc()
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
+        self.init_taxi()
         r = self.post([dict_taxi])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         self.assertEqual(len(Taxi.query.all()), 1)
 
-    def test_missing_ads_field(self):
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
+    def missing_field(self, field):
+        self.init_taxi()
         dict_taxi_d = deepcopy(dict_taxi)
-        del dict_taxi_d['ads']
+        del dict_taxi_d[field]
         r = self.post([dict_taxi_d])
         self.assert400(r)
+
+    def test_missing_ads_field(self):
+        self.missing_field('ads')
 
     def test_missing_driver_field(self):
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
-        dict_taxi_d = deepcopy(dict_taxi)
-        del dict_taxi_d['driver']
-        r = self.post([dict_taxi_d])
-        self.assert400(r)
+        self.missing_field('driver')
 
     def test_missing_vehicle_field(self):
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
+        self.missing_field('vehicle')
+
+    def inexistent_field(self, field, sub_field, value):
+        self.init_taxi()
         dict_taxi_d = deepcopy(dict_taxi)
-        del dict_taxi_d['vehicle']
+        dict_taxi_d[field][sub_field] = value
         r = self.post([dict_taxi_d])
-        self.assert400(r)
+        self.assert404(r)
 
     def test_bad_ads_field(self):
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
-        dict_taxi_d = deepcopy(dict_taxi)
-        dict_taxi_d['ads']['numero'] = '2'
-        r = self.post([dict_taxi_d])
-        self.assert404(r)
+        self.inexistent_field('ads', 'numero', '2')
 
     def test_bad_driver_field(self):
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
-        dict_taxi_d = deepcopy(dict_taxi)
-        dict_taxi_d['driver']['professional_licence'] = 'bad'
-        r = self.post([dict_taxi_d])
-        self.assert404(r)
+        self.inexistent_field('driver', 'professional_licence', 'bad')
 
     def test_bad_vehicle_field(self):
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
-        dict_taxi_d = deepcopy(dict_taxi)
-        dict_taxi_d['vehicle']['licence_plate'] = 'bad'
-        r = self.post([dict_taxi_d])
-        self.assert404(r)
+        self.inexistent_field('vehicle', 'licence_plate', 'bad')
 
     def test_bad_status(self):
-        self.init_zupc()
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
+        self.init_taxi()
         dict_ = deepcopy(dict_taxi)
         dict_['status'] = 'string'
         r = self.post([dict_])
@@ -313,15 +257,7 @@ class TestTaxiPost(Skeleton):
         assert('Invalid status' in r.json['message'])
 
     def test_add_taxi_twice(self):
-        self.init_zupc()
-        self.init_dep()
-        self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
-        self.assert201(r)
-        vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
-        dict_ads_['vehicle_id'] = vehicle_id
-        self.post([dict_ads_], url='/ads/')
+        self.init_taxi()
         r = self.post([dict_taxi])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
@@ -330,4 +266,25 @@ class TestTaxiPost(Skeleton):
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         self.assertEqual(len(Taxi.query.all()), 1)
+
+    def test_remove_ads(self):
+        self.init_taxi()
+        r = self.post([dict_taxi])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        ads_json = r.json['data'][0]['ads']
+        ads = db.session.query(ADS).filter_by(numero=ads_json['numero']).first()
+        self.get('/ads/delete?id={}'.format(ads.id))
+        self.assertEqual(len(Taxi.query.all()), 0)
+
+    def test_remove_driver(self):
+        self.init_taxi()
+        r = self.post([dict_taxi])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        driver_json = r.json['data'][0]['driver']
+        driver = db.session.query(Driver).\
+                filter_by(professional_licence=driver_json['professional_licence']).first()
+        r = self.get('/drivers/delete?id={}'.format(driver.id))
+        self.assertEqual(len(Taxi.query.all()), 0)
 

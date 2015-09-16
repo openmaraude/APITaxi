@@ -209,5 +209,8 @@ def ads_delete():
     if not ads.can_be_deleted_by(current_user):
         abort(403, message="You're not allowed to delete this ADS")
     db.session.delete(ads)
+    #We need to delete attached taxis
+    for taxi in db.session.query(taxis_models.Taxi).filter_by(ads_id=ads.id):
+        db.session.delete(taxi)
     db.session.commit()
-    return redirect(url_for("ads.ads"))
+    return redirect(url_for("api.ads"))
