@@ -140,6 +140,9 @@ def driver_delete():
         abort(404, message="Unable to find the driver")
     if not driver.can_be_deleted_by(current_user):
         abort(403, message="You're not allowed to delete this driver")
+    #We need to delete attached taxis
+    for taxi in db.session.query(taxis_models.Taxi).filter_by(driver_id=driver.id):
+        db.session.delete(taxi)
     db.session.delete(driver)
     db.session.commit()
     return redirect(url_for('api.drivers'))
