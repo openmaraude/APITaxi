@@ -252,8 +252,8 @@ class ActiveTaxisRoute(Resource):
         filters.append('time <= {}s'.format(p['end']))
 
         measurement_name = "nb_taxis_every_{}".format(p['frequency'])
-        query = 'SELECT value FROM {} WHERE {}'.format(measurement_name,
-                " AND ".join(filters))
+        query = 'SELECT sum(value) FROM {} WHERE {} GROUP BY time({}m)'.format(
+                measurement_name, " AND ".join(filters), p['frequency'])
 
 
         c = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
@@ -264,6 +264,6 @@ class ActiveTaxisRoute(Resource):
             for v in result_set:
                 data.append({
                   "x": int(mktime(strptime(v['time']).timetuple())),
-                  "y": v['value']
+                  "y": v['sum']
                   })
         return jsonify({"data": data})
