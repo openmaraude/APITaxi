@@ -8,7 +8,6 @@
     <th>Immatriculation</th>
     <th>Modèle</th>
     <th>Modifier</th>
-    <th>Supprimer</th>
 </tr>
 {% for ads in ads_list.items %}
     <tr>
@@ -16,7 +15,6 @@
         <td> {{ ads.vehicle.licence_plate }} </td>
         <td> {{ ads.vehicle.model }} </td>
         <td> <a href="/ads/form?id={{ ads.id }}">Modifier</a> </td>
-        <td> <a href="/ads/delete?id={{ ads.id }}">Supprimer</a> </td>
 {% endfor %}
 </table>
 {{ render_pagination(ads_list) }}
