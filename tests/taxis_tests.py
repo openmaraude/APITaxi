@@ -1,5 +1,5 @@
 from .skeleton import Skeleton
-from APITaxi.models.taxis import Taxi
+from APITaxi.models.taxis import Taxi, ADS
 from APITaxi.models.administrative import Departement
 from json import dumps, loads
 from copy import deepcopy
@@ -265,4 +265,15 @@ class TestTaxiPost(Skeleton):
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         self.assertEqual(len(Taxi.query.all()), 1)
+
+    def test_remove_ads(self):
+        self.init_taxi()
+        r = self.post([dict_taxi])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        ads_json = r.json['data'][0]['ads']
+        ads = db.session.query(ADS).filter_by(numero=ads_json['numero']).first()
+        self.get('/ads/delete?id={}'.format(ads.id))
+        self.assertEqual(len(Taxi.query.all()), 0)
+
 
