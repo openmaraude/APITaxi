@@ -49,6 +49,10 @@ def store_active_taxis(frequency):
                 current_app.logger.error('Taxi: {}, not found in database'.format(
                     taxi_id))
                 continue
+            if taxi_db.ads is None or taxi_db.ads.zupc is None or\
+                    taxi_db.ads.zupc.parent is None:
+                current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
+                continue
             for operator, result in v:
                 if operator not in map_operateur_zupc_nb_active:
                     u = user_datastore.find_user(email=operator)
