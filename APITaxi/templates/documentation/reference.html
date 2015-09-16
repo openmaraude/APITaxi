@@ -660,55 +660,78 @@ This section describes the different values a hail status can take.
     <tr>
         <td>Value</td>
         <td>Description</td>
+        <td>Interaction</td>
     </tr>
     </thead>
     <tr>
         <td><code>emitted</code></td>
-        <td><em>The first status of hail</em></td>
+        <td><em>The initial status of hail when created by a search engine</em></td>
+        <td><em>This is the status that should be used in the payload of the <a href="/doc/#!/hails/post_hails" target=_blank><code>POST</code> request on the /hails/ API</a> when a <strong>search engine</strong> creates a new hail.</em></td>
     </tr>
     <tr>
         <td><code>received</code></td>
-        <td><em>The hail is received by the ODT</em></td>
+        <td><em>The hail is received from the <strong>search engine</strong> by the <abbr title="Taxi Exchange Point">TXP</abbr></em></td>
+        <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>received</code> <i>after</i> having sent back the complete hail (with the newly grenerated id) to the <strong>search engine</strong> and <i>before</i> forwarding the hail to the <strong>operator</strong>.</em></td>
     </tr>
     <tr>
         <td><code>sent_to_operator</code></td>
-        <td><em>The hail has been sent to the operator</em></td>
+        <td><em>The hail has been sent from the <abbr title="Taxi Exchange Point">TXP</abbr> to the operator</em></td>
+        <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>sent_to_operator</code> <i>after</i> forwarding the hail to the <strong>operator</strong> endpoint.</em></td>
     </tr>
     <tr>
-        <td><code>received_by_operator</code></td>
-        <td><em>We know the operator received the hail</em></td>
+        <td><code> received_by_operator</code></td>
+        <td><em>The <strong>operator</strong> has acknowladged receiving the hail from the <abbr title="Taxi Exchange Point">TXP</abbr></em></td>
+        <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>received_by_operator</code> <i>after</i> receiving a HTTP 200 response from the <strong>operator</strong> endpoint.</em></td>
     </tr>
     <tr>
         <td><code>received_by_taxi</code></td>
         <td><em>The hail has been received by the taxi</em></td>
+        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>received_by_taxi</code> by doing a  <a href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been presented to the taxi driver.</em></td>
     </tr>
     <tr>
         <td><code>accepted_by_taxi</code></td>
-        <td><em>The hail has been accepted by the taxi</em></td>
+        <td><em>The hail has been accepted by the taxi driver</em></td>
+        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>accepted_by_taxi</code> by doing a <a href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been accepted by the taxi driver.</em></td>
     </tr>
     <tr>
         <td><code>declined_by_taxi</code></td>
-        <td><em>The hail has been declined by the taxi</em></td>
-    </tr>
-    <tr>
-        <td><code>incident_customer</code></td>
-        <td><em></em></td>
-    </tr>
-    <tr>
-        <td><code>incident_taxi</code></td>
-        <td><em></em></td>
-    </tr>
-    <tr>
-        <td><code>timeout_customer</code></td>
-        <td><em></em></td>
+        <td><em>The hail has been declined by the taxi driver</em></td>
+        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>declined_by_taxi</code> by doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been rejected by the taxi driver.</em></td>
     </tr>
     <tr>
         <td><code>timeout_taxi</code></td>
-        <td><em></em></td>
+        <td><em>The taxi driver did not accept nor reject the hail after 30s</em></td>
+        <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>timeout_taxi</code> automatically <i>after</i> 30s have passed since the status was set to <code>received_by_taxi</code>.</em></td>
+    </tr>
+    <tr>
+         <td><code>accepted_by_customer</code></td>
+         <td><em>The hail has been confirmed by the client</em></td>
+         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>accepted_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been confirmed by the client.</em></td>
+     </tr>
+     <tr>
+         <td><code>declined_by_customer</code></td>
+         <td><em>The hail has been canceled by the client</em></td>
+         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>declined_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been canceled by the client.<br>Warning: this cancellation can happen at any moment (including before the taxi driver accepts the hail).</em></td>
+     </tr>
+     <tr>
+         <td><code>timeout_customer</code></td>
+         <td><em>The client did not confirm nor cancel the hail after 20s</em></td>
+         <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>timeout_customer</code> automatically <i>after</i> 20s have passed since the status was set to <code>confirmed_by_taxi</code>.</em></td>
+     </tr>
+    <tr>
+        <td><code>incident_customer</code></td>
+        <td><em>An event of <i>force majeure</i> prevents the client to wait for the taxi</em></td>
+        <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>incident_customer</code> by    doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the client cancels the hail after having reconfirmed it.</em></td>
+    </tr>
+    <tr>
+        <td><code>incident_taxi</code></td>
+        <td><em>An event of <i>force majeure</i> prevents the taxi to serve the client</em></td>
+        <td><em>The <strong>operator</strong> <i>should</i> set the status of the hail to <code>incident_taxi</code> by doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the taxi cancels the hail after having accepted it.</em></td>
     </tr>
     <tr>
         <td><code>failure</code></td>
-        <td><em></em></td>
+        <td><em>A technical problem happened.</em></td>
+        <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>failure</code> <i>after</i> receiving a HTTP 4xx or 5xx response from the <strong>operator</strong> endpoint.</em></td>
     </tr>
 </table>
 <br>
