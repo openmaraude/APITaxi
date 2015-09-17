@@ -61,6 +61,8 @@ class TaxiId(Resource):
         json = request.get_json()
         if 'data' not in json:
             abort(400, message="data is needed")
+        if not isinstance(json['data'], list):
+            abort(400, message="data has to be a list")
         if len(json['data']) != 1:
             abort(413, message="You can only PUT one taxi")
         if 'status' not in json['data'][0]:
@@ -173,7 +175,9 @@ class Taxis(Resource):
         json = request.get_json()
         if 'data' not in json:
             abort(400, message="data is required")
-        if len(json['data']) > 1:
+        if not isinstance(json['data'], list):
+            abort(400, message='data has to be a list')
+        if len(json['data']) != 1:
             abort(413, message="You can only post one taxi at a time")
         taxi_json = json['data'][0]
         if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
