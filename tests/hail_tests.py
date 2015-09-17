@@ -149,19 +149,28 @@ class TestHailPost(HailMixin):
     def test_failure_operator_staging(self):
         self.failure_operator('STAGING')
 
-    def test_no_address(self):
+    def no_hail_field(self, k):
         prev_env = self.set_env('DEV', 'http://127.0.0.1:5001/hail/')
         hail = deepcopy(dict_)
-        del hail['customer_address']
+        del hail[k]
         r = self.send_hail(hail)
         self.assert400(r)
 
+    def test_no_address(self):
+        self.no_hail_field('customer_address')
+
     def test_no_phone_number(self):
-        prev_env = self.set_env('DEV', 'http://127.0.0.1:5001/hail/')
-        hail = deepcopy(dict_)
-        del hail['customer_phone_number']
-        r = self.send_hail(hail)
-        self.assert400(r)
+        self.no_hail_field('customer_phone_number')
+
+    def test_no_address(self):
+        self.no_hail_field('customer_address')
+
+    def test_no_lon(self):
+        self.no_hail_field('customer_lon')
+
+    def test_no_lat(self):
+        self.no_hail_field('customer_lat')
+
 
 class  TestHailGet(HailMixin):
 
