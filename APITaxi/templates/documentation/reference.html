@@ -568,7 +568,7 @@ After the taxis available around the client have been retrieved, the chosen taxi
       "customer_id": "2ca43f3d5351664b0d80c43367fbd2711e6b4c7c",
       "customer_phone_number": "+33662228405",
       "taxi": {
-         "id": "540fd1e0-1cc2-4ada-b9e0-824d5a540927",
+         "id": "Rjk4dTV",
          "last_update": 1440757794,
          "position": {
            "lat": 48.8286262,
@@ -577,10 +577,10 @@ After the taxis available around the client have been retrieved, the chosen taxi
       },
       "operateur": "neotaxi",
       "status": "emitted",
-      "taxi_phone_number": "080001020304",
+      "id": "sDfGh3K",
+      "taxi_phone_number": "+33800123456",
       "creation_datetime": "Fri, 28 Aug 2015 12:29:46 -0000",
       "last_status_change": "Fri, 28 Aug 2015 12:29:54 -0000",
-      "id": "1201",
       "incident_customer_reason": null,
       "incident_taxi_reason": null,
       "rating_ride": null,
@@ -638,7 +638,9 @@ After the taxis available around the client have been retrieved, the chosen taxi
         <td><code>taxi_id</code></td>
         <td>string</td>
         <td><em>Identifier of the taxi the client is hailing.<br>
-                 This identifier was returned by the <abbr title="Taxi Exchange Point">TXP</abbr> in the <a href="#taxi_object">Taxi</a> object.</em></td>
+                This identifier was returned by the <abbr title="Taxi Exchange Point">TXP</abbr> in the <a href="#taxi_object">Taxi</a> object.<br>
+            Warning: for historical reasons, when a <strong>search engine</strong> sends a new hail to the <abbr title="Taxi Exchange Point">TXP</abbr>, the taxi id should be passed as a <code>taxi_id</code> field directly in the <code>hail</code> object.<br>
+            In all subsequent exchanges, including when the  <abbr title="Taxi Exchange Point">TXP</abbr> forwards the <code>hail</code> to the <strong>operator</strong>, the taxi id appears instead as a <code>id</code> field in an embedded <code>taxi</code> JSON object inside the <code>hail</code>.</em></td>
     </tr>
     <tr>
          <td><code>operateur</code></td>
@@ -652,6 +654,18 @@ After the taxis available around the client have been retrieved, the chosen taxi
         <td><em>status of the hail.<br> 
                 All possible values are described <a href="#hail_status">here</a></em></td>
     </tr>
+    <tr>
+         <td><code>id</code></td>
+         <td>string</td>
+         <td><em>Identifier of the hail.<br> 
+                 This identifier should be <code>null</code> or omitted when a <strong>search engine</strong> sends a new hail to the <abbr title="Taxi Exchange Point">TXP</abbr>. The newly generated <code>id</code> will be in the <code>hail</code> object returned by the <abbr title="Taxi Exchange Point">TXP</abbr> as a response.</em></td>
+    </tr>
+    <tr>
+          <td><code>taxi_phone_number</code></td>
+          <td>string</td>
+          <td><em>Phone number the client should call in case of problem.<br> 
+                  This phone number can be either the number of the call center of the operator or the mobile phone number of the taxi driver. It has to be reachable at the time of the ride: call center numbers should only be transmitted during opening times.</em></td>
+     </tr>
 </table>
 <h3 id="hail_status">Hail status</h3>
 This section describes the different values a hail status can take.
@@ -666,7 +680,7 @@ This section describes the different values a hail status can take.
     <tr>
         <td><code>emitted</code></td>
         <td><em>The initial status of hail when created by a search engine</em></td>
-        <td><em>This is the status that should be used in the payload of the <a href="/doc/#!/hails/post_hails" target=_blank><code>POST</code> request on the /hails/ API</a> when a <strong>search engine</strong> creates a new hail.</em></td>
+        <td><em>This is the status that should be used in the payload of the <a href="/doc/#!/hails/post_hail" target=_blank><code>POST</code> request on the /hails/ API</a> when a <strong>search engine</strong> creates a new hail.</em></td>
     </tr>
     <tr>
         <td><code>received</code></td>
@@ -679,24 +693,24 @@ This section describes the different values a hail status can take.
         <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>sent_to_operator</code> <i>after</i> forwarding the hail to the <strong>operator</strong> endpoint.</em></td>
     </tr>
     <tr>
-        <td><code> received_by_operator</code></td>
+        <td><code>received_by_operator</code></td>
         <td><em>The <strong>operator</strong> has acknowladged receiving the hail from the <abbr title="Taxi Exchange Point">TXP</abbr></em></td>
         <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>received_by_operator</code> <i>after</i> receiving a HTTP 200 response from the <strong>operator</strong> endpoint.</em></td>
     </tr>
     <tr>
         <td><code>received_by_taxi</code></td>
         <td><em>The hail has been received by the taxi</em></td>
-        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>received_by_taxi</code> by doing a  <a href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been presented to the taxi driver.</em></td>
+        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>received_by_taxi</code> by doing a  <a href="/doc/#!/hails/put_hail_id" target=_blank><code>PUT</code> request on the /hails/{hail_id} API</a> when the hail has been presented to the taxi driver.</em></td>
     </tr>
     <tr>
         <td><code>accepted_by_taxi</code></td>
         <td><em>The hail has been accepted by the taxi driver</em></td>
-        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>accepted_by_taxi</code> by doing a <a href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been accepted by the taxi driver.</em></td>
+        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>accepted_by_taxi</code> by doing a <a href="/doc/#!/hails/put_hail_id" target=_blank><code>PUT</code> request on the /hails/{hail_id} API</a> when the hail has been accepted by the taxi driver.</em></td>
     </tr>
     <tr>
         <td><code>declined_by_taxi</code></td>
         <td><em>The hail has been declined by the taxi driver</em></td>
-        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>declined_by_taxi</code> by doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been rejected by the taxi driver.</em></td>
+        <td><em>The  <strong>operator</strong> <i>should</i> set the status of the hail to <code>declined_by_taxi</code> by doing a <a  href="/doc/#!/hails/put_hail_id" target=_blank><code>PUT</code> request on the /hails/{hail_id} API</a> when the hail has been rejected by the taxi driver.</em></td>
     </tr>
     <tr>
         <td><code>timeout_taxi</code></td>
@@ -706,12 +720,12 @@ This section describes the different values a hail status can take.
     <tr>
          <td><code>accepted_by_customer</code></td>
          <td><em>The hail has been confirmed by the client</em></td>
-         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>accepted_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been confirmed by the client.</em></td>
+         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>accepted_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hail_id" target=_blank><code>PUT</code> request on the /hails/{hail_id} API</a> when the hail has been confirmed by the client.<br>Warning: this confirmation can only happen <i>after</i> the status has been set to <code>confirmed_by_taxi</code> by the <strong>operator</strong>.</em></td>
      </tr>
      <tr>
          <td><code>declined_by_customer</code></td>
          <td><em>The hail has been canceled by the client</em></td>
-         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>declined_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hails" target=_blank><code>PUT</code> request on the /hails/ API</a> when the hail has been canceled by the client.<br>Warning: this cancellation can happen at any moment (including before the taxi driver accepts the hail).</em></td>
+         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>declined_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hail_id" target=_blank><code>PUT</code> request on the /hails/{hail_id} API</a> when the hail has been canceled by the client.<br>Warning: this cancellation can happen at any moment (including before the taxi driver accepts the hail).</em></td>
      </tr>
      <tr>
          <td><code>timeout_customer</code></td>
@@ -731,7 +745,10 @@ This section describes the different values a hail status can take.
     <tr>
         <td><code>failure</code></td>
         <td><em>A technical problem happened.</em></td>
-        <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>failure</code> <i>after</i> receiving a HTTP 4xx or 5xx response from the <strong>operator</strong> endpoint.</em></td>
+        <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>failure</code> <i>when</i>:
+                <ul><li>the <strong>operator</strong> endpoint is unreachable</li>
+                    <li> or when receiving a HTTP 4xx or 5xx response from the <strong>operator</strong> endpoint</li>
+                    <li> or if the <strong>operator</strong> endpoint does not return a <code>hail</code> JSON object containing a valid <code>taxi_phone_number</code>.</li></ul></em></td>
     </tr>
 </table>
 <br>
