@@ -16,7 +16,7 @@ dict_ = {
     'customer_lat': 0,
     'customer_address': 'Pas loin, Paris',
     'customer_phone_number': '067372727',
-    'taxi_id': 1,
+    'taxi_id': 'aa',
     'operateur': 'user_operateur'
 }
 class HailMixin(Skeleton):
@@ -63,13 +63,13 @@ class TestHailPost(HailMixin):
         self.assert400(r)
 
     def test_too_many(self):
-        r = self.post([{}, {}])
+        r = self.post([dict_, dict_])
         self.assertEqual(r.status_code, 413)
 
     def test_missing_fields(self):
         dict_ = {
             'customer_id': 'aa',
-            'taxi_id': 1
+            'taxi_id': 'a'
         }
         r = self.post([dict_])
         self.assert400(r)
@@ -514,7 +514,7 @@ class TestHailPut(HailMixin):
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
-        dict_hail['rating_ride'] = 2.1
+        dict_hail['rating_ride'] = 2
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
         self.assert200(r)

@@ -13,43 +13,16 @@ import requests, json
 from ..descriptors.hail import hail_model
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
+from ..utils import fields as customFields
 
 ns_hail = api.namespace('hails', description="Hail API")
+argument_names = ['customer_id', 'customer_lon', 'customer_lat',
+    'customer_address', 'status']
+dict_hail =  dict(filter(lambda f: f[0] in argument_names,
+        HailModel.marshall_obj().items()))
+for k in dict_hail.keys():
+    dict_hail[k].required = False
 
-
-parser_put = reqparse.RequestParser()
-parser_put.add_argument('customer_lon', type=float, required=True,
-        location='hail')
-parser_put.add_argument('customer_lat', type=float, required=True,
-        location='hail')
-parser_put.add_argument('customer_address', type=unicode, required=True,
-        location='hail')
-parser_put.add_argument('customer_phone_number', type=unicode, required=True,
-        location='hail')
-parser_put.add_argument('status', type=str, required=True,
-                        choices=['received_by_taxi',
-                                 'accepted_by_taxi',
-                                 'declined_by_taxi',
-                                 'incident_taxi',
-                                 'incident_customer'],
-                        location='hail')
-parser_put.add_argument('taxi_phone_number', type=unicode, required=False,
-        location='hail')
-parser_put.add_argument('rating_ride_reason', type=unicode, required=False,
-        location='hail')
-parser_put.add_argument('rating_ride', type=int, required=False,
-        location='hail')
-parser_put.add_argument('incident_customer_reason', type=unicode, required=False,
-        location='hail')
-parser_put.add_argument('incident_taxi_reason', type=unicode, required=False,
-        location='hail')
-parser_put.add_argument('reporting_customer', type=bool, required=False,
-        location='hail')
-parser_put.add_argument('reporting_customer_reason', type=unicode, required=False,
-        location='hail')
-argument_names = [f.name for f in parser_put.args]
-dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
-dict_hail['operateur'] = fields.String(attribute='operateur.email')
 hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
 hail_expect_put = api.model('hail_expect_put',
         {'data': fields.List(fields.Nested(hail_expect_put_details))})
@@ -84,22 +57,11 @@ class HailId(Resource):
         self.filter_access(hail)
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
-        root_parser = reqparse.RequestParser()
-        root_parser.add_argument('data', type=list, location='json')
-        req = root_parser.parse_args()
-        if not 'data' in req or not req['data'] \
-                or not isinstance(req['data'], list) or not len(req['data']) == 1:
-            abort(400, message="JSON is payload is bad")
-        to_parse = req['data'][0]
-        hj = {}
-        for arg in parser_put.args:
-            if arg.required and arg.name not in to_parse.keys():
-                abort(400, message="Field {} is needed".format(arg.name))
-            elif arg.name in to_parse.keys():
-                try:
-                    hj[arg.name] = arg.convert(to_parse[arg.name], '=')
-                except ValueError, e:
-                    abort(400, message=e.args[0])
+        from ..utils.validate_json import validate
+        hj = request.json
+        validate(hj, hail_expect_put)
+        hj = hj['data'][0]
+
         #We change the status
         if hj['status'] == 'accepted_by_taxi':
             if g.version == 1:
@@ -109,22 +71,14 @@ class HailId(Resource):
                     abort(400, message='Taxi phone number is needed')
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
-        try:
-            hail.status = hj['status']
-        except AssertionError:
-            abort(400, message='Invalid status')
-        except ValueError, e:
-            abort(400, message=e.args[0])
-        except RuntimeError, e:
-            abort(403, message=e.args[0])
-        if current_user.has_role('moteur'):
-            for k in ['customer_lon', 'customer_lat',
-                      'customer_address', 'customer_phone_number']:
-                if k in hj and hj[k]:
-                    setattr(hail, k, hj[k])
-        for ev in ['rating_ride', 'rating_ride_reason',
+
+        list_fields = ['status', 'rating_ride', 'rating_ride_reason',
                 'incident_customer_reason', 'incident_taxi_reason',
-                'reporting_customer', 'reporting_customer_reason']:
+                'reporting_customer', 'reporting_customer_reason']
+        if current_user.has_role('moteur'):
+            list_fields.extend(['customer_lon', 'customer_lat',
+                'customer_address', 'customer_phone_number'])
+        for ev in list_fields:
             value = hj.get(ev, None)
             if value is not None:
                 try:
@@ -136,26 +90,22 @@ class HailId(Resource):
                 except ValueError, e:
                     abort(400, e.args[0])
         cache_refresh(db.session(),
-                {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]})
+            {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
+            {'func': TaxiModel.getter_db.refresh, 'args': [TaxiModel, hail.taxi_id]},
+        )
         db.session.commit()
         return {"data": [hail]}
 
 
-parser_post = reqparse.RequestParser()
-parser_post.add_argument('customer_id', type=unicode, required=True)
-parser_post.add_argument('customer_lon', type=float, required=True)
-parser_post.add_argument('customer_lat', type=float, required=True)
-parser_post.add_argument('customer_address', type=unicode, required=True)
-parser_post.add_argument('customer_phone_number', type=unicode, required=True)
-parser_post.add_argument('taxi_id', type=unicode, required=True)
-parser_post.add_argument('operateur', type=unicode, required=True)
-argument_names = map(lambda f: f.name, parser_post.args)
-dict_hail =  dict(filter(lambda f: f[0] in argument_names, HailModel.marshall_obj().items()))
-dict_hail['operateur'] = fields.String(attribute='operateur.email')
-dict_hail['taxi_id'] = fields.String()
+argument_names = ['customer_id', 'customer_lon', 'customer_lat',
+    'customer_address', 'customer_phone_number', 'taxi_id', 'operateur']
+dict_hail =  dict(filter(lambda f: f[0] in argument_names,
+        HailModel.marshall_obj().items()))
+dict_hail['operateur'] = fields.String(attribute='operateur.email', required=True)
+dict_hail['taxi_id'] = fields.String(required=True)
 hail_expect_post_details = api.model('hail_expect_post_details', dict_hail)
 hail_expect = api.model('hail_expect_post',
-        {'data': fields.List(fields.Nested(hail_expect_post_details))})
+        {'data': customFields.List(fields.Nested(hail_expect_post_details))})
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource):
 
@@ -165,20 +115,10 @@ class Hail(Resource):
     @api.expect(hail_expect)
     @json_mimetype_required
     def post(self):
-        root_parser = reqparse.RequestParser()
-        root_parser.add_argument('data', type=list, location='json')
-        req = root_parser.parse_args()
-        if 'data' not in req or not isinstance(req['data'], list) or\
-                len(req['data']) == 0:
-            abort(400, message="data is required")
-        if len(req['data']) != 1:
-            abort(413, message="You can only post one hail at a time")
-        to_parse = req['data'][0]
-        hj = {}
-        for arg in parser_post.args:
-            if arg.name not in to_parse.keys():
-                abort(400, message="{} is required".format(arg.name))
-            hj[arg.name] = arg.convert(to_parse[arg.name], '=')
+        hj = request.json
+        from ..utils.validate_json import validate
+        validate(hj, hail_expect)
+        hj = hj['data'][0]
 
         taxi = TaxiModel.query.get(hj['taxi_id'])
         if not taxi:
@@ -188,11 +128,8 @@ class Hail(Resource):
         desc = taxi.vehicle.get_description(operateur)
         if not desc:
             abort(404, message='Unable to find taxi\'s description')
-        if not taxi.is_free() or\
-                not taxi.is_fresh(hj['operateur']):
+        if not taxi.is_free() or not taxi.is_fresh(hj['operateur']):
             abort(403, message="The taxi is not available")
-        db.session.commit()
-        #@TODO: checker que le status est emitted???
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
                 operateur_id=current_user.id).first()
         if not customer:

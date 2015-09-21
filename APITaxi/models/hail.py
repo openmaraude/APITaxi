@@ -190,8 +190,10 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
         if level >=2:
             return {}
-        return_ = super(Hail, cls).marshall_obj(show_all, filter_id, level=level+1)
-        return_['operateur'] = fields.String(attribute='operateur.email')
+        return_ = super(Hail, cls).marshall_obj(show_all, filter_id,
+                     level=level+1)
+        return_['operateur'] = fields.String(attribute='operateur.email',
+                                required=True)
         return_['id'] = fields.String()
         return_['taxi'] = fields.Nested(api.model('hail_taxi',
                 {'position': fields.Nested(coordinates_descriptor),
