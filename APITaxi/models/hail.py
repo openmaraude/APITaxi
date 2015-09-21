@@ -8,18 +8,15 @@ from ..utils.scoped_session import ScopedSession
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
-from ..extensions import redis_store, region_hails, db
+from ..extensions import redis_store, region_hails, db, get_short_uuid
 from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates, joinedload
 from flask import g
 
-status_enum_list = [ 'emitted', 'received',
-    'sent_to_operator', 'received_by_operator',
-    'received_by_taxi',
-    'accepted_by_taxi', 'accepted_by_customer',
-    'declined_by_taxi', 'declined_by_customer',
-    'incident_customer', 'incident_taxi',
-    'timeout_customer', 'timeout_taxi',
+status_enum_list = [ 'emitted', 'received', 'sent_to_operator',
+ 'received_by_operator', 'received_by_taxi', 'accepted_by_taxi',
+ 'accepted_by_customer', 'declined_by_taxi', 'declined_by_customer',
+ 'incident_customer', 'incident_taxi', 'timeout_customer', 'timeout_taxi',
     'outdated_customer', 'outdated_taxi', 'failure']#This may be redundant
 
 
@@ -28,6 +25,15 @@ class Customer(db.Model, AsDictMixin, HistoryMixin):
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                              primary_key=True)
     nb_sanctions = db.Column(db.Integer, default=0)
+
+    def __init__(self, customer_id, *args, **kwargs):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
+        super(self.__class__, self).__init__(**kwargs)
+        self.id = customer_id
+        self.operateur_id = current_user.id
+        self.nb_sanctions = 0
+        self.added_via = 'api'
 
 
 rating_ride_reason_enum = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
@@ -68,6 +74,13 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
     reporting_customer_reason = db.Column(db.Enum(*reporting_customer_reason_enum,
         name='reporting_customer_reason_enum'), nullable=True)
 
+    def __init__(self, *args, **kwargs):
+        self.id = str(get_short_uuid())
+        self.added_by = 'api'
+        self.creation_datetime = datetime.now().isoformat()
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
+        super(self.__class__, self).__init__(**kwargs)
 
     @validates('rating_ride_reason')
     def validate_rating_ride_reason(self, key, value):
@@ -119,10 +132,6 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
 #We need to restrict this to a subset of statuses
         assert 1 <= value <= 5, 'Rating value has to be 1 <= value <= 5'
         return value
-
-    def __init__(self):
-        db.Model.__init__(self)
-        HistoryMixin.__init__(self)
 
     timeouts = {
             'received_by_taxi': (30, 'timeout_taxi'),

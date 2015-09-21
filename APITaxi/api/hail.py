@@ -133,22 +133,15 @@ class Hail(Resource):
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
                 operateur_id=current_user.id).first()
         if not customer:
-            customer = CustomerModel()
-            customer.id = hj['customer_id']
-            customer.operateur_id = current_user.id
-            customer.nb_sanctions = 0
-            customer.added_via = 'api'
+            customer = CustomerModel(hj['customer_id'])
             db.session.add(customer)
         hail = HailModel()
-        hail.id = get_short_uuid()
-        hail.creation_datetime = datetime.now().isoformat()
         hail.customer_id = hj['customer_id']
         hail.customer_lon = hj['customer_lon']
         hail.customer_lat = hj['customer_lat']
         hail.customer_address = hj['customer_address']
         hail.customer_phone_number = hj['customer_phone_number']
         hail.operateur_id = operateur.id
-        hail.added_via = 'api'
         hail.taxi_id = hj['taxi_id']
         db.session.add(hail)
         db.session.commit()
