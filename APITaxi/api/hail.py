@@ -87,6 +87,9 @@ class HailId(Resource):
         root_parser = reqparse.RequestParser()
         root_parser.add_argument('data', type=list, location='json')
         req = root_parser.parse_args()
+        if not 'data' in req or not req['data'] \
+                or not isinstance(req['data'], list) or not len(req['data']) == 1:
+            abort(400, message="JSON is payload is bad")
         to_parse = req['data'][0]
         hj = {}
         for arg in parser_put.args:
@@ -115,10 +118,10 @@ class HailId(Resource):
         except RuntimeError, e:
             abort(403, message=e.args[0])
         if current_user.has_role('moteur'):
-            hail.customer_lon = hj['customer_lon']
-            hail.customer_lat = hj['customer_lat']
-            hail.customer_address = hj['customer_address']
-            hail.customer_phone_number = hj['customer_phone_number']
+            for k in ['customer_lon', 'customer_lat',
+                      'customer_address', 'customer_phone_number']:
+                if k in hj and hj[k]:
+                    setattr(hail, k, hj[k])
         for ev in ['rating_ride', 'rating_ride_reason',
                 'incident_customer_reason', 'incident_taxi_reason',
                 'reporting_customer', 'reporting_customer_reason']:
