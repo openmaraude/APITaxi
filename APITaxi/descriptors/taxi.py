@@ -26,11 +26,11 @@ taxi_descriptor = api.model('taxi_descriptor',
         "id": fields.String,
         "operator": fields.String,
         "position": fields.Nested(coordinates_descriptor),
-        "vehicle": fields.Nested(vehicle_descriptor),
+        "vehicle": fields.Nested(vehicle_descriptor, required=True),
         "last_update": fields.Integer,
         "crowfly_distance": fields.Float,
-        "ads": fields.Nested(ads_descriptor),
-        "driver": fields.Nested(driver_descriptor),
+        "ads": fields.Nested(ads_descriptor, required=True),
+        "driver": fields.Nested(driver_descriptor, required=True),
         "status": fields.String
     })
 
@@ -42,4 +42,5 @@ taxi_model_details = api.model('taxi_model_details',
           'driver_departement': fields.String,
            'id': fields.String})
 
-taxi_model = api.model('taxi_model', {'data': fields.List(fields.Nested(taxi_descriptor))})
+taxi_model = api.model('taxi_model',
+                 {'data': fields.Nested(taxi_descriptor, as_list=True)})

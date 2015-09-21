@@ -176,7 +176,8 @@ class TestTaxiPost(Skeleton):
         self.assert400(r)
 
     def test_too_many(self):
-        r = self.post([{}, {}])
+        r = self.post([{'driver': None, 'ads': None, 'vehicle': None},
+            {'driver': None, 'ads': None, 'vehicle': None}])
         self.assertEqual(r.status_code, 413)
 
     def test_missing_fields(self):
