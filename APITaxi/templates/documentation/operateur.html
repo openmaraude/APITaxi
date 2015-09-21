@@ -130,23 +130,21 @@ The JSON payload of the UDP datagram should be as follows.
      <tr>
            <td><code>hash</code></td>
            <td>string</td>
-           <td><em>This field is the SHA-1 message digest of the concatenation (without any separator) of the values of the fields <code>timestamp</code>, <code>operator</code>, <code>taxi</code>, <code>lat</code>, <code>lon</code>, <code>device</code>, <code>status</code> and <code>version</code> (in that order) and the API key of the operator (the same API key used to authenticate the HTTPS REST requests).<br><code>sha1(concat(timestamp, operator, taxi, lat, lon, device, status,
-                   version, api_key))</code> </em></td>
+           <td><em>This field is the SHA-1 message digest of the concatenation (without any separator) of the values of the fields <code>timestamp</code>, <code>operator</code>, <code>taxi</code>, <code>lat</code>, <code>lon</code>, <code>device</code>, <code>status</code> and <code>version</code> (in that order) and the API key of the operator (the same API key used to authenticate the HTTPS REST requests).<br><code>sha1(concat(timestamp, operator, taxi, lat, lon, device, status, version, api_key))</code> </em></td>
        </tr>
 </table>
 
-
-</table>
-
-
-<h3 id="get_taxi">Querying the status of a taxi</h3>
-
-
-L'heure de la dernière réception de la position d'un taxi par le RGT est disponible en effectuant un appel HTTPS <code>GET</code> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id">taxis</a>.
-
 <h3 id="put_taxi">Updating the status of a taxi</h3>
-    La disponibilité d'un taxi est mise à jour en effectuant un appel HTTPS <code>PUT</code> à l'api <a href="https://api.opendatataxi.fr/doc/#!/taxis/put_taxis">taxis</a>.
+In most cases, the status of the taxi is automaticaly set by the  <abbr title="Taxi Exchange Point">TXP</abbr> according to the status of a hail.<br>
+Outside of the context of a hail, you still need to indicate if the taxi is <code>free</code> or <code>occupied</code>. This is done through a <a href="https://api.opendatataxi.fr/doc/#!/taxis/put_taxi_id" target="_blank">HTTPS <code>PUT</code> request to the <em>taxis</em> API</a>.
 
+<h3 id="get_taxi">Querying the status and time of last location update of a taxi</h3>
+
+In order to check that the updating of the status or location of the taxi worked properly, you can use a <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank">HTTPS <code>GET</code> request to the <em>/taxis/{taxi_id}</em> API</a>.<br>
+Warning: The  <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank"><code>GET</code> <em>/taxis/{taxi_id}</em> API</a> will return the <code>status</code> and the <code>last_update</code> but the <code>lat</code> and <code>lon</code> will be nulled (for privacy reasons).<br>
+Warning: in production, you should almost never need the  <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank"><code>GET</code> <em>/taxis/{taxi_id}</em> API</a>: 
+all necessary informations about taxis around a location are already in the response of the <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis" target="_blank"><code>GET</code> <em>/taxis</em> API</a> 
+and all necessary informations about the chosen taxi are already in the response of the <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id" target="_blank"><code>GET</code> <em>/hails/{hail_id}</em> API</a> 
 
 <h3 id="get_hail">Receiving a hail</h3>
 Afin de recevoir les courses, les opérateurs doivent mettre à disposition un point d'entrée sur leurs serveurs.<br>
