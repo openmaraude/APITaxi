@@ -122,7 +122,7 @@ class ADS(ResourceMetadata):
             try:
                 ads_db = create_obj_from_json(taxis_models.ADS, ads)
             except KeyError as e:
-                abort(400, message="Missing key: "+str(e))
+                abort(400, message="Missing key: {}".format(str(e)))
             except AssertionError as e:
                 abort(400, message='Bad owner_type value, can be: {}'.format(
                     taxis_models.owner_type_enum

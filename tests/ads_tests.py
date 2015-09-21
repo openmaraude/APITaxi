@@ -104,5 +104,5 @@ class TestADSPost(Skeleton):
         dict_['owner_type'] = None
         r = self.post([dict_])
         self.assert400(r)
-        assert 'Bad owner_type' in r.json['message']
+        assert "Missing key: 'owner_type'" in r.json['message']
 
