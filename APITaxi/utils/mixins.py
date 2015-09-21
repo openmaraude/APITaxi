@@ -37,12 +37,13 @@ class MarshalMixin(object):
             sqlalchemy_types.BOOLEAN: lambda c: custom_fields.Boolean(column=c),
             sqlalchemy_types.DateTime: lambda c: custom_fields.DateTime(column=c),
             sqlalchemy_types.DATETIME: lambda c: custom_fields.DateTime(column=c),
-            sqlalchemy_types.Date: lambda c: custom_fields.Date(),
-            sqlalchemy_types.DATE: lambda c: custom_fields.Date(),
-            sqlalchemy_types.Float: lambda c: custom_fields.Float(),
-            sqlalchemy_types.FLOAT: lambda c: custom_fields.Float(),
-            sqlalchemy_types.Enum: lambda c: custom_fields.String(enum=c.type.enums),
-            sqlalchemy_types.String: lambda c: custom_fields.String()
+            sqlalchemy_types.Date: lambda c: custom_fields.Date(column=c),
+            sqlalchemy_types.DATE: lambda c: custom_fields.Date(column=c),
+            sqlalchemy_types.Float: lambda c: custom_fields.Float(column=c),
+            sqlalchemy_types.FLOAT: lambda c: custom_fields.Float(column=c),
+            sqlalchemy_types.Enum: lambda c: custom_fields.String(column=c,
+                       enum=c.type.enums),
+            sqlalchemy_types.String: lambda c: custom_fields.String(column=c)
         }
     @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
@@ -54,11 +55,13 @@ class MarshalMixin(object):
         else:
             fields_cls = cls.list_fields()
 
-
-        fields_cls = filter(lambda c: not c.primary_key and len(c.foreign_keys) == 0, fields_cls)
-        fields_cls = map(lambda c: (c.name, cls.map_[type(c.type)](c) if type(c.type) in cls.map_.keys() else None),
-                                    fields_cls)
-        fields_cls = filter(lambda c: c[1], fields_cls)
+        def to_keep(c):
+            return not c.primary_key and len(c.foreign_keys) == 0\
+                        and type(c.type) in cls.map_.keys()
+        fields_cls = filter(to_keep, fields_cls)
+        fields_cls = map(lambda c: (c.name,
+                           cls.map_[type(c.type)](c)),
+                         fields_cls)
         return_dict = dict(fields_cls)
 
         if cls.inspect_obj.relationships:
