@@ -71,6 +71,8 @@ class TaxiId(Resource):
         if status == 'answering':
             abort(400, message='Setting status to answering is not authorized')
         taxi = taxis_models.Taxi.query.get(taxi_id)
+        if not taxi:
+            abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
         if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
             abort(403, message='You\'re not authorized to PUT this taxi')
         try:
