@@ -25,11 +25,10 @@ for k in dict_hail.keys():
 hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
 hail_expect_put = api.model('hail_expect_put',
         {'data': fields.List(fields.Nested(hail_expect_put_details))})
-fields_operateur =  ['status', 'rating_ride', 'rating_ride_reason',
-    'incident_customer_reason', 'incident_taxi_reason',
-    'reporting_customer', 'reporting_customer_reason']
-fields_moteur = fields_operateur + ['customer_lon', 'customer_lat',
-    'customer_address', 'customer_phone_number']
+list_fields = ['status', 'incident_taxi_reason',
+    'reporting_customer', 'reporting_customer_reason', 'customer_lon',
+    'customer_lat', 'customer_address', 'customer_phone_number', 'rating_ride',
+    'rating_ride_reason', 'incident_customer_reason']
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
@@ -75,11 +74,6 @@ class HailId(Resource):
                     abort(400, message='Taxi phone number is needed')
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
-
-        if current_user.has_role('moteur'):
-            list_fields = fields_moteur
-        else:
-            list_fields = fields_operateur
         for ev in list_fields:
             value = hj.get(ev, None)
             if value is None:
