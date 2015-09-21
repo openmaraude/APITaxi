@@ -231,7 +231,7 @@ class Hail(Resource):
 
         try:
             headers = {'Content-Type': 'application/json'}
-            if operateur.operator_header_name is not None:
+            if operateur.operator_header_name is not None and operateur.operator_header_name != '':
                 headers[operateur.operator_header_name] = operateur.operator_api_key
             r = requests.post(operateur.hail_endpoint,
                     data=json.dumps(marshal({"data": [hail]}, hail_model)),
