@@ -3,12 +3,11 @@ from flask import request, redirect, url_for, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
-from ..extensions import db, redis_store, get_short_uuid
+from ..extensions import db, redis_store
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
 from ..models.taxis import  Taxi as TaxiModel
 from ..models import security as security_models
-from datetime import datetime
 import requests, json
 from ..descriptors.hail import hail_model
 from ..utils.request_wants_json import json_mimetype_required
@@ -26,6 +25,11 @@ for k in dict_hail.keys():
 hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
 hail_expect_put = api.model('hail_expect_put',
         {'data': fields.List(fields.Nested(hail_expect_put_details))})
+fields_operateur =  ['status', 'rating_ride', 'rating_ride_reason',
+    'incident_customer_reason', 'incident_taxi_reason',
+    'reporting_customer', 'reporting_customer_reason']
+fields_moteur = fields_operateur + ['customer_lon', 'customer_lat',
+    'customer_address', 'customer_phone_number']
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
 class HailId(Resource):
 
@@ -72,23 +76,22 @@ class HailId(Resource):
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
 
-        list_fields = ['status', 'rating_ride', 'rating_ride_reason',
-                'incident_customer_reason', 'incident_taxi_reason',
-                'reporting_customer', 'reporting_customer_reason']
         if current_user.has_role('moteur'):
-            list_fields.extend(['customer_lon', 'customer_lat',
-                'customer_address', 'customer_phone_number'])
+            list_fields = fields_moteur
+        else:
+            list_fields = fields_operateur
         for ev in list_fields:
             value = hj.get(ev, None)
-            if value is not None:
-                try:
-                    setattr(hail, ev, value)
-                except AssertionError, e:
-                    abort(400, message=e.args[0])
-                except RuntimeError, e:
-                    abort(403)
-                except ValueError, e:
-                    abort(400, e.args[0])
+            if value is None:
+                continue
+            try:
+                setattr(hail, ev, value)
+            except AssertionError, e:
+                abort(400, message=e.args[0])
+            except RuntimeError, e:
+                abort(403)
+            except ValueError, e:
+                abort(400, e.args[0])
         cache_refresh(db.session(),
             {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
             {'func': TaxiModel.getter_db.refresh, 'args': [TaxiModel, hail.taxi_id]},
@@ -141,8 +144,8 @@ class Hail(Resource):
         hail.customer_lat = hj['customer_lat']
         hail.customer_address = hj['customer_address']
         hail.customer_phone_number = hj['customer_phone_number']
-        hail.operateur_id = operateur.id
         hail.taxi_id = hj['taxi_id']
+        hail.operateur_id = operateur.id
         db.session.add(hail)
         db.session.commit()
         hail.status = 'emitted'
