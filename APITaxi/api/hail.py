@@ -13,6 +13,7 @@ from ..descriptors.hail import hail_model
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import fields as customFields
+from ..utils.validate_json import validate
 
 ns_hail = api.namespace('hails', description="Hail API")
 argument_names = ['customer_id', 'customer_lon', 'customer_lat',
@@ -25,12 +26,12 @@ for k in dict_hail.keys():
 hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
 hail_expect_put = api.model('hail_expect_put',
         {'data': fields.List(fields.Nested(hail_expect_put_details))})
-list_fields = ['status', 'incident_taxi_reason',
-    'reporting_customer', 'reporting_customer_reason', 'customer_lon',
-    'customer_lat', 'customer_address', 'customer_phone_number', 'rating_ride',
-    'rating_ride_reason', 'incident_customer_reason']
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
 class HailId(Resource):
+    list_fields = ['status', 'incident_taxi_reason',
+        'reporting_customer', 'reporting_customer_reason', 'customer_lon',
+        'customer_lat', 'customer_address', 'customer_phone_number', 'rating_ride',
+        'rating_ride_reason', 'incident_customer_reason']
 
     @classmethod
     def filter_access(cls, hail):
@@ -60,7 +61,6 @@ class HailId(Resource):
         self.filter_access(hail)
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
-        from ..utils.validate_json import validate
         hj = request.json
         validate(hj, hail_expect_put)
         hj = hj['data'][0]
@@ -74,7 +74,7 @@ class HailId(Resource):
                     abort(400, message='Taxi phone number is needed')
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
-        for ev in list_fields:
+        for ev in self.list_fields:
             value = hj.get(ev, None)
             if value is None:
                 continue
@@ -113,7 +113,6 @@ class Hail(Resource):
     @json_mimetype_required
     def post(self):
         hj = request.json
-        from ..utils.validate_json import validate
         validate(hj, hail_expect)
         hj = hj['data'][0]
 
