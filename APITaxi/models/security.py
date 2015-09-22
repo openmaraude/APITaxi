@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
-from ..utils import MarshalMixin
+from ..utils import MarshalMixin, FilterOr404Mixin
 from ..extensions import region_users, db
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
@@ -19,7 +19,7 @@ class Role(db.Model, RoleMixin, MarshalMixin):
     description = db.Column(db.String(255))
 
 
-class User(db.Model, UserMixin, MarshalMixin):
+class User(db.Model, UserMixin, MarshalMixin, FilterOr404Mixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))

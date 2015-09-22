@@ -183,10 +183,8 @@ class Hail(Resource):
         taxi = TaxiModel.query.get(hj['taxi_id'])
         if not taxi:
             return abort(404, message="Unable to find taxi")
-        operateur = security_models.User.query.filter_by(email=hj['operateur'])\
-                .first()
-        if not operateur:
-            abort(404, message='Unable to find the taxi\'s operateur')
+        operateur = security_models.User.filter_by_or_404(
+                email=hj['operateur'], message='Unable to find the taxi\'s operateur')
         desc = taxi.vehicle.get_description(operateur)
         if not desc:
             abort(404, message='Unable to find taxi\'s description')

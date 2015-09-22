@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..extensions import db, region_zupc
 from sqlalchemy_defaults import Column
-from ..utils import MarshalMixin
+from ..utils import MarshalMixin, FilterOr404Mixin
 import geojson, shapely
 from operator import itemgetter
 from geoalchemy2 import Geography
@@ -9,7 +9,7 @@ from geoalchemy2.shape import to_shape
 from ..utils.scoped_session import ScopedSession
 from sqlalchemy.orm import joinedload
 
-class Departement(db.Model, MarshalMixin):
+class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
     id = Column(db.Integer, primary_key=True)
     nom = Column(db.String(255), label='Nom')
     numero = Column(db.String(3), label='Numero')

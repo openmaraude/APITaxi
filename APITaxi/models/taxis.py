@@ -3,7 +3,7 @@ from ..models import vehicle
 from ..extensions import (region_taxi, db, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription
-from ..utils import AsDictMixin, HistoryMixin, fields
+from ..utils import AsDictMixin, HistoryMixin, fields, FilterOr404Mixin
 from ..utils.scoped_session import ScopedSession
 from ..utils.cache_refresh import cache_refresh
 from sqlalchemy_defaults import Column
@@ -18,7 +18,7 @@ from flask import g
 
 
 owner_type_enum = ['company', 'individual']
-class ADS(db.Model, AsDictMixin, HistoryMixin):
+class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
     def __init__(self, licence_plate=None):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
@@ -81,7 +81,7 @@ class ADS(db.Model, AsDictMixin, HistoryMixin):
         return not self.__eq__(other)
 
 
-class Driver(db.Model, AsDictMixin, HistoryMixin):
+class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)

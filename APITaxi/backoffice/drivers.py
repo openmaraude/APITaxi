@@ -58,13 +58,11 @@ class Drivers(ResourceMetadata):
         for driver in json['data']:
             departement = None
             if 'numero' in driver['departement']:
-                departement = administrative_models.Departement.query.\
-                    filter_by(numero=driver['departement']['numero']).first()
+                departement = administrative_models.Departement.\
+                    filter_by_or_404(numero=driver['departement']['numero'])
             elif 'nom' in driver['departement']:
-                departement = administrative_models.Departement.query.\
-                    filter_by(nom=driver['departement']['nom']).first()
-            if not departement:
-                abort(400, message='Unable to find the *departement*')
+                departement = administrative_models.Departement.\
+                    filter_by_or_404(nom=driver['departement']['nom'])
             try:
                 driver_obj = create_obj_from_json(taxis_models.Driver, driver)
                 driver_obj.departement_id = departement.id
