@@ -19,13 +19,14 @@ from sqlalchemy.sql.expression import func as func_sql
 from datetime import datetime, timedelta
 from time import mktime, time
 from functools import partial
-from ..utils.validate_json import validate
+from ..utils.validate_json import ValidatorMixin
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
-class TaxiId(Resource):
+class TaxiId(Resource, ValidatorMixin):
+    model = taxi_put_expect
 
     @login_required
     @roles_accepted('admin', 'operateur')
@@ -64,7 +65,7 @@ class TaxiId(Resource):
             abort(403, message='You\'re not authorized to PUT this taxi')
 
         hj = request.json
-        validate(hj, taxi_put_expect)
+        self.validate(hj)
         try:
             taxi.status = hj['data'][0]['status']
         except AssertionError as e:
@@ -113,14 +114,13 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
 
 
 @ns_taxis.route('/', endpoint="taxi_list")
-class Taxis(Resource):
+class Taxis(Resource, ValidatorMixin):
+    model = taxi_model_expect
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True, location='values')
     get_parser.add_argument('lat', type=float, required=True, location='values')
     get_parser.add_argument('favorite_operator', type=unicode, required=False,
             location='values')
-
-
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -153,7 +153,7 @@ class Taxis(Resource):
     @api.marshal_with(taxi_model)
     def post(self):
         hj = request.json
-        validate(hj, taxi_model_expect)
+        self.validate(hj)
         taxi_json = hj['data'][0]
         departement = administrative_models.Departement.filter_by_or_404(
             numero=str(taxi_json['driver']['departement']))

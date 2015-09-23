@@ -13,7 +13,7 @@ from ..descriptors.hail import hail_model
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import fields as customFields
-from ..utils.validate_json import validate
+from ..utils.validate_json import ValidatorMixin
 
 ns_hail = api.namespace('hails', description="Hail API")
 argument_names = ['customer_id', 'customer_lon', 'customer_lat',
@@ -27,11 +27,12 @@ hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
 hail_expect_put = api.model('hail_expect_put',
         {'data': fields.List(fields.Nested(hail_expect_put_details))})
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
-class HailId(Resource):
+class HailId(Resource, ValidatorMixin):
     list_fields = ['status', 'incident_taxi_reason',
         'reporting_customer', 'reporting_customer_reason', 'customer_lon',
         'customer_lat', 'customer_address', 'customer_phone_number', 'rating_ride',
         'rating_ride_reason', 'incident_customer_reason']
+    model = hail_expect_put
 
     @classmethod
     def filter_access(cls, hail):
@@ -62,7 +63,7 @@ class HailId(Resource):
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
         hj = request.json
-        validate(hj, hail_expect_put)
+        self.validate(hj)
         hj = hj['data'][0]
 
         #We change the status
@@ -104,7 +105,8 @@ hail_expect_post_details = api.model('hail_expect_post_details', dict_hail)
 hail_expect = api.model('hail_expect_post',
         {'data': customFields.List(fields.Nested(hail_expect_post_details))})
 @ns_hail.route('/', endpoint='hail_endpoint')
-class Hail(Resource):
+class Hail(Resource, ValidatorMixin):
+    model = hail_expect
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -113,7 +115,7 @@ class Hail(Resource):
     @json_mimetype_required
     def post(self):
         hj = request.json
-        validate(hj, hail_expect)
+        self.validate(hj)
         hj = hj['data'][0]
 
         taxi = TaxiModel.query.get(hj['taxi_id'])
