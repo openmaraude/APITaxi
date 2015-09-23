@@ -19,10 +19,16 @@ from sqlalchemy.sql.expression import func as func_sql
 from datetime import datetime, timedelta
 from time import mktime, time
 from functools import partial
+from ..utils.validate_json import validate
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
 
+taxi_put_expect = api.model('taxi_put_expect',
+  {'data': customFields.List(customFields.Nested(api.model('api_expect_status',
+   {'status': customFields.String(required=True,
+       enum=['free', 'occupied', 'oncoming', 'off'])
+})))})
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
 
@@ -53,30 +59,19 @@ class TaxiId(Resource):
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.marshal_with(taxi_model)
-    @api.expect(api.model('taxi_put_expect',
-          {'data': fields.List(fields.Nested(api.model('api_expect_status',
-                {'status': fields.String})))}))
+    @api.expect(taxi_put_expect)
     @json_mimetype_required
     def put(self, taxi_id):
-        json = request.get_json()
-        if 'data' not in json:
-            abort(400, message="data is needed")
-        if not isinstance(json['data'], list):
-            abort(400, message="data has to be a list")
-        if len(json['data']) != 1:
-            abort(413, message="You can only PUT one taxi")
-        if 'status' not in json['data'][0]:
-            abort(400, message="a status is needed")
-        status = json['data'][0]['status']
-        if status == 'answering':
-            abort(400, message='Setting status to answering is not authorized')
         taxi = taxis_models.Taxi.query.get(taxi_id)
         if not taxi:
             abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
         if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
             abort(403, message='You\'re not authorized to PUT this taxi')
+
+        hj = request.json
+        validate(hj, taxi_put_expect)
         try:
-            taxi.status = status
+            taxi.status = hj['data'][0]['status']
         except AssertionError as e:
             abort(400, message=str(e))
 

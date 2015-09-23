@@ -107,7 +107,7 @@ class TestTaxiPut(Skeleton):
 
     def test_too_many(self):
         self.post_taxi()
-        r = self.put([{}, {}], self.url)
+        r = self.put([{'status': 'free'}, {'status':'free'}], self.url)
         self.assertEqual(r.status_code, 413)
 
     def good_taxi(self, status):
