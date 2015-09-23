@@ -142,7 +142,8 @@ class Taxis(Resource):
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True, location='values')
     get_parser.add_argument('lat', type=float, required=True, location='values')
-    get_parser.add_argument('favorite_operator', type=unicode, required=False, location='values')
+    get_parser.add_argument('favorite_operator', type=unicode, required=False,
+            location='values')
 
 
 
@@ -177,7 +178,6 @@ class Taxis(Resource):
     @api.marshal_with(taxi_model)
     def post(self):
         hj = request.json
-        from ..utils.validate_json import validate
         validate(hj, taxi_model_expect)
         taxi_json = hj['data'][0]
         departement = administrative_models.Departement.filter_by_or_404(
