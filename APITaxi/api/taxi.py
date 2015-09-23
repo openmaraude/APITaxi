@@ -7,7 +7,7 @@ from ..models import (taxis as taxis_models,
     administrative as administrative_models)
 from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
-from ..descriptors.taxi import taxi_model
+from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import arguments
@@ -24,11 +24,6 @@ from ..utils.validate_json import validate
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
 
-taxi_put_expect = api.model('taxi_put_expect',
-  {'data': customFields.List(customFields.Nested(api.model('api_expect_status',
-   {'status': customFields.String(required=True,
-       enum=['free', 'occupied', 'oncoming', 'off'])
-})))})
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
 
@@ -81,21 +76,6 @@ class TaxiId(Resource):
         return {'data': [taxi]}
 
 
-dict_taxi_expect = \
-         {'vehicle': fields.Nested(api.model('vehicle_expect',
-            {'licence_plate': fields.String}), required=True),
-          'ads': fields.Nested(api.model('ads_expect',
-              {'numero': fields.String, 'insee': fields.String}), required=True),
-          'driver': fields.Nested(api.model('driver_expect',
-              {'professional_licence': fields.String,
-                'departement': fields.String}), required=True),
-          'status': fields.String
-         }
-
-taxi_model_expect = api.model('taxi_expect',
-                          {'data':customFields.List(fields.Nested(
-                              api.model('taxi_expect_details',
-                                        dict_taxi_expect)))})
 
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):

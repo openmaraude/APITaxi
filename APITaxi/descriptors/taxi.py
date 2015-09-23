@@ -44,3 +44,25 @@ taxi_model_details = api.model('taxi_model_details',
 
 taxi_model = api.model('taxi_model',
                  {'data': fields.Nested(taxi_descriptor, as_list=True)})
+
+dict_taxi_expect = \
+     {'vehicle': fields.Nested(api.model('vehicle_expect',
+            {'licence_plate': fields.String}), required=True),
+          'ads': fields.Nested(api.model('ads_expect',
+              {'numero': fields.String, 'insee': fields.String}), required=True),
+          'driver': fields.Nested(api.model('driver_expect',
+              {'professional_licence': fields.String,
+                'departement': fields.String}), required=True),
+          'status': fields.String
+         }
+
+taxi_model_expect = api.model('taxi_expect',
+                          {'data':fields.List(fields.Nested(
+                              api.model('taxi_expect_details',
+                                        dict_taxi_expect)))})
+
+taxi_put_expect = api.model('taxi_put_expect',
+  {'data': fields.List(fields.Nested(api.model('api_expect_status',
+   {'status': fields.String(required=True,
+       enum=['free', 'occupied', 'oncoming', 'off'])
+})))})
