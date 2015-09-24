@@ -9,29 +9,16 @@ from ..models.hail import Hail as HailModel, Customer as CustomerModel
 from ..models.taxis import  Taxi as TaxiModel
 from ..models import security as security_models
 import requests, json
-from ..descriptors.hail import hail_model
+from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
+        puttable_arguments)
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import fields as customFields
 from ..utils.validate_json import ValidatorMixin
 
 ns_hail = api.namespace('hails', description="Hail API")
-argument_names = ['customer_id', 'customer_lon', 'customer_lat',
-    'customer_address', 'status']
-dict_hail =  dict(filter(lambda f: f[0] in argument_names,
-        HailModel.marshall_obj().items()))
-for k in dict_hail.keys():
-    dict_hail[k].required = False
-
-hail_expect_put_details = api.model('hail_expect_put_details', dict_hail)
-hail_expect_put = api.model('hail_expect_put',
-        {'data': fields.List(fields.Nested(hail_expect_put_details))})
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
 class HailId(Resource, ValidatorMixin):
-    list_fields = ['status', 'incident_taxi_reason',
-        'reporting_customer', 'reporting_customer_reason', 'customer_lon',
-        'customer_lat', 'customer_address', 'customer_phone_number', 'rating_ride',
-        'rating_ride_reason', 'incident_customer_reason']
 
     @classmethod
     def filter_access(cls, hail):
@@ -74,7 +61,7 @@ class HailId(Resource, ValidatorMixin):
                     abort(400, message='Taxi phone number is needed')
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
-        for ev in self.list_fields:
+        for ev in puttable_arguments:
             value = hj.get(ev, None)
             if value is None:
                 continue
@@ -94,22 +81,13 @@ class HailId(Resource, ValidatorMixin):
         return {"data": [hail]}
 
 
-argument_names = ['customer_id', 'customer_lon', 'customer_lat',
-    'customer_address', 'customer_phone_number', 'taxi_id', 'operateur']
-dict_hail =  dict(filter(lambda f: f[0] in argument_names,
-        HailModel.marshall_obj().items()))
-dict_hail['operateur'] = fields.String(attribute='operateur.email', required=True)
-dict_hail['taxi_id'] = fields.String(required=True)
-hail_expect_post_details = api.model('hail_expect_post_details', dict_hail)
-hail_expect = api.model('hail_expect_post',
-        {'data': customFields.List(fields.Nested(hail_expect_post_details))})
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource, ValidatorMixin):
 
     @login_required
     @roles_accepted('admin', 'moteur')
     @api.marshal_with(hail_model)
-    @api.expect(hail_expect)
+    @api.expect(hail_expect_post)
     @json_mimetype_required
     def post(self):
         hj = request.json
