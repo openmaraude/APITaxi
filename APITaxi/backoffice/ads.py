@@ -27,6 +27,7 @@ ads_post = make_model('taxis', 'ADS', True)
 
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(ResourceMetadata):
+    model = taxis_models.ADS
 
     parser = reqparse.RequestParser()
     parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=False,
@@ -121,7 +122,7 @@ class ADS(ResourceMetadata):
             try:
                 ads_db = create_obj_from_json(taxis_models.ADS, ads)
             except KeyError as e:
-                abort(400, message="Missing key: {}".format(str(e)))
+                abort(400, message="Missing key: "+str(e))
             except AssertionError as e:
                 abort(400, message='Bad owner_type value, can be: {}'.format(
                     taxis_models.owner_type_enum

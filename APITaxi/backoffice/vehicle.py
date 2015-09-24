@@ -16,6 +16,7 @@ vehicle_model = make_model('taxis', 'Vehicle')
 vehicle_expect = make_model('taxis', 'Vehicle', filter_id=True)
 @ns_administrative.route('vehicles/', endpoint="vehicle")
 class Vehicle(ResourceMetadata):
+    model = vehicle_models.Vehicle
 
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture')

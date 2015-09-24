@@ -11,7 +11,7 @@ class Api(baseApi):
     def expect(self, body):
         def wrapper(f):
             def wraps(s, *args, **kwargs):
-                s.model = body.__schema__
+                s.schema = body.__schema__
                 return f(s, *args, **kwargs)
             wraps.__apidoc__ = getattr(f, '__apidoc__', {})
             return super(Api, self).expect(body)(wraps)

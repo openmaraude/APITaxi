@@ -8,7 +8,7 @@ from ..api import api
 class ValidatorMixin(object):
     @cached_property
     def validator(self):
-        return Draft4Validator(self.model, resolver=api.resolver)
+        return Draft4Validator(self.schema, resolver=api.resolver)
 
     def validate(self, data):
         try:
