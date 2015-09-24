@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..extensions import db
-from ..utils import AsDictMixin, HistoryMixin, unique_constructor, MarshalMixin, fields
+from ..utils import (AsDictMixin, HistoryMixin, unique_constructor,
+        MarshalMixin, fields, FilterOr404Mixin)
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy import UniqueConstraint, and_
@@ -187,7 +188,7 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
 @unique_constructor(db.session,
                     lambda licence_plate: licence_plate,
                     lambda query, licence_plate: query.filter(Vehicle.licence_plate == licence_plate))
-class Vehicle(db.Model, AsDictMixin, MarshalMixin):
+class Vehicle(db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
     id = Column(db.Integer, primary_key=True)
     licence_plate = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule',

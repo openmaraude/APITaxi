@@ -38,14 +38,14 @@ class TestDriverPost(Skeleton):
 
     def test_no_departement(self):
         r = self.post([dict_driver])
-        self.assert400(r)
+        self.assert404(r)
         self.assertEqual(len(Driver.query.all()), 0)
 
     def test_pas_de_nom(self):
         dict_ = deepcopy(dict_driver)
         del dict_['first_name']
         r = self.post([dict_])
-        self.assert400(r)
+        self.assert404(r)
         self.assertEqual(len(Driver.query.all()), 0)
 
     def test_two_inserts(self):

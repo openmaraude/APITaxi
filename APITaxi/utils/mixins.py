@@ -10,10 +10,22 @@ from datetime import datetime
 from . import fields as custom_fields
 from ..api import api
 from flask.ext.restplus.fields import Nested as fields_Nested
+from flask.ext.restplus import abort
 
 class AsDictMixin(object):
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+
+class FilterOr404Mixin(object):
+    @classmethod
+    def filter_by_or_404(cls, **kwargs):
+        message = kwargs.pop('message', 'Unable to find {} for {}'.format(
+            cls.__tablename__, kwargs))
+        v = cls.query.filter_by(**kwargs).first()
+        if not v:
+            abort(404, message=message)
+        return v
 
 
 class MarshalMixin(object):

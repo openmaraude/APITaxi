@@ -184,32 +184,19 @@ class Taxis(Resource):
         taxi_json = json['data'][0]
         if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
             abort(400, message="bad taxi description")
-        departement = administrative_models.Departement.query\
-            .filter_by(numero=str(taxi_json['driver']['departement'])).first()
-        if not departement:
-            abort(404, message='Unable to find the departement')
-        driver = taxis_models.Driver.query\
-                .filter_by(professional_licence=taxi_json['driver']['professional_licence'],
-                           departement_id=departement.id).first()
-        if not driver:
-            abort(404, message="Unable to find the driver")
-        vehicle = taxis_models.Vehicle.query\
-                .filter_by(licence_plate=taxi_json['vehicle']['licence_plate']).first()
-        if not vehicle:
-            abort(404, message="Unable to find the licence plate")
-        ads = taxis_models.ADS.query\
-                .filter_by(numero=taxi_json['ads']['numero'],
-                           insee=taxi_json['ads']['insee']).first()
-        if not ads:
-            abort(404, message="Unable to find numero_ads for this insee code")
+        departement = administrative_models.Departement.filter_by_or_404(
+            numero=str(taxi_json['driver']['departement']))
+        driver = taxis_models.Driver.filter_by_or_404(
+                professional_licence=taxi_json['driver']['professional_licence'],
+                           departement_id=departement.id)
+        vehicle = taxis_models.Vehicle.filter_by_or_404(
+                licence_plate=taxi_json['vehicle']['licence_plate'])
+        ads = taxis_models.ADS.filter_by_or_404(
+              numero=taxi_json['ads']['numero'],insee=taxi_json['ads']['insee'])
         taxi = taxis_models.Taxi.query.filter_by(driver_id=driver.id,
                 vehicle_id=vehicle.id, ads_id=ads.id).first()
         if not taxi:
-            taxi = taxis_models.Taxi()
-        taxi.driver = driver
-        taxi.vehicle = vehicle
-        taxi.ads = ads
-        db.session.add(taxi)
+            taxi = taxis_models.Taxi(driver=driver, vehicle=vehicle, ads=ads)
         if 'status' in taxi_json:
             try:
                 taxi.status = taxi_json['status']
