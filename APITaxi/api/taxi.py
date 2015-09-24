@@ -26,7 +26,6 @@ ns_taxis = api.namespace('taxis', description="Taxi API")
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource, ValidatorMixin):
-    model = taxi_put_expect
 
     @login_required
     @roles_accepted('admin', 'operateur')
@@ -115,7 +114,6 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
-    model = taxi_model_expect
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True, location='values')
     get_parser.add_argument('lat', type=float, required=True, location='values')

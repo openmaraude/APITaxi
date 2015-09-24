@@ -32,7 +32,6 @@ class HailId(Resource, ValidatorMixin):
         'reporting_customer', 'reporting_customer_reason', 'customer_lon',
         'customer_lat', 'customer_address', 'customer_phone_number', 'rating_ride',
         'rating_ride_reason', 'incident_customer_reason']
-    model = hail_expect_put
 
     @classmethod
     def filter_access(cls, hail):
@@ -106,7 +105,6 @@ hail_expect = api.model('hail_expect_post',
         {'data': customFields.List(fields.Nested(hail_expect_post_details))})
 @ns_hail.route('/', endpoint='hail_endpoint')
 class Hail(Resource, ValidatorMixin):
-    model = hail_expect
 
     @login_required
     @roles_accepted('admin', 'moteur')

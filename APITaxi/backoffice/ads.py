@@ -27,7 +27,6 @@ ads_post = make_model('taxis', 'ADS', True)
 
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(ResourceMetadata):
-    model = taxis_models.ADS
 
     parser = reqparse.RequestParser()
     parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=False,

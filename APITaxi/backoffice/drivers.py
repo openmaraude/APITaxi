@@ -24,7 +24,6 @@ driver_details_expect = make_model('taxis', 'Driver', filter_id=True)
 
 @ns_administrative.route('drivers/')
 class Drivers(ResourceMetadata):
-    model = taxis_models.Driver
 
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture')
