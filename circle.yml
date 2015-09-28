@@ -1,0 +1,14 @@
+machine:
+    python:
+        version: 2.7.5
+    services:
+        - postgresql
+    pre:
+        - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 10
+
+checkout:
+    post:
+        - git clone https://github.com/openmaraude/GeoTaxi
+        - cd GeoTaxi/src && make && cd ../..
+        - git clone https://github.com/mattsta/redis/tree/dynamic-redis-2.8
+        - cd dynamic-redis-2.8 && make && cd ..
