@@ -11,6 +11,6 @@ checkout:
     pre:
         - git clone https://github.com/openmaraude/GeoTaxi
         - cd GeoTaxi/src && mkdir obj && make && cd ../..
-        - git clone https://github.com/mattsta/redis/
+        - git clone https://github.com/mattsta/redis
         - cd redis && git checkout dynamic-redis-2.8 && make && cd ..
-        - git clone https://github.com/mattsta/krmt && cd krmt && make
+        - git clone https://github.com/mattsta/krmt && cd krmt && make && cd ..
