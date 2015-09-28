@@ -7,7 +7,7 @@ from ..models import (taxis as taxis_models,
     administrative as administrative_models)
 from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
-from ..descriptors.taxi import taxi_model
+from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import arguments
@@ -19,12 +19,13 @@ from sqlalchemy.sql.expression import func as func_sql
 from datetime import datetime, timedelta
 from time import mktime, time
 from functools import partial
+from ..utils.validate_json import ValidatorMixin
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
-class TaxiId(Resource):
+class TaxiId(Resource, ValidatorMixin):
 
     @login_required
     @roles_accepted('admin', 'operateur')
@@ -53,30 +54,19 @@ class TaxiId(Resource):
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     @api.marshal_with(taxi_model)
-    @api.expect(api.model('taxi_put_expect',
-          {'data': fields.List(fields.Nested(api.model('api_expect_status',
-                {'status': fields.String})))}))
+    @api.expect(taxi_put_expect)
     @json_mimetype_required
     def put(self, taxi_id):
-        json = request.get_json()
-        if 'data' not in json:
-            abort(400, message="data is needed")
-        if not isinstance(json['data'], list):
-            abort(400, message="data has to be a list")
-        if len(json['data']) != 1:
-            abort(413, message="You can only PUT one taxi")
-        if 'status' not in json['data'][0]:
-            abort(400, message="a status is needed")
-        status = json['data'][0]['status']
-        if status == 'answering':
-            abort(400, message='Setting status to answering is not authorized')
         taxi = taxis_models.Taxi.query.get(taxi_id)
         if not taxi:
             abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
         if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
             abort(403, message='You\'re not authorized to PUT this taxi')
+
+        hj = request.json
+        self.validate(hj)
         try:
-            taxi.status = status
+            taxi.status = hj['data'][0]['status']
         except AssertionError as e:
             abort(400, message=str(e))
 
@@ -86,16 +76,6 @@ class TaxiId(Resource):
         return {'data': [taxi]}
 
 
-dict_taxi_expect = \
-         {'vehicle': fields.Nested(api.model('vehicle_expect',
-            {'licence_plate': fields.String})),
-          'ads': fields.Nested(api.model('ads_expect',
-              {'numero': fields.String, 'insee': fields.String})),
-          'driver': fields.Nested(api.model('driver_expect',
-              {'professional_licence': fields.String,
-                'departement': fields.String})),
-          'status': fields.String
-         }
 
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
@@ -133,13 +113,12 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
 
 
 @ns_taxis.route('/', endpoint="taxi_list")
-class Taxis(Resource):
+class Taxis(Resource, ValidatorMixin):
     get_parser = reqparse.RequestParser()
     get_parser.add_argument('lon', type=float, required=True, location='values')
     get_parser.add_argument('lat', type=float, required=True, location='values')
-    get_parser.add_argument('favorite_operator', type=unicode, required=False, location='values')
-
-
+    get_parser.add_argument('favorite_operator', type=unicode, required=False,
+            location='values')
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -168,22 +147,12 @@ class Taxis(Resource):
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @api.expect(api.model('taxi_expect',
-                          {'data':fields.List(fields.Nested(
-                              api.model('taxi_expect_details',
-                                        dict_taxi_expect)))}))
+    @api.expect(taxi_model_expect)
     @api.marshal_with(taxi_model)
     def post(self):
-        json = request.get_json()
-        if 'data' not in json:
-            abort(400, message="data is required")
-        if not isinstance(json['data'], list):
-            abort(400, message='data has to be a list')
-        if len(json['data']) != 1:
-            abort(413, message="You can only post one taxi at a time")
-        taxi_json = json['data'][0]
-        if sorted(taxi_json.keys()) != sorted(dict_taxi_expect.keys()):
-            abort(400, message="bad taxi description")
+        hj = request.json
+        self.validate(hj)
+        taxi_json = hj['data'][0]
         departement = administrative_models.Departement.filter_by_or_404(
             numero=str(taxi_json['driver']['departement']))
         driver = taxis_models.Driver.filter_by_or_404(

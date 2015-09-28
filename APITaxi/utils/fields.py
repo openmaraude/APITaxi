@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask.ext.restplus import fields as basefields
 
-
-
 class FromSQLAlchemyColumnMixin(object):
     def __init__(self, *args, **kwargs):
         column = kwargs.pop("column", None)
@@ -31,7 +29,12 @@ class Nested(FromSQLAlchemyColumnMixin, basefields.Nested):
     pass
 
 class List(FromSQLAlchemyColumnMixin, basefields.List):
-    pass
+    def schema(self, maxItems=1):
+        schema = super(basefields.List, self).schema()
+        schema['maxItems'] = maxItems
+        schema['type'] = 'array'
+        schema['items'] = self.container.__schema__
+        return schema
 
 class Date(FromSQLAlchemyColumnMixin, basefields.BaseField):
     __schema_type__ = 'date'
