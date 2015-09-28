@@ -6,6 +6,7 @@ machine:
     pre:
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 10
         - sudo apt-get install autoconf-archive automake-1.14 autoconf2.59 build-essential check
+        - pip install pip --upgrade
 
 dependencies:
     pre:
