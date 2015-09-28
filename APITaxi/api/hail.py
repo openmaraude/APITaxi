@@ -148,12 +148,11 @@ class Hail(Resource, ValidatorMixin):
             pass
             #return finish_and_abort('Response from endpoint doesn\'t contain json')
 
-        if r_json and 'data' not in r_json or len(r_json['data']) != 1:
+        if r_json and 'data' in r_json and len(r_json['data']) == 1:
+            hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
+        else:
             pass
             #return finish_and_abort('Response is mal formated')
-        else:
-            if 'taxi_phone_number' in r_json['data'][0]:
-                hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
 
         hail.status = 'received_by_operator'
         db.session.commit()

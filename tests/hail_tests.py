@@ -171,6 +171,12 @@ class TestHailPost(HailMixin):
     def test_no_lat(self):
         self.no_hail_field('customer_lat')
 
+    def test_server_empty_answer(self):
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail_empty/')
+        r = self.send_hail(dict_)
+        self.assert201(r)
+        self.app.config['ENV'] = prev_env
+
 
 class  TestHailGet(HailMixin):
 
