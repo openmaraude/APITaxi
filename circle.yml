@@ -13,4 +13,5 @@ checkout:
         - cd GeoTaxi/src && mkdir obj && make && cd ../..
         - git clone https://github.com/mattsta/redis
         - cd redis && git checkout dynamic-redis-2.8 && make && cd ..
+        - cd ..;git clone https://github.com/lloyd/yajl;cd yajl;./configure;make
         - git clone https://github.com/mattsta/krmt && cd krmt && make && cd ..
