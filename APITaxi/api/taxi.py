@@ -106,6 +106,14 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
                 "licence_plate": taxi_db.vehicle.licence_plate,
                 "nb_seats": description.nb_seats
             },
+            "ads": {
+                "insee": taxi_db.ads.insee,
+                "numero": taxi_db.ads.numero
+            },
+            "driver": {
+                "departement": taxi_db.driver.departement,
+                "professional_licence": taxi_db.driver.professional_licence
+            },
             "last_update": timestamp,
             "crowfly_distance": float(distance)
         }
