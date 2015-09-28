@@ -7,11 +7,14 @@ machine:
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 10
         - sudo apt-get install autoconf-archive automake-1.14 autoconf2.59 build-essential check
 
-checkout:
+dependencies:
     pre:
         - git clone https://github.com/openmaraude/GeoTaxi
         - cd GeoTaxi/src && mkdir obj && make && cd ../..
-        - git clone https://github.com/mattsta/redis
-        - cd redis && git checkout dynamic-redis-2.8 && make && cd ..
-        - git clone https://github.com/lloyd/yajl && cd yajl && ./configure && make
-        - git clone https://github.com/mattsta/krmt && cd krmt && make && cd ..
+        - ./install_redis.sh
+        - ./install_yajl.sh
+        - ./install_krmt.sh
+    cache_directories:
+        - redis
+        - yajl
+        - krmt
