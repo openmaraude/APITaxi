@@ -15,6 +15,7 @@ dependencies:
         - ./install_redis.sh
         - ./install_yajl.sh
         - ./install_krmt.sh
+        - wget https://bootstrap.pypa.io/get-pip.py && pip get-pip.py
     cache_directories:
         - redis
         - yajl
