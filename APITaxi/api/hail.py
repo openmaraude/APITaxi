@@ -70,7 +70,7 @@ class HailId(Resource, ValidatorMixin):
             except RuntimeError, e:
                 abort(403)
             except ValueError, e:
-                abort(400, e.args[0])
+                abort(400, message=e.args[0])
         cache_refresh(db.session(),
             {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
             {'func': TaxiModel.getter_db.refresh, 'args': [TaxiModel, hail.taxi_id]},
