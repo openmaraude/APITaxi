@@ -27,7 +27,7 @@ dependencies:
 
 test:
     pre:
-        - ./redis/src/redis-server --module-add krmt/geo.so
+        - ./redis/src/redis-server --module-add krmt/geo.so --port 7777
         - ./GeoTaxi/src/geoloc-server 8080
         - ./faker/faker 
     override:
