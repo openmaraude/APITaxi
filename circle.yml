@@ -27,6 +27,10 @@ dependencies:
         - yajl
         - krmt
 
+database:
+  post:
+    - psql -c "CREATE EXTENSION postgis;" -d circle_test
+
 test:
     pre:
         - ./redis/src/redis-server --module-add krmt/geo.so --port 7777:
