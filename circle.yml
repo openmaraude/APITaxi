@@ -6,6 +6,8 @@ machine:
     pre:
         - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 10
         - sudo apt-get install autoconf-archive automake-1.14 autoconf2.59 build-essential check libspatialindex-dev
+    environment:
+        - SQLALCHEMY_DATABASE_URI = 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
 
 checkout:
     pre:
