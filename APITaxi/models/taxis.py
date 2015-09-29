@@ -15,6 +15,8 @@ from parse import parse
 import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g
+from .driver_languages import driver_languages
+from ..utils.array_of_enum import ArrayOfEnum
 
 
 owner_type_enum = ['company', 'individual']
@@ -100,6 +102,7 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
             nullable=True)
     departement = db.relationship('Departement', backref='vehicle',
             lazy="joined")
+    languages = db.Column(ArrayOfEnum(driver_language))
 
     @classmethod
     def can_be_listed_by(cls, user):
