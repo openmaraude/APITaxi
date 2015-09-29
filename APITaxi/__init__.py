@@ -39,7 +39,7 @@ def create_app(sqlalchemy_uri=None):
     from .extensions import (db, redis_store, region_taxi, region_hails,
             region_users, region_zupc, configure_uploads, documents, images)
     app = Flask(__name__)
-    app.config.from_object('default_settings')
+    app.config.from_object('APITaxi.default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
         app.config.from_envvar('APITAXI_CONFIG_FILE')
     if not 'ENV' in app.config:
@@ -49,6 +49,11 @@ def create_app(sqlalchemy_uri=None):
         app.logger.error("""Here are the possible values for conf['ENV']:
         ('PROD', 'STAGING', 'DEV') your's is: {}""".format(app.config['env']))
         return None
+    #Load configuration from environment variables
+    for k in app.config.keys():
+        if not k in os.environ:
+            continue
+        app.config[k] = os.environ[k]
     if sqlalchemy_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 

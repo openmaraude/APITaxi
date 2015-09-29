@@ -34,4 +34,4 @@ test:
         - ./faker/faker:
             background: true
     override:
-        - APITAXI_CONFIG_FILE=circle_settings.py nosetests tests
+        - nosetests tests
