@@ -7,10 +7,10 @@ REDIS_GEOINDEX = 'geoindex'
 SECURITY_PASSWORD_HASH = 'bcrypt'
 SECURITY_PASSWORD_SALT = 'pepper'
 SECURITY_REGISTERABLE = True
-UPLOADED_IMAGES_DEST = '/home/vincent/dev/APITaxi/uploads'
+UPLOADED_IMAGES_DEST = 'uploads'
 
-UPLOADS_DOCUMENTS_DEST = 'uploads'
-UPLOADS_DOCUMENTS_URL = '/documents/<path:filename>'
+UPLOADED_DOCUMENTS_DEST = 'uploads'
+UPLOADED_DOCUMENTS_URL = '/documents/<path:filename>'
 
 SLACK_API_KEY = None
 
