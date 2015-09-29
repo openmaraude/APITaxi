@@ -26,3 +26,11 @@ dependencies:
         - redis
         - yajl
         - krmt
+
+test:
+    pre:
+        - ./redis/src/redis-server --module-add krmt/geo.so
+        - ./GeoTaxi/src/geoloc-server 8080
+        - ./faker/faker 
+    override:
+	- APITAXI_CONFIG_FILE=circle_settings.py nosetests tests
