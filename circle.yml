@@ -40,5 +40,7 @@ test:
             background: true
         - ./faker/faker:
             background: true
+        - python minimal_operateur_server/api.py:
+            background: true
     override:
         - nosetests tests
