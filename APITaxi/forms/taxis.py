@@ -54,7 +54,7 @@ def departements():
 class DriverForm(ModelForm):
     class Meta:
         model = taxis.Driver
-        exclude = ['added_at', 'added_via', 'source', 'last_update_at']
+        exclude = ['added_at', 'added_via', 'source', 'last_update_at', 'languages']
 
     departement = QuerySelectField(query_factory=departements, get_label='nom')
 

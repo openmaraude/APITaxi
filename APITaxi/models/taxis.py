@@ -17,6 +17,7 @@ from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g
 from .driver_languages import driver_languages
 from ..utils.array_of_enum import ArrayOfEnum
+from sqlalchemy.dialects import postgresql
 
 
 owner_type_enum = ['company', 'individual']
@@ -81,7 +82,6 @@ class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
 
 class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
     def __init__(self):

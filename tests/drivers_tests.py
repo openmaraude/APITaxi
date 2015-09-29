@@ -54,6 +54,18 @@ class TestDriverPost(Skeleton):
         self.assert201(r)
         self.assertEqual(len(Driver.query.all()), 2)
 
+    def test_one_language(self):
+        self.init_dep()
+        d = deepcopy(dict_driver)
+        d['languages'][0] = 'fr'
+        r = self.post([dict_driver])
+        self.assert201(r)
+        self.assertEqual(len(Driver.query.all()), 2)
 
+    def test_one_invalid_language(self):
+        pass
+
+    def test_two_languages(self):
+        pass
 
 
