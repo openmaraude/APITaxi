@@ -9,10 +9,10 @@ machine:
 
 checkout:
     pre:
-	- git clone https://github.com/openmaraude/faker
-	- git clone https://github.com/openmaraude/minimal_operateur_server
+        - git clone https://github.com/openmaraude/faker
+        - git clone https://github.com/openmaraude/minimal_operateur_server
     post:
-	- cd faker && go build && cd ..
+        - cd faker && go build && cd ..
 
 dependencies:
     pre:
@@ -33,4 +33,4 @@ test:
         - ./GeoTaxi/src/geoloc-server 8080
         - ./faker/faker 
     override:
-	- APITAXI_CONFIG_FILE=circle_settings.py nosetests tests
+        - APITAXI_CONFIG_FILE=circle_settings.py nosetests tests
