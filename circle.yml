@@ -10,13 +10,10 @@ machine:
         SQLALCHEMY_DATABASE_URI: 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
         REDIS_URL: "redis://:@localhost:7777/0"
 
-checkout:
+dependencies:
     pre:
         - git clone https://github.com/openmaraude/faker && cd faker && go build && cd ..
         - git clone https://github.com/openmaraude/minimal_operateur_server
-
-dependencies:
-    pre:
         - git clone https://github.com/openmaraude/GeoTaxi
         - cd GeoTaxi/src && mkdir obj && make && cd ../..
         - ./install_redis.sh
