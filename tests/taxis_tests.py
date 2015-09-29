@@ -30,6 +30,8 @@ class TestTaxiGet(TaxiGet):
         self.assert200(r)
         assert(len(r.json['data']) == 1)
         assert('nb_seats' in r.json['data'][0]['vehicle'])
+        assert('rating' in r.json['data'][0])
+        assert(isinstance(r.json['data'][0]['rating'], float))
 
     def test_get_taxi_other_op(self):
         id_taxi = self.add()
@@ -47,7 +49,7 @@ class TestTaxisGet(TaxiGet):
         assert len(r.json['data']) == 1
         taxi = r.json['data'][0]
         for key in ['id', 'operator', 'position', 'vehicle', 'last_update',
-                'crowfly_distance', 'ads', 'driver']:
+                'crowfly_distance', 'ads', 'driver', 'rating']:
             assert key in taxi.keys()
             assert taxi[key] is not None
         for key in ['insee', 'numero']:

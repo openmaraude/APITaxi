@@ -115,7 +115,8 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
                 "professional_licence": taxi_db.driver.professional_licence
             },
             "last_update": timestamp,
-            "crowfly_distance": float(distance)
+            "crowfly_distance": float(distance),
+            "rating": 4.5
         }
     return wrapped
 

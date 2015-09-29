@@ -31,7 +31,8 @@ taxi_descriptor = api.model('taxi_descriptor',
         "crowfly_distance": fields.Float,
         "ads": fields.Nested(ads_descriptor, required=True),
         "driver": fields.Nested(driver_descriptor, required=True),
-        "status": fields.String
+        "status": fields.String,
+        "rating": fields.Float
     })
 
 taxi_model_details = api.model('taxi_model_details',
