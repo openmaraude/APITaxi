@@ -27,8 +27,11 @@ dependencies:
 
 test:
     pre:
-        - ./redis/src/redis-server --module-add krmt/geo.so --port 7777
-        - ./GeoTaxi/src/geoloc-server 8080
-        - ./faker/faker 
+        - ./redis/src/redis-server --module-add krmt/geo.so --port 7777:
+            background: true
+        - ./GeoTaxi/src/geoloc-server 8080:
+            background: true
+        - ./faker/faker:
+            background: true
     override:
         - APITAXI_CONFIG_FILE=circle_settings.py nosetests tests
