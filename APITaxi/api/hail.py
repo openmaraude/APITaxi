@@ -148,7 +148,8 @@ class Hail(Resource, ValidatorMixin):
             pass
             #return finish_and_abort('Response from endpoint doesn\'t contain json')
 
-        if r_json and 'data' in r_json and len(r_json['data']) == 1:
+        if r_json and 'data' in r_json and len(r_json['data']) == 1\
+                and 'taxi_phone_number' in r_json['data'][0]:
             hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
         else:
             pass

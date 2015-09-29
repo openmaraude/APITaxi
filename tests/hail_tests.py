@@ -177,6 +177,12 @@ class TestHailPost(HailMixin):
         self.assert201(r)
         self.app.config['ENV'] = prev_env
 
+    def test_server_empty_taxi(self):
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail_empty_taxi/')
+        r = self.send_hail(dict_)
+        self.assert201(r)
+        self.app.config['ENV'] = prev_env
+
 
 class  TestHailGet(HailMixin):
 
