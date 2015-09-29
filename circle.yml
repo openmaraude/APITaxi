@@ -43,4 +43,4 @@ test:
         - python minimal_operateur_server/api.py:
             background: true
     override:
-        - nosetests tests
+        - nosetests tests --stop
