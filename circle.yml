@@ -8,6 +8,13 @@ machine:
         - sudo apt-get install autoconf-archive automake-1.14 autoconf2.59 build-essential check libspatialindex-dev
         - pip install pip --upgrade
 
+checkout:
+    pre:
+	- git clone https://github.com/openmaraude/faker
+	- git clone https://github.com/openmaraude/minimal_operateur_server
+    post:
+	- cd faker && go build && cd ..
+
 dependencies:
     pre:
         - git clone https://github.com/openmaraude/GeoTaxi
