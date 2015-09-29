@@ -139,6 +139,9 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     _ACTIVITY_TIMEOUT = 15*60
     __caracs = None
 
+    @property
+    def rating(self):
+        return 4.5
 
     @property
     def status(self):
