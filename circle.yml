@@ -8,6 +8,7 @@ machine:
         - sudo apt-get install autoconf-archive automake-1.14 autoconf2.59 build-essential check libspatialindex-dev
     environment:
         SQLALCHEMY_DATABASE_URI: 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
+        REDIS_URL: "redis://:@localhost:7777/0"
 
 checkout:
     pre:
