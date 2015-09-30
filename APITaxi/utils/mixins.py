@@ -6,6 +6,7 @@ from sqlalchemy import types as sqlalchemy_types
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql import ARRAY
 from datetime import datetime
 from . import fields as custom_fields
 from ..api import api
@@ -28,23 +29,28 @@ class FilterOr404Mixin(object):
         return v
 
 
+simple_map_ = {
+        sqlalchemy_types.Integer: lambda c: custom_fields.Integer(column=c),
+        sqlalchemy_types.INTEGER: lambda c: custom_fields.Integer(column=c),
+        sqlalchemy_types.Boolean: lambda c: custom_fields.Boolean(column=c),
+        sqlalchemy_types.BOOLEAN: lambda c: custom_fields.Boolean(column=c),
+        sqlalchemy_types.DateTime: lambda c: custom_fields.DateTime(column=c),
+        sqlalchemy_types.DATETIME: lambda c: custom_fields.DateTime(column=c),
+        sqlalchemy_types.Date: lambda c: custom_fields.Date(column=c),
+        sqlalchemy_types.DATE: lambda c: custom_fields.Date(column=c),
+        sqlalchemy_types.Float: lambda c: custom_fields.Float(column=c),
+        sqlalchemy_types.FLOAT: lambda c: custom_fields.Float(column=c),
+        sqlalchemy_types.Enum: lambda c: custom_fields.String(column=c,
+                   enum=c.type.enums),
+        sqlalchemy_types.String: lambda c: custom_fields.String(column=c),
+        sqlalchemy_types.VARCHAR: lambda c: custom_fields.String(column=c),
+    }
+
 class MarshalMixin(object):
     inspect_obj = None
-    map_ = {
-            sqlalchemy_types.Integer: lambda c: custom_fields.Integer(column=c),
-            sqlalchemy_types.INTEGER: lambda c: custom_fields.Integer(column=c),
-            sqlalchemy_types.Boolean: lambda c: custom_fields.Boolean(column=c),
-            sqlalchemy_types.BOOLEAN: lambda c: custom_fields.Boolean(column=c),
-            sqlalchemy_types.DateTime: lambda c: custom_fields.DateTime(column=c),
-            sqlalchemy_types.DATETIME: lambda c: custom_fields.DateTime(column=c),
-            sqlalchemy_types.Date: lambda c: custom_fields.Date(column=c),
-            sqlalchemy_types.DATE: lambda c: custom_fields.Date(column=c),
-            sqlalchemy_types.Float: lambda c: custom_fields.Float(column=c),
-            sqlalchemy_types.FLOAT: lambda c: custom_fields.Float(column=c),
-            sqlalchemy_types.Enum: lambda c: custom_fields.String(column=c,
-                       enum=c.type.enums),
-            sqlalchemy_types.String: lambda c: custom_fields.String(column=c)
-        }
+    map_ = dict({
+        ARRAY: lambda c: custom_fields.List(simple_map_[type(c.type.item_type)](c), column=c)},
+        **simple_map_)
     @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
         if level == 2:
