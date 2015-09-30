@@ -9,6 +9,7 @@ machine:
     environment:
         SQLALCHEMY_DATABASE_URI: 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
         REDIS_URL: "redis://:@localhost:7777/0"
+        SECURITY_PASSWORD_HASH: 'plaintext'
 
 dependencies:
     pre:

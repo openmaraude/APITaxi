@@ -1,0 +1,15 @@
+DEBUG = True
+ENV = 'DEV'
+SECRET_KEY = 'super-secret'
+SQLALCHEMY_DATABASE_URI = 'postgresql://vincent:vincent@localhost/odtaxi_test'
+REDIS_URL = "redis://:@localhost:6379/0"
+REDIS_GEOINDEX = 'geoindex'
+UPLOADED_DOCUMENTS_DEST= '/home/vincent/dev/APITaxi/documents'
+UPLOADED_IMAGES_DEST= '/home/vincent/dev/APITaxi/uploads'
+UPLOADED_DOCUMENTS_DEST= '/home/vincent/dev/APITaxi/documents'
+UPLOADED_DOCUMENTS_URL = '/documents/<path:filename>'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+SECURITY_PASSWORD_HASH = 'plaintext'
+SECURITY_PASSWORD_SALT = 'pepper'
+SECURITY_REGISTERABLE = True
