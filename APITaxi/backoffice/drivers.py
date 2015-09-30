@@ -68,9 +68,10 @@ class Drivers(ResourceMetadata):
                 driver_obj.departement_id = departement.id
             except KeyError as e:
                 abort(400, message="Key error")
-            if 'languages' in driver and isinstance(driver['languages'], list):
-                for l in driver['languages']:
-                    driver_obj.languages.append(l)
+            except TypeError as e:
+                abort(400, message="languages must be a list")
+            except ValueError as e:
+                abort(400, message=e.message)
             db.session.add(driver_obj)
             if driver_obj.id:
                 edited_drivers_id.append(driver_obj.id)
