@@ -262,9 +262,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def synchronize_status_with_hail(self, hail):
         description = self.vehicle.get_description(hail.operateur)
         description.status = self.map_hail_status_taxi_status[hail.status]
-        #db.session.add(self)
         cache_refresh(db.session(),
-            {'func': self.__class__, 'args': [self.__class__, self.id]})
+            {'func': self.getter_db.refresh, 'args': [self.__class__, self.id]})
 
 
 

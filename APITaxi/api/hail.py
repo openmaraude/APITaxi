@@ -73,8 +73,7 @@ class HailId(Resource, ValidatorMixin):
                 abort(400, message=e.args[0])
         cache_refresh(db.session(),
             {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
-            {'func': TaxiModel.getter_db.refresh,
-                        'args': [TaxiModel, hail.taxi_id]},
+            {'func': TaxiModel.getter_db.refresh, 'args': [TaxiModel, hail.taxi_id]},
         )
         db.session.commit()
         return {"data": [hail]}
@@ -121,20 +120,12 @@ class Hail(Resource, ValidatorMixin):
         hail.status = 'emitted'
         hail.status = 'received'
         hail.status = 'sent_to_operator'
-        cache_refresh(db.session(),
-            {'func': TaxiModel.getter_db.refresh,
-                'args': [TaxiModel, hail.taxi_id]},
-        )
         db.session.commit()
         r = None
 
         def finish_and_abort(message):
             current_app.logger.info(message)
             hail.status  = 'failure'
-            cache_refresh(db.session(),
-                {'func': TaxiModel.getter_db.refresh,
-                    'args': [TaxiModel, hail.taxi_id]},
-            )
             db.session.commit()
             return {"data": [hail]}, 201
 
@@ -165,9 +156,5 @@ class Hail(Resource, ValidatorMixin):
             #return finish_and_abort('Response is mal formated')
 
         hail.status = 'received_by_operator'
-        cache_refresh(db.session(),
-            {'func': TaxiModel.getter_db.refresh,
-                'args': [TaxiModel, hail.taxi_id]},
-        )
         db.session.commit()
         return {"data": [hail]}, 201
