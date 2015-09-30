@@ -16,8 +16,7 @@ import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g
 from .driver_languages import driver_languages
-from ..utils.array_of_enum import ArrayOfEnum
-from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import ARRAY
 
 
 owner_type_enum = ['company', 'individual']
@@ -99,10 +98,10 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
             description=u'Numéro de la carte professionnelle')
 
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'),
-            nullable=True)
-    departement = db.relationship('Departement', backref='vehicle',
-            lazy="joined")
-    languages = db.Column(ArrayOfEnum(driver_language))
+                        nullable=True)
+    departement = db.relationship('Departement', backref='vehicle', 
+                    lazy="joined")
+    languages = db.Column(ARRAY(db.String))
 
     @classmethod
     def can_be_listed_by(cls, user):
@@ -116,6 +115,15 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
 
     def __repr__(self):
         return '<drivers %r>' % str(self.id)
+
+    @validates('languages')
+    def validates_languages(self, key, value):
+        if not isinstance(value, list):
+            raise TypeError()
+        for l in value:
+            if not l in driver_languages:
+                raise ValueError("{} must be in {}".format(l, driver_languages))
+        return list(set(value))
 
 class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
