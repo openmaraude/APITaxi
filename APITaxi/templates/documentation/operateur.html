@@ -136,29 +136,33 @@ The JSON payload of the UDP datagram should be as follows.
 
 <h3 id="put_taxi">Updating the status of a taxi</h3>
 In most cases, the status of the taxi is automaticaly set by the  <abbr title="Taxi Exchange Point">TXP</abbr> according to the status of a hail.<br>
-Outside of the context of a hail, you still need to indicate if the taxi is <code>free</code> or <code>occupied</code>. This is done through a <a href="https://api.opendatataxi.fr/doc/#!/taxis/put_taxi_id" target="_blank">HTTPS <code>PUT</code> request to the <em>taxis</em> API</a>.
+Outside of the context of a hail, you still need to indicate if the taxi is <code>free</code> or <code>occupied</code> or <code>off</code>. This is done through a <a href="https://api.opendatataxi.fr/doc/#!/taxis/put_taxi_id" target="_blank">HTTPS <code>PUT</code> request to the <em>/taxis/{taxi_id}/</em> API</a>.
 
 <h3 id="get_taxi">Querying the status and time of last location update of a taxi</h3>
 
-In order to check that the updating of the status or location of the taxi worked properly, you can use a <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank">HTTPS <code>GET</code> request to the <em>/taxis/{taxi_id}</em> API</a>.<br>
-Warning: The  <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank"><code>GET</code> <em>/taxis/{taxi_id}</em> API</a> will return the <code>status</code> and the <code>last_update</code> but the <code>lat</code> and <code>lon</code> will be nulled (for privacy reasons).<br>
-Warning: in production, you should almost never need the  <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank"><code>GET</code> <em>/taxis/{taxi_id}</em> API</a>: 
-all necessary informations about taxis around a location are already in the response of the <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis" target="_blank"><code>GET</code> <em>/taxis</em> API</a> 
-and all necessary informations about the chosen taxi are already in the response of the <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id" target="_blank"><code>GET</code> <em>/hails/{hail_id}</em> API</a> 
+In order to check that the updating of the status or location of the taxi worked properly, you can use a <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank">HTTPS <code>GET</code> request to the <em>/taxis/{taxi_id}/</em> API</a>.<br>
+Warning: The  <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank"><code>GET</code> <em>/taxis/{taxi_id}/</em> API</a> will return the <code>status</code> and the <code>last_update</code> but the <code>lat</code> and <code>lon</code> will be nulled (for privacy reasons).<br>
+Warning: in production, you should almost never need the  <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxi_id" target="_blank"><code>GET</code> <em>/taxis/{taxi_id}/</em> API</a>:<br>
+all necessary informations about taxis around a location are already in the response of the <a href="https://api.opendatataxi.fr/doc/#!/taxis/get_taxis" target="_blank"><code>GET</code> <em>/taxis</em> API</a><br>
+and all necessary informations about the chosen taxi are already in the response of the <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id" target="_blank"><code>GET</code> <em>/hails/{hail_id}</em> API</a>
 
-<h3 id="get_hail">Receiving a hail</h3>
-Afin de recevoir les courses, les opérateurs doivent mettre à disposition un point d'entrée sur leurs serveurs.<br>
-Ce point d'entrée doit pouvoir recevoir des appels HTTPS <code>POST</code>. L'objet JSON <code>hail</code> qui sera transmis sur ce point d'entrée est détaillé  dans la <a href="/documentation/reference#hail_object">documentation de référence</a>.
-À la suite de la réception d'une demande de mise en relation, l'opérateur doit être capable de transmettre cette demande au taxi désigné.
+<h3 id="post_hail">Receiving a hail</h3>
+In order to receive hails, <strong>operators</strong> need to implement an endpoint on their servers. The endpoint has to be able to receive HTTPS <code>POST</code> requests from the <abbr title="Taxi Exchange Point">TXP</abbr>. This is the only endpoint that needs to be implemented on the <strong>operator</strong> side.<br>
+The <code>hail</code> JSON object which will be transmitted as the payload of the HTTPS <code>POST</code> request is detailed in the <a href="/documentation/reference#hail_object">Reference Documentation</a>.<br>
+Accredited <strong>operators</strong> can enter the <abbr title="Uniform Resource Locator">URL</abbr> of their <i>dev</i>, <i>test</i> and <i>prod</i> endpoints on their <a href="/user/form">My Account</a> page.<br>
+The endpoint should return one of the valid HTTP status code in the <code>2xx Success</code> range in case of success, and in the <code>4xx Client Error</code> or <code>5xx Server Error</code> in case of error. If the status code is in the  <code>2xx Success</code> range, the response payload can be a JSON <code>hail</code> object, in which case the hail will be updated on the  <abbr title="Taxi Exchange Point">TXP</abbr>. This response payload can for instance be used to
+transmit the <code>taxi_phone_number</code> to the  <abbr title="Taxi Exchange Point">TXP</abbr>.<br>
+After the hail has been acknowledged by the operator to the  <abbr title="Taxi Exchange Point">TXP</abbr>, it should be communicated by the operator to the taxi driver ASAP.
 
-<h3 id="#update_hail">Updating the status of a hail</h3>
-Une fois transmise au taxi la demande de mise en relation, sont statut doit etre mis à jour dans le RGT au moyen d'appels HTTPS en <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id"><code>PUT</code> à l'API hails</a>.
-<br>
-Les statuts possibles sont détaillés dans la <a href="/documentation/reference#hail_status">documentation de référence</a>.<br>a
-
-<h3 id="get_hail">Querying the status of a hail</h3>
-Le statut de la course peut également être mis à jour dans le RGT par le moteur de recherche. L'opérateur peut donc suivre son statut au moyen d'appels HTTPS en <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id"><code>GET</code> à l'API hails</a>.
-
+ <h3 id="get_hail">Querying the status of a Hail</h3>
+ In order to keep track of the status of the hail, you can do a <a href="https://api.opendatataxi.fr/doc/#!/hails/get_hail_id" target="_blank">HTTPS <code>GET</code> request to the  <em>/hails/{hail_id}/</em> API</a>.<br>
+ The list of all possible statuses is available in the <a href="/documentation/reference#hail_status">Reference Documentation</a>.
+ 
+ 
+ <h3 id="put_hail">Updating a Hail</h3>
+ In order to finalise the transaction, the taxi has to acknowledge the hail. It is done through a <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id" target="_blank">HTTPS <code>PUT</code> request to the <em>/hails/{hail_id}/</em> API</a>.<br>
+The status of the hail has to be <code>received_by_taxi</code> before the taxi driver is asked to confirm the ride. If you don't send a PUT request with either the <code>accepted_by_taxi</code> or the <code>declined_by_taxi</code> status in the next 30 seconds, the   hail will automatically be updated to <code>timeout_taxi</code> and the whole transaction be considered cancelled. You do have to   check when you do a PUT with the status <code>accepted_by_taxi</code> that the status in the response is
+ <code>accepted_by_taxi</code> (the taxi is arriving) and not <code>timeout_taxi</code> (your reconfirmation arrived too late, the   whole transaction had to be canceled).
 
 
 {% endblock %}

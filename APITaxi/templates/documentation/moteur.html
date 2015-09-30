@@ -34,6 +34,6 @@ The list of all possible statuses is available in the <a href="/documentation/re
 <h3 id="put_hail">Updating a Hail</h3>
 In order to finalise the transaction, the client has to reconfirm the hail after it is acknowledged by the taxi. It is done through a call of the <a href="https://api.opendatataxi.fr/doc/#!/hails/put_hail_id" target="_blank">HTTPS <code>PUT</code> request to the  <em>hails</em> API</a>.<br>
 The status of the hail has to be <code>accepted_by_taxi</code> before the client is asked to reconfirm. If you don't send a PUT request with either the <code>accepted_by_customer</code> or the <code>declined_by_customer</code> status in the next 30 seconds, the hail will automatically be updated to <code>timeout_customer</code> and the whole transaction be considered cancelled. You do have to check when you do a PUT with the status <code>accepted_by_customer</code> that the status in the response is
-<code>accepted_by_taxi</code> (the taxi is arriving) and not <code>timeout_customer</code> (your reconfirmation arrived too late, the whole transaction had to be canceled).
+ indeed <code>accepted_by_customer</code> (you reconfirmed and the taxi is arriving) and not <code>timeout_customer</code> (your reconfirmation arrived too late, the whole transaction had to be canceled).
 
 {% endblock %}

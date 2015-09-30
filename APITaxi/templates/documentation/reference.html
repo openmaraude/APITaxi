@@ -52,10 +52,11 @@
       },
       "id": "9cf0ebfa-dd37-45c4-8a80-60db584535d8",
       "operator": "neotaxi",
+      "rating": 4.65,
       "status": "free",
       "position": {
-         "lat": 48.82689259836185,
-         "lon": 2.3419198393821716
+         "lat": 48.82689259,
+         "lon": 2.34191983
        },
        "last_update": 1440169929,
        "crowfly_distance": 4.29
@@ -98,6 +99,11 @@
          <td><code>operator</code></td>
          <td>string</td>
          <td><em>The name of the operator</em></td>
+    </tr>
+    <tr>
+          <td><code>rating</code></td>
+          <td>float</td>
+          <td><em>The mean of the ratings of last rides of the taxi.<br>It is calculated by the <abbr title="Taxi Exchange Point">TXP</abbr> and falls between 0 and 5.</em></td>
     </tr>
     <tr>
         <td><code>status</code></td>
