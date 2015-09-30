@@ -57,15 +57,56 @@ class TestDriverPost(Skeleton):
     def test_one_language(self):
         self.init_dep()
         d = deepcopy(dict_driver)
-        d['languages'][0] = 'fr'
-        r = self.post([dict_driver])
+        d['languages'] = ['fr']
+        r = self.post([d])
         self.assert201(r)
-        self.assertEqual(len(Driver.query.all()), 2)
+        self.assertEqual(len(Driver.query.all()), 1)
+        driver = r.json['data'][0]
+        assert 'languages' in driver.keys()
+        assert isinstance(driver['languages'], list)
+        assert len(driver['languages']) == 1
+        assert driver['languages'][0] == 'fr'
 
     def test_one_invalid_language(self):
-        pass
+        self.init_dep()
+        d = deepcopy(dict_driver)
+        d['languages'] = ['zz']
+        r = self.post([d])
+        self.assert400(r)
+        error = r.json
+        assert(error['message'][:2] == 'zz')
+
+    def test_string_languages(self):
+        self.init_dep()
+        d = deepcopy(dict_driver)
+        d['languages'] = 'zz'
+        r = self.post([d])
+        self.assert400(r)
+        error = r.json
 
     def test_two_languages(self):
-        pass
+        self.init_dep()
+        d = deepcopy(dict_driver)
+        d['languages'] = ['fr', 'en']
+        r = self.post([d])
+        self.assert201(r)
+        self.assertEqual(len(Driver.query.all()), 1)
+        driver = r.json['data'][0]
+        assert 'languages' in driver.keys()
+        assert isinstance(driver['languages'], list)
+        assert len(driver['languages']) == 2
+        assert 'fr' in driver['languages']
+        assert 'en' in driver['languages']
 
-
+    def test_same_language_twice(self):
+        self.init_dep()
+        d = deepcopy(dict_driver)
+        d['languages'] = ['fr', 'fr']
+        r = self.post([d])
+        self.assert201(r)
+        self.assertEqual(len(Driver.query.all()), 1)
+        driver = r.json['data'][0]
+        assert 'languages' in driver.keys()
+        assert isinstance(driver['languages'], list)
+        assert len(driver['languages']) == 1
+        assert 'fr' in driver['languages']
