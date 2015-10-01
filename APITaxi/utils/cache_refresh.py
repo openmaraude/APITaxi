@@ -1,6 +1,6 @@
 from sqlalchemy import event
 from threading import Thread, current_thread
-from ..extensions import db, region_hails, user_datastore
+from ..extensions import db, user_datastore
 from sqlalchemy.orm import joinedload
 from flask.ext.login import current_user
 from flask import current_app, copy_current_request_context, g
