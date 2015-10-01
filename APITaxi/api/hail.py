@@ -12,7 +12,6 @@ import requests, json
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
 from ..utils.request_wants_json import json_mimetype_required
-from ..utils.cache_refresh import cache_refresh
 from ..utils import fields as customFields
 from ..utils.validate_json import ValidatorMixin
 
@@ -32,7 +31,7 @@ class HailId(Resource, ValidatorMixin):
     @api.marshal_with(hail_model)
     @json_mimetype_required
     def get(self, hail_id):
-        hail = HailModel.get(hail_id)
+        hail = HailModel.cache.get(hail_id)
         if not hail:
             abort(404, message="Unable to find hail: {}".format(hail_id))
         self.filter_access(hail)
@@ -71,10 +70,6 @@ class HailId(Resource, ValidatorMixin):
                 abort(403)
             except ValueError, e:
                 abort(400, message=e.args[0])
-        cache_refresh(db.session(),
-            {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
-           # {'func': TaxiModel.getter_db.refresh, 'args': [TaxiModel, hail.taxi_id]},
-        )
         db.session.commit()
         return {"data": [hail]}
 
@@ -115,11 +110,10 @@ class Hail(Resource, ValidatorMixin):
         hail.customer_phone_number = hj['customer_phone_number']
         hail.taxi_id = hj['taxi_id']
         hail.operateur_id = operateur.id
-        db.session.add(hail)
-        db.session.commit()
         hail.status = 'emitted'
         hail.status = 'received'
         hail.status = 'sent_to_operator'
+        db.session.add(hail)
         db.session.commit()
         r = None
 
