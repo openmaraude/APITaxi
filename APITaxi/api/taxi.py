@@ -9,7 +9,6 @@ from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from ..utils.request_wants_json import json_mimetype_required
-#from ..utils.cache_refresh import cache_refresh
 from ..utils import arguments
 from ..utils import influx_db
 from ..utils import fields as customFields
@@ -22,7 +21,6 @@ from functools import partial
 from ..utils.validate_json import ValidatorMixin
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
-
 
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
