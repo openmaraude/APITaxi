@@ -20,10 +20,10 @@ from flask.ext.celery import Celery
 celery = Celery()
 
 from dogpile.cache import make_region
-region_zupc = make_region('zupc')
 regions = {
     'taxis': make_region('taxis'),
     'hails': make_region('hails'),
+    'zupc': make_region('zupc')
 }
 def user_key_generator(namespace, fn, **kw):
     def generate_key(*args, **kwargs):
