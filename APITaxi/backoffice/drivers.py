@@ -14,7 +14,7 @@ from datetime import datetime
 from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
 from ..utils.make_model import make_model
 from ..utils.slack import slack as slacker
-from ..utils.cache_refresh import cache_refresh
+#from ..utils.cache_refresh import cache_refresh
 from ..utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('drivers', __name__)
@@ -72,9 +72,9 @@ class Drivers(ResourceMetadata):
             if driver_obj.id:
                 edited_drivers_id.append(driver_obj.id)
             new_drivers.append(driver_obj)
-        if edited_drivers_id:
-            cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
-                'kwargs': {'driver': edited_drivers_id}})
+        #if edited_drivers_id:
+        #    cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
+        #        'kwargs': {'driver': edited_drivers_id}})
         db.session.commit()
         return marshal({'data': new_drivers}, driver_fields), 201
 

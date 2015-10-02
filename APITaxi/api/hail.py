@@ -73,7 +73,7 @@ class HailId(Resource, ValidatorMixin):
                 abort(400, message=e.args[0])
         cache_refresh(db.session(),
             {'func': HailModel.get.refresh, 'args': [HailModel, hail_id]},
-            {'func': TaxiModel.getter_db.refresh, 'args': [TaxiModel, hail.taxi_id]},
+           # {'func': TaxiModel.getter_db.refresh, 'args': [TaxiModel, hail.taxi_id]},
         )
         db.session.commit()
         return {"data": [hail]}
@@ -92,7 +92,7 @@ class Hail(Resource, ValidatorMixin):
         self.validate(hj)
         hj = hj['data'][0]
 
-        taxi = TaxiModel.query.get(hj['taxi_id'])
+        taxi = db.session.query(TaxiModel).get(hj['taxi_id'])
         if not taxi:
             return abort(404, message="Unable to find taxi")
         operateur = security_models.User.filter_by_or_404(
