@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, region_zupc
+from ..extensions import db, regions
 from sqlalchemy_defaults import Column
 from ..utils import MarshalMixin, FilterOr404Mixin
+from ..utils.caching import CacheableMixin
 import geojson, shapely
 from operator import itemgetter
 from geoalchemy2 import Geography
 from geoalchemy2.shape import to_shape
-from ..utils.scoped_session import ScopedSession
 from sqlalchemy.orm import joinedload
 
 class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
@@ -17,7 +17,10 @@ class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
     def __str__(self):
         return '%r %r' % (self.numero, self.nom)
 
-class ZUPC(db.Model, MarshalMixin):
+class ZUPC(db.Model, MarshalMixin, CacheableMixin):
+    cache_label = 'zupc'
+    cache_regions = regions
+
     id = Column(db.Integer, primary_key=True)
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'))
     nom = Column(db.String(255), label='Nom')
@@ -64,11 +67,3 @@ class ZUPC(db.Model, MarshalMixin):
     @property
     def right(self):
         return self.bounds[2]
-
-    @classmethod
-    @region_zupc.cache_on_arguments(namespace='Z')
-    def get(cls, id_):
-        with ScopedSession() as session:
-            z = session.query(ZUPC).options(joinedload(ZUPC.parent)).\
-                filter_by(id=id_).first()
-        return z
