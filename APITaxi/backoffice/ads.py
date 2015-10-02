@@ -15,7 +15,7 @@ from datetime import datetime
 from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
 from ..utils.make_model import make_model
 from ..utils.slack import slack
-from ..utils.cache_refresh import cache_refresh
+#from ..utils.cache_refresh import cache_refresh
 from ..utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('ads', __name__)
@@ -136,9 +136,9 @@ class ADS(ResourceMetadata):
             if ads_db.id:
                 edited_ads_id.append(ads.id)
             new_ads.append(ads)
-        if edited_ads_id:
-            cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
-                'kwargs': {'ads': edited_ads_id}})
+        #if edited_ads_id:
+        #    cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
+        #        'kwargs': {'ads': edited_ads_id}})
         db.session.commit()
         return marshal({"data": new_ads}, ads_post), 201
 

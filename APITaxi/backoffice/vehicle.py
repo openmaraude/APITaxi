@@ -8,7 +8,7 @@ from . import ns_administrative
 from flask.ext.restplus import fields, reqparse, abort
 from ..utils.make_model import make_model
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
-from ..utils.cache_refresh import cache_refresh
+#from ..utils.cache_refresh import cache_refresh
 from ..utils.resource_metadata import ResourceMetadata
 mod = Blueprint('vehicle', __name__)
 
@@ -46,9 +46,9 @@ class Vehicle(ResourceMetadata):
             if v.id:
                 edited_vehicles_id.append(v.id)
             new_vehicles.append(v)
-        if edited_vehicles_id:
-            cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
-                'kwargs': {'vehicle': edited_vehicles_id}})
+        #if edited_vehicles_id:
+        #    cache_refresh(db.session(), {'func': taxis_models.refresh_taxi,
+        #        'kwargs': {'vehicle': edited_vehicles_id}})
         db.session.commit()
         return {"data": new_vehicles}, 201
 
