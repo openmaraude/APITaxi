@@ -23,15 +23,9 @@ from dogpile.cache import make_region
 regions = {
     'taxis': make_region('taxis'),
     'hails': make_region('hails'),
-    'zupc': make_region('zupc')
+    'zupc': make_region('zupc'),
+    'users': make_region('users')
 }
-def user_key_generator(namespace, fn, **kw):
-    def generate_key(*args, **kwargs):
-        return fn.__name__ +\
-             "_".join(str(s) for s in args) +\
-             "_".join(k+"_"+str(v) for k,v in kwargs.iteritems())
-    return generate_key
-region_users = make_region('users', function_key_generator=user_key_generator)
 
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)

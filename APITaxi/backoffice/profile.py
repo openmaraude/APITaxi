@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, region_users
+from ..extensions import db
 from ..api import api
 from ..models import security as security_models
 from ..forms.user import UserForm
