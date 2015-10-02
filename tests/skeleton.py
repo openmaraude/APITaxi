@@ -4,7 +4,7 @@ from flask.ext.testing import TestCase
 from json import dumps
 from APITaxi import create_app
 from APITaxi.extensions import (db, redis_store, index_zupc, regions,
-                               region_users, user_datastore)
+        user_datastore)
 from APITaxi.utils.login_manager import user_datastore
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
@@ -29,7 +29,7 @@ class Skeleton(TestCase):
         db.create_all()
         regions['taxis'].invalidate()
         regions['hails'].invalidate()
-        region_users.invalidate()
+        regions['users'].invalidate()
         for role in ['admin', 'operateur', 'moteur']:
             r = user_datastore.create_role(name=role)
             u = user_datastore.create_user(email='user_'+role,
@@ -57,9 +57,8 @@ class Skeleton(TestCase):
         db.session.remove()
         db.drop_all()
         db.get_engine(self.app).dispose()
-        regions['taxis'].invalidate()
-        regions['hails'].invalidate()
-        region_users.invalidate()
+        for r in regions.values():
+            r.invalidate()
         index_zupc.index_zupc = None
 
 

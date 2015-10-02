@@ -26,7 +26,13 @@ def load_user_from_request(request):
             return None
     return user if login_user(user) else None
 
-from .cache_refresh import invalidate_user
+def invalidate_user(sender, user, **extra):
+    c = user.cache
+    c.flush(c._cache_key(user.id))
+    c.flush(c._cache_key(unicode(user.id)))
+    c.flush(c._cache_key(**{"email":user.email}))
+    c.flush(c._cache_key(**{"apikey":user.apikey}))
+
 def init_app(app):
     security = Security()
     security.init_app(app, user_datastore)
