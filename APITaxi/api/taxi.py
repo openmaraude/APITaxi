@@ -54,7 +54,7 @@ class TaxiId(Resource, ValidatorMixin):
     @api.expect(taxi_put_expect)
     @json_mimetype_required
     def put(self, taxi_id):
-        taxi = taxis_models.Taxi.query.get(taxi_id)
+        taxi = taxis_models.Taxi.cache.get(taxi_id)
         if not taxi:
             abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
         if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
