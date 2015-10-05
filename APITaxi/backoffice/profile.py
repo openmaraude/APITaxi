@@ -4,7 +4,6 @@ from ..api import api
 from ..models import security as security_models
 from ..forms.user import UserForm
 from ..utils.login_manager import user_datastore
-from ..utils.cache_refresh import refresh_user, cache_refresh
 
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask import (Blueprint, request, render_template, redirect, jsonify,
@@ -53,8 +52,6 @@ def profile_form():
                 db.session.add(logo_db)
                 user.logos.append(logo_db)
         form.populate_obj(user)
-        cache_refresh(db.session(), {'func': refresh_user,
-                'args': [user.id, True]})
         db.session.add(user)
         db.session.commit()
         return redirect(url_for('profile.profile_form'))
