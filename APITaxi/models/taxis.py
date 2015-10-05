@@ -5,7 +5,6 @@ from ..extensions import (regions, db, user_datastore, redis_store,
 from ..models.vehicle import Vehicle, VehicleDescription
 from ..utils import AsDictMixin, HistoryMixin, fields, FilterOr404Mixin
 from ..utils.caching import CacheableMixin, query_callable
-#from ..utils.cache_refresh import cache_refresh
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
