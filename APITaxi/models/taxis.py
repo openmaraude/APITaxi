@@ -4,6 +4,7 @@ from ..extensions import (regions, db, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription
 from ..utils import AsDictMixin, HistoryMixin, fields, FilterOr404Mixin
+from ..utils.mixins import GetOr404Mixin
 from ..utils.caching import CacheableMixin, query_callable
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
@@ -113,7 +114,7 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
     def __repr__(self):
         return '<drivers %r>' % str(self.id)
 
-class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin):
+class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
     cache_label = 'taxis'
     cache_regions = regions
     query_class = query_callable(regions)

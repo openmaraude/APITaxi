@@ -31,9 +31,7 @@ class HailId(Resource, ValidatorMixin):
     @api.marshal_with(hail_model)
     @json_mimetype_required
     def get(self, hail_id):
-        hail = HailModel.cache.get(hail_id)
-        if not hail:
-            abort(404, message="Unable to find hail: {}".format(hail_id))
+        hail = HailModel.get_or_404(hail_id)
         self.filter_access(hail)
         return {"data": [hail]}
 
@@ -43,7 +41,7 @@ class HailId(Resource, ValidatorMixin):
     @api.expect(hail_expect_put)
     @json_mimetype_required
     def put(self, hail_id):
-        hail = HailModel.query.get_or_404(hail_id)
+        hail = HailModel.get_or_404(hail_id)
         self.filter_access(hail)
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
@@ -87,9 +85,7 @@ class Hail(Resource, ValidatorMixin):
         self.validate(hj)
         hj = hj['data'][0]
 
-        taxi = db.session.query(TaxiModel).get(hj['taxi_id'])
-        if not taxi:
-            return abort(404, message="Unable to find taxi")
+        taxi = TaxiModel.get_or_404(hj['taxi_id'])
         operateur = security_models.User.filter_by_or_404(
                 email=hj['operateur'], message='Unable to find the taxi\'s operateur')
         desc = taxi.vehicle.get_description(operateur)
@@ -110,9 +106,7 @@ class Hail(Resource, ValidatorMixin):
         hail.customer_phone_number = hj['customer_phone_number']
         hail.taxi_id = hj['taxi_id']
         hail.operateur_id = operateur.id
-        hail.status = 'emitted'
         hail.status = 'received'
-        hail.status = 'sent_to_operator'
         db.session.add(hail)
         db.session.commit()
         r = None
@@ -132,6 +126,8 @@ class Hail(Resource, ValidatorMixin):
                 headers=headers)
         except requests.exceptions.MissingSchema:
             pass
+        hail.status = 'sent_to_operator'
+        db.session.commit()
         if not r or r.status_code < 200 or r.status_code >= 300:
             return finish_and_abort("Unable to reach hail's endpoint {} of operator {}"\
                     .format(operateur.hail_endpoint, operateur.email))
