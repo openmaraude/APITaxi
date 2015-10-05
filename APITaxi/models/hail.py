@@ -4,7 +4,7 @@ from flask.ext.security import login_required, roles_accepted,\
         roles_accepted, current_user
 from datetime import datetime, timedelta
 from ..utils import HistoryMixin, AsDictMixin, fields
-from ..utils.caching import CacheableMixin
+from ..utils.caching import CacheableMixin, query_callable
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
@@ -45,6 +45,8 @@ incident_taxi_reason_enum = ['traffic_jam', 'garbage_truck']
 class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin):
     cache_label = 'hails'
     cache_regions = regions
+    query_class = query_callable(regions)
+
     id = db.Column(db.String, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
