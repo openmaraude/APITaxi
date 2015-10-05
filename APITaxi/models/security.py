@@ -2,7 +2,7 @@
 from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
 from ..utils import MarshalMixin, FilterOr404Mixin
-from ..utils.caching import CacheableMixin
+from ..utils.caching import CacheableMixin, query_callable
 from ..extensions import db, regions
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,6 +17,8 @@ roles_users = db.Table('roles_users',
 class Role(CacheableMixin,db.Model, RoleMixin, MarshalMixin):
     cache_label = 'users'
     cache_regions = regions
+    query_class = query_callable(regions)
+
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
@@ -25,6 +27,7 @@ class Role(CacheableMixin,db.Model, RoleMixin, MarshalMixin):
 class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin):
     cache_label = 'users'
     cache_regions = regions
+    query_class = query_callable(regions)
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))

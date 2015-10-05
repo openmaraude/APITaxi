@@ -4,7 +4,7 @@ from ..extensions import (regions, db, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription
 from ..utils import AsDictMixin, HistoryMixin, fields, FilterOr404Mixin
-from ..utils.caching import CacheableMixin
+from ..utils.caching import CacheableMixin, query_callable
 #from ..utils.cache_refresh import cache_refresh
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
@@ -120,6 +120,7 @@ def parse_number(str_):
 class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin):
     cache_label = 'taxis'
     cache_regions = regions
+    query_class = query_callable(regions)
 
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
