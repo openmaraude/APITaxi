@@ -2,7 +2,7 @@
 from ..extensions import db, regions
 from sqlalchemy_defaults import Column
 from ..utils import MarshalMixin, FilterOr404Mixin
-from ..utils.caching import CacheableMixin
+from ..utils.caching import CacheableMixin, query_callable
 import geojson, shapely
 from operator import itemgetter
 from geoalchemy2 import Geography
@@ -20,6 +20,7 @@ class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
 class ZUPC(db.Model, MarshalMixin, CacheableMixin):
     cache_label = 'zupc'
     cache_regions = regions
+    query_class = query_callable(regions)
 
     id = Column(db.Integer, primary_key=True)
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'))
