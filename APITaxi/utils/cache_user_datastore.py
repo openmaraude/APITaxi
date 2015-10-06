@@ -18,11 +18,13 @@ class CacheUserDatastore(SQLAlchemyUserDatastore):
     def find_user(self, **kwargs):
         if kwargs.keys()[0] == 'id':
             return User.cache.get(kwargs['id'])
-        for u in User.cache.filter(**kwargs):
-            return u
-        return None
+        try:
+            return User.cache.filter(**kwargs).next()
+        except StopIteration:
+            return None
 
     def find_role(self, role):
-        for r in Role.cache.filter(name=role):
-            return r
-        return None
+        try:
+            return Role.cache.filter(name=role).next()
+        except StopIteration:
+            return None
