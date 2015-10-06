@@ -65,12 +65,15 @@ class TaxiId(Resource, ValidatorMixin):
 
         hj = request.json
         self.validate(hj)
-        try:
-            taxi.status = hj['data'][0]['status']
-        except AssertionError as e:
-            abort(400, message=str(e))
-
-        db.session.commit()
+        new_status = hj['data'][0]['status']
+        if new_status != taxi.status:
+            try:
+                taxi.vehicle.description.status = hj['data'][0]['status']
+            except AssertionError as e:
+                abort(400, message=str(e))
+            db.session.add(taxi.vehicle.description)
+            db.session.commit()
+            taxi.cache.flush(taxi.cache._cache_key(taxi.id))
         return {'data': [taxi]}
 
 
