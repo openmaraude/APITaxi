@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db
+from ..extensions import db, regions
 from ..utils import (AsDictMixin, HistoryMixin, unique_constructor,
         MarshalMixin, fields, FilterOr404Mixin)
+from ..utils.caching import CacheableMixin, query_callable
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy import UniqueConstraint, and_
@@ -67,7 +68,10 @@ status_vehicle_description_enum = ['free', 'answering', 'occupied', 'oncoming', 
                    query.filter(and_(\
                        VehicleDescription.vehicle_id == vehicle_id,
                        VehicleDescription.added_by == added_by)))
-class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
+class VehicleDescription(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
+    cache_label = 'taxis'
+    cache_regions = regions
+    query_class = query_callable(regions)
 
     def __init__(self, vehicle_id, added_by):
         db.Model.__init__(self)
@@ -188,7 +192,10 @@ class VehicleDescription(db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
 @unique_constructor(db.session,
                     lambda licence_plate: licence_plate,
                     lambda query, licence_plate: query.filter(Vehicle.licence_plate == licence_plate))
-class Vehicle(db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
+class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
+    cache_label = 'taxis'
+    cache_regions = regions
+    query_class = query_callable(regions)
     id = Column(db.Integer, primary_key=True)
     licence_plate = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule',
@@ -216,6 +223,10 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
         if not filter_id:
             return_["id"] = fields.Integer()
         return return_
+
+
+
+
 
     @property
     def description(self):
