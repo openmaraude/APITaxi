@@ -35,7 +35,7 @@ class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin):
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users'),
-                            lazy='joined')
+                            lazy='joined', query_class=query_callable(regions))
     apikey = db.Column(db.String(36), nullable=False)
     hail_endpoint_production = Column(db.String, nullable=True,
             label=u'Hail endpoint production',

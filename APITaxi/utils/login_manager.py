@@ -2,7 +2,7 @@
 from ..extensions import db, user_datastore
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.security.utils import verify_and_update_password
-from flask.ext.login import login_user, user_logged_out
+from flask.ext.login import login_user, user_logged_out, user_logged_in
 
 
 def load_user(user_id):
@@ -39,3 +39,4 @@ def init_app(app):
     app.login_manager.request_loader(load_user_from_request)
     app.login_manager.user_loader(load_user)
     user_logged_out.connect(invalidate_user)
+    user_logged_in.connect(invalidate_user)
