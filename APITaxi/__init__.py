@@ -77,13 +77,13 @@ def create_app(sqlalchemy_uri=None):
     from . import demo
     demo.create_app(app)
     if not region_taxi.is_configured:
-        region_taxi.configure('dogpile.cache.memory')
+        region_taxi.configure(app.config['DOGPILE_CACHE_BACKEND'])
     if not region_hails.is_configured:
-        region_hails.configure('dogpile.cache.memory')
+        region_hails.configure(app.config['DOGPILE_CACHE_BACKEND'])
     if not region_users.is_configured:
-        region_users.configure('dogpile.cache.memory')
+        region_users.configure(app.config['DOGPILE_CACHE_BACKEND'])
     if not region_zupc.is_configured:
-        region_zupc.configure('dogpile.cache.memory')
+        region_zupc.configure(app.config['DOGPILE_CACHE_BACKEND'])
 
     from . import tasks
     tasks.init_app(app)
