@@ -13,24 +13,6 @@ import json
 
 @manager.command
 def load_zupc(cs_zupc, zupc_path):
-    departements = {}
-    for departement in Departement.query.all():
-        departements[departement.numero] = departement
-
-    engine = sqlalchemy.create_engine(cs_zupc)
-    i = 0
-    for row in engine.execute('SELECT nom, insee, st_asewkt(geom) FROM zupc'):
-        zupc = ZUPC()
-        zupc.nom = row[0]
-        zupc.insee = row[1]
-        zupc.shape = shape.from_shape(wkt.loads(row[2]))
-        departement = zupc.insee[:2] if zupc.insee[:2] != '97' else zupc.insee[:3]
-        zupc.departement_id = departements[departement].id
-        db.session.add(zupc)
-        if i % 100 == 0:
-            db.session.commit()
-        i += 1
-    db.session.commit()
 
     with open(zupc_path) as f:
         for feature in json.load(f)['features']:
