@@ -12,7 +12,7 @@ import json
 
 
 @manager.command
-def load_zupc(cs_zupc, zupc_path):
+def load_zupc(zupc_path):
 
     with open(zupc_path) as f:
         for feature in json.load(f)['features']:
@@ -21,8 +21,12 @@ def load_zupc(cs_zupc, zupc_path):
             for insee in feature['properties']:
                 zupc = ZUPC.query.filter_by(insee=insee).first()
                 if not zupc:
+                    zupc = ZUPC()
+                    zupc.insee = insee
+                    zupc.departement = parent.departement
+                    zupc.nom = parent.nom
+                    db.session.add(zupc)
 #This is the case in Paris and Lyon, but it's not important
-                    continue
                 zupc.shape = wkb
                 zupc.parent_id = parent.id
             db.session.commit()
