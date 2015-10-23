@@ -172,7 +172,7 @@ class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(min_time)
-        users = list(map(lambda (email, _): user_datastore.find_user(email=email).id,
+        users = list(map(lambda email_: user_datastore.find_user(email=email_[0]).id,
                 caracs))
         return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
             self.vehicle.descriptions))

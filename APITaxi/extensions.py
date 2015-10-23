@@ -1,6 +1,5 @@
 #coding: utf-8
-from flask_sqlalchemy import SQLAlchemy as BaseSQLAlchemy
-from sqlalchemy.pool import QueuePool as BaseQueuePool
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy(session_options={"autoflush":False})
 from .utils.redis_geo import GeoRedis

@@ -63,11 +63,11 @@ class HailId(Resource, ValidatorMixin):
                 continue
             try:
                 setattr(hail, ev, value)
-            except AssertionError, e:
+            except AssertionError as e:
                 abort(400, message=e.args[0])
-            except RuntimeError, e:
+            except RuntimeError as e:
                 abort(403)
-            except ValueError, e:
+            except ValueError as e:
                 abort(400, message=e.args[0])
         db.session.commit()
         return {"data": [hail]}

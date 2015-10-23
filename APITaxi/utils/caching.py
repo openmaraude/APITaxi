@@ -198,10 +198,10 @@ class Cache(object):
         if kwargs:
             if len(kwargs) > 1:
                 raise TypeError('filter accept only one attribute for filtering')
-            key, value = kwargs.items()[0]
-            if key not in self._attrs():
-                raise TypeError('%s does not have an attribute %s' % self, key)
-            query_kwargs[key] = value
+            for key, value in kwargs.items():
+                if key not in self._attrs():
+                    raise TypeError('%s does not have an attribute %s' % self, key)
+                query_kwargs[key] = value
 
         cache_key = self._cache_key(**kwargs)
         pks = self.regions[self.label].get(cache_key)

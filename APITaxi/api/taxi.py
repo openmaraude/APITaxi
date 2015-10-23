@@ -81,7 +81,7 @@ class TaxiId(Resource, ValidatorMixin):
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
-        taxi_db = taxis_models.Taxi.cache.get(taxi_id)
+        taxi_db = taxis_models.Taxi.cache.get(taxi_id.decode('utf-8'))
         if not taxi_db or not taxi_db.ads or not taxi_db.is_free()\
             or taxi_db.ads.zupc_id not in zupc_customer:
             return None
@@ -96,7 +96,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         if not description:
             return None
         return {
-            "id": taxi_id,
+            "id": taxi_db.id,
             "operator": operator.email,
             "position": {"lat": coords[0], "lon": coords[1]},
             "vehicle": {

@@ -29,7 +29,7 @@ def load_user_from_request(request):
 def invalidate_user(sender, user, **extra):
     c = user.cache
     c.flush(c._cache_key(user.id))
-    c.flush(c._cache_key(unicode(user.id)))
+    c.flush(c._cache_key(str(user.id)))
     c.flush(c._cache_key(**{"email":user.email}))
     c.flush(c._cache_key(**{"apikey":user.apikey}))
 

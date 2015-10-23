@@ -29,7 +29,6 @@ Flask-SQLAlchemy==2.0
 Flask-Testing==0.4.2
 -e hg+https://bitbucket.org/mattupstate/flask-uploads/@default#egg=Flask-Uploads
 Flask-WTF==0.11
-functools32==3.2.3.post2
 GeoAlchemy2==0.2.5
 geojson==1.2.0
 infinity==1.3
