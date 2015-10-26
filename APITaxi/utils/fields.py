@@ -29,9 +29,10 @@ class Nested(FromSQLAlchemyColumnMixin, basefields.Nested):
     pass
 
 class List(FromSQLAlchemyColumnMixin, basefields.List):
-    def schema(self, maxItems=1):
+    def schema(self, maxItems=1, minItems=1):
         schema = super(basefields.List, self).schema()
         schema['maxItems'] = maxItems
+        schema['minItems'] = minItems
         schema['type'] = 'array'
         schema['items'] = self.container.__schema__
         return schema
