@@ -113,7 +113,8 @@ class Skeleton(TestCase):
                 self.assertEqual(v, req[k])
 
     def call(self, url, role, user, fun, data=None, envelope_data=None,
-            version=2, accept="application/json"):
+            version=2, accept="application/json",
+            content_type='application/json'):
         if not role:
             role = self.__class__.role
         if not user:
@@ -121,7 +122,7 @@ class Skeleton(TestCase):
         authorization = "{}:{}".format(user, role)
         if envelope_data:
             data = {"data": data}
-        data = dumps(data) if data else data
+        data = dumps(data) if data and content_type else data
         if not url:
             url = self.__class__.url
         with self.app.test_client() as c:
@@ -130,7 +131,7 @@ class Skeleton(TestCase):
                             "Authorization": authorization,
                             "Accept": accept,
                             "X-VERSION": version},
-                        content_type='application/json')
+                        content_type=content_type)
 
     def get(self, url, role=None, user=None, version=2,
             accept="application/json"):
@@ -138,14 +139,15 @@ class Skeleton(TestCase):
                 accept=accept)
 
     def post(self, data, url=None, envelope_data=True, role=None, user=None,
-            version=2):
+            version=2, content_type='application/json',
+            accept='application/json'):
         return self.call(url, role, user, "post", data, envelope_data,
-            version=version)
+            version=version, content_type=content_type, accept=accept)
 
     def put(self, data, url=None, envelope_data=True, role=None, user=None,
-            version=2):
+            version=2, content_type='application/json'):
         return self.call(url, role, user, "put", data, envelope_data,
-            version=version)
+            version=version, content_type=content_type)
 
     def init_dep(self):
         dep = Departement()

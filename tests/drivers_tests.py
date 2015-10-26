@@ -5,7 +5,7 @@ from APITaxi.models.taxis import Driver
 from json import dumps, loads
 from copy import deepcopy
 from APITaxi.extensions import db
-
+from cStringIO import StringIO
 
 class TestDriverPost(Skeleton):
     url = '/drivers/'
@@ -54,6 +54,8 @@ class TestDriverPost(Skeleton):
         self.assert201(r)
         self.assertEqual(len(Driver.query.all()), 2)
 
-
-
+    def test_post_file(self):
+        r = self.post(dict(file=(StringIO('test file'), 'test.csv'),),
+                content_type=None, envelope_data=False, accept='text/html')
+        self.assert200(r)
 
