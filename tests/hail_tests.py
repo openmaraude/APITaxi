@@ -62,6 +62,14 @@ class TestHailPost(HailMixin):
         r = self.post({}, envelope_data=False)
         self.assert400(r)
 
+    def test_empty_data(self):
+        r = self.post({'data': None}, envelope_data=False)
+        self.assert400(r)
+
+    def test_empty_array(self):
+        r = self.post({'data': []}, envelope_data=False)
+        self.assert400(r)
+
     def test_too_many(self):
         r = self.post([dict_, dict_])
         self.assertEqual(r.status_code, 413)

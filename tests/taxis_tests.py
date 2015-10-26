@@ -112,6 +112,14 @@ class TestTaxiPut(Skeleton):
         r = self.put({}, self.url, envelope_data=False)
         self.assert400(r)
 
+    def test_empty_data(self):
+        r = self.post({'data': None}, envelope_data=False)
+        self.assert400(r)
+
+    def test_empty_array(self):
+        r = self.post({'data': []}, envelope_data=False)
+        self.assert400(r)
+
     def test_no_status(self):
         self.post_taxi()
         r = self.put({'data':[{'nostatus':None}]}, self.url,
