@@ -54,6 +54,6 @@ class Vehicle(ResourceMetadata):
 
     @login_required
     @roles_accepted('stats')
+    @api.doc(False)
     def get(self):
         return self.metadata()
-        
