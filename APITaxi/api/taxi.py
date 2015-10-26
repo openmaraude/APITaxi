@@ -188,6 +188,7 @@ class ActiveTaxisRoute(Resource):
 
     @login_required
     @roles_accepted('admin', 'operateur')
+    @api.doc(False)
     def get(self):
         frequencies = [f for f, _ in current_app.config['STORE_TAXIS_FREQUENCIES']]
         parser = reqparse.RequestParser()
