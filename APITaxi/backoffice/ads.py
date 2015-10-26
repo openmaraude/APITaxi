@@ -91,9 +91,7 @@ class ADS(ResourceMetadata):
     @api.response(200, 'Success', ads_post)
     @index_zupc.reinit()
     def post(self):
-        if request_wants_json():
-            return self.post_json()
-        elif 'file' in request.files:
+        if 'file' in request.files:
             filename = "ads-{}-{}.csv".format(current_user.email,
                     str(datetime.now()))
             documents.save(request.files['file'], name=filename)
@@ -104,6 +102,8 @@ class ADS(ResourceMetadata):
                     current_user.email, url_for('documents.documents',
                         filename=filename, _external=True)))
             return "OK"
+        elif request_wants_json():
+            return self.post_json()
         abort(400, message="File is not present!")
 
     def post_json(self):
