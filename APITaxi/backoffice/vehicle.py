@@ -56,4 +56,3 @@ class Vehicle(ResourceMetadata):
     @roles_accepted('stats')
     def get(self):
         return self.metadata()
-        

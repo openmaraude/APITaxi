@@ -31,9 +31,7 @@ class Drivers(ResourceMetadata):
     @api.expect(driver_details_expect)
     @api.response(200, 'Success', driver_fields)
     def post(self):
-        if request_wants_json():
-            return self.post_json()
-        elif 'file' in request.files:
+        if 'file' in request.files:
             filename = "conducteurs-{}-{}.csv".format(current_user.email,
                     str(datetime.now()))
             documents.save(request.files['file'], name=filename)
@@ -44,6 +42,8 @@ class Drivers(ResourceMetadata):
                     current_user.email, url_for('documents.documents',
                         filename=filename, _external=True)))
             return "OK"
+        if request_wants_json():
+            return self.post_json()
         abort(400, message="Unable to find file")
 
 
