@@ -5,10 +5,10 @@ from json import dumps
 from ..utils.api import Api
 
 api_blueprint = Blueprint('api', __name__)
-api = Api(api_blueprint, ui=False, catch_all_404s=True, title='API version 2.0')
+api = Api(api_blueprint, catch_all_404s=True, title='API version 2.0', doc='/doc/')
 
 
-@api_blueprint.route('/doc/', endpoint='doc')
+@api.documentation
 def swagger_ui():
     return render_template('swagger/index.html')
 
