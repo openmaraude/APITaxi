@@ -253,6 +253,20 @@ class  TestHailGet(HailMixin):
         assert(r.json['data'][0]['status'] == 'timeout_taxi')
         self.app.config['ENV'] = prev_env
 
+    def test_technical_timeout(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        for status in ['received_by_operator', 'sent_to_operator']:
+            r = self.send_hail(dict_hail)
+            self.assert201(r)
+            self.set_hail_status(r, status, timedelta(seconds=11))
+            r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
+                    version=2, role='operateur')
+            self.assert200(r)
+            assert(r.json['data'][0]['status'] == 'failure')
+            self.app.config['ENV'] = prev_env
+
+
 class TestHailPut(HailMixin):
     role = 'operateur'
 
