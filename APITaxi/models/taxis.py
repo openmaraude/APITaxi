@@ -134,7 +134,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
             nullable=True)
     driver = db.relationship('Driver', backref='driver', lazy='joined')
 
-    _FORMAT_OPERATOR = '{timestamp:d} {lat} {lon} {status} {device}'
+    _FORMAT_OPERATOR = '{timestamp:f} {lat} {lon} {status} {device}'
     _DISPONIBILITY_DURATION = 60*60
     _ACTIVITY_TIMEOUT = 15*60
     __caracs = None
