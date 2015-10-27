@@ -163,12 +163,17 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def caracs(self, min_time):
         if self.__caracs is None:
             self.__caracs = self.__class__.retrieve_caracs(self.id)
+        if self.__caracs is None:
+            current_app.logger.error('Taxi {} has no caracs'.format(self.id))
+            return None
         return [i for i in self.__caracs if int(i[1]['timestamp']) >= min_time]
 
     def is_free(self, min_time=None, operateur=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(min_time)
+        if caracs is None:
+            return False
         users = map(lambda (email, _): user_datastore.find_user(email=email).id,
                 caracs)
         return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
