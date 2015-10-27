@@ -164,7 +164,6 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         _, scan = redis_store.hscan("taxi:{}".format(id_))
         if len(scan) == 0:
             return []
-        print scan.items()
         scan = [(k.decode(), cls.parse_redis(v)) for k, v in scan.items()]
         return [(k, v) for k, v in scan]
 
