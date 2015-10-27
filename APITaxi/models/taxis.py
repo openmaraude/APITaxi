@@ -14,7 +14,7 @@ from itertools import compress
 from parse import parse
 import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
-from flask import g
+from flask import g, current_app
 
 
 owner_type_enum = ['company', 'individual']
