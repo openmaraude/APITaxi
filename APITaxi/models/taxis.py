@@ -11,7 +11,7 @@ from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
 from six import string_types
 from itertools import compress
-from parse import parse
+from parse import parse, with_pattern
 import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g, current_app
@@ -114,6 +114,10 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
     def __repr__(self):
         return '<drivers %r>' % str(self.id)
 
+@with_pattern(r'\d+(\.\d+)?')
+def parse_number(str_):
+    return int(float(str_))
+
 class Taxi(db.Model, AsDictMixin, HistoryMixin):
 
     def __init__(self, *args, **kwargs):
@@ -134,10 +138,14 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
             nullable=True)
     driver = db.relationship('Driver', backref='driver', lazy='joined')
 
-    _FORMAT_OPERATOR = '{timestamp:f} {lat} {lon} {status} {device}'
+    _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
     _DISPONIBILITY_DURATION = 60*60
     _ACTIVITY_TIMEOUT = 15*60
     __caracs = None
+
+    @classmethod
+    def parse_redis(cls, v):
+        return parse(cls._FORMAT_OPERATOR, v.decode(), {'Number': parse_number})
 
     @property
     def rating(self):
@@ -156,8 +164,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         _, scan = redis_store.hscan("taxi:{}".format(id_))
         if len(scan) == 0:
             return []
-        scan = [(k.decode(), parse(cls._FORMAT_OPERATOR, v.decode()))\
-                for k, v in scan.items()]
+        print scan.items()
+        scan = [(k.decode(), cls.parse_redis(v)) for k, v in scan.items()]
         return [(k, v) for k, v in scan]
 
     def caracs(self, min_time):
@@ -185,7 +193,7 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
         if not v:
             return False
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        p = parse(self._FORMAT_OPERATOR, v.decode())
+        p = self.parse_redis(v)
         return p['timestamp'] > min_time
 
     def set_free(self):
