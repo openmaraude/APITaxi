@@ -1,7 +1,7 @@
 #coding: utf-8
 
 from ..extensions import redis_store, user_datastore, db, celery
-from ..models.taxis import Taxi
+from ..models.taxis import Taxi, parse_number
 from ..models.administrative import ZUPC
 from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
@@ -23,7 +23,7 @@ def filter_outoftime_values(operator_values, bound):
 def parse_operator_value(operator, s):
     if type(s) not in (str, unicode):
         return operator, None
-    return operator, base_parse(Taxi._FORMAT_OPERATOR, s)
+    return operator, Taxi.parse_redis(s)
 
 def get_data(taxi_ids, bound, redis_store):
     pipe = redis_store.pipeline()

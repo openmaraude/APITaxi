@@ -16,6 +16,7 @@ import time
 from shapely.geometry import Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
 from flask.ext.login import current_user
+from flask import current_app
 
 class Skeleton(TestCase):
     TESTING = True
@@ -83,10 +84,9 @@ class Skeleton(TestCase):
             float_=False):
         taxi = self.post_taxi(user=user)
         timestamp_type = float if float_ else int
-        formatted_value = Taxi._FORMAT_OPERATOR.format(
-                timestamp=timestamp_type(time.time()), lat=lat, lon=lon,
-                status='free', device='d1', version=1)
-        redis_store.hset('taxi:{}'.format(taxi['id']), user, formatted_value)
+        values = [timestamp_type(time.time()), lat, lon, 'free', 'd1', 1]
+        redis_store.hset('taxi:{}'.format(taxi['id']), user,
+                ' '.join(map(lambda v: str(v), values)))
         redis_store.geoadd('geoindex', lat, lon, taxi['id'])
         return taxi
 
