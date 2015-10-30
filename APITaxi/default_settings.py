@@ -24,6 +24,7 @@ SQLALCHEMY_POOL_SIZE = 15
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['pickle']
 
 from celery.schedules import crontab
 #List of tuples of the form
