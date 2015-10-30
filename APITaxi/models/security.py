@@ -76,9 +76,7 @@ class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin):
         kwargs['active'] = True
         super(self.__class__, self).__init__(*args, **kwargs)
 
-    @property
-    def hail_endpoint(self):
-        env = current_app.config['ENV']
+    def hail_endpoint(self, env):
         if env == 'PROD':
             return self.hail_endpoint_production
         elif env == 'STAGING':

@@ -160,7 +160,7 @@ class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
 
     status_required = {
             'sent_to_operator': 'received',
-            'received_by_operator': 'sent_to_operator',
+            'received_by_operator': 'received',
             'received_by_taxi': 'received_by_operator',
             'accepted_by_taxi': 'received_by_taxi',
             'declined_by_taxi': 'received_by_taxi',

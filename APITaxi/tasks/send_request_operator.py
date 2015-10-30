@@ -1,25 +1,30 @@
 #coding: utf-8
 from flask import current_app
+from flask.ext.restplus import marshal
 from ..models.hail import Hail
 from ..descriptors.hail import hail_model
 from ..extensions import db
 import celery, requests, json
 
 @celery.task
-def send_request_operator(hail_id, operator):
+def send_request_operator(hail_id, operateur, env):
     hail = Hail.query.get(hail_id)
+    if not hail:
+        current_app.logger.error('Unable to find hail: {}'.format(hail_id))
+        return None
+    r = None
     try:
         headers = {'Content-Type': 'application/json',
                    'Accept': 'application/json'}
         if operateur.operator_header_name is not None and operateur.operator_header_name != '':
             headers[operateur.operator_header_name] = operateur.operator_api_key
-        r = requests.post(operateur.hail_endpoint,
+        r = requests.post(operateur.hail_endpoint(env),
                 data=json.dumps(marshal({"data": [hail]}, hail_model)),
             headers=headers)
     except requests.exceptions.MissingSchema:
         pass
     if not r or r.status_code < 200 or r.status_code >= 300:
-        current_app.error("Unable to reach hail's endpoint {} of operator {}"\
+        current_app.logger.error("Unable to reach hail's endpoint {} of operator {}"\
             .format(operateur.hail_endpoint, operateur.email))
         hail.status = 'failure'
         db.session.commit()
