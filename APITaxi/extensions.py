@@ -14,7 +14,7 @@ from dogpile.cache import make_region
 regions = {
     'taxis': make_region('taxis'),
     'hails': make_region('hails'),
-    'zupc': make_region('zupc'),
+    'zupc': make_region('zupc').configure('dogpile.cache.memory'),
     'users': make_region('users')
 }
 

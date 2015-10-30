@@ -3,6 +3,7 @@ from ..models import vehicle
 from ..extensions import (regions, db, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription
+from ..models.administrative import ZUPC
 from ..utils import AsDictMixin, HistoryMixin, fields, FilterOr404Mixin
 from ..utils.mixins import GetOr404Mixin
 from ..utils.caching import CacheableMixin, query_callable
@@ -40,7 +41,10 @@ class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
     owner_name = Column(db.String, label=u'Nom du propriétaire')
     category = Column(db.String, label=u'Catégorie de l\'ADS')
     zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'), nullable=True)
-    zupc = db.relationship('ZUPC', backref='ZUPC', lazy='joined')
+
+    @property
+    def zupc(self):
+        return ZUPC.query.get(self.zupc_id)
 
     @validates('owner_type')
     def validate_owner_type(self, key, value):
