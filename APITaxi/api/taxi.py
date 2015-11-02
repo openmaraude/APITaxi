@@ -24,6 +24,7 @@ from ..utils.validate_json import ValidatorMixin
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
 
+
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource, ValidatorMixin):
 
@@ -36,15 +37,11 @@ class TaxiId(Resource, ValidatorMixin):
         taxi = taxis_models.Taxi.get(taxi_id)
         if not taxi:
             abort(404, message="Unable to find this taxi")
-        operator = None
-        for description in taxi.vehicle.descriptions:
-            if description.added_by == current_user.id:
-                operator = current_user
-                break
-        if not operator:
+        description = taxi.vehicle.description
+        if not description:
             abort(403, message="You're not authorized to view this taxi")
         taxi_m = marshal({'data':[taxi]}, taxi_model)
-        taxi_m['data'][0]['operator'] = operator.email
+        taxi_m['data'][0]['operator'] = current_user.email
         op, timestamp = taxi.get_operator(favorite_operator=current_user.email)
         taxi_m['data'][0]['last_update'] = timestamp if op == current_user else None
         return taxi_m
