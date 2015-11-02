@@ -15,6 +15,7 @@ from ..utils.request_wants_json import json_mimetype_required
 from ..utils.cache_refresh import cache_refresh
 from ..utils import fields as customFields
 from ..utils.validate_json import ValidatorMixin
+from geopy.distance import vincenty
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -29,14 +30,20 @@ class HailId(Resource, ValidatorMixin):
 
     @login_required
     @roles_accepted('admin', 'moteur', 'operateur')
-    @api.marshal_with(hail_model)
     @json_mimetype_required
     def get(self, hail_id):
         hail = HailModel.get(hail_id)
         if not hail:
             abort(404, message="Unable to find hail: {}".format(hail_id))
         self.filter_access(hail)
-        return {"data": [hail]}
+        return_ = marshal({"data": [hail]},hail_model)
+        return_['data'][0]['taxi']['crowfly_distance'] = vincenty(
+                (return_['data'][0]['taxi']['position']['lat'],
+                return_['data'][0]['taxi']['position']['lon']),
+                (return_['data'][0]['customer_lat'],
+                 return_['data'][0]['customer_lon'])
+                ).meters
+        return return_
 
     @login_required
     @roles_accepted('admin', 'moteur', 'operateur')
