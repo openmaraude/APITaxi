@@ -224,10 +224,11 @@ class Vehicle(db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
     def get_description(self, user=None):
         if not user:
             user = current_user
+        returned_description = None
         for description in self.descriptions:
             if description.added_by == user.id:
-                return description
-        return None
+                returned_description = description
+        return returned_description
 
     @property
     def model(self):
