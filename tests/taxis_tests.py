@@ -306,6 +306,22 @@ class TestTaxiPost(Skeleton):
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         self.assertEqual(len(Taxi.query.all()), 1)
 
+    def test_add_taxi_change_vehicle_description(self):
+        self.init_taxi()
+        r = self.post([dict_taxi])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        self.assertEqual(len(Taxi.query.all()), 1)
+        taxi_id = r.json['data'][0]['id']
+        dict_v = deepcopy(dict_vehicle)
+        dict_v['color'] = 'red'
+        self.post([dict_v], url='/vehicles/')
+        r = self.get('/taxis/{}/'.format(taxi_id))
+        self.assert200(r)
+        print r.json
+        self.assertEqual(r.json['data'][0]['vehicle']['color'], 'red')
+        self.assertEqual(len(Taxi.query.all()), 1)
+
     def test_remove_ads(self):
         self.init_taxi()
         r = self.post([dict_taxi])

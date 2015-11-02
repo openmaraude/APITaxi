@@ -8,9 +8,9 @@ vehicle_descriptor = api.model('vehicle_descriptor',
     {
         "model": fields.String,
         "constructor": fields.String,
-        "color": fields.String,
+        "color": fields.String(attribute='description.color'),
         "licence_plate": fields.String,
-        "characteristics": fields.List(fields.String),
+        "characteristics": fields.List(fields.String, attribute='description.characteristics'),
         "nb_seats": fields.Integer
     })
 ads_descriptor = api.model('ads_descriptor', {
