@@ -488,6 +488,20 @@ class TestHailPut(HailMixin):
         assert  r.json['data'][0]['rating_ride'] == dict_hail['rating_ride']
         self.app.config['ENV'] = prev_env
 
+    def test_rating_ride_no_status(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail.__status_set_no_check('accepted_by_customer')
+        dict_hail['rating_ride'] = 2
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert200(r)
+        assert  r.json['data'][0]['rating_ride'] == dict_hail['rating_ride']
+        self.app.config['ENV'] = prev_env
+
     def test_rating_ride_min(self):
         dict_hail = deepcopy(dict_)
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
