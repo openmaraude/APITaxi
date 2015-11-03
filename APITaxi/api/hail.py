@@ -42,7 +42,7 @@ class HailId(Resource, ValidatorMixin):
                 return_['data'][0]['taxi']['position']['lon']),
                 (return_['data'][0]['customer_lat'],
                  return_['data'][0]['customer_lon'])
-                ).meters
+                ).kilometers
         return return_
 
     @login_required
