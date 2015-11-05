@@ -139,8 +139,8 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     driver = db.relationship('Driver', backref='driver', lazy='joined')
 
     _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
-    _DISPONIBILITY_DURATION = 60*60
-    _ACTIVITY_TIMEOUT = 15*60
+    _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
+    _ACTIVITY_TIMEOUT = 15*60 #Used for dash
     __caracs = None
 
     @classmethod
