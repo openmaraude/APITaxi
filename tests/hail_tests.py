@@ -193,6 +193,7 @@ class  TestHailGet(HailMixin):
         self.assert201(r)
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']), role='moteur')
         self.assert200(r)
+        self.assertGreater(r.json['data'][0]['taxi']['crowfly_distance'], 1)
         self.app.config['ENV'] = prev_env
 
     def test_access_operateur(self):
