@@ -31,6 +31,7 @@ dict_vehicle = {
     "every_destination" : False,
     "color" : "grey",
     "special_need_vehicle" : True,
+    "nb_seats": 4
 }
 
 dict_ads = {

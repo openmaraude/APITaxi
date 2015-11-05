@@ -58,6 +58,8 @@ class TestTaxisGet(TaxiGet):
         for key in ['departement', 'professional_licence']:
             assert key in taxi['driver']
             assert taxi['driver'][key] is not None
+        for key in ['characteristics', 'color', 'licence_plate', 'model', 'nb_seats']:
+            assert taxi['vehicle'][key] is not None
 
     def test_get_taxis_lonlat_timestamp_float(self):
         self.add(float_=True)
