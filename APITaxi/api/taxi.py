@@ -98,10 +98,12 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
             "vehicle": {
                 "model": description.model,
                 "constructor": description.constructor,
-                "color": description.color,
-                "characteristics": description.characteristics,
+                "description": {
+                    "color": description.color,
+                    "characteristics": description.characteristics,
+                },
+                "nb_seats": description.nb_seats,
                 "licence_plate": taxi_db.vehicle.licence_plate,
-                "nb_seats": description.nb_seats
             },
             "ads": {
                 "insee": taxi_db.ads.insee,
