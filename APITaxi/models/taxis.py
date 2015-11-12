@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from ..models import vehicle
-from ..extensions import (region_taxi, db, user_datastore, redis_store,
+from ..extensions import (regions, db, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription
+from ..models.administrative import ZUPC
 from ..utils import AsDictMixin, HistoryMixin, fields, FilterOr404Mixin
-from ..utils.scoped_session import ScopedSession
-from ..utils.cache_refresh import cache_refresh
+from ..utils.mixins import GetOr404Mixin
+from ..utils.caching import CacheableMixin, query_callable
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
@@ -40,7 +41,10 @@ class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
     owner_name = Column(db.String, label=u'Nom du propriétaire')
     category = Column(db.String, label=u'Catégorie de l\'ADS')
     zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'), nullable=True)
-    zupc = db.relationship('ZUPC', backref='ZUPC', lazy='joined')
+
+    @property
+    def zupc(self):
+        return ZUPC.query.get(self.zupc_id)
 
     @validates('owner_type')
     def validate_owner_type(self, key, value):
@@ -61,7 +65,7 @@ class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
 
     @property
     def vehicle(self):
-        return self.__vehicle
+        return vehicle.Vehicle.query.get(self.vehicle_id)
 
     @vehicle.setter
     def vehicle(self, vehicle):
@@ -113,12 +117,14 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
 
     def __repr__(self):
         return '<drivers %r>' % str(self.id)
-
 @with_pattern(r'\d+(\.\d+)?')
 def parse_number(str_):
     return int(float(str_))
 
-class Taxi(db.Model, AsDictMixin, HistoryMixin):
+class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
+    cache_label = 'taxis'
+    cache_regions = regions
+    query_class = query_callable(regions)
 
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
@@ -237,23 +243,6 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def driver_departement(self):
         return self.driver.departement
 
-    @classmethod
-    @region_taxi.cache_on_arguments(namespace='T', expiration_time=13*3600)
-    def getter_db(cls, id_):
-        with ScopedSession() as session:
-            t = session.query(Taxi).options(joinedload(Taxi.ads),
-                         joinedload(Taxi.driver), joinedload(Taxi.vehicle))\
-                                .filter_by(id=id_).first()
-            return t
-
-    @classmethod
-    def get(cls, id_):
-        t = cls.getter_db(id_)
-        if t is None:
-            return None
-        t.__caracs = cls.retrieve_caracs(id_)
-        return t
-
 
     map_hail_status_taxi_status = {'emitted': 'free',
             'received': 'answering',
@@ -275,8 +264,6 @@ class Taxi(db.Model, AsDictMixin, HistoryMixin):
     def synchronize_status_with_hail(self, hail):
         description = self.vehicle.get_description(hail.operateur)
         description.status = self.map_hail_status_taxi_status[hail.status]
-        cache_refresh(db.session(),
-            {'func': self.getter_db.refresh, 'args': [self.__class__, self.id]})
 
 
 
@@ -295,8 +282,7 @@ def refresh_taxi(**kwargs):
             filters.extend([{filter_k: i} for i in param])
         elif param:
             filters.extend([{filter_k: param}])
-    with ScopedSession() as session:
-        for filter_ in filters:
-            for taxi in session.query(Taxi).filter_by(**filter_):
-                Taxi.getter_db.refresh(Taxi, taxi.id)
+    for filter_ in filters:
+        for taxi in Taxi.query.filter_by(**filter_):
+            Taxi.getter_db.refresh(Taxi, taxi.id)
 

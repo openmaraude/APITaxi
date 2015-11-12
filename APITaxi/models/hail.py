@@ -4,20 +4,17 @@ from flask.ext.security import login_required, roles_accepted,\
         roles_accepted, current_user
 from datetime import datetime, timedelta
 from ..utils import HistoryMixin, AsDictMixin, fields
-from ..utils.scoped_session import ScopedSession
+from ..utils.mixins import GetOr404Mixin
+from ..utils.caching import CacheableMixin, query_callable
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
-from ..extensions import redis_store, region_hails, db, get_short_uuid
+from ..extensions import redis_store, db, get_short_uuid, regions
+from ..models.security import User
 from flask_principal import RoleNeed, Permission
-from sqlalchemy.orm import validates, joinedload
+from sqlalchemy.orm import validates, joinedload, synonym
+from sqlalchemy.ext.hybrid import hybrid_property
 from flask import g
-
-status_enum_list = [ 'emitted', 'received', 'sent_to_operator',
- 'received_by_operator', 'received_by_taxi', 'accepted_by_taxi',
- 'accepted_by_customer', 'declined_by_taxi', 'declined_by_customer',
- 'incident_customer', 'incident_taxi', 'timeout_customer', 'timeout_taxi',
-    'outdated_customer', 'outdated_taxi', 'failure']#This may be redundant
 
 
 class Customer(db.Model, AsDictMixin, HistoryMixin):
@@ -35,17 +32,27 @@ class Customer(db.Model, AsDictMixin, HistoryMixin):
         self.nb_sanctions = 0
         self.added_via = 'api'
 
+status_enum_list = [ 'emitted', 'received', 'sent_to_operator',
+ 'received_by_operator', 'received_by_taxi', 'accepted_by_taxi',
+ 'accepted_by_customer', 'declined_by_taxi', 'declined_by_customer',
+ 'incident_customer', 'incident_taxi', 'timeout_customer', 'timeout_taxi',
+    'outdated_customer', 'outdated_taxi', 'failure']#This may be redundant
+
 
 rating_ride_reason_enum = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
 reporting_customer_reason_enum = ['late', 'aggressive', 'no_show']
 incident_customer_reason_enum = ['mud_river', 'parade', 'earthquake']
 incident_taxi_reason_enum = ['traffic_jam', 'garbage_truck']
-class Hail(db.Model, AsDictMixin, HistoryMixin):
+class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
+    cache_label = 'hails'
+    cache_regions = regions
+    query_class = query_callable(regions)
+
     id = db.Column(db.String, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
             nullable=True)
-    operateur = db.relationship('User', backref='user_operateur',
+    _operateur = db.relationship('User', backref='user_operateur',
         primaryjoin=(operateur_id==User.id), lazy='joined')
     customer_id = db.Column(db.String,
                             nullable=False)
@@ -181,9 +188,10 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
         status_required = self.status_required.get(value, None)
         if status_required and self.__status != status_required:
             raise ValueError("You cannot set status from {} to {}".format(self.__status, value))
-        self.status_changed()
-        self.taxi_relation.synchronize_status_with_hail(self)
         self.__status = value
+        self.status_changed()
+        TaxiM.query.get(self.taxi_id).synchronize_status_with_hail(self)
+
 
     def _TestHailPut__status_set_no_check(self, value):
 #Used for testing purposes
@@ -237,10 +245,7 @@ class Hail(db.Model, AsDictMixin, HistoryMixin):
                         }
         return {}
 
-    @classmethod
-    @region_hails.cache_on_arguments(expiration_time=3600*2, namespace='H')
-    def get(cls, id_):
-        with ScopedSession() as session:
-            h = session.query(Hail).options(joinedload(Hail.operateur)).\
-                filter_by(id=id_).first()
-        return h
+    @property
+    def operateur(self):
+        return User.query.get(self.operateur_id)
+

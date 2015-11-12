@@ -27,6 +27,15 @@ class FilterOr404Mixin(object):
             abort(404, message=message)
         return v
 
+class GetOr404Mixin(object):
+    @classmethod
+    def get_or_404(cls, id_):
+        v = cls.cache.get(id_)
+        if not v:
+            message = 'Unable to find {} with id {}'.format(cls.__tablename__, id_)
+            abort(404, message=message)
+        return v
+
 
 class MarshalMixin(object):
     inspect_obj = None

@@ -9,7 +9,7 @@ from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from ..utils.request_wants_json import json_mimetype_required
-from ..utils.cache_refresh import cache_refresh
+#from ..utils.cache_refresh import cache_refresh
 from ..utils import arguments
 from ..utils import influx_db
 from ..utils import fields as customFields
@@ -34,7 +34,7 @@ class TaxiId(Resource, ValidatorMixin):
         403:'You\'re not authorized to view it'})
     @json_mimetype_required
     def get(self, taxi_id):
-        taxi = taxis_models.Taxi.get(taxi_id)
+        taxi = taxis_models.Taxi.cache.get(taxi_id)
         if not taxi:
             abort(404, message="Unable to find this taxi")
         description = taxi.vehicle.description
@@ -54,7 +54,7 @@ class TaxiId(Resource, ValidatorMixin):
     @api.expect(taxi_put_expect)
     @json_mimetype_required
     def put(self, taxi_id):
-        taxi = taxis_models.Taxi.query.get(taxi_id)
+        taxi = taxis_models.Taxi.cache.get(taxi_id)
         if not taxi:
             abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
         if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
@@ -62,14 +62,15 @@ class TaxiId(Resource, ValidatorMixin):
 
         hj = request.json
         self.validate(hj)
-        try:
-            taxi.status = hj['data'][0]['status']
-        except AssertionError as e:
-            abort(400, message=str(e))
-
-        cache_refresh(db.session(), {'func': taxis_models.Taxi.getter_db.refresh,
-            'args': [taxis_models.Taxi, taxi_id]})
-        db.session.commit()
+        new_status = hj['data'][0]['status']
+        if new_status != taxi.status:
+            try:
+                taxi.vehicle.description.status = hj['data'][0]['status']
+            except AssertionError as e:
+                abort(400, message=str(e))
+            db.session.add(taxi.vehicle.description)
+            db.session.commit()
+            taxi.cache.flush(taxi.cache._cache_key(taxi.id))
         return {'data': [taxi]}
 
 
@@ -77,7 +78,7 @@ class TaxiId(Resource, ValidatorMixin):
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
-        taxi_db = taxis_models.Taxi.get(taxi_id)
+        taxi_db = taxis_models.Taxi.cache.get(taxi_id)
         if not taxi_db or not taxi_db.ads or not taxi_db.is_free()\
             or taxi_db.ads.zupc_id not in zupc_customer:
             return None

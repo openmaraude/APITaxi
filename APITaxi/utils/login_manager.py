@@ -3,7 +3,7 @@ from ..extensions import db, user_datastore
 from ..forms.login import LoginForm
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.security.utils import verify_and_update_password
-from flask.ext.login import login_user, user_logged_out
+from flask.ext.login import login_user, user_logged_out, user_logged_in
 
 
 def load_user(user_id):
@@ -27,10 +27,17 @@ def load_user_from_request(request):
             return None
     return user if login_user(user) else None
 
-from .cache_refresh import invalidate_user
+def invalidate_user(sender, user, **extra):
+    c = user.cache
+    c.flush(c._cache_key(user.id))
+    c.flush(c._cache_key(unicode(user.id)))
+    c.flush(c._cache_key(**{"email":user.email}))
+    c.flush(c._cache_key(**{"apikey":user.apikey}))
+
 def init_app(app):
     security = Security()
     security.init_app(app, user_datastore, login_form=LoginForm)
     app.login_manager.request_loader(load_user_from_request)
     app.login_manager.user_loader(load_user)
     user_logged_out.connect(invalidate_user)
+    user_logged_in.connect(invalidate_user)

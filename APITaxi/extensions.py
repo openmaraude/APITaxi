@@ -1,16 +1,7 @@
 #coding: utf-8
-from flask_sqlalchemy import SQLAlchemy as BaseSQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.pool import QueuePool as BaseQueuePool
 
-
-class SQLAlchemy(BaseSQLAlchemy):
-    def apply_driver_hacks(self, app, info, options):
-        BaseSQLAlchemy.apply_driver_hacks(self, app, info, options)
-        class QueuePool(BaseQueuePool):
-            def  __init__(self, creator, pool_size=5, max_overflow=10, timeout=30, **kw):
-                kw['use_threadlocal'] = True
-                BaseQueuePool.__init__(self, creator, pool_size, max_overflow, timeout, **kw)
-        options.setdefault('poolclass', QueuePool)
 db = SQLAlchemy(session_options={"autoflush":False})
 from .utils.redis_geo import GeoRedis
 from flask.ext.redis import FlaskRedis
@@ -20,16 +11,12 @@ from flask.ext.celery import Celery
 celery = Celery()
 
 from dogpile.cache import make_region
-region_taxi = make_region('taxis')
-region_hails = make_region('hails')
-region_zupc = make_region('zupc')
-def user_key_generator(namespace, fn, **kw):
-    def generate_key(*args, **kwargs):
-        return fn.__name__ +\
-             "_".join(str(s) for s in args) +\
-             "_".join(k+"_"+str(v) for k,v in kwargs.iteritems())
-    return generate_key
-region_users = make_region('users', function_key_generator=user_key_generator)
+regions = {
+    'taxis': make_region('taxis'),
+    'hails': make_region('hails'),
+    'zupc': make_region('zupc').configure('dogpile.cache.memory'),
+    'users': make_region('users')
+}
 
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
