@@ -63,7 +63,7 @@ class HailMixin(Skeleton):
             r = self.get('hails/{}/'.format(hail_id))
             if r.status_code == 200 and r.json['data'][0]['status'] == status:
                 break
-            time.sleep(i*0.01)
+            time.sleep(i*0.001)
         return r
 
 class TestHailPost(HailMixin):

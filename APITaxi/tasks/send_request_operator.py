@@ -3,10 +3,10 @@ from flask import current_app
 from flask.ext.restplus import marshal
 from ..models.hail import Hail
 from ..descriptors.hail import hail_model
-from ..extensions import db
-import celery, requests, json
+from ..extensions import db, celery
+import requests, json
 
-@celery.task
+@celery.task()
 def send_request_operator(hail_id, operateur, env):
     hail = Hail.query.get(hail_id)
     if not hail:
