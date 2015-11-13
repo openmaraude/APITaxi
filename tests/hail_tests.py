@@ -59,7 +59,7 @@ class HailMixin(Skeleton):
         db.session.commit()
 
     def wait_for_status(self, status, hail_id):
-        for i in range(1, 6):
+        for i in range(1, 15):
             r = self.get('hails/{}/'.format(hail_id))
             if r.status_code == 200 and r.json['data'][0]['status'] == status:
                 break
