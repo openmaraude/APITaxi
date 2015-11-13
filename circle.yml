@@ -10,6 +10,7 @@ machine:
         SQLALCHEMY_DATABASE_URI: 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
         REDIS_URL: "redis://:@localhost:7777/0"
         SECURITY_PASSWORD_HASH: 'plaintext'
+        NOW: 'time_test'
 
 dependencies:
     pre:
@@ -39,6 +40,8 @@ test:
         - ./faker/faker:
             background: true
         - python minimal_operateur_server/api.py:
+            background: true
+        - celery worker --app=celery_worker.celery -Q deployment_time_test:
             background: true
     override:
         - nosetests tests --stop
