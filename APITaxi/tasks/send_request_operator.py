@@ -10,10 +10,14 @@ import requests, json
 @celery.task()
 def send_request_operator(hail_id, operateur_id, env):
     hail = Hail.query.get(hail_id)
-    operateur = User.query.get(operateur_id)
     if not hail:
         current_app.logger.error('Unable to find hail: {}'.format(hail_id))
-        return None
+        return False
+    operateur = User.query.get(operateur_id)
+    if not operateur:
+        current_app.logger.error('Unable to find operateur: {}'.format(operateur_id))
+        return False
+
     r = None
     endpoint = operateur.hail_endpoint(env)
     try:
@@ -30,7 +34,7 @@ def send_request_operator(hail_id, operateur_id, env):
             .format(endpoint, operateur.email))
         hail.status = 'failure'
         db.session.commit()
-        return
+        return False
     r_json = None
     try:
         r_json = r.json()
@@ -43,3 +47,4 @@ def send_request_operator(hail_id, operateur_id, env):
 
     hail.status = 'received_by_operator'
     db.session.commit()
+    return True
