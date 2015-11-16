@@ -44,4 +44,4 @@ INFLUXDB_PORT = 8086
 INFLUXDB_USER = ''
 INFLUXDB_PASSWORD = ''
 INFLUXDB_TAXIS_DB = 'taxis'
-NOW = 'deployment_time'
+NOW = 'now'

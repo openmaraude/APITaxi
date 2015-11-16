@@ -116,7 +116,7 @@ class Hail(Resource, ValidatorMixin):
         hail.operateur_id = operateur.id
         hail.status = 'received'
 
-        send_request_operator.apply_async(args=[hail.id, operateur,
+        send_request_operator.apply_async(args=[hail.id, operateur.id,
             current_app.config['ENV']],
             queue='deployment_'+current_app.config['NOW'])
         db.session.add(hail)
