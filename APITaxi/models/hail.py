@@ -141,6 +141,7 @@ class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
         return value
 
     timeouts = {
+            'received': (15, 'failure'),
             'sent_to_operator': (10, 'failure'),
             'received_by_operator': (10, 'failure'),
             'received_by_taxi': (30, 'timeout_taxi'),
