@@ -30,10 +30,10 @@ def send_request_operator(hail_id, operateur_id, env):
     except requests.exceptions.MissingSchema:
         pass
     if not r or r.status_code < 200 or r.status_code >= 300:
-        current_app.logger.error("Unable to reach hail's endpoint {} of operator {}"\
-            .format(endpoint, operateur.email))
         hail.status = 'failure'
         db.session.commit()
+        current_app.logger.error("Unable to reach hail's endpoint {} of operator {}"\
+            .format(endpoint, operateur.email))
         return False
     r_json = None
     try:
