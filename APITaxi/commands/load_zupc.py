@@ -17,8 +17,15 @@ def load_zupc(zupc_path):
     with open(zupc_path) as f:
         for feature in json.load(f)['features']:
             wkb = shape.from_shape(geometry.shape(feature['geometry']))
-            parent = ZUPC.query.filter_by(insee=feature['properties'][0]).first()
-            for insee in feature['properties']:
+            properties = feature['properties']
+            for p in properties:
+                parent = ZUPC.query.filter_by(insee=p).first()
+                if parent:
+                    break
+            if not parent:
+                current_app.logger.error('Unable to get a insee code in : {}'.format(properties))
+                return
+            for insee in properties:
                 zupc = ZUPC.query.filter_by(insee=insee).first()
                 if not zupc:
                     zupc = ZUPC()
