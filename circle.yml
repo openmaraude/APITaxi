@@ -41,7 +41,7 @@ test:
             background: true
         - python minimal_operateur_server/api.py:
             background: true
-        - celery worker --app=celery_worker.celery -Q send_hail_test:
+        - celery worker --app=celery_worker.celery -Q send_hail_time_test:
             background: true
     override:
         - nosetests tests --stop
