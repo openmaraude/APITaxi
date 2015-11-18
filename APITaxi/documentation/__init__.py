@@ -9,3 +9,5 @@ def init_app(app):
     app.register_blueprint(operateur.mod)
     from . import reference
     app.register_blueprint(reference.mod)
+    from . import examples
+    app.register_blueprint(examples.mod)
