@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db
+from ..extensions import db, index_zupc
 from ..models import administrative as administrative_models
 from ..forms.administrative import ZUPCreateForm, ZUPCUpdateForm
-from flask.ext.security import login_required, roles_accepted
+from ..utils import request_wants_json
+from flask.ext.security import login_required, roles_accepted, current_user
+from flask.ext.restplus import reqparse, marshal
 from flask import (Blueprint, request, render_template, redirect, jsonify,
                    url_for)
+from werkzeug.exceptions import BadRequest
+import json
 
 
 mod = Blueprint('zupc', __name__)
@@ -15,15 +19,37 @@ def zupc_list():
         zupc_list=administrative_models.ZUPC.query.paginate(page))
 
 
+def zupc_search():
+    parser = reqparse.RequestParser()
+    parser.add_argument('lon', type=float, required=True, location='args')
+    parser.add_argument('lat', type=float, required=True, location='args')
+    try:
+        args = parser.parse_args()
+    except BadRequest as e:
+        return json.dumps(e.data), 400
+
+    id_list = index_zupc.intersection(args['lon'], args['lat'])
+    to_return = []
+    if id_list:
+        ZUPC = administrative_models.ZUPC
+        zupc_list = ZUPC.query.filter(ZUPC.id.in_(id_list)).all()
+#Level is one, because we don't want to have parent in the response
+        to_return = marshal(zupc_list, ZUPC.marshall_obj(filter_id=True, level=1))
+    return json.dumps({"data": to_return})
+
+
+
+
 @mod.route('/zupc')
 @mod.route('/zupc/')
-@login_required
-@roles_accepted('admin', 'mairie', 'prefecture')
 def zupc():
     if request.method == "GET":
-        return zupc_list()
-    #elif request.method == "POST":
-    #    return zupc_create()
+        if request_wants_json():
+            return zupc_search()
+        roles_accepted = set(['admin', 'mairie', 'prefecture', 'operateur'])
+        if not current_user.is_anonymous() and\
+                len(roles_accepted.intersection(current_user.roles)) > 0:
+            return zupc_list()
     abort(405, message="method now allowed")
 
 
