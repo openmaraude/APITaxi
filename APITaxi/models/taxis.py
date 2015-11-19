@@ -117,6 +117,7 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
 
     def __repr__(self):
         return '<drivers %r>' % str(self.id)
+
 @with_pattern(r'\d+(\.\d+)?')
 def parse_number(str_):
     return int(float(str_))
@@ -264,7 +265,6 @@ class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
     def synchronize_status_with_hail(self, hail):
         description = self.vehicle.get_description(hail.operateur)
         description.status = self.map_hail_status_taxi_status[hail.status]
-
 
 
 def refresh_taxi(**kwargs):

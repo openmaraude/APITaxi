@@ -9,6 +9,7 @@ from APITaxi.models.taxis import Taxi
 from copy import deepcopy
 from werkzeug.exceptions import ServiceUnavailable
 from datetime import datetime, timedelta
+import time
 
 dict_ = {
     'customer_id': 'aa',
@@ -33,6 +34,8 @@ class HailMixin(Skeleton):
             u.hail_endpoint_testing = url
         elif env == 'STAGING':
             u.hail_endpoint_staging = url
+        db.session.add(u)
+        db.session.commit()
         return prev_env
 
     def send_hail(self, dict_hail, method="post", role='moteur', apikey=False):
@@ -54,6 +57,14 @@ class HailMixin(Skeleton):
         if last_status_change:
             hail.last_status_change -= last_status_change
         db.session.commit()
+
+    def wait_for_status(self, status, hail_id):
+        for i in range(1, 40):
+            r = self.get('hails/{}/'.format(hail_id))
+            if r.status_code == 200 and r.json['data'][0]['status'] == status:
+                break
+            time.sleep(i*0.001)
+        return r
 
 class TestHailPost(HailMixin):
     role = 'moteur'
@@ -96,6 +107,8 @@ class TestHailPost(HailMixin):
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
+        self.assertEqual(r.json['data'][0]['status'], 'received')
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
         assert('taxi_phone_number' in r.json['data'][0])
         self.assertEqual(r.json['data'][0]['taxi_phone_number'], 'aaa')
@@ -124,6 +137,7 @@ class TestHailPost(HailMixin):
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
+        r = self.wait_for_status('received', r.json['data'][0]['id'])
         self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
         r = self.get('taxis/{}/'.format(r.json['data'][0]['taxi']['id']),
                 user='user_apikey', role='operateur')
@@ -137,6 +151,7 @@ class TestHailPost(HailMixin):
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
+        r = self.wait_for_status('failure', r.json['data'][0]['id'])
         self.assertEqual(r.json['data'][0]['status'], 'failure')
         self.app.config['ENV'] = prev_env
 
@@ -185,6 +200,7 @@ class TestHailPost(HailMixin):
 
 
 class  TestHailGet(HailMixin):
+    role = 'moteur'
 
     def test_access_moteur(self):
         dict_hail = deepcopy(dict_)
@@ -235,6 +251,7 @@ class  TestHailGet(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi', timedelta(seconds=31))
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
@@ -247,6 +264,7 @@ class  TestHailGet(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'received_by_taxi', timedelta(seconds=31))
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='operateur')
@@ -260,6 +278,7 @@ class  TestHailGet(HailMixin):
         for status in ['received_by_operator', 'sent_to_operator']:
             r = self.send_hail(dict_hail)
             self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             self.set_hail_status(r, status, timedelta(seconds=11))
             r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='operateur')
@@ -276,6 +295,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'received_by_taxi')
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
@@ -288,6 +308,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'received_by_taxi')
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
@@ -300,6 +321,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'received_by_taxi')
 
         dict_hail['taxi_phone_number'] = '000000'
@@ -314,6 +336,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'received_by_taxi')
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -326,6 +349,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'received_by_taxi', timedelta(seconds=10))
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
@@ -340,6 +364,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'received_by_taxi', timedelta(seconds=31))
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_taxi'
@@ -354,6 +379,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi', timedelta(seconds=5))
         dict_hail['status'] = 'accepted_by_customer'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -367,6 +393,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi', timedelta(seconds=21))
         dict_hail['taxi_phone_number'] = '000000'
         dict_hail['status'] = 'accepted_by_customer'
@@ -381,6 +408,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi')
         dict_hail['status'] = 'accepted_by_customer'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -394,6 +422,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi')
         dict_hail['status'] = 'declined_by_customer'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -407,6 +436,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         dict_hail['status'] = 'string'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role="moteur")
@@ -422,6 +452,7 @@ class TestHailPut(HailMixin):
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
             hail.__status_set_no_check('accepted_by_customer')
             dict_hail['status'] = 'accepted_by_customer'
@@ -438,6 +469,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -452,6 +484,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -466,6 +499,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -479,6 +513,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -508,6 +543,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -523,6 +559,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -538,6 +575,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -552,6 +590,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -567,6 +606,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -584,6 +624,7 @@ class TestHailPut(HailMixin):
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
             hail.__status_set_no_check('incident_customer')
             dict_hail['status'] = 'incident_customer'
@@ -600,6 +641,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('incident_customer')
         dict_hail['status'] = 'incident_customer'
@@ -614,6 +656,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('incident_customer')
         dict_hail['status'] = 'incident_customer'
@@ -629,6 +672,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('incident_customer')
         dict_hail['status'] = 'incident_customer'
@@ -645,6 +689,7 @@ class TestHailPut(HailMixin):
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
             hail.__status_set_no_check('incident_taxi')
             dict_hail['status'] = 'incident_taxi'
@@ -661,6 +706,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('incident_taxi')
         dict_hail['status'] = 'incident_taxi'
@@ -675,6 +721,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('incident_taxi')
         dict_hail['status'] = 'incident_taxi'
@@ -689,6 +736,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('incident_taxi')
         dict_hail['status'] = 'incident_taxi'
@@ -703,6 +751,7 @@ class TestHailPut(HailMixin):
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
             hail.__status_set_no_check('accepted_by_customer')
             dict_hail['status'] = 'accepted_by_customer'
@@ -719,6 +768,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'
@@ -735,6 +785,7 @@ class TestHailPut(HailMixin):
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
             hail.__status_set_no_check('accepted_by_customer')
             dict_hail['status'] = 'accepted_by_customer'
@@ -751,6 +802,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('reporting_customer')
         dict_hail['status'] = 'reporting_customer'
@@ -765,6 +817,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('reporting_customer')
         dict_hail['status'] = 'reporting_customer'
@@ -779,6 +832,7 @@ class TestHailPut(HailMixin):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail.__status_set_no_check('accepted_by_customer')
         dict_hail['status'] = 'accepted_by_customer'

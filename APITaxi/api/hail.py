@@ -15,6 +15,7 @@ from ..utils.request_wants_json import json_mimetype_required
 from ..utils import fields as customFields
 from ..utils.validate_json import ValidatorMixin
 from geopy.distance import vincenty
+from ..tasks import send_request_operator
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -114,44 +115,11 @@ class Hail(Resource, ValidatorMixin):
         hail.taxi_id = hj['taxi_id']
         hail.operateur_id = operateur.id
         hail.status = 'received'
+
+        send_request_operator.apply_async(args=[hail.id, operateur.id,
+            current_app.config['ENV']],
+            queue='send_hail_'+current_app.config['NOW'])
         db.session.add(hail)
         db.session.commit()
-        r = None
 
-        def finish_and_abort(message):
-            current_app.logger.info(message)
-            hail.status  = 'failure'
-            db.session.commit()
-            return {"data": [hail]}, 201
-
-        try:
-            headers = {'Content-Type': 'application/json'}
-            if operateur.operator_header_name is not None and operateur.operator_header_name != '':
-                headers[operateur.operator_header_name] = operateur.operator_api_key
-            r = requests.post(operateur.hail_endpoint,
-                    data=json.dumps(marshal({"data": [hail]}, hail_model)),
-                headers=headers)
-        except requests.exceptions.MissingSchema:
-            pass
-        hail.status = 'sent_to_operator'
-        db.session.commit()
-        if not r or r.status_code < 200 or r.status_code >= 300:
-            return finish_and_abort("Unable to reach hail's endpoint {} of operator {}"\
-                    .format(operateur.hail_endpoint, operateur.email))
-        r_json = None
-        try:
-            r_json = r.json()
-        except ValueError:
-            pass
-            #return finish_and_abort('Response from endpoint doesn\'t contain json')
-
-        if r_json and 'data' in r_json and len(r_json['data']) == 1\
-                and 'taxi_phone_number' in r_json['data'][0]:
-            hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
-        else:
-            pass
-            #return finish_and_abort('Response is mal formated')
-
-        hail.status = 'received_by_operator'
-        db.session.commit()
         return {"data": [hail]}, 201

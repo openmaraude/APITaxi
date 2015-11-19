@@ -79,7 +79,6 @@ def create_app(sqlalchemy_uri=None):
     for region in regions.values():
         if not region.is_configured:
             region.configure(app.config['DOGPILE_CACHE_BACKEND'])
-
     from . import tasks
     tasks.init_app(app)
 
