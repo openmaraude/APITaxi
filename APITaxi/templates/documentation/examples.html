@@ -37,7 +37,7 @@ height:auto;
 {% block documentationcontent %}
 <h1>Look for a taxi</h1>
 
-{{ get_code(base_url+'/taxis/?lat=48.8&lon=2.3', apikeys_moteur) }}
+{{ get_code(url_for('api.taxi_list', lat=48.8, lon=2.3), apikeys_moteur) }}
 
 <h1>Free a taxi</h1>
 {% if taxis %}
@@ -49,24 +49,24 @@ height:auto;
 </ul>
 {% endif %}
 Make sure you change the taxi_id in the url
-{{ put_code(base_url+'/taxis/taxi_id/', apikeys_operator, '{"data": [{"status": "free"}]}') }}
+{{ put_code(url_for('api.taxi_id', taxi_id='taxi_id'), apikeys_operator, '{"data": [{"status": "free"}]}') }}
 
 
 <h1>Post a hail</h1>
 Make sure you change the taxi_id and the operator in the body
-{{ post_code(base_url+'/hails/', apikeys_moteur, '{"data": [{"customer_address": "customer address", "customer_id": "0656435678", "customer_lat": 48.8, "customer_lon": 2.3, "customer_phone_number": "0656435678", "operateur": "operator", "taxi_id": "taxi_id"}]}') }}
+{{ post_code(url_for('api.hailid', hail_id='hail_id'), apikeys_moteur, '{"data": [{"customer_address": "customer address", "customer_id": "0656435678", "customer_lat": 48.8, "customer_lon": 2.3, "customer_phone_number": "0656435678", "operateur": "operator", "taxi_id": "taxi_id"}]}') }}
 
 
 <h1>Set status hail to received_by_taxi</h1>
 Make sure you change the hail_id in the url
-{{ put_code(base_url+'/hails/hail_id/', apikeys_operator, '{"data": [{"status": "received_by_taxi"}]}') }}
+{{ put_code(url_for('api.hailid', hail_id='hail_id'), apikeys_operator, '{"data": [{"status": "received_by_taxi"}]}') }}
 
 <h1>Set status hail to accepted_by_taxi</h1>
 Make sure you change the hail_id in the url
-{{ put_code(base_url+'/hails/hail_id/', apikeys_operator, '{"data": [{"status": "accepted_by_taxi", "taxi_phone_number": "0676545373"}]}') }}
+{{ put_code(url_for('api.hailid', hail_id='hail_id'), apikeys_operator, '{"data": [{"status": "accepted_by_taxi", "taxi_phone_number": "0676545373"}]}') }}
 
 <h1>Set status hail to accepted_by_customer</h1>
 Make sure you change the hail_id in the url
-{{ put_code(base_url+'/hails/hail_id/', apikeys_moteur, '{"data": [{"status": "accepted_by_customer"}]}') }}
+{{ put_code(url_for('api.hailid', hail_id='hail_id'), apikeys_moteur, '{"data": [{"status": "accepted_by_customer"}]}') }}
 
 {% endblock %}
