@@ -32,6 +32,7 @@ class ZUPC(db.Model, MarshalMixin, CacheableMixin):
             backref=db.backref('departements'), lazy='joined')
     parent_id = Column(db.Integer, db.ForeignKey('ZUPC.id'))
     parent = db.relationship('ZUPC', remote_side=[id], lazy='joined')
+    active = Column(db.Boolean, default=False)
     __geom = None
     __bounds = None
 
