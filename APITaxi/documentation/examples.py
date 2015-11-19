@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, url_for as base_url_for
 from flask.ext.security import current_user
 from ..extensions import user_datastore
 from ..models.taxis import Taxi
+from functools import partial
 
 mod = Blueprint('examples', __name__)
 
@@ -25,9 +26,9 @@ def doc_index():
         apikeys_moteur = [('anonymous', 'token')]
         taxis = []
 
-
+    url_for = partial(base_url_for, _external=True)
     return render_template('documentation/examples.html',
                  apikeys_operator=apikeys_operator,
                  apikeys_moteur=apikeys_moteur,
                  taxis=taxis,
-                 base_url='https://api.opendatataxi.fr')
+                 url_for=url_for)
