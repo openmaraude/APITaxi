@@ -13,4 +13,4 @@ def register_commands(manager):
     manager.add_command('urls', ShowUrls)
     from .load_zupc import load_zupc
     from .active_tasks import active_tasks
-
+    from .export_taxis import export_taxis
