@@ -130,7 +130,9 @@ class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
-        kwargs['id'] = str(get_short_uuid())
+        kwargs['id'] = kwargs.get('id', None)
+        if not kwargs['id']:
+            kwargs['id'] = str(get_short_uuid())
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
         self.__caracs = None

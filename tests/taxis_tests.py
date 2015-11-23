@@ -257,6 +257,16 @@ class TestTaxiPost(Skeleton):
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         self.assertEqual(len(Taxi.query.all()), 1)
 
+    def test_add_taxi_with_id(self):
+        self.init_taxi()
+        dict_taxi_ = deepcopy(dict_taxi)
+        dict_taxi_['id'] = 'a'
+        r = self.post([dict_taxi_])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
+        self.assertEqual(r.json['data'][0]['id'], 'a')
+        self.assertEqual(len(Taxi.query.all()), 1)
+
     def missing_field(self, field):
         self.init_taxi()
         dict_taxi_d = deepcopy(dict_taxi)

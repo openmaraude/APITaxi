@@ -171,8 +171,11 @@ class Taxis(Resource, ValidatorMixin):
               numero=taxi_json['ads']['numero'],insee=taxi_json['ads']['insee'])
         taxi = taxis_models.Taxi.query.filter_by(driver_id=driver.id,
                 vehicle_id=vehicle.id, ads_id=ads.id).first()
+        if taxi_json.get('id', None):
+            taxi = taxis_models.Taxi.query.get(taxi_json['id'])
         if not taxi:
-            taxi = taxis_models.Taxi(driver=driver, vehicle=vehicle, ads=ads)
+            taxi = taxis_models.Taxi(driver=driver, vehicle=vehicle, ads=ads,
+                    id=taxi_json.get('id', None))
         if 'status' in taxi_json:
             try:
                 taxi.status = taxi_json['status']
