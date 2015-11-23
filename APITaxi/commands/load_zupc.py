@@ -1,15 +1,25 @@
 # -*- coding: utf-8 -*-
 from ..extensions import db
 from ..models.administrative import ZUPC, Departement
+from ..models.taxis import ADS
 from flask.ext.script import prompt_pass
 from validate_email import validate_email
 from . import manager
-from sqlalchemy import create_engine, Table, Column, String, Integer, MetaData
+from sqlalchemy import (create_engine, Table, Column, String, Integer,
+        MetaData, distinct)
 import glob, os, csv, sqlalchemy
 from geoalchemy2 import shape
 from shapely import geometry, wkt
 import json
+from operator import itemgetter
 
+@manager.command
+def update_zupc():
+    insee_list = map(itemgetter(0), db.session.query(distinct(ADS.insee)).all())
+    for insee in insee_list:
+        zupc = ZUPC.query.filter_by(insee=insee).order_by(ZUPC.id.desc()).first()
+        for ads in ADS.query.filter_by(insee=insee).all():
+            ads.zupc_id = zupc.id
 
 @manager.command
 def load_zupc(zupc_path):
@@ -37,3 +47,4 @@ def load_zupc(zupc_path):
                 zupc.shape = wkb
                 zupc.parent_id = parent.id
             db.session.commit()
+    update_zupc()
