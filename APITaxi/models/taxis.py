@@ -76,7 +76,7 @@ class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
 
 
     def __repr__(self):
-        return '<ADS %r>' % str(self.id)
+        return '<ADS %r>' % unicode(self.id)
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()
@@ -116,7 +116,7 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return '<drivers %r>' % str(self.id)
+        return '<drivers %r>' % unicode(self.id)
 
 @with_pattern(r'\d+(\.\d+)?')
 def parse_number(str_):
