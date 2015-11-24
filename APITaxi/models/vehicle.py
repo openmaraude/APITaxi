@@ -27,7 +27,7 @@ class Constructor(db.Model, AsDictMixin, MarshalMixin):
             self.name = name
 
     def __repr__(self):
-        return '<Constructor %r>' % str(self.name)
+        return '<Constructor %r>' % unicode(self.name)
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()
@@ -53,7 +53,7 @@ class Model(db.Model, AsDictMixin, MarshalMixin):
             self.name = name
 
     def __repr__(self):
-        return '<Model %r>' % str(self.id)
+        return '<Model %r>' % unicode(self.id)
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()
@@ -286,7 +286,7 @@ class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mi
         return self.description.type_ if self.description else None
 
     def __repr__(self):
-        return '<Vehicle %r>' % str(self.id)
+        return '<Vehicle %r>' % unicode(self.id)
 
     def __eq__(self, other):
         return self.__repr__() == other.__repr__()
