@@ -9,7 +9,7 @@ import requests, json
 
 @celery.task()
 def send_request_operator(hail_id, operateur_id, env):
-    hail = Hail.query.get(hail_id)
+    hail = Hail.cache.get(hail_id)
     if not hail:
         current_app.logger.error('Unable to find hail: {}'.format(hail_id))
         return False
