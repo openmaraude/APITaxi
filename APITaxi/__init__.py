@@ -38,9 +38,10 @@ def add_version_header(sender, response, **extra):
 
 def commit_signal(sender, changes):
     for model, change in changes:
-        if not hasattr(model, 'cache'):
+        if not hasattr(model, 'cache') or not hasattr(model, 'to_flush'):
             continue
-        model.cache._flush_all(model)
+        for key in model.to_flush:
+            model.cache.flush(key)
 
 def create_app(sqlalchemy_uri=None):
     from .extensions import (db, redis_store, regions, configure_uploads,

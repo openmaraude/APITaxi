@@ -275,6 +275,18 @@ class Cache(object):
         # flush the object
         self.flush(self._cache_key(getattr(obj, self.pk)))
 
+    def _to_flush(self, obj):
+        return_ = []
+        for attr in self._attrs():
+            added, unchanged, deleted = get_history(obj, attr)
+            for value in list(deleted) + list(added):
+                return_.append(self._cache_key(**{attr: value}))
+        # flush "all" listing
+        return_.append(self._cache_key())
+        # flush the object
+        return_.append(self._cache_key(getattr(obj, self.pk)))
+        return return_
+
 
 class CacheableMixin(object):
 
@@ -287,8 +299,19 @@ class CacheableMixin(object):
 
 
     @staticmethod
-    def _flush_event(mapper, connection, target):
+    def _get_to_flush(mapper, connection, target):
         """
         Called on object modification to flush cache of dependencies
         """
-        target.cache._flush_all(target)
+        target.to_flush = target.cache._to_flush(target)
+
+
+    @classmethod
+    def __declare_last__(cls):
+        """
+        Auto clean the caches, including listings possibly associated with
+        this instance, on delete, update and insert.
+        """
+        event.listen(cls, 'before_delete', cls._get_to_flush)
+        event.listen(cls, 'before_update', cls._get_to_flush)
+        event.listen(cls, 'before_insert', cls._get_to_flush)
