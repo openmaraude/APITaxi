@@ -292,14 +292,3 @@ class CacheableMixin(object):
         Called on object modification to flush cache of dependencies
         """
         target.cache._flush_all(target)
-
-
-    @classmethod
-    def __declare_last__(cls):
-        """
-        Auto clean the caches, including listings possibly associated with
-        this instance, on delete, update and insert.
-        """
-        event.listen(cls, 'before_delete', cls._flush_event)
-        event.listen(cls, 'before_update', cls._flush_event)
-        event.listen(cls, 'before_insert', cls._flush_event)

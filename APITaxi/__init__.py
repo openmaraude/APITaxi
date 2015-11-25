@@ -14,6 +14,7 @@ from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from .utils.request_wants_json import request_wants_json
+from flask_sqlalchemy import models_committed
 
 
 valid_versions = ['1', '2']
@@ -34,6 +35,12 @@ def check_version(sender, **extra):
 
 def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
+
+def commit_signal(sender, changes):
+    for model, change in changes:
+        if not hasattr(model, 'cache'):
+            continue
+        model.cache._flush_all(model)
 
 def create_app(sqlalchemy_uri=None):
     from .extensions import (db, redis_store, regions, configure_uploads,
@@ -82,4 +89,5 @@ def create_app(sqlalchemy_uri=None):
     from . import tasks
     tasks.init_app(app)
 
+    models_committed.connect_via(app)(commit_signal)
     return app
