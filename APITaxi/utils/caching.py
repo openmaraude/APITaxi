@@ -38,7 +38,7 @@ def memoize(obj):
 
 
 cache_config = {
-    'backend': 'dogpile.cache.memory',
+    'backend': 'dogpile.cache.redis',
     'expiration_time': 60,
 }
 
