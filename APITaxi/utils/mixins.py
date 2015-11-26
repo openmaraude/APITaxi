@@ -11,7 +11,6 @@ from . import fields as custom_fields
 from ..api import api
 from flask.ext.restplus.fields import Nested as fields_Nested
 from flask.ext.restplus import abort
-from flask import current_app
 
 class AsDictMixin(object):
     def as_dict(self):
@@ -31,12 +30,7 @@ class FilterOr404Mixin(object):
 class GetOr404Mixin(object):
     @classmethod
     def get_or_404(cls, id_):
-        if cls.cache.regions[cls.cache.label].get("{}.id[{}]".format(cls.__tablename__, id_)):
-            v = cls.cache.get(id_)
-            current_app.logger.info("{}.id[{}] found in cache".format(cls.__tablename__, id_))
-        else:
-            v = cls.query.get(id_)
-            #current_app.logger.info("{}.id[{}] not found in cache".format(cls.__tablename__, id_))
+        v = cls.cache.get(id_)
         if not v:
             message = 'Unable to find {} with id {}'.format(cls.__tablename__, id_)
             abort(404, message=message)
