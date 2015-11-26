@@ -68,7 +68,7 @@ class TestTaxisGet(TaxiGet):
         assert len(r.json['data']) == 1
         taxi = r.json['data'][0]
         for key in ['id', 'operator', 'position', 'vehicle', 'last_update',
-                'crowfly_distance', 'ads', 'driver', 'rating']:
+                'crowfly_distance', 'ads', 'driver', 'rating', 'status']:
             assert key in taxi.keys()
             assert taxi[key] is not None
         for key in ['insee', 'numero']:
@@ -77,6 +77,11 @@ class TestTaxisGet(TaxiGet):
         for key in ['departement', 'professional_licence']:
             assert key in taxi['driver']
             assert taxi['driver'][key] is not None
+        for key in ['model', 'constructor', 'color', 'licence_plate',
+                'characteristics', 'nb_seats']:
+            assert key in taxi['vehicle']
+            assert taxi['vehicle'][key] is not None
+
 
     def test_get_taxis_lon_lat_missing_redis_value(self):
         taxi_id = self.add()
@@ -330,7 +335,6 @@ class TestTaxiPost(Skeleton):
         self.post([dict_v], url='/vehicles/')
         r = self.get('/taxis/{}/'.format(taxi_id))
         self.assert200(r)
-        print r.json
         self.assertEqual(r.json['data'][0]['vehicle']['color'], 'red')
         self.assertEqual(len(Taxi.query.all()), 1)
 
