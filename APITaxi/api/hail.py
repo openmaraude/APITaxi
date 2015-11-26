@@ -115,11 +115,11 @@ class Hail(Resource, ValidatorMixin):
         hail.taxi_id = hj['taxi_id']
         hail.operateur_id = operateur.id
         hail.status = 'received'
+        db.session.add(hail)
+        db.session.commit()
 
         send_request_operator.apply_async(args=[hail.id, operateur.id,
             current_app.config['ENV']],
             queue='send_hail_'+current_app.config['NOW'])
-        db.session.add(hail)
-        db.session.commit()
 
         return {"data": [hail]}, 201
