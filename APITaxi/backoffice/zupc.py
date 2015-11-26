@@ -26,7 +26,7 @@ def zupc_search():
     try:
         args = parser.parse_args()
     except BadRequest as e:
-        return json.dumps(e.data), 400
+        return json.dumps(e.data), 400, {"Content-Type": "application/json"}
 
     id_list = index_zupc.intersection(args['lon'], args['lat'])
     to_return = []
@@ -35,7 +35,7 @@ def zupc_search():
         zupc_list = ZUPC.query.filter(ZUPC.id.in_(id_list)).all()
 #Level is one, because we don't want to have parent in the response
         to_return = marshal(zupc_list, ZUPC.marshall_obj(filter_id=True, level=1))
-    return json.dumps({"data": to_return})
+    return json.dumps({"data": to_return}), 200, {"Content-Type": "application/json"}
 
 
 
