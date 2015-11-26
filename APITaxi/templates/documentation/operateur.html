@@ -60,9 +60,9 @@ If successful, the API returns the complete <code>taxi</code> object as describe
 
 
 <h3 id="udp_taxi">Updating the location of a taxi</h3>
- 
- The location of the taxi is updated through a UDP datagram sent to the geolocation server <code>geoloc.opendatataxi.fr</code> on port 80.<br>
- 
+
+The location of the taxi is updated through a UDP datagram sent to the geolocation server (<code>geoloc</code> subdomain of this server) on port 80.<br>
+
 The JSON payload of the UDP datagram should be as follows.
 
 <pre><code class="json">{
