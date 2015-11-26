@@ -114,6 +114,8 @@ class ADS(ResourceMetadata):
         edited_ads_id = []
         new_ads = []
         for ads in json['data']:
+            if ads['vehicle_id'] == 0:
+                ads['vehicle_id'] = None
             if ads['vehicle_id'] and\
               not taxis_models.Vehicle.query.get(ads['vehicle_id']):
                 abort(400, message="Unable to find a vehicle with the id: {}"\

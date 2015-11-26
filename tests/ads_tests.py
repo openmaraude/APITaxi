@@ -86,6 +86,14 @@ class TestADSPost(Skeleton):
         r = self.post([dict_])
         self.assert400(r)
 
+    def test_vehicle_id_O(self):
+        self.init_zupc()
+        dict_ = deepcopy(dict_ads)
+        dict_['vehicle_id'] = 0
+        r = self.post([dict_])
+        print r.json
+        self.assert201(r)
+
     def test_bad_owner_type(self):
         assert(index_zupc.size == 0)
         self.init_zupc()
