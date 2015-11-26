@@ -114,7 +114,8 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
             },
             "last_update": timestamp,
             "crowfly_distance": float(distance),
-            "rating": 4.5
+            "rating": 4.5,
+            "status": description.status
         }
     return wrapped
 
