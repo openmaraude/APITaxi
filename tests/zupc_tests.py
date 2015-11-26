@@ -22,12 +22,16 @@ class TestZUPCSearch(Skeleton):
         zupc = r_json['data'][0]
         for k in ['active', 'nom', 'insee']:
             assert k in zupc
+        assert 'Content-Type' in r.headers
+        assert r.headers['Content-Type'] == 'application/json'
 
     def test_no_argument(self):
         taxi = self.post_taxi_and_locate(lat=2.3, lon=48.5, float_=False)
         self.init_zupc()
         r = self.get('/zupc/')
         self.assert400(r)
+        assert 'Content-Type' in r.headers
+        assert r.headers['Content-Type'] == 'application/json'
 
     def test_bad_type(self):
         taxi = self.post_taxi_and_locate(lat=2.3, lon=48.5, float_=False)
@@ -36,3 +40,5 @@ class TestZUPCSearch(Skeleton):
         self.assert400(r)
         r = self.get('/zupc/?lon=2.3&lat=a')
         self.assert400(r)
+        assert 'Content-Type' in r.headers
+        assert r.headers['Content-Type'] == 'application/json'
