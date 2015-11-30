@@ -20,6 +20,7 @@ def update_zupc():
         zupc = ZUPC.query.filter_by(insee=insee).order_by(ZUPC.id.desc()).first()
         for ads in ADS.query.filter_by(insee=insee).all():
             ads.zupc_id = zupc.id
+    db.session.commit()
 
 @manager.command
 def load_zupc(zupc_path):
