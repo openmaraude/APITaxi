@@ -726,7 +726,7 @@ This section describes the different values a hail status can take.
     <tr>
          <td><code>accepted_by_customer</code></td>
          <td><em>The hail has been confirmed by the client</em></td>
-         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>accepted_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hail_id" target=_blank><code>PUT</code> request on the /hails/{hail_id} API</a> when the hail has been confirmed by the client.<br>Warning: this confirmation can only happen <i>after</i> the status has been set to <code>confirmed_by_taxi</code> by the <strong>operator</strong>.</em></td>
+         <td><em>The <strong>search engine</strong> <i>should</i> set the status of the hail to <code>accepted_by_customer</code> by doing a <a  href="/doc/#!/hails/put_hail_id" target=_blank><code>PUT</code> request on the /hails/{hail_id} API</a> when the hail has been confirmed by the client.<br>Warning: this confirmation can only happen <i>after</i> the status has been set to <code>accepted_by_taxi</code> by the <strong>operator</strong>.</em></td>
      </tr>
      <tr>
          <td><code>declined_by_customer</code></td>
@@ -736,7 +736,7 @@ This section describes the different values a hail status can take.
      <tr>
          <td><code>timeout_customer</code></td>
          <td><em>The client did not confirm nor cancel the hail after 20s</em></td>
-         <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>timeout_customer</code> automatically <i>after</i> 20s have passed since the status was set to <code>confirmed_by_taxi</code>.</em></td>
+         <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>timeout_customer</code> automatically <i>after</i> 20s have passed since the status was set to <code>accepted_by_taxi</code>.</em></td>
      </tr>
     <tr>
         <td><code>incident_customer</code></td>
