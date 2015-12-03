@@ -77,14 +77,25 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
         taxi_db = taxis_models.Taxi.cache.get(taxi_id)
-        if not taxi_db or not taxi_db.ads or not taxi_db.is_free()\
-            or taxi_db.ads.zupc_id not in zupc_customer:
+        if not taxi_db:
+            current_app.logger.info('Unable to find taxi {} in db'.format(taxi_id))
+            return None
+        if not taxi_db.ads:
+            current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
+            return None
+        if not taxi_db.is_free():
+            current_app.logger.info('Taxi {} is not free'.format(taxi_id))
+            return None
+        if not taxi_db.ads.zupc_id in zupc_customer:
+            current_app.logger.info('Taxi {} is not customer\'s zone'.format(taxi_id))
             return None
         operator, timestamp = taxi_db.get_operator(min_time, favorite_operator)
         if not operator:
+            current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
             return None
 #Check if the taxi is operating in its ZUPC
         if not Point(float(coords[1]), float(coords[0])).intersects(taxi_db.ads.zupc.geom):
+            current_app.logger.info('The taxi {} is not in his operating zone'.format(taxi_id))
             return None
 
         description = taxi_db.vehicle.get_description(operator)
