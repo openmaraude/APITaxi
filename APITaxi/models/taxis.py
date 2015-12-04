@@ -17,6 +17,7 @@ import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
+from datetime import datetime
 
 
 owner_type_enum = ['company', 'individual']
