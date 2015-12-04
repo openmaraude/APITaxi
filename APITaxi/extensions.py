@@ -15,7 +15,7 @@ regions = {
     'taxis': make_region('taxis'),
     'hails': make_region('hails'),
     'zupc': make_region('zupc').configure('dogpile.cache.memory'),
-    'users': make_region('users')
+    'users': make_region('users').configure('dogpile.cache.memory')
 }
 
 from flask.ext.uploads import (UploadSet, configure_uploads,
