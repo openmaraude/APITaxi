@@ -53,7 +53,7 @@ class HailMixin(Skeleton):
     def set_hail_status(cls, r, status, last_status_change=None):
         regions['hails'].invalidate()
         hail = Hail.cache.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check(status)
+        hail._status = status
         if last_status_change:
             hail.last_status_change -= last_status_change
         db.session.commit()
@@ -454,7 +454,7 @@ class TestHailPut(HailMixin):
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
-            hail.__status_set_no_check('accepted_by_customer')
+            hail._status = 'accepted_by_customer'
             dict_hail['status'] = 'accepted_by_customer'
             dict_hail['rating_ride_reason'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -471,7 +471,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride_reason'] = 'Une evaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -486,7 +486,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride_reason'] = 'Une évaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -501,7 +501,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride_reason'] = 'late'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -515,7 +515,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride'] = 2
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -530,7 +530,7 @@ class TestHailPut(HailMixin):
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['rating_ride'] = 2
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
@@ -545,7 +545,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride'] = 1
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -561,7 +561,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride'] = 5
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -577,7 +577,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride'] = 6
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -592,7 +592,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride'] = 2
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -608,7 +608,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['rating_ride'] = 'pouet'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -626,7 +626,7 @@ class TestHailPut(HailMixin):
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
-            hail.__status_set_no_check('incident_customer')
+            hail._status = 'incident_customer'
             dict_hail['status'] = 'incident_customer'
             dict_hail['incident_customer_reason'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -643,7 +643,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('incident_customer')
+        hail._status = 'incident_customer'
         dict_hail['status'] = 'incident_customer'
         dict_hail['incident_customer_reason'] = 'Une evaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -658,7 +658,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('incident_customer')
+        hail._status = 'incident_customer' 
         dict_hail['status'] = 'incident_customer'
         dict_hail['incident_customer_reason'] = 'Une évaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -674,7 +674,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('incident_customer')
+        hail._status = 'incident_customer'
         dict_hail['status'] = 'incident_customer'
         dict_hail['incident_customer_reason'] = 'mud_river'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -691,7 +691,7 @@ class TestHailPut(HailMixin):
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
-            hail.__status_set_no_check('incident_taxi')
+            hail._status = 'incident_taxi'
             dict_hail['status'] = 'incident_taxi'
             dict_hail['incident_taxi_reason'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -708,7 +708,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('incident_taxi')
+        hail._status = 'incident_taxi'
         dict_hail['status'] = 'incident_taxi'
         dict_hail['incident_taxi_reason'] = 'Une evaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -723,7 +723,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('incident_taxi')
+        hail._status = 'incident_taxi'
         dict_hail['status'] = 'incident_taxi'
         dict_hail['incident_taxi_reason'] = 'Une évaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -738,7 +738,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('incident_taxi')
+        hail._status = 'incident_taxi'
         dict_hail['status'] = 'incident_taxi'
         dict_hail['incident_taxi_reason'] = 'traffic_jam'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -753,7 +753,7 @@ class TestHailPut(HailMixin):
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
-            hail.__status_set_no_check('accepted_by_customer')
+            hail._status = 'accepted_by_customer'
             dict_hail['status'] = 'accepted_by_customer'
             dict_hail['reporting_customer'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -770,7 +770,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['reporting_customer'] = True
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -787,7 +787,7 @@ class TestHailPut(HailMixin):
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
-            hail.__status_set_no_check('accepted_by_customer')
+            hail._status = 'accepted_by_customer'
             dict_hail['status'] = 'accepted_by_customer'
             dict_hail['reporting_customer_reason'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -804,7 +804,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('reporting_customer')
+        hail._status = 'reporting_customer'
         dict_hail['status'] = 'reporting_customer'
         dict_hail['reporting_customer_reason'] = 'Une evaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -819,7 +819,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('reporting_customer')
+        hail._status = 'reporting_customer'
         dict_hail['status'] = 'reporting_customer'
         dict_hail['reporting_customer_reason'] = 'Une évaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -834,7 +834,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail.__status_set_no_check('accepted_by_customer')
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
         dict_hail['reporting_customer_reason'] = 'no_show'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
