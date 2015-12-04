@@ -9,6 +9,7 @@ from flask.ext.restplus import fields, reqparse, abort
 from ..utils.make_model import make_model
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 from ..utils.resource_metadata import ResourceMetadata
+import datetime
 mod = Blueprint('vehicle', __name__)
 
 vehicle_model = make_model('taxis', 'Vehicle')
@@ -29,11 +30,11 @@ class Vehicle(ResourceMetadata):
             abort(400, message="data is required")
         if len(json['data']) > 250:
             abort(413, message="You can only post 250 vehicles at a time")
-        edited_vehicles_id = []
         new_vehicles = []
         for vehicle in json['data']:
             form = VehicleForm.from_json(vehicle)
             v = vehicle_models.Vehicle(form.data['licence_plate'])
+            v.last_update_at = datetime.datetime.now()
             v_description = vehicle_models.VehicleDescription(vehicle_id=v.id,
                     added_by=current_user.id)
             v.descriptions.append(v_description)
@@ -42,9 +43,13 @@ class Vehicle(ResourceMetadata):
             form_description.populate_obj(v_description)
             v_description.status = 'off'
             db.session.add(v)
-            if v.id:
-                edited_vehicles_id.append(v.id)
+            db.session.add(v_description)
             new_vehicles.append(v)
+            if not v.id:
+                continue
+            for taxi in taxis_models.Taxi.query.filter_by(vehicle_id=v.id).all():
+                taxi.last_update_at = datetime.datetime.now()
+                db.session.add(taxi)
         db.session.commit()
         return {"data": new_vehicles}, 201
 
