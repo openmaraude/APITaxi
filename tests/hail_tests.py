@@ -52,7 +52,7 @@ class HailMixin(Skeleton):
     @classmethod
     def set_hail_status(cls, r, status, last_status_change=None):
         regions['hails'].invalidate()
-        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail = Hail.cache.get(r.json['data'][0]['id'])
         hail.__status_set_no_check(status)
         if last_status_change:
             hail.last_status_change -= last_status_change
