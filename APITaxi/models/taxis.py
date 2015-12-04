@@ -17,6 +17,7 @@ import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
+from datetime import datetime
 
 
 owner_type_enum = ['company', 'individual']
@@ -277,6 +278,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin):
     def synchronize_status_with_hail(self, hail):
         description = self.vehicle.get_description(hail.operateur)
         description.status = self.map_hail_status_taxi_status[hail.status]
+        self.last_update_at = datetime.now()
 
 
 def refresh_taxi(**kwargs):
