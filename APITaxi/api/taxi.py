@@ -73,10 +73,10 @@ class TaxiId(Resource, ValidatorMixin):
 
 
 
-def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
+def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
     def wrapped(taxi):
         taxi_id, distance, coords = taxi
-        taxi_db = taxis_models.Taxi.cache.get(taxi_id)
+        taxi_db = taxis_cache.get(taxi_id, None)
         if not taxi_db:
             current_app.logger.info('Unable to find taxi {} in db'.format(taxi_id))
             return None
@@ -157,8 +157,13 @@ class Taxis(Resource, ValidatorMixin):
             return {'data': []}
         min_time = int(time()) - taxis_models.Taxi._ACTIVITY_TIMEOUT
         favorite_operator = p['favorite_operator']
-        taxis = filter(lambda t: t is not None,
-                map(generate_taxi_dict(zupc_customer, min_time, favorite_operator), r))
+        taxis_cache = dict([(t.id, t) for t in
+            taxis_models.Taxi.query.filter(
+                taxis_models.Taxi.id.in_([id_ for id_,_,_ in r])).all()]
+        )
+        func_generate_taxis = generate_taxi_dict(zupc_customer, min_time,
+                favorite_operator, taxis_cache)
+        taxis = filter(lambda t: t is not None, map(func_generate_taxis, r))
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
         return {'data': taxis}
 
