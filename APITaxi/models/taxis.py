@@ -130,82 +130,25 @@ class Driver(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 def parse_number(str_):
     return int(float(str_))
 
-class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin):
-    @declared_attr
-    def added_by(cls):
-        return Column(db.Integer,db.ForeignKey('user.id'))
-    cache_label = 'taxis'
-    cache_regions = regions
-    query_class = query_callable(regions)
-
-    def __init__(self, *args, **kwargs):
-        db.Model.__init__(self)
-        HistoryMixin.__init__(self)
-        kwargs['id'] = kwargs.get('id', None)
-        if not kwargs['id']:
-            kwargs['id'] = str(get_short_uuid())
-        HistoryMixin.__init__(self)
-        super(self.__class__, self).__init__(**kwargs)
-        self.__caracs = None
-
-    id = Column(db.String, primary_key=True)
-    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
-            nullable=True)
-    vehicle = db.relationship('Vehicle')
-    ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
-    ads = db.relationship('ADS')
-    driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'),
-            nullable=True)
-    driver = db.relationship('Driver')
-
-    _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
-    _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
-    _ACTIVITY_TIMEOUT = 15*60 #Used for dash
-    __caracs = None
+class TaxiRedis(object):
+    _caracs = None
+    def __init__(self):
+        self._caracs = None
 
     @classmethod
     def parse_redis(cls, v):
         return parse(cls._FORMAT_OPERATOR, v.decode(), {'Number': parse_number})
 
-    @property
-    def rating(self):
-        return 4.5
-
-    @property
-    def status(self):
-        return self.vehicle.description.status
-
-    @status.setter
-    def status(self, status):
-        self.vehicle.description.status = status
-
-    @classmethod
-    def retrieve_caracs(cls, id_):
-        _, scan = redis_store.hscan("taxi:{}".format(id_))
-        if len(scan) == 0:
-            return []
-        scan = [(k.decode(), cls.parse_redis(v)) for k, v in scan.items()]
-        return [(k, v) for k, v in scan]
-
     def caracs(self, min_time):
-        if self.__caracs is None:
-            self.__caracs = self.__class__.retrieve_caracs(self.id)
-        for i in self.__caracs:
+        if self._caracs is None:
+            self._caracs = self.__class__.retrieve_caracs(self.id)
+        for i in self._caracs:
             if i[1] is None:
                 current_app.logger.error('Taxi {} has wrong format in redis'.format(self.id))
                 continue
             if i[1]['timestamp'] < min_time:
                 continue
             yield i
-
-    def is_free(self, min_time=None, operateur=None):
-        if not min_time:
-            min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        caracs = self.caracs(min_time)
-        users = map(lambda (email, _): user_datastore.find_user(email=email).id,
-                caracs)
-        return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
-            self.vehicle.descriptions))
 
     def is_fresh(self, operateur):
         v = redis_store.hget('taxi:{}'.format(self.id), operateur)
@@ -215,10 +158,13 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin):
         p = self.parse_redis(v)
         return p['timestamp'] > min_time
 
-    def set_free(self):
-#For debugging purposes
-        for desc in self.vehicle.descriptions:
-            desc.status = 'free'
+    @classmethod
+    def retrieve_caracs(cls, id_):
+        _, scan = redis_store.hscan("taxi:{}".format(id_))
+        if len(scan) == 0:
+            return []
+        scan = [(k.decode(), cls.parse_redis(v)) for k, v in scan.items()]
+        return [(k, v) for k, v in scan]
 
     def get_operator(self, min_time=None, favorite_operator=None):
         if not min_time:
@@ -236,6 +182,64 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin):
             return (None, None)
         operator = user_datastore.find_user(email=min_return[0])
         return (operator, min_return[1])
+
+class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
+        TaxiRedis):
+    @declared_attr
+    def added_by(cls):
+        return Column(db.Integer,db.ForeignKey('user.id'))
+    cache_label = 'taxis'
+    cache_regions = regions
+    query_class = query_callable(regions)
+
+    def __init__(self, *args, **kwargs):
+        db.Model.__init__(self)
+        HistoryMixin.__init__(self)
+        kwargs['id'] = kwargs.get('id', None)
+        if not kwargs['id']:
+            kwargs['id'] = str(get_short_uuid())
+        HistoryMixin.__init__(self)
+        super(self.__class__, self).__init__(**kwargs)
+
+    id = Column(db.String, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
+            nullable=True)
+    vehicle = db.relationship('Vehicle')
+    ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
+    ads = db.relationship('ADS')
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'),
+            nullable=True)
+    driver = db.relationship('Driver')
+
+    _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
+    _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
+    _ACTIVITY_TIMEOUT = 15*60 #Used for dash
+
+    @property
+    def rating(self):
+        return 4.5
+
+    @property
+    def status(self):
+        return self.vehicle.description.status
+
+    @status.setter
+    def status(self, status):
+        self.vehicle.description.status = status
+
+    def is_free(self, min_time=None, operateur=None):
+        if not min_time:
+            min_time = int(time.time() - self._DISPONIBILITY_DURATION)
+        caracs = self.caracs(min_time)
+        users = map(lambda (email, _): user_datastore.find_user(email=email).id,
+                caracs)
+        return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
+            self.vehicle.descriptions))
+
+    def set_free(self):
+#For debugging purposes
+        for desc in self.vehicle.descriptions:
+            desc.status = 'free'
 
     @property
     def driver_professional_licence(self):
