@@ -96,10 +96,6 @@ class MarshalMixin(object):
 
 
 class HistoryMixin(MarshalMixin):
-    @declared_attr
-    def added_by(self):
-        return Column(sqlalchemy_types.Integer, ForeignKey('user.id'))
-
     added_at = Column(sqlalchemy_types.DateTime)
     added_via = Column(sqlalchemy_types.Enum('form', 'api', name="sources"))
     source = Column(sqlalchemy_types.String(255), default='added_by')
@@ -111,10 +107,9 @@ class HistoryMixin(MarshalMixin):
         return columns
 
     def __init__(self):
-        self.added_by = current_user.id if current_user else None
-        self.added_at = datetime.now().isoformat()
         self.added_via = 'form' if 'form' in request.url_rule.rule else 'api'
         self.source = 'added_by'
+        self.added_by = current_user.id
 
     def can_be_deleted_by(self, user):
         return user.has_role("admin") or self.added_by == user.id
