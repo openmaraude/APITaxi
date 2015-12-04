@@ -8,6 +8,16 @@ from flask import g, current_app
 
 class CacheUserDatastore(SQLAlchemyUserDatastore):
 
+    def __init__(self, db = None, user_model=None, role_model=None):
+        self.user_model = user_model
+        self.role_model = role_model
+        self.db = db
+
+    def init_app(self, db, user_model, role_model):
+        self.user_model = user_model
+        self.role_model = role_model
+        self.db = db
+
     def get_user(self, identifier):
         try:
            filter_ = {"id": int(identifier)}

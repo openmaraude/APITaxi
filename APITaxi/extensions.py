@@ -28,9 +28,8 @@ from .index_zupc import IndexZUPC
 index_zupc = IndexZUPC()
 
 from .utils.cache_user_datastore import CacheUserDatastore
-from .models import security
-user_datastore = CacheUserDatastore(db, security.User,
-                            security.Role)
+user_datastore = CacheUserDatastore()
+
 import shortuuid
 suid = shortuuid.ShortUUID()
 
