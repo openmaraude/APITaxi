@@ -81,6 +81,7 @@ class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
     reporting_customer_reason = db.Column(db.Enum(*reporting_customer_reason_enum,
         name='reporting_customer_reason_enum'), nullable=True)
 
+
     def __init__(self, *args, **kwargs):
         self.id = str(get_short_uuid())
         self.added_by = 'api'
@@ -191,7 +192,8 @@ class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
             raise ValueError("You cannot set status from {} to {}".format(self.__status, value))
         self.__status = value
         self.status_changed()
-        TaxiM.query.get(self.taxi_id).synchronize_status_with_hail(self)
+        TaxiM.cache.get(self.taxi_id).synchronize_status_with_hail(self)
+
 
 
     def _TestHailPut__status_set_no_check(self, value):
