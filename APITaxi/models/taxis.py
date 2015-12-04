@@ -154,13 +154,21 @@ class TaxiRedis(object):
                 continue
             yield i
 
-    def is_fresh(self, operateur):
-        v = redis_store.hget('taxi:{}'.format(self.id), operateur)
-        if not v:
-            return False
+    def is_fresh(self, operateur=None):
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        p = self.parse_redis(v)
-        return p['timestamp'] > min_time
+        if operateur:
+            v = redis_store.hget('taxi:{}'.format(self.id), operateur)
+            if not v:
+                return False
+            p = self.parse_redis(v)
+            return p['timestamp'] > min_time
+        else:
+            try:
+                self.caracs(min_time).next()
+            except StopIteration:
+                return False
+            return True
+
 
     @classmethod
     def retrieve_caracs(cls, id_):
