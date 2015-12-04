@@ -132,8 +132,12 @@ def parse_number(str_):
 
 class TaxiRedis(object):
     _caracs = None
-    def __init__(self):
+    _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
+    _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
+
+    def __init__(self, id_):
         self._caracs = None
+        self.id = id_
 
     @classmethod
     def parse_redis(cls, v):
@@ -211,8 +215,6 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
             nullable=True)
     driver = db.relationship('Driver', backref='driver', lazy='joined')
 
-    _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
-    _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
     _ACTIVITY_TIMEOUT = 15*60 #Used for dash
 
     @property
