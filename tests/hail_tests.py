@@ -137,7 +137,7 @@ class TestHailPost(HailMixin):
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
-        r = self.wait_for_status('received', r.json['data'][0]['id'])
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
         r = self.get('taxis/{}/'.format(r.json['data'][0]['taxi']['id']),
                 user='user_apikey', role='operateur')

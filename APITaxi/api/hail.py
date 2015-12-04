@@ -76,6 +76,7 @@ class HailId(Resource, ValidatorMixin):
                 abort(403)
             except ValueError, e:
                 abort(400, message=e.args[0])
+        db.session.add(hail)
         db.session.commit()
         return {"data": [hail]}
 

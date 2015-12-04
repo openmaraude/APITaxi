@@ -193,6 +193,7 @@ class Taxis(Resource, ValidatorMixin):
                 taxi.status = taxi_json['status']
             except AssertionError:
                 abort(400, message='Invalid status')
+        db.session.add(taxi)
         db.session.commit()
         return {'data':[taxi]}, 201
 

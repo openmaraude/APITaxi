@@ -39,7 +39,7 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
     insee = Column(db.String, label=u'Code INSEE de la commune d\'attribution',
                    description=u'Code INSEE de la commune d\'attribution')
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
-    __vehicle = db.relationship('Vehicle', backref='vehicle', lazy='joined')
+    __vehicle = db.relationship('Vehicle', lazy='joined')
     owner_type = Column(Enum(*owner_type_enum, name='owner_type_enum'),
             label=u'Type Propriétaire')
     owner_name = Column(db.String, label=u'Nom du propriétaire')
@@ -109,7 +109,7 @@ class Driver(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'),
             nullable=True)
-    departement = db.relationship('Departement', backref='vehicle',
+    departement = db.relationship('Departement',
             lazy="joined")
 
     @classmethod
@@ -150,12 +150,12 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin):
     id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
-    vehicle = db.relationship('Vehicle', backref='vehicle_taxi', lazy='joined')
+    vehicle = db.relationship('Vehicle')
     ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
-    ads = db.relationship('ADS', backref='ads', lazy='joined')
+    ads = db.relationship('ADS')
     driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'),
             nullable=True)
-    driver = db.relationship('Driver', backref='driver', lazy='joined')
+    driver = db.relationship('Driver')
 
     _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
     _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
