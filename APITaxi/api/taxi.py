@@ -157,9 +157,11 @@ class Taxis(Resource, ValidatorMixin):
             return {'data': []}
         min_time = int(time()) - taxis_models.Taxi._ACTIVITY_TIMEOUT
         favorite_operator = p['favorite_operator']
+        taxis_redis = [taxis_models.TaxiRedis(t_id) for t_id, _, _ in r]
+        taxis_redis = filter(lambda t: t.is_fresh(), taxis_redis)
         taxis_cache = dict([(t.id, t) for t in
             taxis_models.Taxi.query.filter(
-                taxis_models.Taxi.id.in_([id_ for id_,_,_ in r])).all()]
+                taxis_models.Taxi.id.in_([t.id for t in taxis_redis])).all()]
         )
         func_generate_taxis = generate_taxi_dict(zupc_customer, min_time,
                 favorite_operator, taxis_cache)
