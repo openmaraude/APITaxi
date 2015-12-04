@@ -71,7 +71,7 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
     customer_phone_number = db.Column(db.String, nullable=False)
     taxi_id = db.Column(db.String, db.ForeignKey('taxi.id'), nullable=False)
     taxi_relation = db.relationship('Taxi', backref="taxi", lazy="joined")
-    __status = db.Column(db.Enum(*status_enum_list,
+    _status = db.Column(db.Enum(*status_enum_list,
         name='hail_status'), default='emitted', nullable=False, name='status')
     last_status_change = db.Column(db.DateTime)
     db.ForeignKeyConstraint(['operateur_id', 'customer_id'],
@@ -180,15 +180,15 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
 
     @property
     def status(self):
-        time, next_status = self.timeouts.get(self.__status, (None, None))
+        time, next_status = self.timeouts.get(self._status, (None, None))
         if time:
             self.check_time_out(time, next_status)
-        return self.__status
+        return self._status
 
     @status.setter
     def status(self, value):
         assert value in status_enum_list
-        if value == self.__status:
+        if value == self._status:
             return True
         roles_accepted = self.roles_accepted.get(value, None)
         if roles_accepted:
@@ -196,26 +196,14 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
             if not perm.can():
                 raise RuntimeError("You're not authorized to set this status")
         status_required = self.status_required.get(value, None)
-        if status_required and self.__status != status_required:
-            raise ValueError("You cannot set status from {} to {}".format(self.__status, value))
-        self.__status = value
+        if status_required and self._status != status_required:
+            raise ValueError("You cannot set status from {} to {}".format(self._status, value))
+        self._status = value
         self.status_changed()
         TaxiM.cache.get(self.taxi_id).synchronize_status_with_hail(self)
 
 
 
-    def _TestHailPut__status_set_no_check(self, value):
-#Used for testing purposes
-        self.__status = value
-        self.status_changed()
-
-    def _TestHailGet__status_set_no_check(self, value):
-#Used for testing purposes
-        self._TestHailPut__status_set_no_check(value)
-
-    def _HailMixin__status_set_no_check(self, value):
-#Used for testing purposes
-        self._TestHailPut__status_set_no_check(value)
     @classmethod
     def marshall_obj(cls, show_all=False, filter_id=False, level=0):
         if level >=2:
