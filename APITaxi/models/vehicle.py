@@ -205,7 +205,7 @@ class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mi
     licence_plate = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule',
             unique=True)
-    descriptions = db.relationship("VehicleDescription", backref="Vehicle",
+    descriptions = db.relationship("VehicleDescription",
             lazy='joined')
 
     def __init__(self, licence_plate=None):
