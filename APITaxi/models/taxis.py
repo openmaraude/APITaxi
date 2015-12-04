@@ -16,10 +16,14 @@ from parse import parse, with_pattern
 import time, operator
 from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g, current_app
+from sqlalchemy.ext.declarative import declared_attr
 
 
 owner_type_enum = ['company', 'individual']
-class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
+class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+    @declared_attr
+    def added_by(cls):
+        return Column(db.Integer,db.ForeignKey('user.id'))
     def __init__(self, licence_plate=None):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
@@ -85,7 +89,10 @@ class ADS(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
         return not self.__eq__(other)
 
 
-class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
+class Driver(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+    @declared_attr
+    def added_by(cls):
+        return Column(db.Integer,db.ForeignKey('user.id'))
     def __init__(self):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
@@ -122,7 +129,10 @@ class Driver(db.Model, AsDictMixin, HistoryMixin, FilterOr404Mixin):
 def parse_number(str_):
     return int(float(str_))
 
-class Taxi(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
+class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin):
+    @declared_attr
+    def added_by(cls):
+        return Column(db.Integer,db.ForeignKey('user.id'))
     cache_label = 'taxis'
     cache_regions = regions
     query_class = query_callable(regions)

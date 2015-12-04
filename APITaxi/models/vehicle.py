@@ -9,6 +9,7 @@ from sqlalchemy import UniqueConstraint, and_
 from flask.ext.login import current_user
 from itertools import compress
 from sqlalchemy.orm import validates
+from sqlalchemy.ext.declarative import declared_attr
 
 @unique_constructor(db.session,
                     lambda name: name,
@@ -68,7 +69,11 @@ status_vehicle_description_enum = ['free', 'answering', 'occupied', 'oncoming', 
                    query.filter(and_(\
                        VehicleDescription.vehicle_id == vehicle_id,
                        VehicleDescription.added_by == added_by)))
-class VehicleDescription(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, MarshalMixin):
+
+class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
+    @declared_attr
+    def added_by(cls):
+        return Column(db.Integer,db.ForeignKey('user.id'))
     cache_label = 'taxis'
     cache_regions = regions
     query_class = query_callable(regions)

@@ -15,9 +15,13 @@ from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates, joinedload, synonym
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask import g
+from sqlalchemy.ext.declarative import declared_attr
 
 
-class Customer(db.Model, AsDictMixin, HistoryMixin):
+class Customer(HistoryMixin, db.Model, AsDictMixin):
+    @declared_attr
+    def added_by(cls):
+        return db.Column(db.Integer,db.ForeignKey('user.id'))
     id = db.Column(db.String, primary_key=True)
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
                              primary_key=True)
@@ -43,7 +47,12 @@ rating_ride_reason_enum = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_tax
 reporting_customer_reason_enum = ['late', 'aggressive', 'no_show']
 incident_customer_reason_enum = ['mud_river', 'parade', 'earthquake']
 incident_taxi_reason_enum = ['traffic_jam', 'garbage_truck']
-class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
+class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
+
+    @declared_attr
+    def added_by(cls):
+        return db.Column(db.Integer,db.ForeignKey('user.id'))
+
     cache_label = 'hails'
     cache_regions = regions
     query_class = query_callable(regions)
@@ -83,7 +92,6 @@ class Hail(CacheableMixin, db.Model, AsDictMixin, HistoryMixin, GetOr404Mixin):
 
     def __init__(self, *args, **kwargs):
         self.id = str(get_short_uuid())
-        self.added_by = 'api'
         self.creation_datetime = datetime.now().isoformat()
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
