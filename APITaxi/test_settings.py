@@ -8,3 +8,4 @@ SQLALCHEMY_POOL_SIZE = 2
 
 SECURITY_PASSWORD_HASH = 'plaintext'
 NOW = 'time_test'
+DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'
