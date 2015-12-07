@@ -143,7 +143,7 @@ class TaxiRedis(object):
     def parse_redis(cls, v):
         return parse(cls._FORMAT_OPERATOR, v.decode(), {'Number': parse_number})
 
-    def caracs(self, min_time):
+    def caracs(self, min_time, operateur=None):
         if self._caracs is None:
             self._caracs = self.__class__.retrieve_caracs(self.id)
         for i in self._caracs:
@@ -152,30 +152,26 @@ class TaxiRedis(object):
                 continue
             if i[1]['timestamp'] < min_time:
                 continue
+            if operateur and i[0] != operateur:
+                continue
             yield i
 
     def is_fresh(self, operateur=None):
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        if operateur:
-            v = redis_store.hget('taxi:{}'.format(self.id), operateur)
-            if not v:
-                return False
-            p = self.parse_redis(v)
-            return p['timestamp'] > min_time
-        else:
-            try:
-                self.caracs(min_time).next()
-            except StopIteration:
-                return False
-            return True
+        try:
+            self.caracs(min_time, operateur).next()
+        except StopIteration:
+            return False
+        return True
 
 
     @classmethod
-    def retrieve_caracs(cls, id_):
-        _, scan = redis_store.hscan("taxi:{}".format(id_))
-        if len(scan) == 0:
+    def retrieve_caracs(cls, id_, caracs=None):
+        if not caracs:
+            caracs = redis_store.hgetall("taxi:{}".format(id_))
+        if len(caracs) == 0:
             return []
-        scan = [(k.decode(), cls.parse_redis(v)) for k, v in scan.items()]
+        scan = [(k.decode(), cls.parse_redis(v)) for k, v in caracs.items()]
         return [(k, v) for k, v in scan]
 
     def get_operator(self, min_time=None, favorite_operator=None):

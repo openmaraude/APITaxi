@@ -75,7 +75,8 @@ class TaxiId(Resource, ValidatorMixin):
 
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
     def wrapped(taxi):
-        taxi_id, distance, coords = taxi
+        taxi_redis, distance, coords = taxi
+        taxi_id =  taxi_redis.id
         taxi_db = taxis_cache.get(taxi_id, None)
         if not taxi_db:
             current_app.logger.info('Unable to find taxi {} in db'.format(taxi_id))
@@ -83,6 +84,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
         if not taxi_db.ads:
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
             return None
+        taxi_db._caracs = taxi_redis._caracs
         if not taxi_db.is_free():
             current_app.logger.info('Taxi {} is not free'.format(taxi_id))
             return None
@@ -157,15 +159,16 @@ class Taxis(Resource, ValidatorMixin):
             return {'data': []}
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         favorite_operator = p['favorite_operator']
-        taxis_redis = [taxis_models.TaxiRedis(t_id) for t_id, _, _ in r]
-        taxis_redis = filter(lambda t: t.is_fresh(), taxis_redis)
+        taxis_redis = [(taxis_models.TaxiRedis(t_id), d, c) for t_id, d, c in r]
+        taxis_redis = filter(lambda t: t[0].is_fresh(), taxis_redis)
         taxis_cache = dict([(t.id, t) for t in
             taxis_models.Taxi.query.filter(
-                taxis_models.Taxi.id.in_([t.id for t in taxis_redis])).all()]
+                taxis_models.Taxi.id.in_([t.id for t, d, c in taxis_redis])).all()]
         )
         func_generate_taxis = generate_taxi_dict(zupc_customer, min_time,
                 favorite_operator, taxis_cache)
-        taxis = filter(lambda t: t is not None, map(func_generate_taxis, r))
+        taxis = filter(lambda t: t is not None,
+                map(func_generate_taxis, taxis_redis))
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
         return {'data': taxis}
 
