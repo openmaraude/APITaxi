@@ -155,7 +155,7 @@ class Taxis(Resource, ValidatorMixin):
         if len(r) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        min_time = int(time()) - taxis_models.Taxi._ACTIVITY_TIMEOUT
+        min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         favorite_operator = p['favorite_operator']
         taxis_redis = [taxis_models.TaxiRedis(t_id) for t_id, _, _ in r]
         taxis_redis = filter(lambda t: t.is_fresh(), taxis_redis)
