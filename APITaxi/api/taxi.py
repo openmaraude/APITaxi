@@ -159,6 +159,10 @@ class Taxis(Resource, ValidatorMixin):
         favorite_operator = p['favorite_operator']
         taxis_redis = [taxis_models.TaxiRedis(t_id) for t_id, _, _ in r]
         taxis_redis = filter(lambda t: t.is_fresh(), taxis_redis)
+        if len(taxis_redis) == 0:
+            current_app.logger.info('No taxi fresh found at {}, {}'.format(lat, lon))
+            return {'data': []}
+
         taxis_cache = dict([(t.id, t) for t in
             taxis_models.Taxi.query.filter(
                 taxis_models.Taxi.id.in_([t.id for t in taxis_redis])).all()]
