@@ -49,7 +49,7 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 
     @property
     def zupc(self):
-        return ZUPC.query.get(self.zupc_id)
+        return ZUPC.cache.get(self.zupc_id)
 
     @validates('owner_type')
     def validate_owner_type(self, key, value):
