@@ -193,8 +193,8 @@ class Taxis(Resource, ValidatorMixin):
         if taxi_json.get('id', None):
             taxi = taxis_models.Taxi.query.get(taxi_json['id'])
         if not taxi:
-            taxi = taxis_models.Taxi(driver=driver, vehicle=vehicle, ads=ads,
-                    id=taxi_json.get('id', None))
+            taxi = taxis_models.Taxi(driver_id=driver.id, vehicle=vehicle,
+                    ads_id=ads.id, id=taxi_json.get('id', None))
         if 'status' in taxi_json:
             try:
                 taxi.status = taxi_json['status']

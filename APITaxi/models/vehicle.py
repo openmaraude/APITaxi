@@ -198,15 +198,17 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
                     lambda licence_plate: licence_plate,
                     lambda query, licence_plate: query.filter(Vehicle.licence_plate == licence_plate))
 class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
-    cache_label = 'taxis'
+    cache_label = 'vehicles'
     cache_regions = regions
     query_class = query_callable(regions)
     id = Column(db.Integer, primary_key=True)
     licence_plate = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule',
             unique=True)
-    descriptions = db.relationship("VehicleDescription",
-            lazy='joined')
+
+    @property
+    def descriptions(self):
+        return VehicleDescription.query.filter_by(vehicle_id=self.id)
 
     def __init__(self, licence_plate=None):
         if isinstance(licence_plate, self.__class__):
