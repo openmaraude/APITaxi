@@ -672,6 +672,51 @@ After the taxis available around the client have been retrieved, the chosen taxi
           <td><em>Phone number the client should call in case of problem.<br> 
                   This phone number can be either the number of the call center of the operator or the mobile phone number of the taxi driver. It has to be reachable at the time of the ride: call center numbers should only be transmitted during opening times.</em></td>
      </tr>
+
+    <tr>
+           <td><code>incident_customer_reason</code></td>
+           <td>string</td>
+           <td><em>Reason of the incident that prompted the client to cancel the ride.<br>
+                   This is reserved for future use. The only accepted value as per version 2 of the API is an empty string.
+                   This field should be used by <strong>search engines</strong> when setting the status of the ride to <code>incident_customer</code>.</em></td>
+    </tr>
+    <tr>
+           <td><code>incident_taxi_reason</code></td>
+           <td>string</td>
+           <td><em>Reason of the incident that prompted the taxi to cancel the ride.<br>
+                   This field should be used by <strong>operators</strong> when setting the status of the ride to <code>incident_taxi</code>.<br>
+                   The possible reasons are: <code>no_show</code> (when the client cannot be found), <code>address</code> (when the address cannot be found), <code>traffic</code> (when a traffic jam prevents the taxi to arrive at the location in a reasonable time) and <code>breakdown</code> (in case of a mechanical problem on the vehicle preventing the taxi to continue operating).
+                    This information will be visible too the search engine querying the <code>hail</code>.
+                </em></td>
+    </tr>
+    <tr>
+           <td><code>rating_ride</code></td>
+           <td>integer<br>(from 1 to 5)</td>
+           <td><em>Rating of the ride by the client.<br>
+                   This field should be used by <strong>search engines</strong> during or after the ride to let customers rate the ride between 1 and 5 stars. A ride can be rated multiple times, but only the latest rating will be considered.</em></td>
+    </tr>
+    <tr>
+           <td><code>rating_ride_reason</code></td>
+           <td>string</td>
+           <td><em>Explanation of the rating of the ride by the client.<br>
+                   This field should be used by <strong>search engines</strong> during or after the ride to let the client explain low ratings of the ride.
+                   It is recommended to ask customers for their <code>rating_ride_reason</code> when their <code>rating_ride</code> is 3 stars or less. This information will not be individually transmitted to the taxi driver.<br>
+                   The possible values are <code>ko</code> (the taxi never showed and/or the ride did not happen), <code>payment</code> (credit card refused, etc), <code>courtesy</code> (general attitude problems, loud radio, etc), <code>route</code> (subpar itinerary, etc) and <code>cleanliness</code> (dirty car, cigarette smell, etc).</em></td>
+      </tr>
+   <tr>
+           <td><code>reporting_customer</code></td>
+           <td>boolean</td>
+           <td><em>Reporting of a problem encountered with a customer by a driver.<br>
+                   This field should be used by <strong>operators</strong> during or after the ride to let the taxi driver inform the search engine that a problem happened with the client. In that case, the hail should be update with a <code>reporting_customer</code> set to <code>True</code> and a <code>reporting_customer_reason</code> should be provided.</em></td>
+     </tr>
+     <tr>
+            <td><code>reporting_customer_reason</code></td>
+            <td>string</td>
+            <td><em>Explanation of the problem encountered with a customer by a driver.<br>
+                    This field should be used by <strong>operators</strong> during or after the ride to let taxi drivers explain the type of problem they encountered with a client.
+                    It is only required if <code>reporting_customer</code> is set to <code>True</code>.<br>
+                    The possible values are <code>ko</code> (the client was nowhere to be seen and/or the ride did not happen), <code>payment</code> (unpaid ride, bargaining, etc), <code>courtesy</code> (general attitude problems, etc), <code>route</code> (non existing destination address, etc) and <code>cleanliness</code> (dirty luggages, cigarette, etc).</em></td>
+       </tr>
 </table>
 <h3 id="hail_status">Hail status</h3>
 This section describes the different values a hail status can take.
