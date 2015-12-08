@@ -445,8 +445,7 @@ class TestHailPut(HailMixin):
         self.app.config['ENV'] = prev_env
 
     def test_rating_ride_reason_all_valid_values(self):
-        valid_values = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
-        assert sorted(valid_values) == sorted(rating_ride_reason_enum)
+        valid_values = ['ko', 'payment', 'courtesy', 'route', 'cleanliness']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
@@ -617,8 +616,7 @@ class TestHailPut(HailMixin):
         self.app.config['ENV'] = prev_env
 
     def test_incident_customer_reason_all_valid_values(self):
-        valid_values = ['mud_river', 'parade', 'earthquake']
-        assert sorted(valid_values) == sorted(incident_customer_reason_enum)
+        valid_values = ['']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
@@ -658,7 +656,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail._status = 'incident_customer' 
+        hail._status = 'incident_customer'
         dict_hail['status'] = 'incident_customer'
         dict_hail['incident_customer_reason'] = 'Une évaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -682,8 +680,7 @@ class TestHailPut(HailMixin):
         self.assert403(r)
 
     def test_incident_taxi_reason_all_valid_values(self):
-        valid_values = ['traffic_jam', 'garbage_truck']
-        assert sorted(valid_values) == sorted(incident_taxi_reason_enum)
+        valid_values = ['no_show', 'address', 'traffic', 'breakdown']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
@@ -778,8 +775,7 @@ class TestHailPut(HailMixin):
         self.assert403(r)
 
     def test_reporting_customer_reason_all_valid_values(self):
-        valid_values = ['late', 'aggressive', 'no_show']
-        assert sorted(valid_values) == sorted(reporting_customer_reason_enum)
+        valid_values = ['ko', 'payment', 'courtesy', 'route', 'cleanliness']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
