@@ -43,10 +43,15 @@ status_enum_list = [ 'emitted', 'received', 'sent_to_operator',
     'outdated_customer', 'outdated_taxi', 'failure']#This may be redundant
 
 
-rating_ride_reason_enum = ['late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
-reporting_customer_reason_enum = ['late', 'aggressive', 'no_show']
-incident_customer_reason_enum = ['mud_river', 'parade', 'earthquake']
-incident_taxi_reason_enum = ['traffic_jam', 'garbage_truck']
+rating_ride_reason_enum = ['ko', 'payment', 'courtesy', 'route', 'cleanliness',
+                           'late', 'no_credit_card', 'bad_itinerary', 'dirty_taxi']
+reporting_customer_reason_enum = ['ko', 'payment', 'courtesy', 'route', 'cleanliness',
+                                  'late', 'aggressive', 'no_show']
+incident_customer_reason_enum = ['',
+                                 'mud_river', 'parade', 'earthquake']
+incident_taxi_reason_enum = ['no_show', 'address', 'traffic', 'breakdown',
+                             'traffic_jam', 'garbage_truck']
+
 class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
 
     @declared_attr
