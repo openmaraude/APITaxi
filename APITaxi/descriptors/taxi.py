@@ -19,7 +19,7 @@ ads_descriptor = api.model('ads_descriptor', {
 })
 driver_descriptor = api.model('driver_descriptor', {
         'professional_licence': fields.String,
-        'departement': fields.String(attribute='departement.numero')
+        'departement': fields.String
 })
 taxi_descriptor = api.model('taxi_descriptor',
     {

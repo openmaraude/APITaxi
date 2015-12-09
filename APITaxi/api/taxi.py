@@ -3,7 +3,7 @@ import calendar, time
 from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, redirect, url_for, jsonify, current_app
-from ..models import (taxis as taxis_models,
+from ..models import (taxis as taxis_models, vehicle as vehicle_models,
     administrative as administrative_models)
 from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 from time import mktime, time
 from functools import partial
 from ..utils.validate_json import ValidatorMixin
+from psycopg2.extras import RealDictCursor
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -72,64 +73,101 @@ class TaxiId(Resource, ValidatorMixin):
         return {'data': [taxi]}
 
 
+get_columns_names = lambda m: [c.name for c in m.__table__.columns]
+fields_get_taxi = fields = {
+    "taxi": get_columns_names(taxis_models.Taxi),
+    "model": get_columns_names(vehicle_models.Model),
+    "constructor": get_columns_names(vehicle_models.Constructor),
+    "vehicle_description": get_columns_names(vehicle_models.VehicleDescription),
+    "vehicle": get_columns_names(vehicle_models.Vehicle),
+    '"ADS"': get_columns_names(taxis_models.ADS),
+    "driver": get_columns_names(taxis_models.Driver),
+    "departement": get_columns_names(administrative_models.Departement)
+}
+
+get_taxis_request = """SELECT {} FROM taxi
+LEFT OUTER JOIN vehicle ON vehicle.id = taxi.vehicle_id
+LEFT OUTER JOIN vehicle_description ON vehicle.id = vehicle_description.vehicle_id
+LEFT OUTER JOIN model ON model.id = vehicle_description.model_id
+LEFT OUTER JOIN constructor ON constructor.id = vehicle_description.constructor_id
+LEFT OUTER JOIN "ADS" ON "ADS".id = taxi.ads_id
+LEFT OUTER JOIN driver ON driver.id = taxi.driver_id
+LEFT OUTER JOIN departement ON departement.id = driver.departement_id
+WHERE taxi.id IN %s""".format(", ".join(
+    [", ".join(["{0}.{1} AS {2}_{1}".format(k, v2, k.replace('"', '')) for v2 in v])
+        for k, v  in fields_get_taxi.items()])
+    )
+
+
 
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
     def wrapped(taxi):
-        taxi_id, distance, coords = taxi
+        taxi_redis, distance, coords = taxi
+        taxi_id = taxi_redis.id
         taxi_db = taxis_cache.get(taxi_id, None)
         if not taxi_db:
             current_app.logger.info('Unable to find taxi {} in db'.format(taxi_id))
             return None
-        if not taxi_db.ads:
+        if not taxi_db[0]['taxi_ads_id']:
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
             return None
-        if not taxi_db.is_free():
+        if not taxi_redis._is_free(taxi_db,
+            lambda t: t['vehicle_description_added_by'],
+            lambda t: t['vehicle_description_status']):
             current_app.logger.info('Taxi {} is not free'.format(taxi_id))
             return None
-        if not taxi_db.ads.zupc_id in zupc_customer:
+        zupc_id = taxi_db[0]['ads_zupc_id']
+        if not zupc_id in zupc_customer:
             current_app.logger.info('Taxi {} is not customer\'s zone'.format(taxi_id))
             return None
-        operator, timestamp = taxi_db.get_operator(min_time, favorite_operator)
+        operator, timestamp = taxi_redis.get_operator(min_time, favorite_operator)
         if not operator:
             current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
             return None
 #Check if the taxi is operating in its ZUPC
-        if not Point(float(coords[1]), float(coords[0])).intersects(taxi_db.ads.zupc.geom):
+        zupc = administrative_models.ZUPC.cache.get(zupc_id)
+        if not Point(float(coords[1]), float(coords[0])).intersects(zupc.geom):
             current_app.logger.info('The taxi {} is not in his operating zone'.format(taxi_id))
             return None
 
-        description = taxi_db.vehicle.get_description(operator)
-        if not description:
+        taxi = None
+        for t in taxi_db:
+            if t['vehicle_description_added_by'] == operator.id:
+                taxi = t
+                break
+
+        if not taxi:
             return None
+        characs = vehicle_models.VehicleDescription.get_characs(
+                lambda o, f: o.get('vehicle_description_{}'.format(f)), t)
         return {
             "id": taxi_id,
             "operator": operator.email,
             "position": {"lat": coords[0], "lon": coords[1]},
             "vehicle": {
-                "model": description.model,
-                "constructor": description.constructor,
+                "model": taxi['model_name'],
+                "constructor": taxi['constructor_name'],
                 "description": {
-                    "color": description.color,
-                    "characteristics": description.characteristics,
+                    "color": taxi['vehicle_description_color'],
+                    "characteristics": characs,
                 },
-                "nb_seats": description.nb_seats,
-                "licence_plate": taxi_db.vehicle.licence_plate,
+                "nb_seats": taxi['vehicle_description_nb_seats'],
+                "licence_plate": taxi['vehicle_licence_plate'],
             },
             "ads": {
-                "insee": taxi_db.ads.insee,
-                "numero": taxi_db.ads.numero
+                "insee": taxi['ads_insee'],
+                "numero": taxi['ads_numero']
             },
             "driver": {
-                "departement": taxi_db.driver.departement,
-                "professional_licence": taxi_db.driver.professional_licence
+                "departement": taxi['departement_numero'],
+                "professional_licence": taxi['driver_professional_licence']
             },
             "last_update": timestamp,
             "crowfly_distance": float(distance),
             "rating": 4.5,
-            "status": description.status
+            "status": taxi['vehicle_description_status']
         }
     return wrapped
-
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
@@ -138,6 +176,7 @@ class Taxis(Resource, ValidatorMixin):
     get_parser.add_argument('lat', type=float, required=True, location='values')
     get_parser.add_argument('favorite_operator', type=unicode, required=False,
             location='values')
+
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -157,19 +196,23 @@ class Taxis(Resource, ValidatorMixin):
             return {'data': []}
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         favorite_operator = p['favorite_operator']
-        taxis_redis = [taxis_models.TaxiRedis(t_id) for t_id, _, _ in r]
-        taxis_redis = filter(lambda t: t.is_fresh(), taxis_redis)
+        taxis_redis = [(taxis_models.TaxiRedis(t_id), d, c) for t_id, d, c in r]
+        taxis_redis = filter(lambda t: t[0].is_fresh(), taxis_redis)
         if len(taxis_redis) == 0:
             current_app.logger.info('No taxi fresh found at {}, {}'.format(lat, lon))
             return {'data': []}
 
-        taxis_cache = dict([(t.id, t) for t in
-            taxis_models.Taxi.query.filter(
-                taxis_models.Taxi.id.in_([t.id for t in taxis_redis])).all()]
-        )
+        cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
+        cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
+        taxis_cache = dict()
+        for t in cur.fetchall():
+            if not t['taxi_id'] in taxis_cache:
+                taxis_cache[t['taxi_id']] = []
+            taxis_cache[t['taxi_id']].append(t)
         func_generate_taxis = generate_taxi_dict(zupc_customer, min_time,
                 favorite_operator, taxis_cache)
-        taxis = filter(lambda t: t is not None, map(func_generate_taxis, r))
+        taxis = filter(lambda t: t is not None,
+                    map(func_generate_taxis, taxis_redis))
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
         return {'data': taxis}
 
