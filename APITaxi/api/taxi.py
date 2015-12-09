@@ -147,10 +147,8 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
             "vehicle": {
                 "model": taxi['model_name'],
                 "constructor": taxi['constructor_name'],
-                "description": {
                     "color": taxi['vehicle_description_color'],
                     "characteristics": characs,
-                },
                 "nb_seats": taxi['vehicle_description_nb_seats'],
                 "licence_plate": taxi['vehicle_licence_plate'],
             },
@@ -180,8 +178,8 @@ class Taxis(Resource, ValidatorMixin):
 
     @login_required
     @roles_accepted('admin', 'moteur')
-    @api.doc(responses={403:'You\'re not authorized to view it'}, parser=get_parser)
-    @api.marshal_with(taxi_model)
+    @api.doc(responses={403:'You\'re not authorized to view it'},
+            parser=get_parser, model=taxi_model)
     @json_mimetype_required
     def get(self):
         p = self.__class__.get_parser.parse_args()
