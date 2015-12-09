@@ -12,10 +12,13 @@ celery = Celery()
 
 from dogpile.cache import make_region
 regions = {
-    'taxis': make_region('taxis'),
+    'taxis': make_region('taxis').configure('dogpile.cache.redis'),
     'hails': make_region('hails'),
     'zupc': make_region('zupc').configure('dogpile.cache.memory'),
-    'users': make_region('users').configure('dogpile.cache.redis')
+    'users': make_region('users').configure('dogpile.cache.redis'),
+    'ads': make_region('ads').configure('dogpile.cache.redis'),
+    'drivers': make_region('drivers').configure('dogpile.cache.redis'),
+    'vehicles': make_region('vehicles').configure('dogpile.cache.redis')
 }
 
 from flask.ext.uploads import (UploadSet, configure_uploads,

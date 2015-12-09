@@ -21,7 +21,10 @@ from datetime import datetime
 
 
 owner_type_enum = ['company', 'individual']
-class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+class ADS(CacheableMixin, HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+    cache_label = 'ads'
+    cache_regions = regions
+    query_class = query_callable(regions)
     @declared_attr
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
@@ -90,7 +93,10 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
         return not self.__eq__(other)
 
 
-class Driver(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+class Driver(CacheableMixin, HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+    cache_label = 'drivers'
+    cache_regions = regions
+    query_class = query_callable(regions)
     @declared_attr
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
@@ -232,14 +238,23 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
             nullable=True)
-    vehicle = db.relationship('Vehicle', backref='vehicle_taxi', lazy='joined')
     ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'), nullable=True)
-    ads = db.relationship('ADS', backref='ads', lazy='joined')
     driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'),
             nullable=True)
-    driver = db.relationship('Driver', backref='driver', lazy='joined')
 
     _ACTIVITY_TIMEOUT = 15*60 #Used for dash
+
+    @property
+    def vehicle(self):
+        return Vehicle.cache.get(self.vehicle_id)
+
+    @property
+    def driver(self):
+        return Driver.cache.get(self.driver_id)
+
+    @property
+    def ads(self):
+        return ADS.cache.get(self.driver_id)
 
     @property
     def rating(self):
