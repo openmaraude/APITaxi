@@ -15,7 +15,7 @@ class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
     numero = Column(db.String(3), label='Numero')
 
     def __str__(self):
-        return '%r %r' % (self.numero, self.nom)
+        return '%s' % (self.numero)
 
 class ZUPC(db.Model, MarshalMixin, CacheableMixin):
     cache_label = 'zupc'

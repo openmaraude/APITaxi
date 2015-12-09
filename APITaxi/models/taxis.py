@@ -113,6 +113,7 @@ class Driver(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
     departement = db.relationship('Departement', backref='vehicle',
             lazy="joined")
 
+
     @classmethod
     def can_be_listed_by(cls, user):
         return super(Driver, cls).can_be_listed_by(user) or user.has_role('prefecture')
@@ -195,6 +196,21 @@ class TaxiRedis(object):
         operator = user_datastore.find_user(email=min_return[0])
         return (operator, min_return[1])
 
+    def get_fresh_operateurs(self, min_time=None):
+        if not min_time:
+            min_time = int(time.time() - self._DISPONIBILITY_DURATION)
+        caracs = self.caracs(min_time)
+        return map(lambda (email, _): user_datastore.find_user(email=email).id,
+                caracs)
+
+    def _is_free(self, descriptions, func_added_by, func_status, min_time=None):
+        if not min_time:
+            min_time = int(time.time() - self._DISPONIBILITY_DURATION)
+        users = self.get_fresh_operateurs(min_time)
+        return all(map(lambda desc: func_added_by(desc) not in users\
+            or func_status(desc) == 'free',
+            descriptions))
+
 class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         TaxiRedis):
     @declared_attr
@@ -237,14 +253,12 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     def status(self, status):
         self.vehicle.description.status = status
 
-    def is_free(self, min_time=None, operateur=None):
-        if not min_time:
-            min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        caracs = self.caracs(min_time)
-        users = map(lambda (email, _): user_datastore.find_user(email=email).id,
-                caracs)
-        return all(map(lambda desc: desc.added_by not in users or desc.status == 'free',
-            self.vehicle.descriptions))
+
+    def is_free(self, min_time=None):
+        return self._is_free(self.vehicle.descriptions,
+                lambda desc: desc.added_by,
+                lambda desc: desc.status,
+                min_time)
 
     def set_free(self):
 #For debugging purposes
