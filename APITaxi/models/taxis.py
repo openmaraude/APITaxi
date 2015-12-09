@@ -135,10 +135,13 @@ class TaxiRedis(object):
     _caracs = None
     _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
     _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
+    _fresh_operateurs_timestamps = None
+
 
     def __init__(self, id_):
         self._caracs = None
         self.id = id_
+        self._fresh_operateurs_timestamps = None
 
     @classmethod
     def parse_redis(cls, v):
@@ -179,37 +182,42 @@ class TaxiRedis(object):
         scan = [(k.decode(), cls.parse_redis(v)) for k, v in scan.items()]
         return [(k, v) for k, v in scan]
 
+
     def get_operator(self, min_time=None, favorite_operator=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         min_return = (None, min_time)
-        caracs = self.caracs(min_time)
-        if caracs:
-            for operator_name, carac in caracs:
-                if operator_name == favorite_operator:
-                    operator = user_datastore.find_user(email=operator_name)
-                    return (operator, carac['timestamp'])
-                if int(carac['timestamp']) > min_return[1]:
-                    min_return = (operator_name, carac['timestamp'])
+        for operator, timestamp in self.get_fresh_operateurs_timestamps():
+            if operator.email == favorite_operator:
+                min_return = (operator, timestamp)
+                break
+            if int(timestamp) > min_return[1]:
+                min_return = (operator, timestamp)
         if min_return[0] is None:
             return (None, None)
-        operator = user_datastore.find_user(email=min_return[0])
-        return (operator, min_return[1])
+        return min_return
 
-    def get_fresh_operateurs(self, min_time=None):
+
+    def get_fresh_operateurs_timestamps(self, min_time=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(min_time)
-        return map(lambda (email, _): user_datastore.find_user(email=email).id,
-                caracs)
+        if not self._fresh_operateurs_timestamps:
+            self._fresh_operateurs_timestamps = list(map(
+                lambda (email, c): (user_datastore.find_user(email=email), c['timestamp']),
+                caracs
+            ))
+        return self._fresh_operateurs_timestamps
+
 
     def _is_free(self, descriptions, func_added_by, func_status, min_time=None):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
-        users = self.get_fresh_operateurs(min_time)
+        users = map(lambda u_c : u_c[0].id, self.get_fresh_operateurs_timestamps(min_time))
         return all(map(lambda desc: func_added_by(desc) not in users\
             or func_status(desc) == 'free',
             descriptions))
+
 
 class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         TaxiRedis):
@@ -228,6 +236,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
             kwargs['id'] = str(get_short_uuid())
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
+        TaxiRedis.__init__(self, self.id)
 
     id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
