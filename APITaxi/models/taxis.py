@@ -136,12 +136,14 @@ class TaxiRedis(object):
     _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
     _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
     _fresh_operateurs_timestamps = None
+    _users_cache = {}
 
 
-    def __init__(self, id_):
+    def __init__(self, id_, users_cache={}):
         self._caracs = None
         self.id = id_
         self._fresh_operateurs_timestamps = None
+        self.users_cache = users_cache
 
     @classmethod
     def parse_redis(cls, v):
@@ -203,10 +205,13 @@ class TaxiRedis(object):
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(min_time)
         if not self._fresh_operateurs_timestamps:
+            get_user = lambda email: self._users_cache.get(email, user_datastore.find_user(email=email))
             self._fresh_operateurs_timestamps = list(map(
-                lambda (email, c): (user_datastore.find_user(email=email), c['timestamp']),
+                lambda (email, c): (get_user(email), c['timestamp']),
                 caracs
             ))
+            for user, _ in  self._fresh_operateurs_timestamps:
+                self._users_cache[user.email] = user
         return self._fresh_operateurs_timestamps
 
 
