@@ -186,12 +186,16 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
 
     @property
     def characteristics(self):
+        return VehicleDescription.get_characs(lambda o, f: getattr(o, f), self)
+
+    @staticmethod
+    def get_characs(getattr_, obj):
         fields = ['special_need_vehicle', 'every_destination', 'gps',
             'electronic_toll', 'air_con', 'pet_accepted', 'bike_accepted',
             'baby_seat', 'wifi', 'tablet', 'dvd_player', 'fresh_drink',
             'amex_accepted', 'bank_check_accepted', 'nfc_cc_accepted',
             'credit_card_accepted', 'luxury']
-        return list(compress(fields, map(lambda f: getattr(self, f), fields)))
+        return list(compress(fields, map(lambda f: getattr_(obj, f), fields)))
 
 
 @unique_constructor(db.session,
@@ -230,12 +234,10 @@ class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mi
         return return_
 
 
-
-
-
     @property
     def description(self):
         return self.get_description()
+
 
     def get_description(self, user=None):
         if not user:
@@ -246,9 +248,11 @@ class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mi
                 returned_description = description
         return returned_description
 
+
     @property
     def model(self):
         return self.description.model if self.description else None
+
 
     @property
     def constructor(self):
