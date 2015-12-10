@@ -11,6 +11,6 @@ def register_commands(manager):
     from .create_influx_db import create_influx_db
     manager.add_command('db', MigrateCommand)
     manager.add_command('urls', ShowUrls)
-    from .load_zupc import load_zupc
+    from .load_zupc import load_zupc, add_airport_zupc
     from .active_tasks import active_tasks
     from .export_taxis import export_taxis
