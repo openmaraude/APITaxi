@@ -266,6 +266,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     @status.setter
     def status(self, status):
         self.vehicle.description.status = status
+        self.last_update_at = datetime.now()
 
 
     def is_free(self, min_time=None):
