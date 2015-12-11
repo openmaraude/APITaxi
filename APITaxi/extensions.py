@@ -10,12 +10,11 @@ redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 from flask.ext.celery import Celery
 celery = Celery()
 
-from dogpile.cache import make_region
 regions = {
-    'taxis': make_region('taxis'),
-    'hails': make_region('hails'),
-    'zupc': make_region('zupc').configure('dogpile.cache.memory'),
-    'users': make_region('users').configure('dogpile.cache.redis')
+    'taxis': None,
+    'hails': None,
+    'zupc': None,
+    'users': None
 }
 
 from flask.ext.uploads import (UploadSet, configure_uploads,

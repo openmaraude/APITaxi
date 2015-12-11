@@ -14,6 +14,7 @@ from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from .utils.request_wants_json import request_wants_json
+from dogpile.cache import make_region
 
 
 valid_versions = ['1', '2']
@@ -76,9 +77,13 @@ def create_app(sqlalchemy_uri=None):
     init_login_manager(app)
     from . import demo
     demo.create_app(app)
-    for region in regions.values():
-        if not region.is_configured:
-            region.configure(app.config['DOGPILE_CACHE_BACKEND'])
+    for region in regions.keys():
+        conf = app.config['DOGPILE_CACHE_REGIONS'].get(region,
+                app.config['DOGPILE_CACHE_BACKEND'])
+        if not conf:
+            conf = app.config['DOGPILE_CACHE_BACKEND']
+        regions[region] = make_region(region).configure(conf)
+
     from . import tasks
     tasks.init_app(app)
 
