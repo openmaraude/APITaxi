@@ -15,9 +15,10 @@ UPLOADED_DOCUMENTS_URL = '/documents/<path:filename>'
 SLACK_API_KEY = None
 
 DOGPILE_CACHE_URLS = ''
-DOGPILE_CACHE_REGIONS = [
-    ('taxis', None)
-]
+DOGPILE_CACHE_REGIONS = {
+    'zupc': 'dogpile.cache.memory',
+    'users': 'dogpile.cache.memory'
+}
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.memory'
 SQLALCHEMY_POOL_SIZE = 15
