@@ -131,19 +131,30 @@ class Driver(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 def parse_number(str_):
     return int(float(str_))
 
+
+class UserPseudoCache(object):
+    def __init__(self):
+        self.cache = dict()
+
+    def get(self, item):
+        if not item in self.cache:
+            self.cache[item] = user_datastore.find_user(email=item)
+        return self.cache[item]
+
+
 class TaxiRedis(object):
     _caracs = None
     _DISPONIBILITY_DURATION = 15*60 #Used in "is_fresh, is_free'
     _FORMAT_OPERATOR = '{timestamp:Number} {lat} {lon} {status} {device}'
     _fresh_operateurs_timestamps = None
-    _users_cache = {}
+    _users_cache = UserPseudoCache()
 
 
-    def __init__(self, id_, users_cache={}):
+    def __init__(self, id_, users_cache):
         self._caracs = None
         self.id = id_
         self._fresh_operateurs_timestamps = None
-        self.users_cache = users_cache
+        self._users_cache = users_cache
 
     @classmethod
     def parse_redis(cls, v):
@@ -205,13 +216,14 @@ class TaxiRedis(object):
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         caracs = self.caracs(min_time)
         if not self._fresh_operateurs_timestamps:
-            get_user = lambda email: self._users_cache.get(email, user_datastore.find_user(email=email))
+            get_user = lambda email: self._users_cache.get(email)
             self._fresh_operateurs_timestamps = list(map(
                 lambda (email, c): (get_user(email), c['timestamp']),
                 caracs
             ))
-            for user, _ in  self._fresh_operateurs_timestamps:
-                self._users_cache[user.email] = user
+            self._fresh_operateurs_timestamps = filter(
+                    lambda u_c: u_c[0] is not None,
+                    self._fresh_operateurs_timestamps)
         return self._fresh_operateurs_timestamps
 
 
@@ -219,9 +231,10 @@ class TaxiRedis(object):
         if not min_time:
             min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         users = map(lambda u_c : u_c[0].id, self.get_fresh_operateurs_timestamps(min_time))
-        return all(map(lambda desc: func_added_by(desc) not in users\
-            or func_status(desc) == 'free',
-            descriptions))
+        return len(users) > 0 and\
+                all(map(lambda desc: func_added_by(desc) not in users\
+                    or func_status(desc) == 'free',
+                    descriptions))
 
 
 class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
@@ -241,7 +254,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
             kwargs['id'] = str(get_short_uuid())
         HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
-        TaxiRedis.__init__(self, self.id)
+        TaxiRedis.__init__(self, self.id, UserPseudoCache())
 
     id = Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'),
