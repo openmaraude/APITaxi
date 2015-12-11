@@ -194,8 +194,10 @@ class TaxiRedis(object):
 
     @classmethod
     def retrieve_caracs(cls, id_):
-        items = redis_store.hgetall("taxi:{}".format(id_))
-        return cls.transform_caracs(items)
+        _, scan = redis_store.hscan("taxi:{}".format(id_))
+        if not scan:
+            return []
+        return cls.transform_caracs(scan)
 
 
     def get_operator(self, min_time=None, favorite_operator=None):
