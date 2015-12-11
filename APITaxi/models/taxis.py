@@ -150,15 +150,17 @@ class TaxiRedis(object):
     _users_cache = UserPseudoCache()
 
 
-    def __init__(self, id_, users_cache):
-        self._caracs = None
+    def __init__(self, id_, users_cache, caracs=None):
+        self._caracs = caracs
         self.id = id_
         self._fresh_operateurs_timestamps = None
         self._users_cache = users_cache
+        if isinstance(self._caracs, dict):
+            self._caracs = self.transform_caracs(caracs)
 
-    @classmethod
-    def parse_redis(cls, v):
-        return parse(cls._FORMAT_OPERATOR, v.decode(), {'Number': parse_number})
+    @staticmethod
+    def parse_redis(v):
+        return parse(TaxiRedis._FORMAT_OPERATOR, v.decode(), {'Number': parse_number})
 
     def caracs(self, min_time):
         if self._caracs is None:
@@ -186,14 +188,14 @@ class TaxiRedis(object):
                 return False
             return True
 
+    @staticmethod
+    def transform_caracs(caracs):
+        return [(k.decode(), TaxiRedis.parse_redis(v)) for k, v in caracs.items()]
 
     @classmethod
     def retrieve_caracs(cls, id_):
-        _, scan = redis_store.hscan("taxi:{}".format(id_))
-        if len(scan) == 0:
-            return []
-        scan = [(k.decode(), cls.parse_redis(v)) for k, v in scan.items()]
-        return [(k, v) for k, v in scan]
+        items = redis_store.hgetall("taxi:{}".format(id_))
+        return cls.transform_caracs(items)
 
 
     def get_operator(self, min_time=None, favorite_operator=None):

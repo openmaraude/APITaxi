@@ -195,8 +195,12 @@ class Taxis(Resource, ValidatorMixin):
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         favorite_operator = p['favorite_operator']
         users_cache = taxis_models.UserPseudoCache()
-        taxis_redis = [(taxis_models.TaxiRedis(t_id, users_cache), d, c)
-                for t_id, d, c in r]
+        pipe = redis_store.pipeline()
+        for t_id, _, _ in r:
+            pipe.hgetall('taxi:{}'.format(t_id))
+        taxis_redis = [
+                (taxis_models.TaxiRedis(v[0], users_cache, caracs), v[1], v[2])
+                for v, caracs in zip(r, pipe.execute())]
         taxis_redis = filter(lambda t: t[0].is_fresh(), taxis_redis)
         if len(taxis_redis) == 0:
             current_app.logger.info('No taxi fresh found at {}, {}'.format(lat, lon))
