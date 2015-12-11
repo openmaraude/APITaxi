@@ -119,8 +119,10 @@ class Hail(Resource, ValidatorMixin):
         db.session.add(hail)
         db.session.commit()
 
-        send_request_operator.apply_async(args=[hail.id, operateur.id,
-            current_app.config['ENV']],
+        send_request_operator.apply_async(args=[hail.id,
+            operateur.hail_endpoint(current_app.config['ENV']),
+            operateur.operator_header_name,
+            operateur.operator_api_key, operateur.email],
             queue='send_hail_'+current_app.config['NOW'])
 
         return {"data": [hail]}, 201
