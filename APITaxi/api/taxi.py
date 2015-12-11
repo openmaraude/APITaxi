@@ -194,7 +194,7 @@ class Taxis(Resource, ValidatorMixin):
             return {'data': []}
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         favorite_operator = p['favorite_operator']
-        users_cache = {}
+        users_cache = taxis_models.UserPseudoCache()
         taxis_redis = [(taxis_models.TaxiRedis(t_id, users_cache), d, c)
                 for t_id, d, c in r]
         taxis_redis = filter(lambda t: t[0].is_fresh(), taxis_redis)
