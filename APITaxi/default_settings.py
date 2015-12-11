@@ -20,7 +20,7 @@ DOGPILE_CACHE_REGIONS = {
     'users': 'dogpile.cache.memory'
 }
 
-DOGPILE_CACHE_BACKEND = 'dogpile.cache.memory'
+DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'
 SQLALCHEMY_POOL_SIZE = 15
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
