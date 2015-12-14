@@ -35,14 +35,15 @@ class Vehicle(ResourceMetadata):
             form = VehicleForm.from_json(vehicle)
             v = vehicle_models.Vehicle(form.data['licence_plate'])
             v.last_update_at = datetime.datetime.now()
+            form.populate_obj(v)
+            db.session.add(v)
+            db.session.commit()
             v_description = vehicle_models.VehicleDescription(vehicle_id=v.id,
                     added_by=current_user.id)
             v.descriptions.append(v_description)
-            form.populate_obj(v)
             form_description = VehicleDescriptionForm.from_json(vehicle)
             form_description.populate_obj(v_description)
             v_description.status = 'off'
-            db.session.add(v)
             db.session.add(v_description)
             new_vehicles.append(v)
             if not v.id:
