@@ -184,6 +184,10 @@ class Taxis(Resource, ValidatorMixin):
     def get(self):
         p = self.__class__.get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
+        if current_app.config['LIMITED_ZONE'] and\
+            not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
+            #It must be 403, but I don't know how our clients will react:
+            return {'data': []}
         zupc_customer = index_zupc.intersection(lon, lat)
         if len(zupc_customer) == 0:
             current_app.logger.info('No zone found at {}, {}'.format(lat, lon))

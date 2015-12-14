@@ -10,7 +10,8 @@ from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
 from APITaxi.models.taxis import Taxi
 from functools import partial
-from .fake_data import dict_driver, dict_vehicle, dict_ads, dict_taxi
+from .fake_data import (dict_driver, dict_vehicle, dict_ads, dict_taxi,
+    dict_driver_2, dict_vehicle_2, dict_ads_2, dict_taxi_2)
 from copy import deepcopy
 import time
 from shapely.geometry import Polygon, MultiPolygon
@@ -62,26 +63,38 @@ class Skeleton(TestCase):
         index_zupc.index_zupc = None
 
 
-    def post_taxi(self, role=None, user=None):
-        self.init_zupc()
+    def post_taxi(self, role=None, user=None, post_second=False):
+        self.init_zupc(post_second)
         post = partial(self.post, role='operateur', user=user)
         self.init_dep()
-        r = post([dict_driver], url='/drivers/')
+        if post_second:
+            r = post([dict_driver_2], url='/drivers/')
+        else:
+            r = post([dict_driver], url='/drivers/')
         self.assert201(r)
-        r = post([dict_vehicle], url='/vehicles/')
+        if post_second:
+            r = post([dict_vehicle_2], url='/vehicles/')
+        else:
+            r = post([dict_vehicle], url='/vehicles/')
         self.assert201(r)
         vehicle_id = r.json['data'][0]['id']
-        dict_ads_ = deepcopy(dict_ads)
+        if post_second:
+            dict_ads_ = deepcopy(dict_ads_2)
+        else:
+            dict_ads_ = deepcopy(dict_ads)
         dict_ads_['vehicle_id'] = vehicle_id
         post([dict_ads_], url='/ads/')
-        r = post([dict_taxi], url='/taxis/')
+        if post_second:
+            r = post([dict_taxi_2], url='/taxis/')
+        else:
+            r = post([dict_taxi], url='/taxis/')
         self.assert201(r)
         taxi = r.json['data'][0]
         return taxi
 
     def post_taxi_and_locate(self, lat=1, lon=1, user='user_operateur',
-            float_=False):
-        taxi = self.post_taxi(user=user)
+            float_=False, post_second=False):
+        taxi = self.post_taxi(user=user, post_second=post_second)
         timestamp_type = float if float_ else int
         values = [timestamp_type(time.time()), lat, lon, 'free', 'd1', 1]
         redis_store.hset('taxi:{}'.format(taxi['id']), user,
@@ -89,11 +102,14 @@ class Skeleton(TestCase):
         redis_store.geoadd('geoindex', lat, lon, taxi['id'])
         return taxi
 
-    def init_zupc(self):
+    def init_zupc(self, post_second=False):
         zupc = ZUPC()
-        zupc.insee = '75056'
-        zupc.nom = 'Paris'
-        poly = Polygon([(48,2), (49,2), (49,3), (48,3)])
+        zupc.insee = '75056' if not post_second else '34172'
+        zupc.nom = 'Paris' if not post_second else 'Montpellier'
+        if post_second:
+            poly = Polygon([(43.7, 3.7), (43.7, 4.4), (43.4, 4.4), (43.4, 3.7)])
+        else:
+            poly = Polygon([(48,2), (49,2), (49,3), (48,3)])
         zupc.shape = from_shape(MultiPolygon([poly]), srid=4326)
         db.session.add(zupc)
         db.session.commit()

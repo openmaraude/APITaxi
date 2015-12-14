@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 dict_vehicle = {
     "licence_plate" : "DF-118-FG",
     "model" : "BX",
@@ -34,6 +35,9 @@ dict_vehicle = {
     "nb_seats": 4
 }
 
+dict_vehicle_2 = deepcopy(dict_vehicle)
+dict_vehicle_2['licence_plate'] = 'second-licence'
+
 dict_ads = {
     "category": "c1",
     "doublage": True,
@@ -42,6 +46,9 @@ dict_ads = {
     "owner_name": "name",
     "owner_type": "company",
 }
+dict_ads_2 = deepcopy(dict_ads)
+dict_ads_2['numero'] = "2"
+dict_ads_2['insee'] = "34172"
 
 dict_driver = {
     "last_name" : "last name",
@@ -52,10 +59,17 @@ dict_driver = {
         "numero" : "53"
         }
 }
+dict_driver_2 = deepcopy(dict_driver)
+dict_driver_2['professional_licence'] = 'kkppkk'
 
 dict_taxi = {
     "vehicle": {"licence_plate": "DF-118-FG"},
     "driver": {"professional_licence": "ppkkpp", "departement":"53"},
     "ads": {"insee": "75056", "numero": "1"},
     "status": "free"
+}
+dict_taxi_2 = {
+        "vehicle": {"licence_plate": "second-licence"},
+        "driver": {"professional_licence": "kkppkk", "departement": "53"},
+        "ads": {"insee": "34172", "numero": "2"}
 }
