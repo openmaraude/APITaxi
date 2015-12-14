@@ -11,10 +11,11 @@ import time
 class TaxiGet(Skeleton):
     url = '/taxis/'
 
-    def add(self, lat=2.1, lon=48.5, float_=False):
+    def add(self, lat=2.1, lon=48.5, float_=False, post_second=False):
         self.init_zupc()
         self.init_dep()
-        taxi = self.post_taxi_and_locate(lat=lat, lon=lon, float_=float_)
+        taxi = self.post_taxi_and_locate(lat=lat, lon=lon, float_=float_,
+                post_second=post_second)
         id_taxi = taxi['id']
         taxi_db = Taxi.query.get(id_taxi)
         taxi_db.set_free()
@@ -60,6 +61,24 @@ class TestTaxisGet(TaxiGet):
             assert taxi['driver'][key] is not None
         for key in ['characteristics', 'color', 'licence_plate', 'model', 'nb_seats']:
             assert taxi['vehicle'][key] is not None
+
+
+    def test_get_taxis_limited_zone(self):
+        from flask import current_app
+        from shapely.geometry import Polygon
+        current_app.config['LIMITED_ZONE'] = Polygon([
+            (43.7, 3.7), (43.7, 4.4), (43.4, 4.4), (43.4, 3.7)])
+#One in Paris
+        self.add()
+#One in Montpellier
+        self.add(3.8, 43.6, post_second=True)
+        r = self.get('/taxis/?lat=2.1&lon=48.5')
+        self.assert200(r)
+        assert len(r.json['data']) == 0
+        r = self.get('/taxis/?lat=3.8&lon=43.6')
+        self.assert200(r)
+        assert len(r.json['data']) == 1
+        current_app.config['LIMITED_ZONE'] = None
 
     def test_get_taxis_lonlat_timestamp_float(self):
         self.add(float_=True)
