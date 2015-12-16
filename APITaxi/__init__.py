@@ -82,7 +82,8 @@ def create_app(sqlalchemy_uri=None):
                 app.config['DOGPILE_CACHE_BACKEND'])
         if not conf:
             conf = app.config['DOGPILE_CACHE_BACKEND']
-        regions[region] = make_region(region).configure(conf)
+        regions[region] = make_region(region).configure(conf,
+                arguments = {'distributed_lock': True})
 
     from . import tasks
     tasks.init_app(app)
