@@ -12,16 +12,6 @@ api = Api(api_blueprint, doc=False, catch_all_404s=True, title='API version 2.0'
 def swagger_ui():
     return render_template('swagger/index.html')
 
-
-@api.representation('text/html')
-def output_html(data, code=200, headers=None):
-    if type(data) is dict:
-        data = dumps(data)
-    resp = make_response(data, code)
-    resp.headers.extend(headers or {})
-    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
-    return resp
-
 def init_app(app):
     from . import hail, taxi
     app.register_blueprint(api_blueprint)
