@@ -137,4 +137,4 @@ def driver_delete():
         db.session.delete(taxi)
     db.session.delete(driver)
     db.session.commit()
-    return redirect(url_for('api.drivers'))
+    return redirect(url_for('api.administrative_drivers'))
