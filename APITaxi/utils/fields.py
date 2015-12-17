@@ -36,7 +36,7 @@ class List(FromSQLAlchemyColumnMixin, basefields.List):
         schema['items'] = self.container.__schema__
         return schema
 
-class Date(FromSQLAlchemyColumnMixin, basefields.BaseField):
+class Date(FromSQLAlchemyColumnMixin, basefields.Raw):
     __schema_type__ = 'date'
     __schema_format__ = None
 

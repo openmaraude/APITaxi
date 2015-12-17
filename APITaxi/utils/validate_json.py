@@ -16,7 +16,7 @@ class ValidatorMixin(object):
         except ValidationError as e:
             if e.validator == 'maxItems':
                 abort(413, message="Maximum size of {} is {}".format(e.relative_path[-1],
-                    e.validator_value), code=413)
+                    e.validator_value))
             elif e.validator == 'enum':
                 abort(400,
                   message='Invalid {}, {}'.format(e.relative_path[-1], e.message))
