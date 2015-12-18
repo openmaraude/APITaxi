@@ -20,6 +20,7 @@ from time import mktime, time
 from functools import partial
 from ..utils.validate_json import ValidatorMixin
 from psycopg2.extras import RealDictCursor
+import math
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -167,6 +168,15 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
         }
     return wrapped
 
+def get_taxis_caracs(r, users_cache):
+    pipe = redis_store.pipeline()
+    for t_id, _, _ in r:
+        pipe.hscan('taxi:{}'.format(t_id))
+    taxis_redis = [
+        (taxis_models.TaxiRedis(v[0], users_cache, caracs[1]), v[1], v[2])
+        for v, caracs in zip(r, pipe.execute())]
+    return filter(lambda t: t[0].is_fresh(), taxis_redis)
+
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
     get_parser = reqparse.RequestParser()
@@ -174,6 +184,9 @@ class Taxis(Resource, ValidatorMixin):
     get_parser.add_argument('lat', type=float, required=True, location='values')
     get_parser.add_argument('favorite_operator', type=unicode, required=False,
             location='values')
+    get_parser.add_argument('count', type=int, required=False,
+            location='values', default=10)
+
 
 
     @login_required
@@ -196,33 +209,35 @@ class Taxis(Resource, ValidatorMixin):
         if len(r) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
-        favorite_operator = p['favorite_operator']
         users_cache = taxis_models.UserPseudoCache()
-        pipe = redis_store.pipeline()
-        for t_id, _, _ in r:
-            pipe.hscan('taxi:{}'.format(t_id))
-        taxis_redis = [
-                (taxis_models.TaxiRedis(v[0], users_cache, caracs[1]), v[1], v[2])
-                for v, caracs in zip(r, pipe.execute())]
-        taxis_redis = filter(lambda t: t[0].is_fresh(), taxis_redis)
+        taxis_redis = get_taxis_caracs(r, users_cache)
         if len(taxis_redis) == 0:
             current_app.logger.info('No taxi fresh found at {}, {}'.format(lat, lon))
             return {'data': []}
 
         cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
-        cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
-        taxis_cache = dict()
-        for t in cur.fetchall():
-            if not t['taxi_id'] in taxis_cache:
-                taxis_cache[t['taxi_id']] = []
-            taxis_cache[t['taxi_id']].append(t)
-        func_generate_taxis = generate_taxi_dict(zupc_customer, min_time,
-                favorite_operator, taxis_cache)
-        taxis = filter(lambda t: t is not None,
+        min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
+        def get_taxis(cur, taxis_redis):
+            cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
+            taxis_cache = dict()
+            for t in cur.fetchall():
+                if not t['taxi_id'] in taxis_cache:
+                    taxis_cache[t['taxi_id']] = []
+                taxis_cache[t['taxi_id']].append(t)
+            func_generate_taxis = generate_taxi_dict(zupc_customer, min_time,
+                p['favorite_operator'], taxis_cache)
+            return filter(lambda t: t is not None,
                     map(func_generate_taxis, taxis_redis))
+        taxis = []
+        for i in range(0, int(math.ceil(float(len(taxis_redis))/p['count']))):
+            begin = i * p['count']
+            end = begin + p['count']
+            taxis += get_taxis(cur, taxis_redis[begin:end])
+            if len(taxis) >= p['count']:
+                break
+
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
-        return {'data': taxis}
+        return {'data': taxis[:p['count']]}
 
     @login_required
     @roles_accepted('admin', 'operateur')
