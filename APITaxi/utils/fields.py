@@ -17,7 +17,8 @@ class Boolean(FromSQLAlchemyColumnMixin, basefields.Boolean):
     pass
 
 class DateTime(FromSQLAlchemyColumnMixin, basefields.DateTime):
-    pass
+    def __init__(self, dt_format='rfc822', **kwargs):
+        super(DateTime, self).__init__(dt_format, **kwargs)
 
 class Float(FromSQLAlchemyColumnMixin, basefields.Float):
     pass
