@@ -10,7 +10,7 @@ mod = Blueprint('examples', __name__)
 
 @mod.route('/documentation/examples')
 def doc_index():
-    if not current_user.is_anonymous():
+    if not current_user.is_anonymous:
         apikeys_operator = set()
         apikeys_moteur = set()
         if 'operateur' in current_user.roles:
