@@ -118,17 +118,12 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
             current_app.logger.info('Taxi {} is not free'.format(taxi_id))
             return None
         zupc_id = taxi_db[0]['ads_zupc_id']
-        if not zupc_id in zupc_customer:
+        if not any(map(lambda z: z.id ==zupc_id, zupc_customer)):
             current_app.logger.info('Taxi {} is not customer\'s zone'.format(taxi_id))
             return None
         operator, timestamp = taxi_redis.get_operator(min_time, favorite_operator)
         if not operator:
             current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
-            return None
-#Check if the taxi is operating in its ZUPC
-        zupc = administrative_models.ZUPC.cache.get(zupc_id)
-        if not Point(float(coords[1]), float(coords[0])).intersects(zupc.geom):
-            current_app.logger.info('The taxi {} is not in his operating zone'.format(taxi_id))
             return None
 
         taxi = None
@@ -136,11 +131,18 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
             if t['vehicle_description_added_by'] == operator.id:
                 taxi = t
                 break
-
         if not taxi:
             return None
         characs = vehicle_models.VehicleDescription.get_characs(
                 lambda o, f: o.get('vehicle_description_{}'.format(f)), t)
+#Check if the taxi is operating in its ZUPC
+        zupc = None
+        for zupc in zupc_customer:
+            if zupc.id == zupc_id:
+                break
+        if not zupc or not Point(float(coords[1]), float(coords[0])).intersects(zupc.geom):
+            current_app.logger.info('The taxi {} is not in his operating zone'.format(taxi_id))
+            return None
         return {
             "id": taxi_id,
             "operator": operator.email,
@@ -217,6 +219,7 @@ class Taxis(Resource, ValidatorMixin):
 
         cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
+        zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in zupc_customer]
         def get_taxis(cur, taxis_redis):
             cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
             taxis_cache = dict()
