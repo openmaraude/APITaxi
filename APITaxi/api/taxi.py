@@ -229,9 +229,9 @@ class Taxis(Resource, ValidatorMixin):
             return filter(lambda t: t is not None,
                     map(func_generate_taxis, taxis_redis))
         taxis = []
-        for i in range(0, int(math.ceil(float(len(taxis_redis))/p['count']))):
-            begin = i * p['count']
-            end = begin + p['count']
+        for i in range(0, int(math.ceil(float(len(taxis_redis))/p['count']*4))):
+            begin = i * p['count'] * 4
+            end = begin + p['count'] * 4
             taxis += get_taxis(cur, taxis_redis[begin:end])
             if len(taxis) >= p['count']:
                 break
