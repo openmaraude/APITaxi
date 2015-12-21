@@ -21,6 +21,7 @@ from functools import partial
 from ..utils.validate_json import ValidatorMixin
 from psycopg2.extras import RealDictCursor
 import math
+from itertools import islice
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -225,15 +226,17 @@ class Taxis(Resource, ValidatorMixin):
                 if not t['taxi_id'] in taxis_cache:
                     taxis_cache[t['taxi_id']] = []
                 taxis_cache[t['taxi_id']].append(t)
-            func_generate_taxis = generate_taxi_dict(zupc_customer, min_time,
-                p['favorite_operator'], taxis_cache)
-            return filter(lambda t: t is not None,
-                    map(func_generate_taxis, taxis_redis))
+            func_generate_taxis = generate_taxi_dict(zupc_customer,
+                    min_time, p['favorite_operator'], taxis_cache)
+            for t in taxis_redis:
+                gen = func_generate_taxis(t)
+                if gen:
+                    yield gen
         taxis = []
         for i in range(0, int(math.ceil(float(len(taxis_redis))/p['count']*4))):
             begin = i * p['count'] * 4
             end = begin + p['count'] * 4
-            taxis += get_taxis(cur, taxis_redis[begin:end])
+            taxis += islice(get_taxis(cur, taxis_redis[begin:end]), 0, p['count'] - len(taxis))
             if len(taxis) >= p['count']:
                 break
 
