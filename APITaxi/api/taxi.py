@@ -43,7 +43,7 @@ class TaxiId(Resource, ValidatorMixin):
         taxi_m = marshal({'data':[taxi]}, taxi_model)
         taxi_m['data'][0]['operator'] = current_user.email
         op, timestamp = taxi.get_operator(favorite_operator=current_user.email)
-        taxi_m['data'][0]['last_update'] = timestamp if op == current_user else None
+        taxi_m['data'][0]['last_update'] = timestamp if op == current_user.email else None
         return taxi_m
 
     @login_required
@@ -83,7 +83,8 @@ fields_get_taxi = fields = {
     "vehicle": get_columns_names(vehicle_models.Vehicle),
     '"ADS"': get_columns_names(taxis_models.ADS),
     "driver": get_columns_names(taxis_models.Driver),
-    "departement": get_columns_names(administrative_models.Departement)
+    "departement": get_columns_names(administrative_models.Departement),
+    "u": ['email']
 }
 
 get_taxis_request = """SELECT {} FROM taxi
@@ -94,6 +95,7 @@ LEFT OUTER JOIN constructor ON constructor.id = vehicle_description.constructor_
 LEFT OUTER JOIN "ADS" ON "ADS".id = taxi.ads_id
 LEFT OUTER JOIN driver ON driver.id = taxi.driver_id
 LEFT OUTER JOIN departement ON departement.id = driver.departement_id
+LEFT OUTER JOIN "user" AS u ON u.id = vehicle_description.added_by
 WHERE taxi.id IN %s""".format(", ".join(
     [", ".join(["{0}.{1} AS {2}_{1}".format(k, v2, k.replace('"', '')) for v2 in v])
         for k, v  in fields_get_taxi.items()])
@@ -113,7 +115,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
             return None
         if not taxi_redis._is_free(taxi_db,
-            lambda t: t['vehicle_description_added_by'],
+            lambda t: t['u_email'],
             lambda t: t['vehicle_description_status']):
             current_app.logger.info('Taxi {} is not free'.format(taxi_id))
             return None
@@ -133,7 +135,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
 
         taxi = None
         for t in taxi_db:
-            if t['vehicle_description_added_by'] == operator.id:
+            if t['u_email'] == operator:
                 taxi = t
                 break
 
@@ -143,7 +145,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
                 lambda o, f: o.get('vehicle_description_{}'.format(f)), t)
         return {
             "id": taxi_id,
-            "operator": operator.email,
+            "operator": t['u_email'],
             "position": {"lat": coords[0], "lon": coords[1]},
             "vehicle": {
                 "model": taxi['model_name'],
@@ -168,12 +170,12 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
         }
     return wrapped
 
-def get_taxis_caracs(r, users_cache):
+def get_taxis_caracs(r):
     pipe = redis_store.pipeline()
     for t_id, _, _ in r:
         pipe.hscan('taxi:{}'.format(t_id))
     taxis_redis = [
-        (taxis_models.TaxiRedis(v[0], users_cache, caracs[1]), v[1], v[2])
+        (taxis_models.TaxiRedis(v[0], caracs[1]), v[1], v[2])
         for v, caracs in zip(r, pipe.execute())]
     return filter(lambda t: t[0].is_fresh(), taxis_redis)
 
@@ -209,8 +211,7 @@ class Taxis(Resource, ValidatorMixin):
         if len(r) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        users_cache = taxis_models.UserPseudoCache()
-        taxis_redis = get_taxis_caracs(r, users_cache)
+        taxis_redis = get_taxis_caracs(r)
         if len(taxis_redis) == 0:
             current_app.logger.info('No taxi fresh found at {}, {}'.format(lat, lon))
             return {'data': []}
