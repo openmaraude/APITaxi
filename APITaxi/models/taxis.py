@@ -148,7 +148,10 @@ class TaxiRedis(object):
 
     @staticmethod
     def parse_redis(v):
-        return parse(TaxiRedis._FORMAT_OPERATOR, v.decode(), {'Number': parse_number})
+        r = dict()
+        r['timestamp'], r['lat'], r['lon'], r['status'], r['device'], r['version'] = v.decode().split(' ')
+        r['timestamp'] = parse_number(r['timestamp'])
+        return r
 
     def caracs(self, min_time):
         if self._caracs is None:
