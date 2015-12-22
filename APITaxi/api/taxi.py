@@ -236,9 +236,11 @@ class Taxis(Resource, ValidatorMixin):
                 if gen:
                     yield gen
         taxis = []
-        for i in range(0, int(math.ceil(float(len(taxis_redis))/p['count']*4))):
+        for i in range(0, int(math.ceil(float(len(taxis_redis))/(p['count']*4)))):
             begin = i * p['count'] * 4
             end = begin + p['count'] * 4
+            if len(taxis_redis[begin:end]) == 0:
+                break
             taxis += islice(get_taxis(cur, taxis_redis[begin:end]), 0, p['count'] - len(taxis))
             if len(taxis) >= p['count']:
                 break
