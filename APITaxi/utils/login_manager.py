@@ -40,4 +40,3 @@ def init_app(app):
     app.login_manager.request_loader(load_user_from_request)
     app.login_manager.user_loader(load_user)
     user_logged_out.connect(invalidate_user)
-    user_logged_in.connect(invalidate_user)
