@@ -22,6 +22,7 @@ from ..utils.validate_json import ValidatorMixin
 from psycopg2.extras import RealDictCursor
 import math
 from itertools import islice
+from collections import deque
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -104,14 +105,10 @@ WHERE taxi.id IN %s""".format(", ".join(
 
 
 
-def generate_taxi_dict(zupc_customer, min_time, favorite_operator, taxis_cache):
-    def wrapped(taxi):
+def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
+    def wrapped(taxi, taxi_db):
         taxi_redis, distance, coords = taxi
         taxi_id = taxi_redis.id
-        taxi_db = taxis_cache.get(taxi_id, None)
-        if not taxi_db:
-            current_app.logger.info('Unable to find taxi {} in db'.format(taxi_id))
-            return None
         if not taxi_db[0]['taxi_ads_id']:
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
             return None
@@ -222,31 +219,35 @@ class Taxis(Resource, ValidatorMixin):
         cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in zupc_customer]
-        def get_taxis(cur, taxis_redis):
-            cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
-            taxis_cache = dict()
-            for t in cur.fetchall():
-                if not t['taxi_id'] in taxis_cache:
-                    taxis_cache[t['taxi_id']] = []
-                taxis_cache[t['taxi_id']].append(t)
-            func_generate_taxis = generate_taxi_dict(zupc_customer,
-                    min_time, p['favorite_operator'], taxis_cache)
-            for t in taxis_redis:
-                gen = func_generate_taxis(t)
-                if gen:
-                    yield gen
         taxis = []
-        for i in range(0, int(math.ceil(float(len(taxis_redis))/(p['count']*4)))):
-            begin = i * p['count'] * 4
-            end = begin + p['count'] * 4
-            if len(taxis_redis[begin:end]) == 0:
+        func_generate_taxis = generate_taxi_dict(zupc_customer,
+                min_time, p['favorite_operator'])
+        cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
+        taxis_db = cur.fetchmany(4)
+        for t in taxis_redis:
+            while len(taxis_db) == 0 or\
+                    t[0].id == taxis_db[0]['taxi_id'] and t[0].id == taxis_db[-1]['taxi_id']:
+                l = cur.fetchmany(4)
+                if len(l) == 0:
+                    break
+                taxis_db.extend(l)
+            if len(taxis_db) == 0:
                 break
-            taxis += islice(get_taxis(cur, taxis_redis[begin:end]), 0, p['count'] - len(taxis))
-            if len(taxis) >= p['count']:
+            #Get the first index that's not t[0].id
+            index = next((i for i, v in enumerate(taxis_db) if v['taxi_id'] != t[0].id),
+                    len(taxis_db))
+            if taxis_db[0]['taxi_id'] != t[0].id :
+                current_app.logger.info('Unable to find taxi {} in db'.format(t[0].id))
+                continue
+            gen = func_generate_taxis(t, taxis_db[:index])
+            if gen:
+                taxis.append(gen)
+            del taxis_db[:index]
+            if len(taxis) == p['count']:
                 break
 
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
-        return {'data': taxis[:p['count']]}
+        return {'data': taxis}
 
     @login_required
     @roles_accepted('admin', 'operateur')
