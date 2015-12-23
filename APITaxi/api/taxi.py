@@ -98,7 +98,7 @@ LEFT OUTER JOIN "ADS" ON "ADS".id = taxi.ads_id
 LEFT OUTER JOIN driver ON driver.id = taxi.driver_id
 LEFT OUTER JOIN departement ON departement.id = driver.departement_id
 LEFT OUTER JOIN "user" AS u ON u.id = vehicle_description.added_by
-WHERE taxi.id IN %s""".format(", ".join(
+WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
     [", ".join(["{0}.{1} AS {2}_{1}".format(k, v2, k.replace('"', '')) for v2 in v])
         for k, v  in fields_get_taxi.items()])
     )
@@ -222,6 +222,7 @@ class Taxis(Resource, ValidatorMixin):
         taxis = []
         func_generate_taxis = generate_taxi_dict(zupc_customer,
                 min_time, p['favorite_operator'])
+        taxis_redis = sorted(taxis_redis, key=lambda t: t[0].id.lower())
         cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
         taxis_db = cur.fetchmany(4)
         for t in taxis_redis:
