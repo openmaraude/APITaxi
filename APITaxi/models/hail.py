@@ -66,7 +66,7 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
     creation_datetime = db.Column(db.DateTime, nullable=False)
     operateur_id = db.Column(db.Integer, db.ForeignKey('user.id'),
             nullable=True)
-    _operateur = db.relationship('User', backref='user_operateur',
+    _operateur = db.relationship('User', 
         primaryjoin=(operateur_id==User.id), lazy='joined')
     customer_id = db.Column(db.String,
                             nullable=False)
