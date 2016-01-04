@@ -8,6 +8,7 @@ from operator import itemgetter
 from geoalchemy2 import Geography
 from geoalchemy2.shape import to_shape
 from sqlalchemy.orm import joinedload
+from shapely.prepared import prep
 
 class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
     id = Column(db.Integer, primary_key=True)
@@ -34,6 +35,7 @@ class ZUPC(db.Model, MarshalMixin, CacheableMixin):
     parent = db.relationship('ZUPC', remote_side=[id], lazy='joined')
     active = Column(db.Boolean, default=False)
     __geom = None
+    __preped_geom = None
     __bounds = None
 
     def __repr__(self):
@@ -47,6 +49,12 @@ class ZUPC(db.Model, MarshalMixin, CacheableMixin):
         if self.__geom is None:
             self.__geom = to_shape(self.shape)
         return self.__geom
+
+    @property
+    def preped_geom(self):
+        if self.__preped_geom is None:
+            self.__preped_geom = prep(self.geom)
+        return self.__preped_geom
 
     @property
     def bounds(self):
