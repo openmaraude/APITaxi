@@ -2,7 +2,7 @@
 from flask.ext.security import  SQLAlchemyUserDatastore
 from ..extensions import db, regions
 from flask import current_app
-from ..models.security import User, Role, UserMixin
+from ..models.security import User, Role, UserBase
 from sqlalchemy.orm import joinedload, scoped_session
 from flask import g, current_app
 from sqlalchemy import inspect
@@ -39,7 +39,7 @@ class CachedValue(object):
         )
 
 
-class CachedUser(CachedValue, UserMixin):
+class CachedUser(CachedValue, UserBase):
     base_class = User
 
 

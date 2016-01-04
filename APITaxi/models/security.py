@@ -23,8 +23,19 @@ class Role(CacheableMixin,db.Model, RoleMixin, MarshalMixin):
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
 
+class UserBase(object):
 
-class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin):
+    def hail_endpoint(self, env):
+        if env == 'PROD':
+            return self.hail_endpoint_production
+        elif env == 'STAGING':
+            return self.hail_endpoint_staging
+        elif env == 'DEV':
+            return self.hail_endpoint_testing
+        return None
+
+class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin,
+        UserBase):
     cache_label = 'users'
     cache_regions = regions
     query_class = query_callable(regions)
@@ -74,15 +85,6 @@ class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin):
         kwargs['password'] = encrypt_password(kwargs['password'])
         kwargs['active'] = True
         super(self.__class__, self).__init__(*args, **kwargs)
-
-    def hail_endpoint(self, env):
-        if env == 'PROD':
-            return self.hail_endpoint_production
-        elif env == 'STAGING':
-            return self.hail_endpoint_staging
-        elif env == 'DEV':
-            return self.hail_endpoint_testing
-        return None
 
 
 class Logo(db.Model):
