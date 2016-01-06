@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask.ext.security import  SQLAlchemyUserDatastore
+from flask.ext.security import  SQLAlchemyUserDatastore, UserMixin
 from ..extensions import db, regions
 from flask import current_app
 from ..models.security import User, Role, UserBase
@@ -39,7 +39,7 @@ class CachedValue(object):
         )
 
 
-class CachedUser(CachedValue, UserBase):
+class CachedUser(CachedValue, UserBase, UserMixin):
     base_class = User
 
 
