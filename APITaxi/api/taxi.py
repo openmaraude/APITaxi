@@ -140,7 +140,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         for zupc in zupc_customer:
             if zupc.id == zupc_id:
                 break
-        if not zupc or not Point(float(coords[1]), float(coords[0])).intersects(zupc.geom):
+        if not zupc or not zupc.preped_geom.contains(Point(float(coords[1]), float(coords[0]))):
             current_app.logger.info('The taxi {} is not in his operating zone'.format(taxi_id))
             return None
         return {
