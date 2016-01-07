@@ -52,9 +52,8 @@ class Skeleton(TestCase):
         ids = []
         for taxi in Taxi.query.all():
             redis_store.delete('taxi:{}'.format(taxi.id))
-            ids.append(taxi.id)
-        for i in ids:
-            redis_store.zrem('geoindex', i)
+        redis_store.delete('geoindex')
+        redis_store.delete('timestamps')
         db.session.remove()
         db.drop_all()
         db.get_engine(self.app).dispose()
@@ -99,7 +98,9 @@ class Skeleton(TestCase):
         values = [timestamp_type(time.time()), lat, lon, 'free', 'd1', 1]
         redis_store.hset('taxi:{}'.format(taxi['id']), user,
                 ' '.join(map(lambda v: str(v), values)))
-        redis_store.geoadd('geoindex', lat, lon, taxi['id'])
+        n = '{}:{}'.format(taxi['id'], user)
+        redis_store.geoadd('geoindex', lat, lon, n)
+        redis_store.zadd('timestamps', **{n:time.time()})
         return taxi
 
     def init_zupc(self, post_second=False):
