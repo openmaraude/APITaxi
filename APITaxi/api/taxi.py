@@ -44,8 +44,11 @@ class TaxiId(Resource, ValidatorMixin):
             abort(403, message="You're not authorized to view this taxi")
         taxi_m = marshal({'data':[taxi]}, taxi_model)
         taxi_m['data'][0]['operator'] = current_user.email
-        op, timestamp = taxi.get_operator(favorite_operator=current_user.email)
-        taxi_m['data'][0]['last_update'] = timestamp if op == current_user.email else None
+        v = redis_store.hget('taxi:{}'.format(taxi_id), current_user.email)
+        if v:
+            taxi_m['data'][0]['last_update'] = int(v.split(' ')[0])
+        else:
+            taxi_m['data'][0]['last_update'] = None
         return taxi_m
 
     @login_required

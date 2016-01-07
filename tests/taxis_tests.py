@@ -33,6 +33,7 @@ class TestTaxiGet(TaxiGet):
         assert('nb_seats' in r.json['data'][0]['vehicle'])
         assert('rating' in r.json['data'][0])
         assert(isinstance(r.json['data'][0]['rating'], float))
+        assert(isinstance(r.json['data'][0]['last_update'], int))
 
     def test_get_taxi_other_op(self):
         id_taxi = self.add()
