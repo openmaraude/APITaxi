@@ -274,12 +274,24 @@ class TestTaxiPost(Skeleton):
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         self.assertEqual(len(Taxi.query.all()), 1)
 
-    def test_add_taxi_with_id(self):
+    def test_add_taxi_with_id_normal_user(self):
         self.init_taxi()
         dict_taxi_ = deepcopy(dict_taxi)
         dict_taxi_['id'] = 'a'
         r = self.post([dict_taxi_])
         self.assert201(r)
+        del dict_taxi_['id']
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
+        self.assertNotEqual(r.json['data'][0]['id'], 'a')
+        self.assertEqual(len(Taxi.query.all()), 1)
+
+    def test_add_taxi_with_admin_user(self):
+        self.init_taxi()
+        dict_taxi_ = deepcopy(dict_taxi)
+        dict_taxi_['id'] = 'a'
+        r = self.post([dict_taxi_], user='user_admin', role='admin')
+        self.assert201(r)
+        del dict_taxi_['status']
         self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
         self.assertEqual(r.json['data'][0]['id'], 'a')
         self.assertEqual(len(Taxi.query.all()), 1)

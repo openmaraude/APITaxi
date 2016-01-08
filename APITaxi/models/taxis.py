@@ -244,8 +244,8 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         kwargs['id'] = kwargs.get('id', None)
         if not kwargs['id']:
             kwargs['id'] = str(get_short_uuid())
-        HistoryMixin.__init__(self)
         super(self.__class__, self).__init__(**kwargs)
+        HistoryMixin.__init__(self)
         TaxiRedis.__init__(self, self.id)
 
     id = Column(db.String, primary_key=True)
