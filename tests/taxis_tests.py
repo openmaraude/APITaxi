@@ -103,14 +103,6 @@ class TestTaxisGet(TaxiGet):
             assert taxi['vehicle'][key] is not None
 
 
-    def test_get_taxis_lon_lat_missing_redis_value(self):
-        taxi_id = self.add()
-        redis_store.delete('taxi:{}'.format(taxi_id))
-        r = self.get('/taxis/?lat=2.3&lon=48.7')
-        self.assert200(r)
-        assert len(r.json['data']) == 0
-
-
     def test_get_taxi_out_of_zupc(self):
         self.add(1, 1)
         r = self.get('/taxis/?lat=2.2&lon=48.7')

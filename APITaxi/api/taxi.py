@@ -23,6 +23,8 @@ from psycopg2.extras import RealDictCursor
 import math
 from itertools import islice
 from collections import deque
+from operator import itemgetter
+
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -173,15 +175,6 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         }
     return wrapped
 
-def get_taxis_caracs(r):
-    pipe = redis_store.pipeline()
-    for t_id, _, _ in r:
-        pipe.hscan('taxi:{}'.format(t_id))
-    taxis_redis = [
-        (taxis_models.TaxiRedis(v[0], caracs[1]), v[1], v[2])
-        for v, caracs in zip(r, pipe.execute())]
-    return filter(lambda t: t[0].is_fresh(), taxis_redis)
-
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
     get_parser = reqparse.RequestParser()
@@ -214,20 +207,46 @@ class Taxis(Resource, ValidatorMixin):
         if len(r) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        taxis_redis = get_taxis_caracs(r)
-        if len(taxis_redis) == 0:
-            current_app.logger.info('No taxi fresh found at {}, {}'.format(lat, lon))
+        name_redis = '{}:{}:{}'.format(p['lon'], p['lat'], time())
+        redis_store.zadd(name_redis, **dict([(id_, d) for id_, d, _ in r]))
+        nb_fresh_taxis = redis_store.zinterstore('fresh:'+name_redis,
+                {name_redis:0, current_app.config['REDIS_TIMESTAMPS']:1}
+        )
+        if nb_fresh_taxis == 0:
+            current_app.logger.info('No fresh taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
+        timestamps = dict(redis_store.zrange('fresh:'+name_redis, 0, -1, withscores=True))
+        taxis_redis = dict
 
-        cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in zupc_customer]
+        taxis_redis = dict()
+        for taxi_id_operator, distance, coords in r:
+            ts = timestamps[taxi_id_operator]
+            if ts < min_time:
+                continue
+            taxi_id, operator = taxi_id_operator.split(':')
+            if taxi_id not in taxis_redis:
+                taxis_redis[taxi_id] = (taxis_models.TaxiRedis(taxi_id, []),
+                    distance, coords)
+            else:
+                if all(map(lambda t: t[0].caracs['timestamps'] > ts,
+                    taxis_redis[taxi_id].caracs)
+                    ):
+                    taxis_redis[taxi_id][1] = distance
+                    taxis_redis[taxi_id][2] = coords
+            taxis_redis[taxi_id][0]._caracs.append(
+                (operator, {'timestamp': timestamps[taxi_id_operator],
+                    'lat': coords[0], 'lon': coords[1], 'status': 'free'}
+                )
+            )
+        taxis_redis = sorted(taxis_redis.values(), key=itemgetter(1))
+        cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
+        cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
+        taxis_db = cur.fetchmany(4)
         taxis = []
         func_generate_taxis = generate_taxi_dict(zupc_customer,
                 min_time, p['favorite_operator'])
-        taxis_redis = sorted(taxis_redis, key=lambda t: t[0].id.lower())
-        cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
-        taxis_db = cur.fetchmany(4)
         for t in taxis_redis:
             while len(taxis_db) == 0 or\
                     t[0].id == taxis_db[0]['taxi_id'] and t[0].id == taxis_db[-1]['taxi_id']:
