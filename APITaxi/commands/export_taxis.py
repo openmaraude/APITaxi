@@ -74,6 +74,11 @@ def import_taxis(filename='/tmp/taxis.tar.gz'):
 
     users_apikey = dict([(id_, user_datastore.find_user(email=email).apikey)
         for (id_, email) in users_dict.items()])
+    admin_apikey = None
+    for user in user_datastore.user_model.query.all():
+        if user.has_role('admin'):
+            admin_apikey = user.apikey
+            break
 
     dirs = [d for d in os.listdir(pathname) if os.path.isdir(os.path.join(pathname, d))]
     i = 1
@@ -116,7 +121,7 @@ def import_taxis(filename='/tmp/taxis.tar.gz'):
                 current_app.logger.error(r.content)
                 current_app.logger.error(d_name)
                 return
-
+        headers['X-API-KEY'] = admin_apikey
         r = requests.post(url_for('api.taxi_list', _external=True),
                 headers=headers, data=json.dumps(
                     {"data": [
@@ -132,7 +137,7 @@ def import_taxis(filename='/tmp/taxis.tar.gz'):
                             "vehicle": {
                                 "licence_plate": licence_plate
                                 },
-                            "id": d_name
+                            "id": d_name,
                         }
                         ]}
                     ))
