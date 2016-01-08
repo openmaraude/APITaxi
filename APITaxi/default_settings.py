@@ -5,6 +5,7 @@ SQLALCHEMY_DATABASE_URI = 'postgresql://v:v@localhost/odtaxi'
 REDIS_URL = "redis://:@localhost:6379/0"
 REDIS_GEOINDEX = 'geoindex'
 REDIS_TIMESTAMPS = 'timestamps'
+REDIS_NOT_AVAILABLE = 'not_available'
 SECURITY_PASSWORD_HASH = 'bcrypt'
 SECURITY_PASSWORD_SALT = 'pepper'
 SECURITY_REGISTERABLE = True
