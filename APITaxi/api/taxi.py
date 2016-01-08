@@ -23,7 +23,6 @@ from psycopg2.extras import RealDictCursor
 import math
 from itertools import islice
 from collections import deque
-from operator import itemgetter
 
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
@@ -240,7 +239,7 @@ class Taxis(Resource, ValidatorMixin):
                     'lat': coords[0], 'lon': coords[1], 'status': 'free'}
                 )
             )
-        taxis_redis = sorted(taxis_redis.values(), key=itemgetter(1))
+        taxis_redis = sorted(taxis_redis.values(), key=lambda t: t[0].id.lower())
         cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
         cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
         taxis_db = cur.fetchmany(4)
