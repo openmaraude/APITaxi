@@ -117,11 +117,6 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         if not taxi_db[0]['taxi_ads_id']:
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
             return None
-        if not taxi_redis._is_free(taxi_db,
-            lambda t: t['u_email'],
-            lambda t: t['vehicle_description_status']):
-            current_app.logger.info('Taxi {} is not free'.format(taxi_id))
-            return None
         zupc_id = taxi_db[0]['ads_zupc_id']
         if not any(map(lambda z: z.id ==zupc_id, zupc_customer)):
             current_app.logger.info('Taxi {} is not customer\'s zone'.format(taxi_id))
@@ -209,23 +204,38 @@ class Taxis(Resource, ValidatorMixin):
             return {'data': []}
         name_redis = '{}:{}:{}'.format(p['lon'], p['lat'], time())
         redis_store.zadd(name_redis, **dict([(id_, d) for id_, d, _ in r]))
-        nb_fresh_taxis = redis_store.zinterstore('fresh:'+name_redis,
+
+        fresh_redis = 'fresh:'+name_redis
+        nb_fresh_taxis = redis_store.zinterstore(fresh_redis,
                 {name_redis:0, current_app.config['REDIS_TIMESTAMPS']:1}
         )
         if nb_fresh_taxis == 0:
             current_app.logger.info('No fresh taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        timestamps = dict(redis_store.zrange('fresh:'+name_redis, 0, -1, withscores=True))
-        taxis_redis = dict
-
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
+        timestamps = dict(filter(lambda taxi_id_ts: taxi_id_ts[1]>= min_time,
+            redis_store.zrange(fresh_redis, 0, -1, withscores=True)
+            )
+        )
+
+        na_redis = 'na:'+name_redis
+        r_not_available = redis_store.zinterstore(na_redis,
+                {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
+        )
+        if r_not_available > 1:
+            not_available = set(map(
+                lambda taxi_id_operator: taxi_id_operator.split(':')[0],
+                redis_store.zrange(na_redis, 0, -1)
+            ))
+            filter_fun = lambda taxi_id_operator, _:\
+                taxi_id_operator.split(':')[0] not in not_available
+            r = filter(filter_fun, r)
+
         zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in zupc_customer]
         taxis_redis = dict()
         for taxi_id_operator, distance, coords in r:
-            ts = timestamps[taxi_id_operator]
-            if ts < min_time:
-                continue
             taxi_id, operator = taxi_id_operator.split(':')
+            ts = timestamps[taxi_id_operator]
             if taxi_id not in taxis_redis:
                 taxis_redis[taxi_id] = (taxis_models.TaxiRedis(taxi_id, []),
                     distance, coords)
@@ -270,6 +280,8 @@ class Taxis(Resource, ValidatorMixin):
                 break
 
         taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
+        #Clean-up redis
+        redis_store.delete(fresh_redis, na_redis)
         return {'data': taxis}
 
     @login_required
