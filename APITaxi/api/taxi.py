@@ -282,7 +282,8 @@ class Taxis(Resource, ValidatorMixin):
         if not taxi:
             taxi = taxis_models.Taxi(driver=driver, vehicle=vehicle, ads=ads,
                     id=taxi_json.get('id', None))
-        if 'status' in taxi_json:
+        #This can happen if this is posted with a admin user
+        if 'status' in taxi_json and taxi.vehicle.description:
             try:
                 taxi.status = taxi_json['status']
             except AssertionError:
