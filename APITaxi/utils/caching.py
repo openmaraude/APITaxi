@@ -303,3 +303,15 @@ class CacheableMixin(object):
         event.listen(cls, 'before_delete', cls._flush_event)
         event.listen(cls, 'before_update', cls._flush_event)
         event.listen(cls, 'before_insert', cls._flush_event)
+
+from ..extensions import regions, db
+from psycopg2.extras import RealDictCursor
+def cache_in(sql_expression, ids, region_label, transform=lambda v: v):
+    def creator(ids_c):
+        cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
+        cur.execute(sql_expression, (tuple(ids_c),))
+        r = cur.fetchall()
+        print r
+        return map(lambda d: transform(d), r)
+    region = regions[region_label]
+    return region.get_or_create_multi(ids, creator)
