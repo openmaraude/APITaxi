@@ -1,5 +1,6 @@
 from APITaxi import create_app
 application = create_app()
+application.warm_up_redis()
 
 if __name__ == '__main__':
     application.run()
