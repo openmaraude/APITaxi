@@ -12,6 +12,7 @@ from ..utils.request_wants_json import json_mimetype_required
 from ..utils import arguments
 from ..utils import influx_db
 from ..utils import fields as customFields
+from ..utils.caching import cache_in
 from shapely.geometry import Point
 from sqlalchemy import distinct
 from sqlalchemy.sql.expression import func as func_sql
@@ -124,7 +125,6 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         if not operator:
             current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
             return None
-
         taxi = None
         for t in taxi_db:
             if t['u_email'] == operator:
@@ -134,14 +134,6 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
             return None
         characs = vehicle_models.VehicleDescription.get_characs(
                 lambda o, f: o.get('vehicle_description_{}'.format(f)), t)
-#Check if the taxi is operating in its ZUPC
-        zupc = None
-        for zupc in zupc_customer:
-            if zupc.id == zupc_id:
-                break
-        if not zupc or not zupc.preped_geom.contains(Point(float(coords[1]), float(coords[0]))):
-            current_app.logger.info('The taxi {} is not in his operating zone'.format(taxi_id))
-            return None
         return {
             "id": taxi_id,
             "operator": t['u_email'],
@@ -169,6 +161,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         }
     return wrapped
 
+
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
     get_parser = reqparse.RequestParser()
@@ -178,6 +171,26 @@ class Taxis(Resource, ValidatorMixin):
             location='values')
     get_parser.add_argument('count', type=int, required=False,
             location='values', default=10)
+
+    def filter_outofzone_taxis(self):
+#First we filter taxis with no zupc and taxi that aren't allowed to pickup here
+#(i.e their charging zone is not the same as the one of customer's position
+#Then we filter taxis that aren't in the customer zone
+        return map(lambda z_id_t: z_id_t[1], filter(
+                lambda z_id_t: all(
+                    map(lambda z: z.id != z_id_t[0] or\
+                                  z.preped_geom.contains(
+                                      Point(float(z_id_t[1][2][1]),
+                                          float(z_id_t[1][2][0])
+                                      )
+                                  ),
+                        self.zupc_customer)),
+                filter(
+                    lambda z_id_t: z_id_t[0] and z_id_t[0] not in self.zupc_customer,
+                    zip(self.zupc_taxis, self.taxis_redis)
+                )
+              )
+             )
 
 
 
@@ -193,8 +206,8 @@ class Taxis(Resource, ValidatorMixin):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        zupc_customer = index_zupc.intersection(lon, lat)
-        if len(zupc_customer) == 0:
+        self.zupc_customer = index_zupc.intersection(lon, lat)
+        if len(self.zupc_customer) == 0:
             current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
         r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
@@ -230,33 +243,40 @@ class Taxis(Resource, ValidatorMixin):
                 taxi_id_operator.split(':')[0] not in not_available
             r = filter(filter_fun, r)
 
-        zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in zupc_customer]
-        taxis_redis = dict()
+        self.zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in self.zupc_customer]
+        self.taxis_redis = dict()
         for taxi_id_operator, distance, coords in r:
             taxi_id, operator = taxi_id_operator.split(':')
             ts = timestamps[taxi_id_operator]
-            if taxi_id not in taxis_redis:
-                taxis_redis[taxi_id] = (taxis_models.TaxiRedis(taxi_id, []),
+            if taxi_id not in self.taxis_redis:
+                self.taxis_redis[taxi_id] = (taxis_models.TaxiRedis(taxi_id, []),
                     distance, coords)
             else:
                 if all(map(lambda t: t[0].caracs['timestamps'] > ts,
-                    taxis_redis[taxi_id].caracs)
+                    self.taxis_redis[taxi_id].caracs)
                     ):
-                    taxis_redis[taxi_id][1] = distance
-                    taxis_redis[taxi_id][2] = coords
-            taxis_redis[taxi_id][0]._caracs.append(
+                    self.taxis_redis[taxi_id][1] = distance
+                    self.taxis_redis[taxi_id][2] = coords
+            self.taxis_redis[taxi_id][0]._caracs.append(
                 (operator, {'timestamp': timestamps[taxi_id_operator],
                     'lat': coords[0], 'lon': coords[1], 'status': 'free'}
                 )
             )
-        taxis_redis = sorted(taxis_redis.values(), key=lambda t: t[0].id.lower())
+        self.taxis_redis = sorted(self.taxis_redis.values(), key=lambda t: t[0].id.lower())
+        self.zupc_taxis = cache_in("""
+            SELECT taxi.id AS id, ads.zupc_id AS zupc_id FROM taxi
+            LEFT OUTER JOIN "ADS" as ads ON taxi.ads_id = ads.id
+            """, [t[0].id for t in self.taxis_redis], 'taxis_zupc',
+            transform=lambda d: d['zupc_id'])
+        self.taxis_redis = self.filter_outofzone_taxis()
+
         cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
-        cur.execute(get_taxis_request, (tuple((t[0].id for t in taxis_redis)),))
+        cur.execute(get_taxis_request, (tuple((t[0].id for t in self.taxis_redis)),))
         taxis_db = cur.fetchmany(4)
         taxis = []
-        func_generate_taxis = generate_taxi_dict(zupc_customer,
+        func_generate_taxis = generate_taxi_dict(self.zupc_customer,
                 min_time, p['favorite_operator'])
-        for t in taxis_redis:
+        for t in self.taxis_redis:
             while len(taxis_db) == 0 or\
                     t[0].id == taxis_db[0]['taxi_id'] and t[0].id == taxis_db[-1]['taxi_id']:
                 l = cur.fetchmany(4)
