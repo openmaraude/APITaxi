@@ -91,7 +91,7 @@ def create_app(sqlalchemy_uri=None):
     from .models import security
     user_datastore.init_app(db, security.User, security.Role)
     def warm_up_redis():
-        from .models.taxi import Taxi as TaxiModel
+        from .models.taxis import Taxi as TaxiModel
         for taxi in TaxiModel.query.all():
             for description in taxi.vehicle.descriptions:
                 TaxiModel.set_redis_status(description)
