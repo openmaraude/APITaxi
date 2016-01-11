@@ -14,6 +14,7 @@ regions = {
     'taxis': None,
     'hails': None,
     'zupc': None,
+    'taxis_zupc': None,
     'users': None
 }
 
