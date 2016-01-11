@@ -95,6 +95,6 @@ def create_app(sqlalchemy_uri=None):
         for taxi in TaxiModel.query.all():
             for description in taxi.vehicle.descriptions:
                 TaxiModel.set_redis_status(description)
-    app.warm_up_redis = warm_up_redis
+    app.before_first_request_funcs.append(warm_up_redis)
 
     return app
