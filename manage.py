@@ -5,7 +5,6 @@ from flask.ext.migrate import Migrate
 from APITaxi.commands import register_commands, manager
 
 app = create_app()
-app.warm_up_redis()
 
 manager.app = app
 
