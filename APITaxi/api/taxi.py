@@ -264,7 +264,8 @@ class Taxis(Resource, ValidatorMixin):
                     'lat': coords[0], 'lon': coords[1], 'status': 'free'}
                 )
             )
-        self.taxis_redis = sorted(self.taxis_redis.values(), key=lambda t: t[0].id.lower())
+        self.taxis_redis = sorted(self.taxis_redis.values(),
+                key=lambda t: t[0].id.lower())
         self.zupc_taxis = cache_in("""
             SELECT taxi.id AS id, ads.zupc_id AS zupc_id FROM taxi
             LEFT OUTER JOIN "ADS" as ads ON taxi.ads_id = ads.id
