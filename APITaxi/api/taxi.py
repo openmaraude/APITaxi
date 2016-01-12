@@ -239,15 +239,17 @@ class Taxis(Resource, ValidatorMixin):
                 lambda taxi_id_operator: taxi_id_operator.split(':')[0],
                 redis_store.zrange(na_redis, 0, -1)
             ))
-            filter_fun = lambda taxi_id_operator, _:\
-                taxi_id_operator.split(':')[0] not in not_available
+            filter_fun = lambda taxi_id_operator:\
+                taxi_id_operator[0].split(':')[0] not in not_available
             r = filter(filter_fun, r)
 
         self.zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in self.zupc_customer]
         self.taxis_redis = dict()
         for taxi_id_operator, distance, coords in r:
             taxi_id, operator = taxi_id_operator.split(':')
-            ts = timestamps[taxi_id_operator]
+            ts = timestamps.get(taxi_id_operator, None)
+            if not ts:
+                continue
             if taxi_id not in self.taxis_redis:
                 self.taxis_redis[taxi_id] = (taxis_models.TaxiRedis(taxi_id, []),
                     distance, coords)

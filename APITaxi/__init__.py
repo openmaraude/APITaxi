@@ -114,7 +114,7 @@ def create_app(sqlalchemy_uri=None):
                     cursor)
             keys = set(keys)
         redis_store.srem(app.config['REDIS_NOT_AVAILABLE'], to_remove)
-        redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], not_available)
+        redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], list(not_available))
 
 
     return app
