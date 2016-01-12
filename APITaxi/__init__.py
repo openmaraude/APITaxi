@@ -90,11 +90,31 @@ def create_app(sqlalchemy_uri=None):
 
     from .models import security
     user_datastore.init_app(db, security.User, security.Role)
+
+    @app.before_first_request
     def warm_up_redis():
         from .models.taxis import Taxi as TaxiModel
+        not_available = set()
+        available = set()
         for taxi in TaxiModel.query.all():
             for description in taxi.vehicle.descriptions:
-                TaxiModel.set_redis_status(description)
-    app.before_first_request_funcs.append(warm_up_redis)
+                user = user_datastore.get_user(description.added_by)
+                taxi_id_operator = "{}:{}".format(taxi.id, user.email)
+                if description.status == 'free':
+                    available.add(taxi_id_operator)
+                else:
+                    not_available.add(taxi_id_operator)
+        to_remove = list()
+        cursor, keys = redis_store.sscan(app.config['REDIS_NOT_AVAILABLE'], 0)
+        keys = set(keys)
+        while cursor != 0:
+            to_remove.extend(keys.intersection(available))
+            not_available.difference_update(keys)
+            cursor, keys = redis_store.sscan(app.config['REDIS_NOT_AVAILABLE'], 
+                    cursor)
+            keys = set(keys)
+        redis_store.srem(app.config['REDIS_NOT_AVAILABLE'], to_remove)
+        redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], not_available)
+
 
     return app
