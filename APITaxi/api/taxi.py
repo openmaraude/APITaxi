@@ -117,10 +117,6 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         if not taxi_db[0]['taxi_ads_id']:
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
             return None
-        zupc_id = taxi_db[0]['ads_zupc_id']
-        if not any(map(lambda z: z.id ==zupc_id, zupc_customer)):
-            current_app.logger.info('Taxi {} is not customer\'s zone'.format(taxi_id))
-            return None
         operator, timestamp = taxi_redis.get_operator(min_time, favorite_operator)
         if not operator:
             current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
@@ -172,7 +168,7 @@ class Taxis(Resource, ValidatorMixin):
     get_parser.add_argument('count', type=int, required=False,
             location='values', default=10)
 
-    def filter_outofzone_taxis(self):
+    def filter_outofzone_taxis(self, zupc, taxis):
 #First we filter taxis with no zupc and taxi that aren't allowed to pickup here
 #(i.e their charging zone is not the same as the one of customer's position
 #Then we filter taxis that aren't in the customer zone
@@ -187,7 +183,7 @@ class Taxis(Resource, ValidatorMixin):
                         self.zupc_customer)),
                 filter(
                     lambda z_id_t: z_id_t[0] and z_id_t[0] not in self.zupc_customer,
-                    zip(self.zupc_taxis, self.taxis_redis)
+                    zip(zupc, taxis)
                 )
               )
              )
@@ -262,18 +258,26 @@ class Taxis(Resource, ValidatorMixin):
                     'lat': coords[0], 'lon': coords[1], 'status': 'free'}
                 )
             )
-        self.taxis_redis = sorted(self.taxis_redis.values(), key=lambda t: t[0].id.lower())
-        self.zupc_taxis = cache_in("""
-            SELECT taxi.id AS id, ads.zupc_id AS zupc_id FROM taxi
-            LEFT OUTER JOIN "ADS" as ads ON taxi.ads_id = ads.id
-            """, [t[0].id for t in self.taxis_redis], 'taxis_zupc',
-            transform=lambda d: d['zupc_id'])
-        self.taxis_redis = self.filter_outofzone_taxis()
+
+        taxis = []
+#Sorting by distance
+        self.taxis_redis = sorted(self.taxis_redis.values(), key=lambda t: t[2])
+        i = 0
+        while len(taxis) < p['count']:
+            zupc_list = cache_in("""
+                SELECT taxi.id AS id, ads.zupc_id AS zupc_id FROM taxi
+                LEFT OUTER JOIN "ADS" as ads ON taxi.ads_id = ads.id
+                """, [t[0].id for t in self.taxis_redis], 'taxis_zupc',
+                i, p['count'], transform=lambda d: d['zupc_id'])
+            filtered_taxis = self.filter_outofzone_taxis(zupc_list,
+                    taxis_redis[i*p['count']:(i+1)*p['count']])
+            taxis_db = cache_in(get_taxis_request, )
+            taxis.extend(filter(lambda a: a is not None,
+                )
 
         cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
         cur.execute(get_taxis_request, (tuple((t[0].id for t in self.taxis_redis)),))
         taxis_db = cur.fetchmany(4)
-        taxis = []
         func_generate_taxis = generate_taxi_dict(self.zupc_customer,
                 min_time, p['favorite_operator'])
         for t in self.taxis_redis:

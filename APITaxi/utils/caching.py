@@ -306,12 +306,14 @@ class CacheableMixin(object):
 
 from ..extensions import regions, db
 from psycopg2.extras import RealDictCursor
-def cache_in(sql_expression, ids, region_label, transform=lambda v: v):
+def cache_in(sql_expression, ids, region_label,
+        page=None, count=None, transform=lambda v: v):
     def creator(ids_c):
         cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
         cur.execute(sql_expression, (tuple(ids_c),))
         r = cur.fetchall()
-        print r
         return map(lambda d: transform(d), r)
     region = regions[region_label]
-    return region.get_or_create_multi(ids, creator)
+    begin = page * count if count else None
+    end = begin + count if count is not None else None
+    return region.get_or_create_multi(ids[begin:end], creator)
