@@ -91,7 +91,6 @@ class TestADSPost(Skeleton):
         dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = 0
         r = self.post([dict_])
-        print r.json
         self.assert201(r)
 
     def test_bad_owner_type(self):
