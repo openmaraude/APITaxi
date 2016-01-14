@@ -799,7 +799,9 @@ This section describes the different values a hail status can take.
         <td><em>The <abbr title="Taxi Exchange Point">TXP</abbr> changes the status to <code>failure</code> <i>when</i>:
                 <ul><li>the <strong>operator</strong> endpoint is unreachable</li>
                     <li> or when receiving a HTTP 4xx or 5xx response from the <strong>operator</strong> endpoint</li>
-                    <li> or if the <strong>operator</strong> endpoint does not return a <code>hail</code> JSON object containing a valid <code>taxi_phone_number</code>.</li></ul></em></td>
+                    <li> or if the <strong>operator</strong> endpoint does not return a <code>hail</code> JSON object containing a valid <code>taxi_phone_number</code>.</li>
+                    <li> or if the <strong>operator</strong> does not set the status of the <code>hail</code> to <code>received_by_taxi</code> in the 10s <i>after</i> the status has been set to <code>received_by_operator</code></li></ul></em></td>
+
     </tr>
 </table>
 <br>
