@@ -157,16 +157,16 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         }
     return wrapped
 
+get_parser = reqparse.RequestParser()
+get_parser.add_argument('lon', type=float, required=True, location='values')
+get_parser.add_argument('lat', type=float, required=True, location='values')
+get_parser.add_argument('favorite_operator', type=unicode, required=False,
+    location='values')
+get_parser.add_argument('count', type=int, required=False,
+        location='values', default=10)
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
-    get_parser = reqparse.RequestParser()
-    get_parser.add_argument('lon', type=float, required=True, location='values')
-    get_parser.add_argument('lat', type=float, required=True, location='values')
-    get_parser.add_argument('favorite_operator', type=unicode, required=False,
-            location='values')
-    get_parser.add_argument('count', type=int, required=False,
-            location='values', default=10)
 
     def filter_outofzone_taxis(self, zupc, taxis):
 #First we filter taxis with no zupc and taxi that aren't allowed to pickup here
