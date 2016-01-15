@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, regions
+from ..extensions import db, regions, user_datastore, redis_store
 from ..utils import (AsDictMixin, HistoryMixin, unique_constructor,
         MarshalMixin, fields, FilterOr404Mixin)
 from ..utils.caching import CacheableMixin, query_callable
@@ -10,6 +10,7 @@ from flask.ext.login import current_user
 from itertools import compress
 from sqlalchemy.orm import validates
 from sqlalchemy.ext.declarative import declared_attr
+from flask import current_app
 
 @unique_constructor(db.session,
                     lambda name: name,
@@ -149,20 +150,37 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
             nullable=True)
     vehicle_id = Column(db.Integer, db.ForeignKey('vehicle.id'))
     UniqueConstraint('vehicle_id', 'added_by', name="uq_vehicle_description")
-    status = Column(Enum(*status_vehicle_description_enum,
-        name='status_taxi_enum'), nullable=True, default='free')
+    _status = Column(Enum(*status_vehicle_description_enum,
+        name='status_taxi_enum'), nullable=True, default='free', name='status')
     nb_seats = Column(db.Integer, name='nb_seats',
             description=u'Nombre de places assises disponibles pour les voyageurs',
             label=u'Nombre de places')
     __table_args__ = (db.UniqueConstraint('vehicle_id', 'added_by',
         name="_uq_vehicle_description"),)
 
-    @validates('status')
-    def validate_status(self, key, value):
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, value):
         assert value is None or value == 'None' or value in status_vehicle_description_enum,\
                 '{} is not a valid status, (valid statuses are {})'\
                     .format(value, status_vehicle_description_enum)
-        return value
+        self._status = value
+        user = user_datastore.get_user(self.added_by)
+        from .taxis import Taxi
+        for t in Taxi.query.join(Taxi.vehicle, aliased=True).filter_by(id=self.vehicle_id):
+            taxi_id_operator = "{}:{}".format(t.id, user.email)
+            if self._status == 'free':
+                redis_store.srem(current_app.config['REDIS_NOT_AVAILABLE'],
+                    taxi_id_operator)
+            else:
+                redis_store.sadd(current_app.config['REDIS_NOT_AVAILABLE'],
+                    taxi_id_operator)
+
+
+
 
     @classmethod
     def to_exclude(cls):

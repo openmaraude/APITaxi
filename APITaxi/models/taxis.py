@@ -268,21 +268,11 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     def status(self):
         return self.vehicle.description.status
 
-    def set_redis_status(self, description):
-        user = user_datastore.get_user(description.added_by)
-        taxi_id_operator = "{}:{}".format(self.id, user.email)
-        if description.status != 'free':
-            redis_store.sadd(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
-        else:
-            redis_store.srem(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
 
     @status.setter
     def status(self, status):
         self.vehicle.description.status = status
         self.last_update_at = datetime.now()
-        self.set_redis_status(self.vehicle.description)
 
 
     def is_free(self, min_time=None):
@@ -338,7 +328,6 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         description = self.vehicle.get_description(hail.operateur)
         description.status = self.map_hail_status_taxi_status[hail.status]
         self.last_update_at = datetime.now()
-        self.set_redis_status(description)
 
 
 def refresh_taxi(**kwargs):

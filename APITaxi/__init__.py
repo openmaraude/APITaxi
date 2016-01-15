@@ -93,17 +93,22 @@ def create_app(sqlalchemy_uri=None):
 
     @app.before_first_request
     def warm_up_redis():
-        from .models.taxis import Taxi as TaxiModel
         not_available = set()
         available = set()
-        for taxi in TaxiModel.query.all():
-            for description in taxi.vehicle.descriptions:
-                user = user_datastore.get_user(description.added_by)
-                taxi_id_operator = "{}:{}".format(taxi.id, user.email)
-                if description.status == 'free':
-                    available.add(taxi_id_operator)
-                else:
-                    not_available.add(taxi_id_operator)
+        cur = db.session.connection().connection.cursor()
+        cur.execute("""
+        SELECT taxi.id AS taxi_id, vd.status, vd.added_by FROM taxi
+        LEFT OUTER JOIN vehicle ON vehicle.id = taxi.vehicle_id
+        LEFT OUTER JOIN vehicle_description AS vd ON vehicle.id = vd.vehicle_id
+        """)
+        users = {u.id: u.email for u in security.User.query.all()}
+        for taxi_id, status, added_by in cur.fetchall():
+            user = users.get(added_by)
+            taxi_id_operator = "{}:{}".format(taxi_id, user)
+            if status == 'free':
+                available.add(taxi_id_operator)
+            else:
+                not_available.add(taxi_id_operator)
         to_remove = list()
         cursor, keys = redis_store.sscan(app.config['REDIS_NOT_AVAILABLE'], 0)
         keys = set(keys)
@@ -113,8 +118,10 @@ def create_app(sqlalchemy_uri=None):
             cursor, keys = redis_store.sscan(app.config['REDIS_NOT_AVAILABLE'], 
                     cursor)
             keys = set(keys)
-        redis_store.srem(app.config['REDIS_NOT_AVAILABLE'], to_remove)
-        redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], not_available)
+        if len(to_remove) > 0:
+            redis_store.srem(app.config['REDIS_NOT_AVAILABLE'], to_remove)
+        if len(not_available) > 0:
+            redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], *not_available)
 
 
     return app
