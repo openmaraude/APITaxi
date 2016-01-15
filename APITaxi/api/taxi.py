@@ -178,6 +178,18 @@ class Taxis(Resource, ValidatorMixin):
                     )
                 ]
 
+    def filter_not_available(self, fresh_redis, na_redis):
+        #As said before there might be non-fresh taxis
+        nb_not_available = redis_store.zinterstore(na_redis,
+                {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
+        )
+        if nb_not_available == 0:
+            return
+        for v in redis_store.zrange(na_redis, 0, -1):
+            try:
+                del self.taxis_redis[v.split(':')[0]]
+            except KeyError:
+                pass
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -222,6 +234,7 @@ class Taxis(Resource, ValidatorMixin):
         self.taxis_redis = {k: taxis_models.TaxiRedis(k, caracs_list=list(v))
             for k, v in groupby(positions, key=lambda k_v: k_v[0].split(':')[0])}
         na_redis = 'na:'+name_redis
+        self.filter_not_available(fresh_redis, na_redis)
 
         self.zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in self.zupc_customer]
 
