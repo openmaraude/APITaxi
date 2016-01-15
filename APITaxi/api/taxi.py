@@ -206,6 +206,8 @@ class Taxis(Resource, ValidatorMixin):
         if len(self.zupc_customer) == 0:
             current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
+        #It returns a list of all taxis near the given point
+        #For each taxi you have a tuple with: (id, distance, [lon, lat])
         positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX'],
                 lat, lon)
         if len(positions) == 0:
@@ -244,13 +246,12 @@ class Taxis(Resource, ValidatorMixin):
         sorted_ids = [t.id for t in
                 sorted(self.taxis_redis.values(), key=lambda t: t.distance)]
         for i in range(0, int(math.ceil(len(sorted_ids)/float(p['count'])))):
+            page_ids = sorted_ids[i*p['count']:(i+1)*p['count']]
             zupc_list = {v['id']: v['zupc_id'] for v in cache_in("""
                 SELECT taxi.id AS id, ads.zupc_id AS zupc_id FROM taxi
                 LEFT OUTER JOIN "ADS" as ads ON ads.id = taxi.ads_id
-                WHERE taxi.id IN %s
-                """, sorted_ids, 'taxis_zupc', i, p['count']) if v}
-            filtered_ids = self.filter_outofzone_taxis(zupc_list,
-                    sorted_ids[i*p['count']:(i+1)*p['count']])
+                WHERE taxi.id IN %s """, page_ids, 'taxis_zupc') if v}
+            filtered_ids = self.filter_outofzone_taxis(zupc_list, page_ids)
             if len(filtered_ids) == 0:
                 continue
             taxis_db = [v for v in cache_in(get_taxis_request, filtered_ids,
