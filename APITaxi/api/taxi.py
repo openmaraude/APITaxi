@@ -187,7 +187,7 @@ class Taxis(Resource, ValidatorMixin):
             parser=get_parser, model=taxi_model)
     @json_mimetype_required
     def get(self):
-        p = self.__class__.get_parser.parse_args()
+        p = get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
         if current_app.config['LIMITED_ZONE'] and\
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
