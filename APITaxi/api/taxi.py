@@ -266,7 +266,7 @@ class Taxis(Resource, ValidatorMixin):
             if len(taxis) >= p['count']:
                 break
         #Clean-up redis
-        redis_store.delete(fresh_redis, na_redis)
+        redis_store.delete(fresh_redis, na_redis, name_redis)
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required
