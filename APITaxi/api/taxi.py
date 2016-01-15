@@ -20,9 +20,8 @@ from datetime import datetime, timedelta
 from time import mktime, time
 from functools import partial
 from ..utils.validate_json import ValidatorMixin
-from psycopg2.extras import RealDictCursor
 import math
-from itertools import islice
+from itertools import islice, groupby
 from collections import deque
 
 
@@ -110,9 +109,8 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
 
 
 
-def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
-    def wrapped(taxi, taxi_db):
-        taxi_redis, distance, coords = taxi
+def generate_taxi_dict(min_time, favorite_operator):
+    def wrapped(taxi_redis, taxi_db):
         taxi_id = taxi_redis.id
         if not taxi_db[0]['taxi_ads_id']:
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
@@ -133,7 +131,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
         return {
             "id": taxi_id,
             "operator": t['u_email'],
-            "position": {"lat": coords[0], "lon": coords[1]},
+            "position": taxi_redis.coords,
             "vehicle": {
                 "model": taxi['model_name'],
                 "constructor": taxi['constructor_name'],
@@ -151,7 +149,7 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
                 "professional_licence": taxi['driver_professional_licence']
             },
             "last_update": timestamp,
-            "crowfly_distance": float(distance),
+            "crowfly_distance": float(taxi_redis.distance),
             "rating": 4.5,
             "status": taxi['vehicle_description_status']
         }
@@ -221,38 +219,11 @@ class Taxis(Resource, ValidatorMixin):
         #Select only fresh taxis, and add operator and timestamps to the tuple
         positions = [(v[0], [v[1], v[2], timestamps[v[0]]])
                         for v in positions if v[0] in timestamps]
+        self.taxis_redis = {k: taxis_models.TaxiRedis(k, caracs_list=list(v))
+            for k, v in groupby(positions, key=lambda k_v: k_v[0].split(':')[0])}
         na_redis = 'na:'+name_redis
-        r_not_available = redis_store.zinterstore(na_redis,
-                {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
-        )
-        if r_not_available > 1:
-            not_available = set(map(
-                lambda taxi_id_operator: taxi_id_operator.split(':')[0],
-                redis_store.zrange(na_redis, 0, -1)
-            ))
-            filter_fun = lambda taxi_id_operator, _:\
-                taxi_id_operator.split(':')[0] not in not_available
-            r = filter(filter_fun, r)
 
         self.zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in self.zupc_customer]
-        self.taxis_redis = dict()
-        for taxi_id_operator, distance, coords in r:
-            taxi_id, operator = taxi_id_operator.split(':')
-            ts = timestamps[taxi_id_operator]
-            if taxi_id not in self.taxis_redis:
-                self.taxis_redis[taxi_id] = (taxis_models.TaxiRedis(taxi_id, []),
-                    distance, coords)
-            else:
-                if all(map(lambda t: t[0].caracs['timestamps'] > ts,
-                    self.taxis_redis[taxi_id].caracs)
-                    ):
-                    self.taxis_redis[taxi_id][1] = distance
-                    self.taxis_redis[taxi_id][2] = coords
-            self.taxis_redis[taxi_id][0]._caracs.append(
-                (operator, {'timestamp': timestamps[taxi_id_operator],
-                    'lat': coords[0], 'lon': coords[1], 'status': 'free'}
-                )
-            )
 
         taxis = []
 #Sorting by distance
