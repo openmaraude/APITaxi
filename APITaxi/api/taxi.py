@@ -202,9 +202,10 @@ class Taxis(Resource, ValidatorMixin):
         if len(positions) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        name_redis = '{}:{}:{}'.format(p['lon'], p['lat'], time())
-        redis_store.zadd(name_redis, **dict([(id_, d) for id_, d, _ in r]))
-
+        name_redis = '{}:{}:{}'.format(lon, lat, time())
+        redis_store.zadd(name_redis, **{id_: d for id_, d, _ in positions})
+        #The resulting set may contain unfresh taxi because they haven't be
+        #deleted yet
         fresh_redis = 'fresh:'+name_redis
         nb_fresh_taxis = redis_store.zinterstore(fresh_redis,
                 {name_redis:0, current_app.config['REDIS_TIMESTAMPS']:1}
@@ -213,11 +214,13 @@ class Taxis(Resource, ValidatorMixin):
             current_app.logger.info('No fresh taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
-        timestamps = dict(filter(lambda taxi_id_ts: taxi_id_ts[1]>= min_time,
-            redis_store.zrange(fresh_redis, 0, -1, withscores=True)
-            )
-        )
+        #We select only the fresh taxis
+        timestamps = dict(redis_store.zrangebyscore(fresh_redis, min_time,
+            '+inf', withscores=True))
 
+        #Select only fresh taxis, and add operator and timestamps to the tuple
+        positions = [(v[0], [v[1], v[2], timestamps[v[0]]])
+                        for v in positions if v[0] in timestamps]
         na_redis = 'na:'+name_redis
         r_not_available = redis_store.zinterstore(na_redis,
                 {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
