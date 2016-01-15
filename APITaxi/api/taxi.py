@@ -197,8 +197,9 @@ class Taxis(Resource, ValidatorMixin):
         if len(self.zupc_customer) == 0:
             current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
-        r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
-        if len(r) == 0:
+        positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX'],
+                lat, lon)
+        if len(positions) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
         name_redis = '{}:{}:{}'.format(p['lon'], p['lat'], time())
