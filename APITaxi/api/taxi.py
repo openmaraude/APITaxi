@@ -168,26 +168,17 @@ get_parser.add_argument('count', type=int, required=False,
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
 
-    def filter_outofzone_taxis(self, zupc, taxis):
+    def filter_outofzone_taxis(self, zupc, taxi_ids):
 #First we filter taxis with no zupc and taxi that aren't allowed to pickup here
 #(i.e their charging zone is not the same as the one of customer's position
 #Then we filter taxis that aren't in the customer zone
-        return map(lambda z_id_t: z_id_t[1], filter(
-                lambda z_id_t: all(
-                    map(lambda z: z.id != z_id_t[0] or\
-                                  z.preped_geom.contains(
-                                      Point(float(z_id_t[1][2][1]),
-                                          float(z_id_t[1][2][0])
-                                      )
-                                  ),
-                        self.zupc_customer)),
-                filter(
-                    lambda z_id_t: z_id_t[0] and z_id_t[0] not in self.zupc_customer,
-                    zip(zupc, taxis)
-                )
-              )
-             )
-
+        return [t_id for t_id in taxi_ids if t_id in zupc and\
+                zupc[t_id] in self.zupc_customer and\
+                self.zupc_customer[zupc[t_id]].preped_geom.contains(
+                      Point(float(self.taxis_redis[t_id].lat),
+                          float(self.taxis_redis[t_id].lon))
+                    )
+                ]
 
 
     @login_required
