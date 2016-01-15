@@ -165,7 +165,6 @@ get_parser.add_argument('count', type=int, required=False,
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
-
     def filter_outofzone_taxis(self, zupc, taxi_ids):
 #First we filter taxis with no zupc and taxi that aren't allowed to pickup here
 #(i.e their charging zone is not the same as the one of customer's position
@@ -236,55 +235,39 @@ class Taxis(Resource, ValidatorMixin):
         na_redis = 'na:'+name_redis
         self.filter_not_available(fresh_redis, na_redis)
 
-        self.zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in self.zupc_customer]
+        self.zupc_customer = {id_: administrative_models.ZUPC.cache.get(id_)
+                            for id_ in self.zupc_customer}
 
         taxis = []
+        func_generate_taxis = generate_taxi_dict(min_time, p['favorite_operator'])
 #Sorting by distance
-        self.taxis_redis = sorted(self.taxis_redis.values(), key=lambda t: t[2])
-        i = 0
-        while len(taxis) < p['count']:
-            zupc_list = cache_in("""
+        sorted_ids = [t.id for t in
+                sorted(self.taxis_redis.values(), key=lambda t: t.distance)]
+        for i in range(0, int(math.ceil(len(sorted_ids)/float(p['count'])))):
+            zupc_list = {v['id']: v['zupc_id'] for v in cache_in("""
                 SELECT taxi.id AS id, ads.zupc_id AS zupc_id FROM taxi
-                LEFT OUTER JOIN "ADS" as ads ON taxi.ads_id = ads.id
-                """, [t[0].id for t in self.taxis_redis], 'taxis_zupc',
-                i, p['count'], transform=lambda d: d['zupc_id'])
-            filtered_taxis = self.filter_outofzone_taxis(zupc_list,
-                    taxis_redis[i*p['count']:(i+1)*p['count']])
-            taxis_db = cache_in(get_taxis_request, )
-            taxis.extend(filter(lambda a: a is not None,
-                )
-
-        cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
-        cur.execute(get_taxis_request, (tuple((t[0].id for t in self.taxis_redis)),))
-        taxis_db = cur.fetchmany(4)
-        func_generate_taxis = generate_taxi_dict(self.zupc_customer,
-                min_time, p['favorite_operator'])
-        for t in self.taxis_redis:
-            while len(taxis_db) == 0 or\
-                    t[0].id == taxis_db[0]['taxi_id'] and t[0].id == taxis_db[-1]['taxi_id']:
-                l = cur.fetchmany(4)
-                if len(l) == 0:
-                    break
-                taxis_db.extend(l)
-            if len(taxis_db) == 0:
-                break
-            #Get the first index that's not t[0].id
-            index = next((i for i, v in enumerate(taxis_db) if v['taxi_id'] != t[0].id),
-                    len(taxis_db))
-            if taxis_db[0]['taxi_id'] != t[0].id :
-                current_app.logger.info('Unable to find taxi {} in db'.format(t[0].id))
+                LEFT OUTER JOIN "ADS" as ads ON ads.id = taxi.ads_id
+                WHERE taxi.id IN %s
+                """, sorted_ids, 'taxis_zupc', i, p['count']) if v}
+            filtered_ids = self.filter_outofzone_taxis(zupc_list,
+                    sorted_ids[i*p['count']:(i+1)*p['count']])
+            if len(filtered_ids) == 0:
                 continue
-            gen = func_generate_taxis(t, taxis_db[:index])
-            if gen:
-                taxis.append(gen)
-            del taxis_db[:index]
-            if len(taxis) == p['count']:
+            taxis_db = [v for v in cache_in(get_taxis_request, filtered_ids,
+                'taxis_cache_sql', get_id=lambda v: v[0]['taxi_id'],
+                   transform_result=lambda r: map(lambda v: list(v[1]),
+                                 groupby(r, lambda t: t['taxi_id']),))
+                   if v]
+            if len(taxis_db) == 0:
+                continue
+            l = [func_generate_taxis(self.taxis_redis[t[0]['taxi_id']], t)
+                    for t in taxis_db if len(t) > 0]
+            taxis.extend(filter(None, l))
+            if len(taxis) >= p['count']:
                 break
-
-        taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
         #Clean-up redis
         redis_store.delete(fresh_redis, na_redis)
-        return {'data': taxis}
+        return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required
     @roles_accepted('admin', 'operateur')
