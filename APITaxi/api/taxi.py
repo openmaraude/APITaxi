@@ -205,7 +205,7 @@ class Taxis(Resource, ValidatorMixin):
             current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
         #It returns a list of all taxis near the given point
-        #For each taxi you have a tuple with: (id, distance, [lon, lat])
+        #For each taxi you have a tuple with: (id, distance, [lat, lon])
         positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX'],
                 lat, lon)
         if len(positions) == 0:
