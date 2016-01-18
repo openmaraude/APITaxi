@@ -147,7 +147,7 @@ class TaxiRedis(object):
             self._caracs = self.transform_caracs(caracs)
         if caracs_list:
             self._caracs = {v[0].split(':')[1]: {
-                'coords': {'lon': v[1][1][0], 'lat': v[1][1][1]},
+                'coords': {'lat': v[1][1][0], 'lon': v[1][1][1]},
                 'timestamp': v[1][2], 'distance': v[1][0]}
                     for v in caracs_list
             }

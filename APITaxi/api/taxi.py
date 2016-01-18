@@ -130,8 +130,8 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
             current_app.logger.info('Taxi not in customer\'s zone')
             return
         if not zupc_customer[taxi['ads_zupc_id']].preped_geom.contains(
-                      Point(float(taxi_redis.lat),
-                          float(taxi_redis.lon))
+                      Point(float(taxi_redis.lon),
+                          float(taxi_redis.lat))
                       ):
             current_app.logger.info('Taxi is not in its zone')
             return
