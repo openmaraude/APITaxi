@@ -78,12 +78,15 @@ def create_app(sqlalchemy_uri=None):
     from . import demo
     demo.create_app(app)
     for region in regions.keys():
-        conf = app.config['DOGPILE_CACHE_REGIONS'].get(region,
+        backend = app.config['DOGPILE_CACHE_REGIONS'].get(region,
                 app.config['DOGPILE_CACHE_BACKEND'])
-        if not conf:
-            conf = app.config['DOGPILE_CACHE_BACKEND']
-        regions[region] = make_region(region).configure(conf,
-                arguments = {'distributed_lock': True})
+        if not backend:
+            backend = app.config['DOGPILE_CACHE_BACKEND']
+
+        conf = backend if isinstance(backend, dict) else {"backend": backend}
+        conf.setdefault('arguments', {'distributed_lock': True})
+
+        regions[region] = make_region(region).configure(**conf)
 
     from . import tasks
     tasks.init_app(app)
