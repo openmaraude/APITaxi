@@ -17,12 +17,11 @@ UPLOADED_DOCUMENTS_URL = '/documents/<path:filename>'
 SLACK_API_KEY = None
 
 DOGPILE_CACHE_URLS = ''
-from .utils.msgpack_backend import MsgpackProxy
 DOGPILE_CACHE_REGIONS = {
     'zupc': 'dogpile.cache.memory',
     'users': 'dogpile.cache.memory',
     'taxis_cache_sql': {'backend': 'dogpile.cache.null',
-        'wrap': MsgpackProxy},
+        'wrap': 'APITaxi.utils.msgpack_backend.MsgpackProxy'},
 }
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'

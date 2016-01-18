@@ -1,6 +1,7 @@
 from dogpile.cache.proxy import ProxyBackend
 import msgpack
-from dogpile.cache.api import NO_VALUE
+from dogpile.cache.api import NO_VALUE, CachedValue
+import datetime
 
 class _EncodedProxy(ProxyBackend):
     """base class for building value-mangling proxies"""
@@ -39,6 +40,20 @@ class _EncodedProxy(ProxyBackend):
         return translated
 
 
+def decode_datetime(obj):
+    if b'__datetime__' in obj:
+        obj = datetime.datetime.strptime(obj[b'as_str'].decode(), "%Y%m%dT%H:%M:%S.%f")
+    elif b'__date__' in obj:
+        obj = datetime.datetime.strptime(obj[b'as_str'].decode(), "%Y%m%d")
+    return obj
+
+def encode_datetime(obj):
+    if isinstance(obj, datetime.datetime):
+        obj = {'__datetime__': True, 'as_str': obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()}
+    elif isinstance(obj, datetime.date):
+        obj = {'__date__': True, 'as_str': obj.strftime("%Y%m%d").encode()}
+    return obj
+
 class MsgpackProxy(_EncodedProxy):
     """custom decode/encode for value mangling"""
 
@@ -46,9 +61,9 @@ class MsgpackProxy(_EncodedProxy):
         if not v or v is NO_VALUE:
             return NO_VALUE
         # you probably want to specify a custom decoder via `object_hook`
-        v = msgpack.unpackb(v, encoding="utf-8")
+        v = msgpack.unpackb(v, encoding="utf-8", object_hook=decode_datetime)
         return CachedValue(*v)
 
     def value_encode(self, v):
         # you probably want to specify a custom encoder via `default`
-        return msgpack.packb(v, use_bin_type=True)
+        return msgpack.packb(v, use_bin_type=True, default=encode_datetime)

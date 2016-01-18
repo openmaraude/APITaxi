@@ -84,6 +84,11 @@ def create_app(sqlalchemy_uri=None):
             backend = app.config['DOGPILE_CACHE_BACKEND']
 
         conf = backend if isinstance(backend, dict) else {"backend": backend}
+        if 'wrap' in conf and isinstance(conf['wrap'], str):
+            p = conf['wrap'].rfind('.')
+            path = conf['wrap'][:p]
+            classname = conf['wrap'][p+1:]
+            conf['wrap'] = [getattr(__import__(path, fromlist=[classname]), classname), ]
         conf.setdefault('arguments', {'distributed_lock': True})
 
         regions[region] = make_region(region).configure(**conf)
