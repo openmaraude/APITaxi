@@ -19,7 +19,8 @@ SLACK_API_KEY = None
 DOGPILE_CACHE_URLS = ''
 DOGPILE_CACHE_REGIONS = {
     'zupc': 'dogpile.cache.memory',
-    'users': 'dogpile.cache.memory'
+    'users': 'dogpile.cache.memory',
+    'taxis_cache_sql': 'dogpile.cache.null',
 }
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'

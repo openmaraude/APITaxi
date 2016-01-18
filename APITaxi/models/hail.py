@@ -240,14 +240,14 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
 
     @property
     def taxi(self):
-        for operator, carac in TaxiM.retrieve_caracs(self.taxi_id):
-            if operator == self.operateur.email:
-                return {
-                        'position': {'lon': carac['lon'],'lat' : carac['lat']},
-                        'last_update' : carac['timestamp'],
-                        'id': self.taxi_id
-                        }
-        return {}
+        carac = TaxiM.retrieve_caracs(self.taxi_id).get(self.operateur.email, None)
+        if not carac:
+            return {}
+        return {
+            'position': {'lon': carac['lon'],'lat' : carac['lat']},
+            'last_update' : carac['timestamp'],
+            'id': self.taxi_id
+        }
 
     @property
     def operateur(self):

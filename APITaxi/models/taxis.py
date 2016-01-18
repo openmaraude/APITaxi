@@ -139,12 +139,38 @@ class TaxiRedis(object):
     _fresh_operateurs_timestamps = None
 
 
-    def __init__(self, id_, caracs=None):
+    def __init__(self, id_, caracs=None, caracs_list=None):
         self._caracs = caracs
         self.id = id_
         self._fresh_operateurs_timestamps = None
-        if isinstance(self._caracs, dict):
+        if isinstance(caracs, dict):
             self._caracs = self.transform_caracs(caracs)
+        if caracs_list:
+            self._caracs = {v[0].split(':')[1]: {
+                'coords': {'lon': v[1][1][0], 'lat': v[1][1][1]},
+                'timestamp': v[1][2], 'distance': v[1][0]}
+                    for v in caracs_list
+            }
+        if self._caracs:
+            self._min_caracs = min(self._caracs.values(), key=lambda v: v['timestamp'])
+        else:
+            self._min_caracs = None
+
+    @property
+    def coords(self):
+        return (self._min_caracs['coords'] if self._min_caracs else None)
+
+    @property
+    def distance(self):
+        return (self._min_caracs['distance'] if self._min_caracs else None)
+
+    @property
+    def lon(self):
+        return self.coords['lon'] if self._min_caracs else None
+
+    @property
+    def lat(self):
+        return self.coords['lat'] if self._min_caracs else None
 
     @staticmethod
     def parse_redis(v):
@@ -156,10 +182,7 @@ class TaxiRedis(object):
     def caracs(self, min_time):
         if self._caracs is None:
             self._caracs = self.__class__.retrieve_caracs(self.id)
-        for i in self._caracs:
-            if i[1] is None:
-                current_app.logger.error('Taxi {} has wrong format in redis'.format(self.id))
-                continue
+        for i in self._caracs.iteritems():
             if i[1]['timestamp'] < min_time:
                 continue
             yield i
@@ -181,7 +204,7 @@ class TaxiRedis(object):
 
     @staticmethod
     def transform_caracs(caracs):
-        return [(k.decode(), TaxiRedis.parse_redis(v)) for k, v in caracs.items()]
+        return {k.decode(): TaxiRedis.parse_redis(v) for k, v in caracs.iteritems()}
 
     @classmethod
     def retrieve_caracs(cls, id_):
@@ -268,21 +291,11 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     def status(self):
         return self.vehicle.description.status
 
-    def set_redis_status(self, description):
-        user = user_datastore.get_user(description.added_by)
-        taxi_id_operator = "{}:{}".format(self.id, user.email)
-        if description.status != 'free':
-            redis_store.sadd(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
-        else:
-            redis_store.srem(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
 
     @status.setter
     def status(self, status):
         self.vehicle.description.status = status
         self.last_update_at = datetime.now()
-        self.set_redis_status(self.vehicle.description)
 
 
     def is_free(self, min_time=None):
@@ -338,7 +351,6 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         description = self.vehicle.get_description(hail.operateur)
         description.status = self.map_hail_status_taxi_status[hail.status]
         self.last_update_at = datetime.now()
-        self.set_redis_status(description)
 
 
 def refresh_taxi(**kwargs):

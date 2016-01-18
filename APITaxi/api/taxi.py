@@ -20,9 +20,8 @@ from datetime import datetime, timedelta
 from time import mktime, time
 from functools import partial
 from ..utils.validate_json import ValidatorMixin
-from psycopg2.extras import RealDictCursor
 import math
-from itertools import islice
+from itertools import islice, groupby
 from collections import deque
 
 
@@ -111,15 +110,10 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
 
 
 def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
-    def wrapped(taxi, taxi_db):
-        taxi_redis, distance, coords = taxi
+    def wrapped(taxi_redis, taxi_db):
         taxi_id = taxi_redis.id
         if not taxi_db[0]['taxi_ads_id']:
             current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
-            return None
-        zupc_id = taxi_db[0]['ads_zupc_id']
-        if not any(map(lambda z: z.id ==zupc_id, zupc_customer)):
-            current_app.logger.info('Taxi {} is not customer\'s zone'.format(taxi_id))
             return None
         operator, timestamp = taxi_redis.get_operator(min_time, favorite_operator)
         if not operator:
@@ -132,12 +126,21 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
                 break
         if not taxi:
             return None
+        if taxi['ads_zupc_id'] not in zupc_customer:
+            current_app.logger.info('Taxi not in customer\'s zone')
+            return
+        if not zupc_customer[taxi['ads_zupc_id']].preped_geom.contains(
+                      Point(float(taxi_redis.lat),
+                          float(taxi_redis.lon))
+                      ):
+            current_app.logger.info('Taxi is not in its zone')
+            return
         characs = vehicle_models.VehicleDescription.get_characs(
                 lambda o, f: o.get('vehicle_description_{}'.format(f)), t)
         return {
             "id": taxi_id,
             "operator": t['u_email'],
-            "position": {"lat": coords[0], "lon": coords[1]},
+            "position": taxi_redis.coords,
             "vehicle": {
                 "model": taxi['model_name'],
                 "constructor": taxi['constructor_name'],
@@ -155,44 +158,35 @@ def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
                 "professional_licence": taxi['driver_professional_licence']
             },
             "last_update": timestamp,
-            "crowfly_distance": float(distance),
+            "crowfly_distance": float(taxi_redis.distance),
             "rating": 4.5,
             "status": taxi['vehicle_description_status']
         }
     return wrapped
 
+get_parser = reqparse.RequestParser()
+get_parser.add_argument('lon', type=float, required=True, location='values')
+get_parser.add_argument('lat', type=float, required=True, location='values')
+get_parser.add_argument('favorite_operator', type=unicode, required=False,
+    location='values')
+get_parser.add_argument('count', type=int, required=False,
+        location='values', default=10)
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource, ValidatorMixin):
-    get_parser = reqparse.RequestParser()
-    get_parser.add_argument('lon', type=float, required=True, location='values')
-    get_parser.add_argument('lat', type=float, required=True, location='values')
-    get_parser.add_argument('favorite_operator', type=unicode, required=False,
-            location='values')
-    get_parser.add_argument('count', type=int, required=False,
-            location='values', default=10)
 
-    def filter_outofzone_taxis(self):
-#First we filter taxis with no zupc and taxi that aren't allowed to pickup here
-#(i.e their charging zone is not the same as the one of customer's position
-#Then we filter taxis that aren't in the customer zone
-        return map(lambda z_id_t: z_id_t[1], filter(
-                lambda z_id_t: all(
-                    map(lambda z: z.id != z_id_t[0] or\
-                                  z.preped_geom.contains(
-                                      Point(float(z_id_t[1][2][1]),
-                                          float(z_id_t[1][2][0])
-                                      )
-                                  ),
-                        self.zupc_customer)),
-                filter(
-                    lambda z_id_t: z_id_t[0] and z_id_t[0] not in self.zupc_customer,
-                    zip(self.zupc_taxis, self.taxis_redis)
-                )
-              )
-             )
-
-
+    def filter_not_available(self, fresh_redis, na_redis):
+        #As said before there might be non-fresh taxis
+        nb_not_available = redis_store.zinterstore(na_redis,
+                {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
+        )
+        if nb_not_available == 0:
+            return
+        for v in redis_store.zrange(na_redis, 0, -1):
+            try:
+                del self.taxis_redis[v.split(':')[0]]
+            except KeyError:
+                pass
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -200,7 +194,7 @@ class Taxis(Resource, ValidatorMixin):
             parser=get_parser, model=taxi_model)
     @json_mimetype_required
     def get(self):
-        p = self.__class__.get_parser.parse_args()
+        p = get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
         if current_app.config['LIMITED_ZONE'] and\
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
@@ -210,13 +204,17 @@ class Taxis(Resource, ValidatorMixin):
         if len(self.zupc_customer) == 0:
             current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
-        r = redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon)
-        if len(r) == 0:
+        #It returns a list of all taxis near the given point
+        #For each taxi you have a tuple with: (id, distance, [lat, lon])
+        positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX'],
+                lat, lon)
+        if len(positions) == 0:
             current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        name_redis = '{}:{}:{}'.format(p['lon'], p['lat'], time())
-        redis_store.zadd(name_redis, **dict([(id_, d) for id_, d, _ in r]))
-
+        name_redis = '{}:{}:{}'.format(lon, lat, time())
+        redis_store.zadd(name_redis, **{id_: d for id_, d, _ in positions})
+        #The resulting set may contain unfresh taxi because they haven't be
+        #deleted yet
         fresh_redis = 'fresh:'+name_redis
         nb_fresh_taxis = redis_store.zinterstore(fresh_redis,
                 {name_redis:0, current_app.config['REDIS_TIMESTAMPS']:1}
@@ -225,83 +223,44 @@ class Taxis(Resource, ValidatorMixin):
             current_app.logger.info('No fresh taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
-        timestamps = dict(filter(lambda taxi_id_ts: taxi_id_ts[1]>= min_time,
-            redis_store.zrange(fresh_redis, 0, -1, withscores=True)
-            )
-        )
+        #We select only the fresh taxis
+        timestamps = dict(redis_store.zrangebyscore(fresh_redis, min_time,
+            '+inf', withscores=True))
 
+        #Select only fresh taxis, and add operator and timestamps to the tuple
+        positions = [(v[0], [v[1], v[2], timestamps[v[0]]])
+                        for v in positions if v[0] in timestamps]
+        self.taxis_redis = {k: taxis_models.TaxiRedis(k, caracs_list=list(v))
+            for k, v in groupby(positions, key=lambda k_v: k_v[0].split(':')[0])}
         na_redis = 'na:'+name_redis
-        r_not_available = redis_store.zinterstore(na_redis,
-                {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
-        )
-        if r_not_available > 1:
-            not_available = set(map(
-                lambda taxi_id_operator: taxi_id_operator.split(':')[0],
-                redis_store.zrange(na_redis, 0, -1)
-            ))
-            filter_fun = lambda taxi_id_operator, _:\
-                taxi_id_operator.split(':')[0] not in not_available
-            r = filter(filter_fun, r)
+        self.filter_not_available(fresh_redis, na_redis)
 
-        self.zupc_customer = [administrative_models.ZUPC.cache.get(z) for z in self.zupc_customer]
-        self.taxis_redis = dict()
-        for taxi_id_operator, distance, coords in r:
-            taxi_id, operator = taxi_id_operator.split(':')
-            ts = timestamps[taxi_id_operator]
-            if taxi_id not in self.taxis_redis:
-                self.taxis_redis[taxi_id] = (taxis_models.TaxiRedis(taxi_id, []),
-                    distance, coords)
-            else:
-                if all(map(lambda t: t[0].caracs['timestamps'] > ts,
-                    self.taxis_redis[taxi_id].caracs)
-                    ):
-                    self.taxis_redis[taxi_id][1] = distance
-                    self.taxis_redis[taxi_id][2] = coords
-            self.taxis_redis[taxi_id][0]._caracs.append(
-                (operator, {'timestamp': timestamps[taxi_id_operator],
-                    'lat': coords[0], 'lon': coords[1], 'status': 'free'}
-                )
-            )
-        self.taxis_redis = sorted(self.taxis_redis.values(), key=lambda t: t[0].id.lower())
-        self.zupc_taxis = cache_in("""
-            SELECT taxi.id AS id, ads.zupc_id AS zupc_id FROM taxi
-            LEFT OUTER JOIN "ADS" as ads ON taxi.ads_id = ads.id
-            """, [t[0].id for t in self.taxis_redis], 'taxis_zupc',
-            transform=lambda d: d['zupc_id'])
-        self.taxis_redis = self.filter_outofzone_taxis()
+        self.zupc_customer = {id_: administrative_models.ZUPC.cache.get(id_)
+                            for id_ in self.zupc_customer}
 
-        cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
-        cur.execute(get_taxis_request, (tuple((t[0].id for t in self.taxis_redis)),))
-        taxis_db = cur.fetchmany(4)
         taxis = []
         func_generate_taxis = generate_taxi_dict(self.zupc_customer,
                 min_time, p['favorite_operator'])
-        for t in self.taxis_redis:
-            while len(taxis_db) == 0 or\
-                    t[0].id == taxis_db[0]['taxi_id'] and t[0].id == taxis_db[-1]['taxi_id']:
-                l = cur.fetchmany(4)
-                if len(l) == 0:
-                    break
-                taxis_db.extend(l)
+#Sorting by distance
+        sorted_ids = [t.id for t in
+                sorted(self.taxis_redis.values(), key=lambda t: t.distance)]
+        for i in range(0, int(math.ceil(len(sorted_ids)/float(p['count'])))):
+            page_ids = sorted_ids[i*p['count']:(i+1)*p['count']]
+            taxis_db = [v for v in cache_in(get_taxis_request, page_ids,
+                'taxis_cache_sql', get_id=lambda v: v[0]['taxi_id'],
+                   transform_result=lambda r: map(lambda v: list(v[1]),
+                                 groupby(r, lambda t: t['taxi_id']),))
+                   if v]
             if len(taxis_db) == 0:
-                break
-            #Get the first index that's not t[0].id
-            index = next((i for i, v in enumerate(taxis_db) if v['taxi_id'] != t[0].id),
-                    len(taxis_db))
-            if taxis_db[0]['taxi_id'] != t[0].id :
-                current_app.logger.info('Unable to find taxi {} in db'.format(t[0].id))
                 continue
-            gen = func_generate_taxis(t, taxis_db[:index])
-            if gen:
-                taxis.append(gen)
-            del taxis_db[:index]
-            if len(taxis) == p['count']:
+            l = [func_generate_taxis(self.taxis_redis[t[0]['taxi_id']], t)
+                    for t in taxis_db if len(t) > 0]
+            taxis.extend(filter(None, l))
+            if len(taxis) >= p['count']:
                 break
-
-        taxis = sorted(taxis, key=lambda taxi: taxi['crowfly_distance'])
         #Clean-up redis
-        redis_store.delete(fresh_redis, na_redis)
-        return {'data': taxis}
+        redis_store.delete(fresh_redis, na_redis, name_redis)
+        return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required
     @roles_accepted('admin', 'operateur')
