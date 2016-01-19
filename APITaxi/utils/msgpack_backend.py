@@ -1,7 +1,7 @@
 from dogpile.cache.proxy import ProxyBackend
 import msgpack
 from dogpile.cache.api import NO_VALUE, CachedValue
-import datetime
+import datetime, time
 
 class _EncodedProxy(ProxyBackend):
     """base class for building value-mangling proxies"""
@@ -42,16 +42,16 @@ class _EncodedProxy(ProxyBackend):
 
 def decode_datetime(obj):
     if b'__datetime__' in obj:
-        obj = datetime.datetime.strptime(obj[b'as_str'].decode(), "%Y%m%dT%H:%M:%S.%f")
+        return datetime.datetime.fromtimestamp(obj[b'as_int'])
     elif b'__date__' in obj:
-        obj = datetime.datetime.strptime(obj[b'as_str'].decode(), "%Y%m%d")
+        return datetime.date.fromordinal(obj[b'as_int'])
     return obj
 
 def encode_datetime(obj):
     if isinstance(obj, datetime.datetime):
-        obj = {'__datetime__': True, 'as_str': obj.strftime("%Y%m%dT%H:%M:%S.%f").encode()}
+        obj = {'__datetime__': True, 'as_int': time.mktime(obj.timetuple())}
     elif isinstance(obj, datetime.date):
-        obj = {'__date__': True, 'as_str': obj.strftime("%Y%m%d").encode()}
+        obj = {'__date__': True, 'as_int': obj.toordinal()}
     return obj
 
 class MsgpackProxy(_EncodedProxy):
