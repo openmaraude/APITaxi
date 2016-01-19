@@ -36,6 +36,8 @@ def zupc_search():
     to_return = []
     ZUPC = administrative_models.ZUPC
     for zupc in cur.fetchall():
+        if any(map(lambda z: zupc['insee'] == z['insee'], to_return)):
+            continue
         to_return.append(marshal(zupc, ZUPC.marshall_obj(filter_id=True, level=1)))
     return json.dumps({"data": to_return}), 200, {"Content-Type": "application/json"}
 
