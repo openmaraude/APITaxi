@@ -9,6 +9,7 @@ from flask import (Blueprint, request, render_template, redirect, jsonify,
                    url_for)
 from werkzeug.exceptions import BadRequest
 import json
+from psycopg2.extras import RealDictCursor
 
 
 mod = Blueprint('zupc', __name__)
@@ -28,13 +29,14 @@ def zupc_search():
     except BadRequest as e:
         return json.dumps(e.data), 400, {"Content-Type": "application/json"}
 
-    id_list = index_zupc.intersection(args['lon'], args['lat'])
+    cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""SELECT active, nom, insee FROM "ZUPC"
+        WHERE ST_Contains(shape::geometry, ST_POINT(%s, %s)::geography::geometry)""",
+        (args['lon'], args['lat']))
     to_return = []
-    if id_list:
-        ZUPC = administrative_models.ZUPC
-        zupc_list = ZUPC.query.filter(ZUPC.id.in_(id_list)).all()
-#Level is one, because we don't want to have parent in the response
-        to_return = marshal(zupc_list, ZUPC.marshall_obj(filter_id=True, level=1))
+    ZUPC = administrative_models.ZUPC
+    for zupc in cur.fetchall():
+        to_return.append(marshal(zupc, ZUPC.marshall_obj(filter_id=True, level=1)))
     return json.dumps({"data": to_return}), 200, {"Content-Type": "application/json"}
 
 
