@@ -330,6 +330,8 @@ class ActiveTaxisRoute(Resource):
         if current_user.has_role('admin'):
             if p['operator']:
                 filters.append("operator = {}".format(p['operator']))
+            else:
+                filters.append("operator = ''")
         else:
             filters.append("operator = '{}'".format(current_user.email))
 

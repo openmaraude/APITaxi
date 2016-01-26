@@ -37,10 +37,11 @@ def get_data(taxi_ids, bound, redis_store):
     return ifilter(lambda taxi_operator: len(taxi_operator[1]) > 0, zipped_value)
 
 def store_active_taxis(frequency):
-    bound_time = datetime.now()
+    now = datetime.now()
     bound_time -= timedelta(seconds=Taxi._ACTIVITY_TIMEOUT + frequency * 60)
     bound = mktime(bound_time.timetuple())
     map_operateur_zupc_nb_active = dict()
+    map_zupc_nb_active = dict()
     for l in scan_as_list('taxi:*', redis_store):
         for taxi_id, v in get_data(l, bound, redis_store):
             taxi_id = taxi_id[5:] #We cut the "taxi:" part
@@ -52,6 +53,15 @@ def store_active_taxis(frequency):
             if taxi_db.ads is None:
                 current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
                 continue
+            zupc = ZUPC.get(taxi_db.ads.zupc_id)
+            zupc = zupc.parent
+            if not zupc:
+                current_app.logger.error('Unable to find zupc: {}'.format(
+                    taxi_db.ads.zupc_id))
+            zupc = zupc.insee
+            if zupc not in map_zupc_nb_active:
+                map_zupc_nb_active[zupc] = 0
+            map_zupc_nb_active[zupc] += 1
             for operator, result in v:
                 if operator not in map_operateur_zupc_nb_active:
                     u = user_datastore.find_user(email=operator)
@@ -59,15 +69,9 @@ def store_active_taxis(frequency):
                         current_app.logger.error('User: {} not found'.format(operator))
                         continue
                     map_operateur_zupc_nb_active[operator] = dict()
-                zupc = ZUPC.get(taxi_db.ads.zupc_id)
                 if not zupc:
                     current_app.logger.error('Unable to find zupc: {}'.format(
                         taxi_db.ads.zupc_id))
-                zupc = zupc.parent
-                if not zupc:
-                    current_app.logger.error('Unable to find zupc: {}'.format(
-                        taxi_db.ads.zupc_id))
-                zupc = zupc.insee
                 if zupc not in map_operateur_zupc_nb_active[operator]:
                     map_operateur_zupc_nb_active[operator][zupc] = 0
                 map_operateur_zupc_nb_active[operator][zupc] += 1
@@ -85,7 +89,7 @@ def store_active_taxis(frequency):
                         "operator": operator,
                         "zupc": zupc
                     },
-                    "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
+                    "time": now.strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
                         "value": active
                     }
@@ -95,5 +99,24 @@ def store_active_taxis(frequency):
                 current_app.logger.info('To insert: {}'.format(to_insert))
                 client.write_points(to_insert)
                 to_insert = []
+    for zupc, active in map_zupc_nb_active.iteritems():
+        to_insert.append(
+            {
+                "measurement": measurement_name,
+                "tags": {
+                    "operator": "",
+                    "zupc": zupc
+                },
+                "time": now.strftime('%Y%m%dT%H:%M:%SZ'),
+                "fields": {
+                    "value": active
+                }
+            }
+        )
+        if len(to_insert) == 100:
+            current_app.logger.info('To insert: {}'.format(to_insert))
+            client.write_points(to_insert)
+            to_insert = []
+
     current_app.logger.info('To insert: {}'.format(to_insert))
     client.write_points(to_insert)
