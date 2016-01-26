@@ -20,7 +20,8 @@ DOGPILE_CACHE_URLS = ''
 DOGPILE_CACHE_REGIONS = {
     'zupc': 'dogpile.cache.memory',
     'users': 'dogpile.cache.memory',
-    'taxis_cache_sql': 'dogpile.cache.null',
+    'taxis_cache_sql': {'backend': 'dogpile.cache.null',
+        'wrap': 'APITaxi.utils.msgpack_backend.MsgpackProxy'},
 }
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'
