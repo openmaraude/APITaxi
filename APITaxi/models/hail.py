@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from ..utils import HistoryMixin, AsDictMixin, fields
 from ..utils.mixins import GetOr404Mixin
 from ..utils.caching import CacheableMixin, query_callable
+from ..utils import influx_db
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
@@ -14,7 +15,7 @@ from ..models.security import User
 from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates, joinedload, synonym
 from sqlalchemy.ext.hybrid import hybrid_property
-from flask import g
+from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
 
 
@@ -192,6 +193,7 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
 
     @status.setter
     def status(self, value):
+        old_status = self._status
         assert value in status_enum_list
         if value == self._status:
             return True
@@ -205,7 +207,26 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
             raise ValueError("You cannot set status from {} to {}".format(self._status, value))
         self._status = value
         self.status_changed()
-        TaxiM.cache.get(self.taxi_id).synchronize_status_with_hail(self)
+        taxi = TaxiM.cache.get(self.taxi_id)
+        taxi.synchronize_status_with_hail(self)
+        client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
+        try:
+            client.write_points([{
+                "measurement": "hails_status_changed",
+                "tags": {
+                    "added_by": User.query.get(self.added_by).email,
+                    "operator": self.operateur.email,
+                    "zupc": taxi.ads.zupc.insee,
+                    "previous_status": old_status,
+                    "status": self._status
+                    },
+                "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
+                "fields": {
+                    "value": 1
+                }
+                }])
+        except Exception as e:
+            current_app.logger.error('Influxdb Error: {}'.format(e))
 
 
 
@@ -226,6 +247,7 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
 
     def status_changed(self):
         self.last_status_change = datetime.now()
+
 
     def check_time_out(self, duration, timeout_status):
         if datetime.now() < (self.last_status_change + timedelta(seconds=duration)):

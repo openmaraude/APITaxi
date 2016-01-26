@@ -16,6 +16,8 @@ from ..utils import fields as customFields
 from ..utils.validate_json import ValidatorMixin
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
+from ..utils import influx_db
+from datetime import datetime
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -124,5 +126,22 @@ class Hail(Resource, ValidatorMixin):
             operateur.operator_header_name,
             operateur.operator_api_key, operateur.email],
             queue='send_hail_'+current_app.config['NOW'])
+
+        client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
+        try:
+            client.write_points([{
+                "measurement": "hails_created",
+                "tags": {
+                    "added_by": current_user.email,
+                    "operator": operateur.email,
+                    "zupc": taxi.ads.zupc.insee,
+                    },
+                "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
+                "fields": {
+                    "value": 1
+                }
+                }])
+        except Exception as e:
+            current_app.logger.error('Influxdb Error: {}'.format(e))
 
         return {"data": [hail]}, 201
