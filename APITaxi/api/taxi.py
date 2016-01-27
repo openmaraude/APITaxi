@@ -55,29 +55,30 @@ class TaxiId(Resource, ValidatorMixin):
     @login_required
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
-        403:'You\'re not authorized to view it'})
-    @api.marshal_with(taxi_model)
+        403:'You\'re not authorized to view it'}, model=taxi_model)
     @api.expect(taxi_put_expect)
     @json_mimetype_required
     def put(self, taxi_id):
-        taxi = taxis_models.Taxi.cache.get(taxi_id)
-        if not taxi:
+        taxis = taxis_models.RawTaxi.get([taxi_id])
+        if not taxis:
             abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
-        if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
+        taxis = taxis[0]
+        t = [t for t in taxis if current_user.id == t['vehicle_description_added_by']]
+        if not t:
             abort(403, message='You\'re not authorized to PUT this taxi')
 
         hj = request.json
         self.validate(hj)
         new_status = hj['data'][0]['status']
-        if new_status != taxi.status:
-            try:
-                taxi.vehicle.description.status = hj['data'][0]['status']
-            except AssertionError as e:
-                abort(400, message=str(e))
-            db.session.add(taxi.vehicle.description)
+        if new_status != t[0]['vehicle_description_status']:
+            cur = db.session.connection().connection.cursor()
+            cur.execute("UPDATE vehicle_description SET status=%s WHERE id=%s",
+                    (new_status, t[0]['vehicle_description_id']))
             db.session.commit()
-            taxi.cache.flush(taxi.cache._cache_key(taxi.id))
-        return {'data': [taxi]}
+            cache = taxis_models.Taxi.cache
+            cache.flush(cache._cache_key(taxi_id))
+            t[0]['vehicle_description_status'] = new_status
+        return {'data': [taxis_models.RawTaxi.generate_dict(t, operator=current_user.email)]}
 
 
 get_parser = reqparse.RequestParser()
