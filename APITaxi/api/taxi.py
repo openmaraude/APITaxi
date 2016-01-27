@@ -105,6 +105,22 @@ class Taxis(Resource, ValidatorMixin):
             except KeyError:
                 pass
 
+    def filter_zone(self, t):
+        zupc_id = t['ads_zupc_id']
+        if not zupc_id in self.zupc_customer.keys():
+            current_app.logger.info('Taxi not in customer\'s zone')
+            return False
+        t_redis = self.taxis_redis[t['taxi_id']]
+        if not self.zupc_customer[t['ads_zupc_id']].preped_geom.contains(
+                      Point(float(t_redis.lon),
+                          float(t_redis.lat))
+                      ):
+            current_app.logger.info('Taxi is not in its zone')
+            return False
+        return True
+
+
+
     @login_required
     @roles_accepted('admin', 'moteur')
     @api.doc(responses={403:'You\'re not authorized to view it'},
