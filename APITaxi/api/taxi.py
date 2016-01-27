@@ -55,114 +55,31 @@ class TaxiId(Resource, ValidatorMixin):
     @login_required
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
-        403:'You\'re not authorized to view it'})
-    @api.marshal_with(taxi_model)
+        403:'You\'re not authorized to view it'}, model=taxi_model)
     @api.expect(taxi_put_expect)
     @json_mimetype_required
     def put(self, taxi_id):
-        taxi = taxis_models.Taxi.cache.get(taxi_id)
-        if not taxi:
+        taxis = taxis_models.RawTaxi.get([taxi_id])
+        if not taxis:
             abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
-        if current_user.id not in [desc.added_by for desc in taxi.vehicle.descriptions]:
+        taxis = taxis[0]
+        t = [t for t in taxis if current_user.id == t['vehicle_description_added_by']]
+        if not t:
             abort(403, message='You\'re not authorized to PUT this taxi')
 
         hj = request.json
         self.validate(hj)
         new_status = hj['data'][0]['status']
-        if new_status != taxi.status:
-            try:
-                taxi.vehicle.description.status = hj['data'][0]['status']
-            except AssertionError as e:
-                abort(400, message=str(e))
-            db.session.add(taxi.vehicle.description)
+        if new_status != t[0]['vehicle_description_status']:
+            cur = db.session.connection().connection.cursor()
+            cur.execute("UPDATE vehicle_description SET status=%s WHERE id=%s",
+                    (new_status, t[0]['vehicle_description_id']))
             db.session.commit()
-            taxi.cache.flush(taxi.cache._cache_key(taxi.id))
-        return {'data': [taxi]}
+            cache = taxis_models.Taxi.cache
+            cache.flush(cache._cache_key(taxi_id))
+            t[0]['vehicle_description_status'] = new_status
+        return {'data': [taxis_models.RawTaxi.generate_dict(t, operator=current_user.email)]}
 
-
-get_columns_names = lambda m: [c.name for c in m.__table__.columns]
-fields_get_taxi = fields = {
-    "taxi": get_columns_names(taxis_models.Taxi),
-    "model": get_columns_names(vehicle_models.Model),
-    "constructor": get_columns_names(vehicle_models.Constructor),
-    "vehicle_description": get_columns_names(vehicle_models.VehicleDescription),
-    "vehicle": get_columns_names(vehicle_models.Vehicle),
-    '"ADS"': get_columns_names(taxis_models.ADS),
-    "driver": get_columns_names(taxis_models.Driver),
-    "departement": get_columns_names(administrative_models.Departement),
-    "u": ['email']
-}
-
-get_taxis_request = """SELECT {} FROM taxi
-LEFT OUTER JOIN vehicle ON vehicle.id = taxi.vehicle_id
-LEFT OUTER JOIN vehicle_description ON vehicle.id = vehicle_description.vehicle_id
-LEFT OUTER JOIN model ON model.id = vehicle_description.model_id
-LEFT OUTER JOIN constructor ON constructor.id = vehicle_description.constructor_id
-LEFT OUTER JOIN "ADS" ON "ADS".id = taxi.ads_id
-LEFT OUTER JOIN driver ON driver.id = taxi.driver_id
-LEFT OUTER JOIN departement ON departement.id = driver.departement_id
-LEFT OUTER JOIN "user" AS u ON u.id = vehicle_description.added_by
-WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
-    [", ".join(["{0}.{1} AS {2}_{1}".format(k, v2, k.replace('"', '')) for v2 in v])
-        for k, v  in fields_get_taxi.items()])
-    )
-
-
-
-def generate_taxi_dict(zupc_customer, min_time, favorite_operator):
-    def wrapped(taxi_redis, taxi_db):
-        taxi_id = taxi_redis.id
-        if not taxi_db[0]['taxi_ads_id']:
-            current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
-            return None
-        operator, timestamp = taxi_redis.get_operator(min_time, favorite_operator)
-        if not operator:
-            current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
-            return None
-        taxi = None
-        for t in taxi_db:
-            if t['u_email'] == operator:
-                taxi = t
-                break
-        if not taxi:
-            return None
-        if taxi['ads_zupc_id'] not in zupc_customer:
-            current_app.logger.info('Taxi not in customer\'s zone')
-            return
-        if not zupc_customer[taxi['ads_zupc_id']].preped_geom.contains(
-                      Point(float(taxi_redis.lon),
-                          float(taxi_redis.lat))
-                      ):
-            current_app.logger.info('Taxi is not in its zone')
-            return
-        characs = vehicle_models.VehicleDescription.get_characs(
-                lambda o, f: o.get('vehicle_description_{}'.format(f)), t)
-        return {
-            "id": taxi_id,
-            "operator": t['u_email'],
-            "position": taxi_redis.coords,
-            "vehicle": {
-                "model": taxi['model_name'],
-                "constructor": taxi['constructor_name'],
-                    "color": taxi['vehicle_description_color'],
-                    "characteristics": characs,
-                "nb_seats": taxi['vehicle_description_nb_seats'],
-                "licence_plate": taxi['vehicle_licence_plate'],
-            },
-            "ads": {
-                "insee": taxi['ads_insee'],
-                "numero": taxi['ads_numero']
-            },
-            "driver": {
-                "departement": taxi['departement_numero'],
-                "professional_licence": taxi['driver_professional_licence']
-            },
-            "last_update": timestamp,
-            "crowfly_distance": float(taxi_redis.distance),
-            "rating": 4.5,
-            "status": taxi['vehicle_description_status']
-        }
-    return wrapped
 
 get_parser = reqparse.RequestParser()
 get_parser.add_argument('lon', type=float, required=True, location='values')
@@ -187,6 +104,22 @@ class Taxis(Resource, ValidatorMixin):
                 del self.taxis_redis[v.split(':')[0]]
             except KeyError:
                 pass
+
+    def filter_zone(self, t):
+        zupc_id = t['ads_zupc_id']
+        if not zupc_id in self.zupc_customer.keys():
+            current_app.logger.info('Taxi not in customer\'s zone')
+            return False
+        t_redis = self.taxis_redis[t['taxi_id']]
+        if not self.zupc_customer[t['ads_zupc_id']].preped_geom.contains(
+                      Point(float(t_redis.lon),
+                          float(t_redis.lat))
+                      ):
+            current_app.logger.info('Taxi is not in its zone')
+            return False
+        return True
+
+
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -239,22 +172,19 @@ class Taxis(Resource, ValidatorMixin):
                             for id_ in self.zupc_customer}
 
         taxis = []
-        func_generate_taxis = generate_taxi_dict(self.zupc_customer,
-                min_time, p['favorite_operator'])
 #Sorting by distance
         sorted_ids = [t.id for t in
                 sorted(self.taxis_redis.values(), key=lambda t: t.distance)]
         for i in range(0, int(math.ceil(len(sorted_ids)/float(p['count'])))):
             page_ids = sorted_ids[i*p['count']:(i+1)*p['count']]
-            taxis_db = [v for v in cache_in(get_taxis_request, page_ids,
-                'taxis_cache_sql', get_id=lambda v: v[0]['taxi_id'],
-                   transform_result=lambda r: map(lambda v: list(v[1]),
-                                 groupby(r, lambda t: t['taxi_id']),))
-                   if v]
+            taxis_db = taxis_models.RawTaxi.get(page_ids)
             if len(taxis_db) == 0:
                 continue
-            l = [func_generate_taxis(self.taxis_redis[t[0]['taxi_id']], t)
-                    for t in taxis_db if len(t) > 0]
+            l = [taxis_models.RawTaxi.generate_dict(t,
+                        self.taxis_redis[t[0]['taxi_id']], min_time=min_time,
+                        favorite_operator=p['favorite_operator'])
+                for t in taxis_db if len(t) > 0
+                if self.filter_zone(t[0])]
             taxis.extend(filter(None, l))
             if len(taxis) >= p['count']:
                 break

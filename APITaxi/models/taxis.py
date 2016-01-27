@@ -2,11 +2,12 @@
 from ..models import vehicle
 from ..extensions import (regions, db, user_datastore, redis_store,
         get_short_uuid)
-from ..models.vehicle import Vehicle, VehicleDescription
-from ..models.administrative import ZUPC
-from ..utils import AsDictMixin, HistoryMixin, fields, FilterOr404Mixin
+from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
+from ..models.administrative import ZUPC, Departement
+from ..utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
+        get_columns_names)
 from ..utils.mixins import GetOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable
+from ..utils.caching import CacheableMixin, query_callable, cache_in
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
@@ -18,6 +19,7 @@ from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
 from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
 from datetime import datetime
+from itertools import groupby
 
 
 owner_type_enum = ['company', 'individual']
@@ -283,6 +285,8 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
 
     _ACTIVITY_TIMEOUT = 15*60 #Used for dash
 
+
+
     @property
     def rating(self):
         return 4.5
@@ -352,6 +356,94 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         description.status = self.map_hail_status_taxi_status[hail.status]
         self.last_update_at = datetime.now()
 
+
+
+class RawTaxi(object):
+    fields_get = {
+        "taxi": get_columns_names(Taxi),
+        "model": get_columns_names(Model),
+        "constructor": get_columns_names(Constructor),
+        "vehicle_description": get_columns_names(VehicleDescription),
+        "vehicle": get_columns_names(Vehicle),
+        '"ADS"': get_columns_names(ADS),
+        "driver": get_columns_names(Driver),
+        "departement": get_columns_names(Departement),
+        "u": ['email']
+    }
+
+    request_in = """SELECT {} FROM taxi
+LEFT OUTER JOIN vehicle ON vehicle.id = taxi.vehicle_id
+LEFT OUTER JOIN vehicle_description ON vehicle.id = vehicle_description.vehicle_id
+LEFT OUTER JOIN model ON model.id = vehicle_description.model_id
+LEFT OUTER JOIN constructor ON constructor.id = vehicle_description.constructor_id
+LEFT OUTER JOIN "ADS" ON "ADS".id = taxi.ads_id
+LEFT OUTER JOIN driver ON driver.id = taxi.driver_id
+LEFT OUTER JOIN departement ON departement.id = driver.departement_id
+LEFT OUTER JOIN "user" AS u ON u.id = vehicle_description.added_by
+WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
+    [", ".join(["{0}.{1} AS {2}_{1}".format(k, v2, k.replace('"', '')) for v2 in v])
+        for k, v  in fields_get.items()])
+    )
+
+    @staticmethod
+    def generate_dict(taxi_db, taxi_redis=None, operator=None, min_time=None,
+            favorite_operator=None):
+        taxi_id = taxi_db[0]['taxi_id']
+        if not taxi_db[0]['taxi_ads_id']:
+            current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
+            return None
+        if taxi_redis:
+            operator, timestamp = taxi_redis.get_operator(min_time, favorite_operator)
+            if not operator:
+                current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
+                return None
+        else:
+            timestamp = None
+        taxi = None
+        for t in taxi_db:
+            if t['u_email'] == operator:
+                taxi = t
+                break
+        if not taxi:
+            return None
+        characs = VehicleDescription.get_characs(
+                lambda o, f: o.get('vehicle_description_{}'.format(f)), t)
+        return {
+            "id": taxi_id,
+            "operator": t['u_email'],
+            "position": taxi_redis.coords if taxi_redis else None,
+            "vehicle": {
+                "model": taxi['model_name'],
+                "constructor": taxi['constructor_name'],
+                    "color": taxi['vehicle_description_color'],
+                    "characteristics": characs,
+                "nb_seats": taxi['vehicle_description_nb_seats'],
+                "licence_plate": taxi['vehicle_licence_plate'],
+            },
+            "ads": {
+                "insee": taxi['ads_insee'],
+                "numero": taxi['ads_numero']
+            },
+            "driver": {
+                "departement": taxi['departement_numero'],
+                "professional_licence": taxi['driver_professional_licence']
+            },
+            "last_update": timestamp,
+            "crowfly_distance": float(taxi_redis.distance) if taxi_redis else None,
+            "rating": 4.5,
+            "status": taxi['vehicle_description_status']
+        }
+
+
+    @staticmethod
+    def get(ids=None, operateur_id=None,id_=None):
+        return [[v for v in l
+                if not operateur_id or v['vehicle_description_added_by'] == operateur_id]
+                for l in cache_in(RawTaxi.request_in, ids,
+                            'taxis_cache_sql', get_id=lambda v: v[0]['taxi_id'],
+                            transform_result=lambda r: map(lambda v: list(v[1]),
+                            groupby(r, lambda t: t['taxi_id']),))
+               if l]
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)

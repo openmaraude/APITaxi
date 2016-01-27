@@ -6,7 +6,7 @@ from flask.ext.security import (login_required, roles_required,
 from ..extensions import db, redis_store
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
-from ..models.taxis import  Taxi as TaxiModel
+from ..models.taxis import  Taxi as TaxiModel, RawTaxi, TaxiRedis
 from ..models import security as security_models
 import requests, json
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
@@ -96,13 +96,16 @@ class Hail(Resource, ValidatorMixin):
         self.validate(hj)
         hj = hj['data'][0]
 
-        taxi = TaxiModel.get_or_404(hj['taxi_id'])
         operateur = security_models.User.filter_by_or_404(
-                email=hj['operateur'], message='Unable to find the taxi\'s operateur')
-        desc = taxi.vehicle.get_description(operateur)
-        if not desc:
-            abort(404, message='Unable to find taxi\'s description')
-        if not taxi.is_free() or not taxi.is_fresh(hj['operateur']):
+                email=hj['operateur'],
+                message='Unable to find the taxi\'s operateur')
+
+        descriptions = RawTaxi.get((hj['taxi_id'],), operateur.id)
+        if len(descriptions) == 0:
+            abort(404, message='Unable to find taxi {} of {}'.format(
+                hj['taxi_id'], hj['operateur']))
+        if descriptions[0][0]['vehicle_description_status'] != 'free' or\
+                not TaxiRedis(hj['taxi_id']).is_fresh(hj['operateur']):
             abort(403, message="The taxi is not available")
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
                 operateur_id=current_user.id).first()
