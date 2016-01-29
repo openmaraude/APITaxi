@@ -88,8 +88,8 @@ class Hail(Resource, ValidatorMixin):
 
     @login_required
     @roles_accepted('admin', 'moteur')
-    @api.marshal_with(hail_model)
     @api.expect(hail_expect_post)
+    @api.response(201, 'Success', hail_model)
     @json_mimetype_required
     def post(self):
         hj = request.json
@@ -112,6 +112,12 @@ class Hail(Resource, ValidatorMixin):
         if not customer:
             customer = CustomerModel(hj['customer_id'])
             db.session.add(customer)
+        taxi_score = redis_store.zscore(current_app.config['REDIS_GEOINDEX'],
+                '{}:{}'.format(hj['taxi_id'], operateur.email))
+        r = redis_store.geodecode(int(taxi_score)) if taxi_score else None
+        current_app.logger.info('r: {}'.format(r))
+        taxi_pos = r[0] if r else None
+
         hail = HailModel()
         hail.customer_id = hj['customer_id']
         hail.customer_lon = hj['customer_lon']
@@ -119,6 +125,8 @@ class Hail(Resource, ValidatorMixin):
         hail.customer_address = hj['customer_address']
         hail.customer_phone_number = hj['customer_phone_number']
         hail.taxi_id = hj['taxi_id']
+        hail.initial_taxi_lat = taxi_pos[0] if r else None
+        hail.initial_taxi_lon = taxi_pos[1] if r else None
         hail.operateur_id = operateur.id
         hail.status = 'received'
         db.session.add(hail)
@@ -146,5 +154,7 @@ class Hail(Resource, ValidatorMixin):
                 }])
         except Exception as e:
             current_app.logger.error('Influxdb Error: {}'.format(e))
-
-        return {"data": [hail]}, 201
+        result = marshal({"data": [hail]}, hail_model)
+        result['data'][0]['taxi']['lon'] = hail.initial_taxi_lon
+        result['data'][0]['taxi']['lat'] = hail.initial_taxi_lat
+        return result, 201
