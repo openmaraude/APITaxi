@@ -21,10 +21,10 @@ def dashboard():
             continue
         zupc = ZUPC.get(zupc_tuple.zupc_id)
         if not zupc:
-            logger.info('Unable to find ZUPC with id: {}'.format(zupc_tuple.zupc_id))
+            logger.debug('Unable to find ZUPC with id: {}'.format(zupc_tuple.zupc_id))
             continue
         if not zupc.parent:
-            logger.info('Unable to find a ZUPC parent with id: {}'.format(zupc.parent_id))
+            logger.debug('Unable to find a ZUPC parent with id: {}'.format(zupc.parent_id))
             continue
         if zupc.parent.id in zupc_parent_id:
             continue

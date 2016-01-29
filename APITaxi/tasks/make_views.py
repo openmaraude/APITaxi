@@ -96,7 +96,7 @@ def store_active_taxis(frequency):
                 }
             )
             if len(to_insert) == 100:
-                current_app.logger.info('To insert: {}'.format(to_insert))
+                current_app.logger.debug('To insert: {}'.format(to_insert))
                 client.write_points(to_insert)
                 to_insert = []
     for zupc, active in map_zupc_nb_active.iteritems():
@@ -114,9 +114,9 @@ def store_active_taxis(frequency):
             }
         )
         if len(to_insert) == 100:
-            current_app.logger.info('To insert: {}'.format(to_insert))
+            current_app.logger.debug('To insert: {}'.format(to_insert))
             client.write_points(to_insert)
             to_insert = []
 
-    current_app.logger.info('To insert: {}'.format(to_insert))
+    current_app.logger.debug('To insert: {}'.format(to_insert))
     client.write_points(to_insert)
