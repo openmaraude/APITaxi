@@ -119,6 +119,8 @@ class TestHailPost(HailMixin):
         self.assert200(r)
         self.assertEqual(r.json['data'][0]['status'], 'answering')
         self.app.config['ENV'] = prev_env
+        hail = Hail.query.all()[0]
+        assert hail.change_to_received_by_operator
 
     def test_received_by_operator_prod(self):
         self.received_by_operator('PROD')

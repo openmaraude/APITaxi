@@ -59,10 +59,9 @@ class MarshalMixin(object):
         if level == 2:
             return {}
         cls.inspect_obj = inspect(cls)
+        fields_cls = cls.list_fields()
         if not show_all and hasattr(cls, 'public_fields'):
-            fields_cls = map(lambda k: getattr(cls, k),cls.public_fields)
-        else:
-            fields_cls = cls.list_fields()
+            fields_cls = filter(lambda f: f.name in cls.public_fields, fields_cls)
 
         def to_keep(c):
             return not c.primary_key and len(c.foreign_keys) == 0\
