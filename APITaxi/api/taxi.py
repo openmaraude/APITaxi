@@ -108,14 +108,14 @@ class Taxis(Resource, ValidatorMixin):
     def filter_zone(self, t):
         zupc_id = t['ads_zupc_id']
         if not zupc_id in self.zupc_customer.keys():
-            current_app.logger.info('Taxi not in customer\'s zone')
+            current_app.logger.debug('Taxi not in customer\'s zone')
             return False
         t_redis = self.taxis_redis[t['taxi_id']]
         if not self.zupc_customer[t['ads_zupc_id']].preped_geom.contains(
                       Point(float(t_redis.lon),
                           float(t_redis.lat))
                       ):
-            current_app.logger.info('Taxi is not in its zone')
+            current_app.logger.debug('Taxi is not in its zone')
             return False
         return True
 
@@ -135,14 +135,14 @@ class Taxis(Resource, ValidatorMixin):
             return {'data': []}
         self.zupc_customer = index_zupc.intersection(lon, lat)
         if len(self.zupc_customer) == 0:
-            current_app.logger.info('No zone found at {}, {}'.format(lat, lon))
+            current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
         #It returns a list of all taxis near the given point
         #For each taxi you have a tuple with: (id, distance, [lat, lon])
         positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX'],
                 lat, lon)
         if len(positions) == 0:
-            current_app.logger.info('No taxi found at {}, {}'.format(lat, lon))
+            current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
         name_redis = '{}:{}:{}'.format(lon, lat, time())
         redis_store.zadd(name_redis, **{id_: d for id_, d, _ in positions})
@@ -153,7 +153,7 @@ class Taxis(Resource, ValidatorMixin):
                 {name_redis:0, current_app.config['REDIS_TIMESTAMPS']:1}
         )
         if nb_fresh_taxis == 0:
-            current_app.logger.info('No fresh taxi found at {}, {}'.format(lat, lon))
+            current_app.logger.debug('No fresh taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
         min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
         #We select only the fresh taxis

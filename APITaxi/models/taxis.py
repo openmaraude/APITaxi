@@ -390,12 +390,12 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
             favorite_operator=None):
         taxi_id = taxi_db[0]['taxi_id']
         if not taxi_db[0]['taxi_ads_id']:
-            current_app.logger.info('Taxi {} has no ADS'.format(taxi_id))
+            current_app.logger.debug('Taxi {} has no ADS'.format(taxi_id))
             return None
         if taxi_redis:
             operator, timestamp = taxi_redis.get_operator(min_time, favorite_operator)
             if not operator:
-                current_app.logger.info('Unable to find operator for taxi {}'.format(taxi_id))
+                current_app.logger.debug('Unable to find operator for taxi {}'.format(taxi_id))
                 return None
         else:
             timestamp = None
