@@ -245,6 +245,8 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
                 {'position': fields.Nested(coordinates_descriptor),
                  'last_update': fields.Integer(),
                  'id': fields.String()}))
+        del return_['initial_taxi_lat']
+        del return_['initial_taxi_lon']
         return return_
 
     def status_changed(self):

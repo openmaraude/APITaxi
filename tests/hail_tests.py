@@ -108,6 +108,8 @@ class TestHailPost(HailMixin):
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
         self.assertEqual(r.json['data'][0]['status'], 'received')
+        assert 'initial_taxi_lat' not in r.json['data'][0]
+        assert 'initial_taxi_lon' not in r.json['data'][0]
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
         assert('taxi_phone_number' in r.json['data'][0])

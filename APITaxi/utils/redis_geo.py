@@ -27,5 +27,8 @@ class GeoRedis(StrictRedis):
         command += ' '+order
         return self.execute_command(command)
 
+    def geodecode(self, score):
+        return self.execute_command('geodecode {}'.format(score))
+
 
 
