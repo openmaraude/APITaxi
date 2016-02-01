@@ -359,6 +359,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
 
 
 class RawTaxi(object):
+    region = 'taxis_cache_sql'
     fields_get = {
         "taxi": get_columns_names(Taxi),
         "model": get_columns_names(Model),
@@ -415,8 +416,8 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
             "vehicle": {
                 "model": taxi['model_name'],
                 "constructor": taxi['constructor_name'],
-                    "color": taxi['vehicle_description_color'],
-                    "characteristics": characs,
+                "color": taxi['vehicle_description_color'],
+                "characteristics": characs,
                 "nb_seats": taxi['vehicle_description_nb_seats'],
                 "licence_plate": taxi['vehicle_licence_plate'],
             },
@@ -440,10 +441,14 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
         return [[v for v in l
                 if not operateur_id or v['vehicle_description_added_by'] == operateur_id]
                 for l in cache_in(RawTaxi.request_in, ids,
-                            'taxis_cache_sql', get_id=lambda v: v[0]['taxi_id'],
+                            RawTaxi.region, get_id=lambda v: v[0]['taxi_id'],
                             transform_result=lambda r: map(lambda v: list(v[1]),
                             groupby(r, lambda t: t['taxi_id']),))
                if l]
+
+    @staticmethod
+    def flush(id_):
+        redis_store.delete((RawTaxi.region, id_))
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)
