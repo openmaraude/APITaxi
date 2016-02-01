@@ -49,8 +49,7 @@ class Vehicle(ResourceMetadata):
             if not v.id:
                 continue
             for taxi in taxis_models.Taxi.query.filter_by(vehicle_id=v.id).all():
-                taxi.last_update_at = datetime.datetime.now()
-                db.session.add(taxi)
+                taxis_models.RawTaxi.flush(taxi.id)
         db.session.commit()
         return {"data": new_vehicles}, 201
 

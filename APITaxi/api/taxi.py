@@ -30,6 +30,16 @@ ns_taxis = api.namespace('taxis', description="Taxi API")
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource, ValidatorMixin):
+    def get_descriptions(self, taxi_id):
+        taxis = taxis_models.RawTaxi.get([taxi_id])
+        if not taxis:
+            abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
+        taxis = taxis[0]
+        t = [t for t in taxis if current_user.id == t['vehicle_description_added_by']]
+        if not t:
+            abort(403, message='You\'re not authorized to view this taxi')
+        v = redis_store.hget('taxi:{}'.format(taxi_id), current_user.email)
+        return t, int(v.split(' ')[0]) if v else None
 
     @login_required
     @roles_accepted('admin', 'operateur')
@@ -37,19 +47,12 @@ class TaxiId(Resource, ValidatorMixin):
         403:'You\'re not authorized to view it'})
     @json_mimetype_required
     def get(self, taxi_id):
-        taxi = taxis_models.Taxi.cache.get(taxi_id)
-        if not taxi:
-            abort(404, message="Unable to find this taxi")
-        description = taxi.vehicle.description
-        if not description:
-            abort(403, message="You're not authorized to view this taxi")
-        taxi_m = marshal({'data':[taxi]}, taxi_model)
+        t, last_update_at = self.get_descriptions(taxi_id)
+        taxi_m = marshal({'data':[
+            taxis_models.RawTaxi.generate_dict(t,
+            operator=current_user.email)]}, taxi_model)
         taxi_m['data'][0]['operator'] = current_user.email
-        v = redis_store.hget('taxi:{}'.format(taxi_id), current_user.email)
-        if v:
-            taxi_m['data'][0]['last_update'] = int(v.split(' ')[0])
-        else:
-            taxi_m['data'][0]['last_update'] = None
+        taxi_m['data'][0]['last_update'] = last_update_at
         return taxi_m
 
     @login_required
@@ -59,26 +62,23 @@ class TaxiId(Resource, ValidatorMixin):
     @api.expect(taxi_put_expect)
     @json_mimetype_required
     def put(self, taxi_id):
-        taxis = taxis_models.RawTaxi.get([taxi_id])
-        if not taxis:
-            abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
-        taxis = taxis[0]
-        t = [t for t in taxis if current_user.id == t['vehicle_description_added_by']]
-        if not t:
-            abort(403, message='You\'re not authorized to PUT this taxi')
-
         hj = request.json
         self.validate(hj)
+        t, last_update_at = self.get_descriptions(taxi_id)
         new_status = hj['data'][0]['status']
         if new_status != t[0]['vehicle_description_status']:
             cur = db.session.connection().connection.cursor()
             cur.execute("UPDATE vehicle_description SET status=%s WHERE id=%s",
                     (new_status, t[0]['vehicle_description_id']))
             db.session.commit()
-            cache = taxis_models.Taxi.cache
-            cache.flush(cache._cache_key(taxi_id))
+            taxis_models.RawTaxi.flush(taxi_id)
             t[0]['vehicle_description_status'] = new_status
-        return {'data': [taxis_models.RawTaxi.generate_dict(t, operator=current_user.email)]}
+        taxi_m = marshal({'data':[
+            taxis_models.RawTaxi.generate_dict(t, operator=current_user.email)]
+            }, taxi_model)
+        taxi_m['data'][0]['operator'] = current_user.email
+        taxi_m['data'][0]['last_update'] = last_update_at
+        return taxi_m
 
 
 get_parser = reqparse.RequestParser()
