@@ -355,6 +355,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         description = self.vehicle.get_description(hail.operateur)
         description.status = self.map_hail_status_taxi_status[hail.status]
         self.last_update_at = datetime.now()
+        RawTaxi.flush(self.id)
 
 
 
