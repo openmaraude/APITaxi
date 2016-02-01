@@ -62,6 +62,11 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
     cache_label = 'hails'
     cache_regions = regions
     query_class = query_callable(regions)
+    public_fields = ['creation_datetime', 'customer_address', 'customer_id',
+        'customer_lat', 'customer_lon', 'customer_phone_number', 'id',
+        'incident_customer_reason', 'incident_taxi_reason', 'last_status_change',
+        'operateur', 'rating_ride', 'rating_ride_reason', 'reporting_customer',
+        'reporting_customer_reason', 'status', 'taxi', 'taxi_phone_number']
 
     id = db.Column(db.String, primary_key=True)
     creation_datetime = db.Column(db.DateTime, nullable=False)
@@ -97,6 +102,18 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
         name='reporting_customer_reason_enum'), nullable=True)
     initial_taxi_lon = db.Column(db.Float, nullable=True)
     initial_taxi_lat = db.Column(db.Float, nullable=True)
+    change_to_sent_to_operator = db.Column(db.DateTime, nullable=True)
+    change_to_received_by_operator = db.Column(db.DateTime, nullable=True)
+    change_to_received_by_taxi = db.Column(db.DateTime, nullable=True)
+    change_to_accepted_by_taxi = db.Column(db.DateTime, nullable=True)
+    change_to_accepted_by_customer = db.Column(db.DateTime, nullable=True)
+    change_to_declined_by_taxi = db.Column(db.DateTime, nullable=True)
+    change_to_declined_by_customer = db.Column(db.DateTime, nullable=True)
+    change_to_incident_taxi = db.Column(db.DateTime, nullable=True)
+    change_to_incident_customer = db.Column(db.DateTime, nullable=True)
+    change_to_timeout_taxi = db.Column(db.DateTime, nullable=True)
+    change_to_timeout_customer = db.Column(db.DateTime, nullable=True)
+    change_to_failure = db.Column(db.DateTime, nullable=True)
 
 
     def __init__(self, *args, **kwargs):
@@ -245,12 +262,13 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
                 {'position': fields.Nested(coordinates_descriptor),
                  'last_update': fields.Integer(),
                  'id': fields.String()}))
-        del return_['initial_taxi_lat']
-        del return_['initial_taxi_lon']
         return return_
 
     def status_changed(self):
         self.last_status_change = datetime.now()
+        field = 'change_to_{}'.format(self.status)
+        if hasattr(self, field):
+            setattr(self, field, self.last_status_change)
 
 
     def check_time_out(self, duration, timeout_status):

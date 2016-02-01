@@ -115,7 +115,6 @@ class Hail(Resource, ValidatorMixin):
         taxi_score = redis_store.zscore(current_app.config['REDIS_GEOINDEX'],
                 '{}:{}'.format(hj['taxi_id'], operateur.email))
         r = redis_store.geodecode(int(taxi_score)) if taxi_score else None
-        current_app.logger.info('r: {}'.format(r))
         taxi_pos = r[0] if r else None
 
         hail = HailModel()
