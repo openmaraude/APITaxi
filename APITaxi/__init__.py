@@ -97,7 +97,8 @@ def create_app(sqlalchemy_uri=None):
     tasks.init_app(app)
 
     from .models import security
-    user_datastore.init_app(db, security.User, security.Role)
+    user_datastore.init_app(db, security.User, security.CachedValue,
+            security.Role)
 
     @app.before_first_request
     def warm_up_redis():

@@ -319,3 +319,34 @@ def cache_in(sql_expression, ids, region_label, transform=lambda v: v,
         return [res[orders_res[id_]] if id_ in orders_res else None for id_ in ids_c]
     region = regions[region_label]
     return region.get_or_create_multi([(region_label, i) for i in ids], creator)
+
+class CachedValue(object):
+    def __init__(self, v):
+        for i in inspect(v).attrs:
+            if isinstance(i.value, list):
+                setattr(self, i.key, [])
+                for i2 in i.value:
+                    getattr(self, i.key).append(CachedValue(i2))
+            else:
+                setattr(self, i.key, i.value)
+
+    @classmethod
+    def create(cls, **kwargs):
+        def creator():
+            v = cls.base_class.query.filter_by(**kwargs).first()
+            if v:
+                return cls(v)
+            return None
+        return creator
+
+    @classmethod
+    def get_key(cls, **kwargs):
+        return '{}.{}[{}]'.format(cls.base_class.__tablename__,
+                kwargs.keys()[0], kwargs.values()[0])
+
+    @classmethod
+    def get(cls, **kwargs):
+        return cls.regions[cls.base_class.cache_label].get_or_create(
+                cls.get_key(**kwargs),
+                cls.create(**kwargs)
+        )
