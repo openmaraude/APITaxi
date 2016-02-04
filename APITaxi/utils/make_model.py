@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from ..api import api
 import importlib
 from flask.ext.restplus import fields as basefields
 
-def make_model(filename, model_name, *args, **kwargs):
+def make_model(filename, model_name, api, *args, **kwargs):
     module = importlib.import_module(".".join(['APITaxi', 'models', filename]))
     model = getattr(module, model_name)
     list_names = [filename, model_name]

@@ -18,8 +18,8 @@ from ..utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('drivers', __name__)
 
-driver_fields = make_model('taxis', 'Driver')
-driver_details_expect = make_model('taxis', 'Driver', filter_id=True)
+driver_fields = make_model('taxis', 'Driver', api=api)
+driver_details_expect = make_model('taxis', 'Driver', api=api, filter_id=True)
 
 @ns_administrative.route('drivers/')
 class Drivers(ResourceMetadata):
