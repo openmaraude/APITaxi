@@ -1,8 +1,9 @@
 #coding: utf-8
 from ..models.taxis import Taxi, ADS, Driver
 from ..models.vehicle import Vehicle, VehicleDescription
-from APITaxi_utils.make_model import make_model
 from ..extensions import user_datastore
+from ..descriptors import (ads as ads_descriptors,
+        drivers as drivers_descriptors, vehicle as vehicle_descriptors)
 from . import manager
 from flask.ext.login import login_user
 from flask.ext.restplus import marshal
@@ -13,9 +14,9 @@ import json, tarfile, StringIO, os, requests
 
 @manager.command
 def export_taxis(filename='/tmp/taxis.tar.gz'):
-    model_ads = make_model('taxis', 'ADS', api=api, show_all=True)
-    model_driver = make_model('taxis', 'Driver', api=api)
-    model_vehicle = make_model('taxis', 'Vehicle', api=api, filter_id=True)
+    model_ads = ads_descriptors.ads_model
+    model_driver = drivers_descriptors.driver_fields
+    model_vehicle = vehicle_descriptors.vehicle_expect
     tar = tarfile.TarFile.open(filename, 'w:gz')
     users = set()
 
