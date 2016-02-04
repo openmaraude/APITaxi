@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db
+from ..extensions import db, user_datastore
 from ..api import api
 from ..models import security as security_models
 from ..forms.user import UserForm
-from ..utils.login_manager import user_datastore
 
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask import (Blueprint, request, render_template, redirect, jsonify,
