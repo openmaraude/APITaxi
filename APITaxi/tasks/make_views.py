@@ -1,12 +1,10 @@
 #coding: utf-8
-
-from ..extensions import redis_store, user_datastore, db, celery
-from ..models.taxis import Taxi, parse_number
+from ..extensions import redis_store, user_datastore
+from ..models.taxis import Taxi
 from ..models.administrative import ZUPC
 from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
 from time import mktime
-from parse import parse as base_parse
 from flask import current_app
 from APITaxi_utils import influx_db
 

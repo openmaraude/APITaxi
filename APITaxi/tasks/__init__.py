@@ -1,7 +1,5 @@
 #coding: utf-8
 from ..extensions import celery
-from flask import current_app
-from logging import getLogger
 
 def init_app(app):
     celery.init_app(app)

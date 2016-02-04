@@ -4,11 +4,8 @@ from ..api import api
 from sqlalchemy_defaults import Column
 from APITaxi_utils import MarshalMixin, FilterOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable
-import geojson, shapely
-from operator import itemgetter
 from geoalchemy2 import Geography
 from geoalchemy2.shape import to_shape
-from sqlalchemy.orm import joinedload
 from shapely.prepared import prep
 
 class Departement(db.Model, MarshalMixin, FilterOr404Mixin):

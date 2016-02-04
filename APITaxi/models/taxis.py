@@ -12,10 +12,8 @@ from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
 from six import string_types
-from itertools import compress
-from parse import parse, with_pattern
-import time, operator
-from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
+from parse import with_pattern
+import time
 from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
 from datetime import datetime

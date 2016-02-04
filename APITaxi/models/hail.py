@@ -7,14 +7,12 @@ from APITaxi_utils import HistoryMixin, AsDictMixin, fields
 from APITaxi_utils.mixins import GetOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable
 from APITaxi_utils import influx_db
-from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api
-from ..extensions import redis_store, db, get_short_uuid, regions
+from ..extensions import db, get_short_uuid, regions
 from ..models.security import User
 from flask_principal import RoleNeed, Permission
-from sqlalchemy.orm import validates, joinedload, synonym
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import validates
 from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
 
