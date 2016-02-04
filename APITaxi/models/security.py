@@ -2,7 +2,7 @@
 from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
 from ..utils import MarshalMixin, FilterOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable
+from ..utils.caching import CacheableMixin, query_callable, CachedValue
 from ..extensions import db, regions
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
@@ -92,3 +92,7 @@ class Logo(db.Model):
     size=db.Column(db.String)
     format_=db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
+class CachedUser(CachedValue, User, UserMixin):
+    base_class = User
+    regions = regions
