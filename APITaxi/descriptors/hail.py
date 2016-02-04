@@ -3,7 +3,7 @@ from ..models.hail import Hail as HailModel
 from ..utils.make_model import make_model
 from ..api import api
 from ..utils import fields
-hail_model = make_model('hail', 'Hail')
+hail_model = make_model('hail', 'Hail', api=api)
 
 puttable_arguments = ['status', 'incident_taxi_reason',
         'reporting_customer', 'reporting_customer_reason', 'customer_lon',

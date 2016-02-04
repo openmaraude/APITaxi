@@ -13,9 +13,9 @@ import json, tarfile, StringIO, os, requests
 
 @manager.command
 def export_taxis(filename='/tmp/taxis.tar.gz'):
-    model_ads = make_model('taxis', 'ADS', True)
-    model_driver = make_model('taxis', 'Driver')
-    model_vehicle = make_model('taxis', 'Vehicle', filter_id=True)
+    model_ads = make_model('taxis', 'ADS', api=api, show_all=True)
+    model_driver = make_model('taxis', 'Driver', api=api)
+    model_vehicle = make_model('taxis', 'Vehicle', api=api, filter_id=True)
     tar = tarfile.TarFile.open(filename, 'w:gz')
     users = set()
 

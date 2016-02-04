@@ -12,8 +12,8 @@ from ..utils.resource_metadata import ResourceMetadata
 import datetime
 mod = Blueprint('vehicle', __name__)
 
-vehicle_model = make_model('taxis', 'Vehicle')
-vehicle_expect = make_model('taxis', 'Vehicle', filter_id=True)
+vehicle_model = make_model('taxis', 'Vehicle', api=api)
+vehicle_expect = make_model('taxis', 'Vehicle', api=api, filter_id=True)
 @ns_administrative.route('vehicles/', endpoint="vehicle")
 class Vehicle(ResourceMetadata):
     model = vehicle_models.Vehicle
