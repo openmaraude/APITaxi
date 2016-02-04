@@ -13,7 +13,6 @@ from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
 from ..utils.request_wants_json import json_mimetype_required
 from ..utils import fields as customFields
-from ..utils.validate_json import ValidatorMixin
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
 from ..utils import influx_db
@@ -21,7 +20,7 @@ from datetime import datetime
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
-class HailId(Resource, ValidatorMixin):
+class HailId(Resource):
 
     @classmethod
     def filter_access(cls, hail):
@@ -48,7 +47,7 @@ class HailId(Resource, ValidatorMixin):
     @login_required
     @roles_accepted('admin', 'moteur', 'operateur')
     @api.marshal_with(hail_model)
-    @api.expect(hail_expect_put)
+    @api.expect(hail_expect_put, validate=True)
     @json_mimetype_required
     def put(self, hail_id):
         hail = HailModel.get_or_404(hail_id)
@@ -56,7 +55,6 @@ class HailId(Resource, ValidatorMixin):
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
         hj = request.json
-        self.validate(hj)
         hj = hj['data'][0]
 
         #We change the status
@@ -84,16 +82,15 @@ class HailId(Resource, ValidatorMixin):
 
 
 @ns_hail.route('/', endpoint='hail_endpoint')
-class Hail(Resource, ValidatorMixin):
+class Hail(Resource):
 
     @login_required
     @roles_accepted('admin', 'moteur')
-    @api.expect(hail_expect_post)
+    @api.expect(hail_expect_post, validate=True)
     @api.response(201, 'Success', hail_model)
     @json_mimetype_required
     def post(self):
         hj = request.json
-        self.validate(hj)
         hj = hj['data'][0]
 
         operateur = security_models.User.filter_by_or_404(

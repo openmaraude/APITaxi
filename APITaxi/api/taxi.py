@@ -19,7 +19,6 @@ from sqlalchemy.sql.expression import func as func_sql
 from datetime import datetime, timedelta
 from time import mktime, time
 from functools import partial
-from ..utils.validate_json import ValidatorMixin
 import math
 from itertools import islice, groupby
 from collections import deque
@@ -29,7 +28,7 @@ ns_taxis = api.namespace('taxis', description="Taxi API")
 
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
-class TaxiId(Resource, ValidatorMixin):
+class TaxiId(Resource):
     def get_descriptions(self, taxi_id):
         taxis = taxis_models.RawTaxi.get([taxi_id])
         if not taxis:
@@ -59,11 +58,10 @@ class TaxiId(Resource, ValidatorMixin):
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'}, model=taxi_model)
-    @api.expect(taxi_put_expect)
+    @api.expect(taxi_put_expect, validate=True)
     @json_mimetype_required
     def put(self, taxi_id):
         hj = request.json
-        self.validate(hj)
         t, last_update_at = self.get_descriptions(taxi_id)
         new_status = hj['data'][0]['status']
         if new_status != t[0]['vehicle_description_status']:
@@ -98,7 +96,7 @@ get_parser.add_argument('count', type=int, required=False,
         location='values', default=10)
 
 @ns_taxis.route('/', endpoint="taxi_list")
-class Taxis(Resource, ValidatorMixin):
+class Taxis(Resource):
 
     def filter_not_available(self, fresh_redis, na_redis):
         #As said before there might be non-fresh taxis
@@ -204,11 +202,10 @@ class Taxis(Resource, ValidatorMixin):
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @api.expect(taxi_model_expect)
+    @api.expect(taxi_model_expect, validate=True)
     @api.marshal_with(taxi_model)
     def post(self):
         hj = request.json
-        self.validate(hj)
         taxi_json = hj['data'][0]
         departement = administrative_models.Departement.filter_by_or_404(
             numero=str(taxi_json['driver']['departement']))
