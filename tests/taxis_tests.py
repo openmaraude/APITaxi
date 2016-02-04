@@ -165,7 +165,7 @@ class TestTaxiPut(Skeleton):
     def test_too_many(self):
         self.post_taxi()
         r = self.put([{'status': 'free'}, {'status':'free'}], self.url)
-        self.assertEqual(r.status_code, 413)
+        self.assertEqual(r.status_code, 400)
 
     def good_taxi(self, status):
         id_ = self.post_taxi()
@@ -235,7 +235,7 @@ class TestTaxiPost(Skeleton):
     def test_too_many(self):
         r = self.post([{'driver': None, 'ads': None, 'vehicle': None},
             {'driver': None, 'ads': None, 'vehicle': None}])
-        self.assertEqual(r.status_code, 413)
+        self.assertEqual(r.status_code, 400)
 
     def test_missing_fields(self):
         dict_ = {
@@ -334,7 +334,7 @@ class TestTaxiPost(Skeleton):
         dict_['status'] = 'string'
         r = self.post([dict_])
         self.assert400(r)
-        assert('Invalid status' in r.json['message'])
+        assert('failed' in r.json['message'])
 
     def test_add_taxi_twice(self):
         self.init_taxi()
