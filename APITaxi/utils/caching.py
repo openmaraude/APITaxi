@@ -11,6 +11,7 @@ from sqlalchemy.orm.attributes import get_history
 from sqlalchemy.ext.declarative import declared_attr
 from dogpile.cache.region import make_region
 from dogpile.cache.api import NO_VALUE
+from flask import current_app
 
 
 def md5_key_mangler(key):
@@ -304,13 +305,13 @@ class CacheableMixin(object):
         event.listen(cls, 'before_update', cls._flush_event)
         event.listen(cls, 'before_insert', cls._flush_event)
 
-from ..extensions import regions, db
 from psycopg2.extras import RealDictCursor
 def cache_in(sql_expression, ids, region_label, transform=lambda v: v,
-        transform_result=None, get_id=lambda v: v['id']):
+        transform_result=None, get_id=lambda v: v['id'], regions=None):
     def creator(*ids_c):
         ids_c = [i[1] for i in ids_c]
-        cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
+        cur = current_app.extensions['sqlalchemy'].db.session.connection().\
+                connection.cursor(cursor_factory=RealDictCursor)
         cur.execute(sql_expression, (tuple(ids_c),))
         res = map(lambda d: transform(d), cur.fetchall())
         if transform_result:
