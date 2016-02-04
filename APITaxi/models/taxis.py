@@ -448,7 +448,8 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
                 for l in cache_in(RawTaxi.request_in, ids,
                             RawTaxi.region, get_id=lambda v: v[0]['taxi_id'],
                             transform_result=lambda r: map(lambda v: list(v[1]),
-                            groupby(r, lambda t: t['taxi_id']),))
+                            groupby(r, lambda t: t['taxi_id']),),
+                            regions=regions)
                if l]
 
     @staticmethod
