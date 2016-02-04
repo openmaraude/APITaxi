@@ -8,7 +8,6 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy import inspect
 from datetime import datetime
 from . import fields as custom_fields
-from ..api import api
 from flask.ext.restplus.fields import Nested as fields_Nested
 from flask.ext.restplus import abort
 
@@ -79,7 +78,7 @@ class MarshalMixin(object):
                 value = r.mapper.class_.marshall_obj(show_all, filter_id, level=level+1)
                 if len(value.keys()) == 0:
                     continue
-                return_dict[k] = fields_Nested(api.model(k, value))
+                return_dict[k] = fields_Nested(cls.api.model(k, value))
         return return_dict
 
 
@@ -108,7 +107,7 @@ class HistoryMixin(MarshalMixin):
     def __init__(self):
         self.added_via = 'form' if 'form' in request.url_rule.rule else 'api'
         self.source = 'added_by'
-        self.added_by = current_user.id
+        self.added_by = current_user.id if not current_user.is_anonymous else None
 
     def can_be_deleted_by(self, user):
         return user.has_role("admin") or self.added_by == user.id

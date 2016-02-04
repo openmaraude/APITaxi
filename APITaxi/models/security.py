@@ -9,12 +9,14 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from flask import current_app
 from dogpile.cache import make_region
+from ..api import api
 
 roles_users = db.Table('roles_users',
         db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
         db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
 
 class Role(CacheableMixin,db.Model, RoleMixin, MarshalMixin):
+    api = api
     cache_label = 'users'
     cache_regions = regions
     query_class = query_callable(regions)
@@ -36,6 +38,7 @@ class UserBase(object):
 
 class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin,
         UserBase):
+    api = api
     cache_label = 'users'
     cache_regions = regions
     query_class = query_callable(regions)
