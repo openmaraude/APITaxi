@@ -2,7 +2,6 @@
 from flask import current_app
 from flask.ext.restplus import marshal
 from ..models.hail import Hail
-from ..models.security import User
 from ..descriptors.hail import hail_model
 from ..extensions import db, celery
 import requests, json

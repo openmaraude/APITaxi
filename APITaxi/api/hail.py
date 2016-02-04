@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
-from flask import request, redirect, url_for, current_app, g
+from flask import request, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
 from ..extensions import db, redis_store
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
-from ..models.taxis import  Taxi as TaxiModel, RawTaxi, TaxiRedis
+from ..models.taxis import  RawTaxi, TaxiRedis
 from ..models import security as security_models
-import requests, json
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
 from APITaxi_utils.request_wants_json import json_mimetype_required
-from APITaxi_utils import fields as customFields
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
 from APITaxi_utils import influx_db

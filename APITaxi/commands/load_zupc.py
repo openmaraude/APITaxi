@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 from ..extensions import db
-from ..models.administrative import ZUPC, Departement
+from ..models.administrative import ZUPC
 from ..models.taxis import ADS
-from flask.ext.script import prompt_pass
-from validate_email import validate_email
 from . import manager
-from sqlalchemy import (create_engine, Table, Column, String, Integer,
-        MetaData, distinct)
-import glob, os, csv, sqlalchemy
+from sqlalchemy import distinct
 from geoalchemy2 import shape
-from shapely import geometry, wkt, ops
+from shapely import geometry, ops
 import json
 from operator import itemgetter
 from flask import current_app

@@ -1,6 +1,5 @@
 #coding: utf-8
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.pool import QueuePool as BaseQueuePool
 
 db = SQLAlchemy(session_options={"autoflush":False})
 from APITaxi_utils.redis_geo import GeoRedis

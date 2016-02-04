@@ -2,27 +2,16 @@
 import calendar, time
 from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, redirect, url_for, jsonify, current_app
-from ..models import (taxis as taxis_models, vehicle as vehicle_models,
-    administrative as administrative_models)
-from ..extensions import (db, redis_store, index_zupc, user_datastore)
+from flask import request, current_app
+from ..models import (taxis as taxis_models, administrative as administrative_models)
+from ..extensions import db, redis_store, index_zupc
 from ..api import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from APITaxi_utils.request_wants_json import json_mimetype_required
-from APITaxi_utils import arguments
-from APITaxi_utils import influx_db
-from APITaxi_utils import fields as customFields
-from APITaxi_utils.caching import cache_in
 from shapely.geometry import Point
-from sqlalchemy import distinct
-from sqlalchemy.sql.expression import func as func_sql
-from datetime import datetime, timedelta
-from time import mktime, time
-from functools import partial
+from time import time
 import math
-from itertools import islice, groupby
-from collections import deque
-
+from itertools import groupby
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 

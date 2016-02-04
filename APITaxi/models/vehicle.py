@@ -8,7 +8,6 @@ from sqlalchemy.types import Enum
 from sqlalchemy import UniqueConstraint, and_
 from flask.ext.login import current_user
 from itertools import compress
-from sqlalchemy.orm import validates
 from sqlalchemy.ext.declarative import declared_attr
 from flask import current_app
 from ..api import api

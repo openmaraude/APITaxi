@@ -8,8 +8,7 @@ from ..models import (taxis as taxis_models, vehicle as vehicle_models,
         administrative as administrative_models)
 from APITaxi_utils import create_obj_from_json, request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                   render_template, request, redirect, url_for, abort, jsonify,
-                   current_app)
+                   abort, jsonify)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
