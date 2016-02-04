@@ -6,9 +6,9 @@ from ..extensions import db
 from ..api import api
 from . import ns_administrative
 from flask.ext.restplus import fields, reqparse, abort
-from ..utils.make_model import make_model
+from APITaxi_utils.make_model import make_model
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
-from ..utils.resource_metadata import ResourceMetadata
+from APITaxi_utils.resource_metadata import ResourceMetadata
 import datetime
 mod = Blueprint('vehicle', __name__)
 

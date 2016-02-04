@@ -3,10 +3,10 @@ from .taxis import Taxi as TaxiM
 from flask.ext.security import login_required, roles_accepted,\
         roles_accepted, current_user
 from datetime import datetime, timedelta
-from ..utils import HistoryMixin, AsDictMixin, fields
-from ..utils.mixins import GetOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable
-from ..utils import influx_db
+from APITaxi_utils import HistoryMixin, AsDictMixin, fields
+from APITaxi_utils.mixins import GetOr404Mixin
+from APITaxi_utils.caching import CacheableMixin, query_callable
+from APITaxi_utils import influx_db
 from .security import User
 from ..descriptors.common import coordinates_descriptor
 from ..api import api

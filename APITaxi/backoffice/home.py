@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import Blueprint, render_template, url_for, jsonify
 from flask.ext.security import login_required, current_user
-from ..utils import request_wants_json
+from APITaxi_utils import request_wants_json
 
 mod = Blueprint('home_bo', __name__)
 

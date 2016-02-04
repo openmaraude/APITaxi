@@ -2,8 +2,8 @@
 from ..extensions import db, regions
 from ..api import api
 from sqlalchemy_defaults import Column
-from ..utils import MarshalMixin, FilterOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable
+from APITaxi_utils import MarshalMixin, FilterOr404Mixin
+from APITaxi_utils.caching import CacheableMixin, query_callable
 import geojson, shapely
 from operator import itemgetter
 from geoalchemy2 import Geography

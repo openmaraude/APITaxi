@@ -6,16 +6,16 @@ from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
 from ..models import (taxis as taxis_models, vehicle as vehicle_models,
         administrative as administrative_models)
-from ..utils import create_obj_from_json, request_wants_json
+from APITaxi_utils import create_obj_from_json, request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    render_template, request, redirect, url_for, abort, jsonify,
                    current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
-from ..utils.make_model import make_model
-from ..utils.slack import slack
-from ..utils.resource_metadata import ResourceMetadata
+from APITaxi_utils.make_model import make_model
+from APITaxi_utils.slack import slack
+from APITaxi_utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('ads', __name__)
 

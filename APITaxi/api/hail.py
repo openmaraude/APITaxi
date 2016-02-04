@@ -11,11 +11,11 @@ from ..models import security as security_models
 import requests, json
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
-from ..utils.request_wants_json import json_mimetype_required
-from ..utils import fields as customFields
+from APITaxi_utils.request_wants_json import json_mimetype_required
+from APITaxi_utils import fields as customFields
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
-from ..utils import influx_db
+from APITaxi_utils import influx_db
 from datetime import datetime
 
 ns_hail = api.namespace('hails', description="Hail API")

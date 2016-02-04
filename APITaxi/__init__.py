@@ -13,7 +13,7 @@ from flask.ext.redis import FlaskRedis
 from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
-from .utils.request_wants_json import request_wants_json
+from APITaxi_utils.request_wants_json import request_wants_json
 from dogpile.cache import make_region
 
 
@@ -73,7 +73,7 @@ def create_app(sqlalchemy_uri=None):
     request_finished.connect(add_version_header, app)
 
     configure_uploads(app, (documents, images))
-    from .utils.login_manager import init_app as init_login_manager
+    from APITaxi_utils.login_manager import init_app as init_login_manager
     from .forms.login import LoginForm
     init_login_manager(app, user_datastore, LoginForm)
     from . import demo

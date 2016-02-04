@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..models import taxis as taxis_models, administrative as administrative_models
 from ..api import api
-from ..utils import fields
+from APITaxi_utils import fields
 from .common import coordinates_descriptor
 
 vehicle_descriptor = api.model('vehicle_descriptor',
