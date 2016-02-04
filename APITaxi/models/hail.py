@@ -20,6 +20,7 @@ from sqlalchemy.ext.declarative import declared_attr
 
 
 class Customer(HistoryMixin, db.Model, AsDictMixin):
+    api = api
     @declared_attr
     def added_by(cls):
         return db.Column(db.Integer,db.ForeignKey('user.id'))
@@ -59,6 +60,7 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
     def added_by(cls):
         return db.Column(db.Integer,db.ForeignKey('user.id'))
 
+    api = api
     cache_label = 'hails'
     cache_regions = regions
     query_class = query_callable(regions)

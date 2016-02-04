@@ -20,10 +20,12 @@ from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
 from datetime import datetime
 from itertools import groupby
+from ..api import api
 
 
 owner_type_enum = ['company', 'individual']
 class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+    api = api
     @declared_attr
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
@@ -93,6 +95,7 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 
 
 class Driver(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
+    api = api
     @declared_attr
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
@@ -259,6 +262,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     @declared_attr
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
+    api = api
     cache_label = 'taxis'
     cache_regions = regions
     query_class = query_callable(regions)
