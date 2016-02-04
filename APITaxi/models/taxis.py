@@ -4,10 +4,10 @@ from ..extensions import (regions, db, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
 from ..models.administrative import ZUPC, Departement
-from ..utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
+from APITaxi_utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
         get_columns_names)
-from ..utils.mixins import GetOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable, cache_in
+from APITaxi_utils.mixins import GetOr404Mixin
+from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates

@@ -1,7 +1,7 @@
 #coding: utf-8
 from ..models.taxis import Taxi, ADS, Driver
 from ..models.vehicle import Vehicle, VehicleDescription
-from ..utils.make_model import make_model
+from APITaxi_utils.make_model import make_model
 from ..extensions import user_datastore
 from . import manager
 from flask.ext.login import login_user

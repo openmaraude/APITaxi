@@ -7,7 +7,7 @@ from ..forms.user import UserForm
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask import (Blueprint, request, render_template, redirect, jsonify,
                    url_for, abort, current_app, send_file)
-from ..utils import fields
+from APITaxi_utils import fields
 from flask.ext.restplus import fields as basefields, marshal_with, Resource
 import os
 import uuid

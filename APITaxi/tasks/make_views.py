@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from time import mktime
 from parse import parse as base_parse
 from flask import current_app
-from ..utils import influx_db
+from APITaxi_utils import influx_db
 
 def scan_as_list(match, redis_store):
     cursor = ''
