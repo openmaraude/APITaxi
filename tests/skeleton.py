@@ -5,7 +5,6 @@ from json import dumps
 from APITaxi import create_app
 from APITaxi.extensions import (db, redis_store, index_zupc, regions,
         user_datastore)
-from APITaxi.utils.login_manager import user_datastore
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
 from APITaxi.models.taxis import Taxi
