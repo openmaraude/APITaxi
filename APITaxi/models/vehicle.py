@@ -174,8 +174,6 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
             t.set_avaibility(operator.email, self._status)
 
 
-
-
     @classmethod
     def to_exclude(cls):
         return list(HistoryMixin.to_exclude()) + ['status']
