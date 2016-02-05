@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, current_app
 from ..models import (taxis as taxis_models, administrative as administrative_models)
-from ..extensions import db, redis_store, index_zupc
+from ..extensions import redis_store, index_zupc
 from ..api import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from APITaxi_utils.request_wants_json import json_mimetype_required
@@ -54,10 +54,11 @@ class TaxiId(Resource):
         t, last_update_at = self.get_descriptions(taxi_id)
         new_status = hj['data'][0]['status']
         if new_status != t[0]['vehicle_description_status']:
-            cur = db.session.connection().connection.cursor()
+            cur = current_app.extensions['sqlalchemy'].db.session.\
+                    connection().connection.cursor()
             cur.execute("UPDATE vehicle_description SET status=%s WHERE id=%s",
                     (new_status, t[0]['vehicle_description_id']))
-            db.session.commit()
+            current_app.extensions['sqlalchemy'].db.session.commit()
             taxis_models.RawTaxi.flush(taxi_id)
             t[0]['vehicle_description_status'] = new_status
             taxi_id_operator = "{}:{}".format(taxi_id, current_user.email)
@@ -221,6 +222,6 @@ class Taxis(Resource):
                 taxi.status = taxi_json['status']
             except AssertionError:
                 abort(400, message='Invalid status')
-        db.session.add(taxi)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(taxi)
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return {'data':[taxi]}, 201

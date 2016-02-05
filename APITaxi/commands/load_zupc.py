@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db
 from ..models.administrative import ZUPC
 from ..models.taxis import ADS
 from . import manager
@@ -12,12 +11,13 @@ from flask import current_app
 
 @manager.command
 def update_zupc():
-    insee_list = map(itemgetter(0), db.session.query(distinct(ADS.insee)).all())
+    insee_list = map(itemgetter(0), current_app.extensions['sqlalchemy'].db\
+            .session.query(distinct(ADS.insee)).all())
     for insee in insee_list:
         zupc = ZUPC.query.filter_by(insee=insee).order_by(ZUPC.id.desc()).first()
         for ads in ADS.query.filter_by(insee=insee).all():
             ads.zupc_id = zupc.id
-    db.session.commit()
+    current_app.extensions['sqlalchemy'].db.session.commit()
 
 
 def add_zupc(wkb, insee, parent):
@@ -27,11 +27,11 @@ def add_zupc(wkb, insee, parent):
         zupc.insee = insee
         zupc.departement = parent.departement
         zupc.nom = parent.nom
-        db.session.add(zupc)
+        current_app.extensions['sqlalchemy'].db.session.add(zupc)
 #This is the case in Paris and Lyon, but it's not important
     zupc.shape = wkb
     zupc.parent_id = parent.id
-    db.session.add(zupc)
+    current_app.extensions['sqlalchemy'].db.session.add(zupc)
 
 
 @manager.command
@@ -52,7 +52,7 @@ def load_zupc(zupc_path):
                 return
             for insee in properties:
                 add_zupc(wkb, insee, parent)
-            db.session.commit()
+            current_app.extensions['sqlalchemy'].db.session.commit()
     update_zupc()
 
 
@@ -76,5 +76,5 @@ def add_airport_zupc(zupc_file_path, insee):
             wkb = geometry.MultiPolygon([ops.cascaded_union(l)])
             current_app.logger.info('Finished to compute union')
             add_zupc(shape.from_shape(wkb), i + 'A', parent)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
 

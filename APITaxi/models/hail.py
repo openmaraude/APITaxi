@@ -8,7 +8,8 @@ from APITaxi_utils import fields
 from APITaxi_utils.caching import CacheableMixin, query_callable
 from APITaxi_utils import influx_db
 from ..descriptors.common import coordinates_descriptor
-from ..extensions import db, get_short_uuid, regions
+from ..extensions import get_short_uuid, regions
+from . import db
 from ..models.security import User
 from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates

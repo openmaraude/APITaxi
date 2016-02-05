@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, Blueprint
+from flask import request, Blueprint, current_app
 from ..models import vehicle as vehicle_models, taxis as taxis_models
-from ..extensions import db
 from ..api import api
 from ..descriptors.vehicle import vehicle_model, vehicle_expect
 from . import ns_administrative
@@ -34,21 +33,21 @@ class Vehicle(ResourceMetadata):
             v = vehicle_models.Vehicle(form.data['licence_plate'])
             v.last_update_at = datetime.datetime.now()
             form.populate_obj(v)
-            db.session.add(v)
-            db.session.commit()
+            current_app.extensions['sqlalchemy'].db.session.add(v)
+            current_app.extensions['sqlalchemy'].db.session.commit()
             v_description = vehicle_models.VehicleDescription(vehicle_id=v.id,
                     added_by=current_user.id)
             v.descriptions.append(v_description)
             form_description = VehicleDescriptionForm.from_json(vehicle)
             form_description.populate_obj(v_description)
             v_description.status = 'off'
-            db.session.add(v_description)
+            current_app.extensions['sqlalchemy'].db.session.add(v_description)
             new_vehicles.append(v)
             if not v.id:
                 continue
             for taxi in taxis_models.Taxi.query.filter_by(vehicle_id=v.id).all():
                 taxis_models.RawTaxi.flush(taxi.id)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return {"data": new_vehicles}, 201
 
     @login_required

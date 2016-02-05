@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..models import vehicle
-from ..extensions import (regions, db, user_datastore, redis_store,
+from . import db
+from ..extensions import (regions, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
 from ..models.administrative import ZUPC, Departement

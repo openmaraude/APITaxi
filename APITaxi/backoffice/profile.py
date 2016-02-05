@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, user_datastore
+from ..extensions import user_datastore
 from ..api import api
 from ..models import security as security_models
 from ..forms.user import UserForm
@@ -48,11 +48,11 @@ def profile_form():
                 image = Image.open(file_dest)
                 logo_db = security_models.Logo(id=id_, size=image.size,
                     format_=image.format, user_id=user.id)
-                db.session.add(logo_db)
+                current_app.extensions['sqlalchemy'].db.session.add(logo_db)
                 user.logos.append(logo_db)
         form.populate_obj(user)
-        db.session.add(user)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(user)
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return redirect(url_for('profile.profile_form'))
     return render_template('forms/profile.html', form=form,
         form_method="POST", logos=current_user.logos, submit_value="Modifier",
