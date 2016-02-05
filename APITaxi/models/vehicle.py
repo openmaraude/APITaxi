@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..extensions import user_datastore
 from . import db
+from .security import User
 from APITaxi_utils.mixins import (AsDictMixin, HistoryMixin, unique_constructor,
         MarshalMixin, FilterOr404Mixin)
 from APITaxi_utils import fields
@@ -169,7 +169,7 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
                     .format(value, status_vehicle_description_enum)
         self._status = value
         from .taxis import Taxi
-        operator = user_datastore.get_user(self.added_by)
+        operator = User.query.get(self.added_by)
         for t in Taxi.query.join(Taxi.vehicle, aliased=True).filter_by(id=self.vehicle_id):
             t.set_avaibility(operator.email, self._status)
 

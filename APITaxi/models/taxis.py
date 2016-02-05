@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from . import db
-from ..extensions import user_datastore
 from .vehicle import Vehicle, VehicleDescription, Model, Constructor
 from .administrative import ZUPC, Departement
+from .security import User
 from APITaxi_utils import fields, get_columns_names
 from APITaxi_utils.mixins import (GetOr404Mixin, AsDictMixin, HistoryMixin,
     FilterOr404Mixin)
@@ -313,7 +313,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
 
     def is_free(self, min_time=None):
         return self._is_free(self.vehicle.descriptions,
-                lambda desc: user_datastore.get_user(desc.added_by).email,
+                lambda desc: User.query.get(desc.added_by).email,
                 lambda desc: desc.status,
                 min_time)
 
