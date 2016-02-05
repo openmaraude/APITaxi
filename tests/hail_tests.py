@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from APITaxi.extensions import redis_store, regions
+from APITaxi.extensions import redis_store
 from .skeleton import Skeleton
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi.models.hail import (Customer, Hail, rating_ride_reason_enum,
@@ -52,7 +52,7 @@ class HailMixin(Skeleton):
 
     @classmethod
     def set_hail_status(cls, r, status, last_status_change=None):
-        regions['hails'].invalidate()
+        current_app.extensions['dogpile_cache'].invalidate_region('hails')
         hail = Hail.cache.get(r.json['data'][0]['id'])
         hail._status = status
         if last_status_change:

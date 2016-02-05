@@ -8,7 +8,6 @@ from APITaxi_utils.mixins import GetOr404Mixin, HistoryMixin, AsDictMixin
 from APITaxi_utils.caching import CacheableMixin, query_callable
 from APITaxi_utils.get_short_uuid import get_short_uuid
 from ..descriptors.common import coordinates_descriptor
-from ..extensions import regions
 from . import db
 from .security import User
 from flask_principal import RoleNeed, Permission
@@ -57,8 +56,7 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
         return db.Column(db.Integer,db.ForeignKey('user.id'))
 
     cache_label = 'hails'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
     public_fields = ['creation_datetime', 'customer_address', 'customer_id',
         'customer_lat', 'customer_lon', 'customer_phone_number', 'id',
         'incident_customer_reason', 'incident_taxi_reason', 'last_status_change',

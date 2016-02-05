@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from . import db
-from ..extensions import (regions, user_datastore)
+from ..extensions import user_datastore
 from .vehicle import Vehicle, VehicleDescription, Model, Constructor
 from .administrative import ZUPC, Departement
 from APITaxi_utils import fields, get_columns_names
@@ -270,8 +270,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
     cache_label = 'taxis'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
 
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
@@ -454,8 +453,7 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
                 for l in cache_in(RawTaxi.request_in, ids,
                             RawTaxi.region, get_id=lambda v: v[0]['taxi_id'],
                             transform_result=lambda r: map(lambda v: list(v[1]),
-                            groupby(r, lambda t: t['taxi_id']),),
-                            regions=regions)
+                            groupby(r, lambda t: t['taxi_id']),))
                if l]
 
     @staticmethod
