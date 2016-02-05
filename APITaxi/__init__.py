@@ -78,7 +78,6 @@ def create_app(sqlalchemy_uri=None):
     init_login_manager(app, user_datastore, LoginForm)
     from . import demo
     demo.create_app(app)
-
     from . import tasks
     tasks.init_app(app)
 
