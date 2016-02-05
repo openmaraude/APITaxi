@@ -242,6 +242,23 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
         except Exception as e:
             current_app.logger.error('Influxdb Error: {}'.format(e))
 
+
+
+    @classmethod
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0, api=None):
+        if level >=2:
+            return {}
+        return_ = super(Hail, cls).marshall_obj(show_all, filter_id,
+                     level=level+1, api=api)
+        return_['operateur'] = fields.String(attribute='operateur.email',
+                                required=True)
+        return_['id'] = fields.String()
+        return_['taxi'] = fields.Nested(api.model('hail_taxi',
+                {'position': fields.Nested(coordinates_descriptor),
+                 'last_update': fields.Integer(),
+                 'id': fields.String()}))
+        return return_
+
     def status_changed(self):
         self.last_status_change = datetime.now()
         field = 'change_to_{}'.format(self.status)
