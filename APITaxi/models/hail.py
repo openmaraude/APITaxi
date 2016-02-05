@@ -8,9 +8,9 @@ from APITaxi_utils.mixins import GetOr404Mixin, HistoryMixin, AsDictMixin
 from APITaxi_utils.caching import CacheableMixin, query_callable
 from APITaxi_utils.get_short_uuid import get_short_uuid
 from ..descriptors.common import coordinates_descriptor
-from ..extensions import get_short_uuid, regions
+from ..extensions import regions
 from . import db
-from ..models.security import User
+from .security import User
 from flask_principal import RoleNeed, Permission
 from sqlalchemy.orm import validates
 from flask import g, current_app
