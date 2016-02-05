@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from ..models import vehicle
 from . import db
-from ..extensions import (regions, user_datastore, get_short_uuid)
-from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
-from ..models.administrative import ZUPC, Departement
+from ..extensions import (regions, user_datastore)
+from .vehicle import Vehicle, VehicleDescription, Model, Constructor
+from .administrative import ZUPC, Departement
 from APITaxi_utils.mixins import AsDictMixin, HistoryMixin, FilterOr404Mixin
 from APITaxi_utils import fields, get_columns_names
 from APITaxi_utils.mixins import GetOr404Mixin
@@ -71,7 +70,7 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 
     @property
     def vehicle(self):
-        return vehicle.Vehicle.query.get(self.vehicle_id)
+        return Vehicle.query.get(self.vehicle_id)
 
     @vehicle.setter
     def vehicle(self, vehicle):
