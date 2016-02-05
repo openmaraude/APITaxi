@@ -190,7 +190,7 @@ class TaxiRedis(object):
     def is_fresh(self, operateur=None):
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         if operateur:
-            v = redis_store.hget('taxi:{}'.format(self.id), operateur)
+            v = current_app.extensions['redis'].hget('taxi:{}'.format(self.id), operateur)
             if not v:
                 return False
             p = self.parse_redis(v)
@@ -208,7 +208,7 @@ class TaxiRedis(object):
 
     @classmethod
     def retrieve_caracs(cls, id_):
-        _, scan = redis_store.hscan("taxi:{}".format(id_))
+        _, scan = current_app.extensions['redis'].hscan("taxi:{}".format(id_))
         if not scan:
             return []
         return cls.transform_caracs(scan)
@@ -250,6 +250,16 @@ class TaxiRedis(object):
                 all(map(lambda desc: func_added_by(desc) not in users\
                     or func_status(desc) == 'free',
                     descriptions))
+
+
+    def set_avaibility(self, operator_email, status):
+        taxi_id_operator = "{}:{}".format(self.id, operator_email)
+        if status == 'free':
+            current_app.extensions['redis'].srem(
+                current_app.config['REDIS_NOT_AVAILABLE'], taxi_id_operator)
+        else:
+            current_app.extensions['redis'].sadd(
+                current_app.config['REDIS_NOT_AVAILABLE'], taxi_id_operator)
 
 
 class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
@@ -448,7 +458,7 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
 
     @staticmethod
     def flush(id_):
-        redis_store.delete((RawTaxi.region, id_))
+        current_app.extensions['redis'].delete((RawTaxi.region, id_))
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)
