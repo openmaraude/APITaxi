@@ -69,3 +69,16 @@ def zupc_delete():
     current_app.extensions['sqlalchemy'].db.session.delete(zupc)
     current_app.extensions['sqlalchemy'].db.session.commit()
     return redirect(url_for("zupc.zupc"))
+
+
+@mod.route('/zupc/autocomplete')
+def zupc_autocomplete():
+    #@TODO: have some identification here?
+    term = request.args.get('q')
+    like = "%{}%".format(term)
+
+    response = administrative_models.ZUPC.query.filter(
+            administrative_models.ZUPC.nom.ilike(like)).all()
+    return jsonify(suggestions=map(lambda zupc:{'name': zupc.nom, 'id': int(zupc.id)},
+                                        response))
+
