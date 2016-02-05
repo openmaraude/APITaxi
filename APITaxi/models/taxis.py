@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from ..models import vehicle
 from . import db
-from ..extensions import (regions, user_datastore, get_short_uuid)
+from ..extensions import (regions, user_datastore)
 from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
 from ..models.administrative import ZUPC, Departement
 from APITaxi_utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
         get_columns_names)
 from APITaxi_utils.mixins import GetOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
+from APITaxi_utils.get_short_uuid import get_short_uuid
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
