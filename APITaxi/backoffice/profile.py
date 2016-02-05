@@ -58,6 +58,32 @@ class LogoHref(basefields.Raw):
     def output(self, key, obj):
         return url_for('profile.image', user_id=obj.user_id, src=obj.id)
 
+model_user = api.model("user", {
+    'data': basefields.List(basefields.Nested(
+        api.model("user_model",
+            {
+                "name": fields.String(attribute='commercial_name'),
+                "logos": basefields.List(basefields.Nested(
+                    api.model('logo_model', 
+                        {'href': LogoHref,
+                         'size' : fields.String,
+                         'format': fields.String(attribute='format_'),
+                        }
+                        )
+                    ))
+            }
+        )))
+    })
+
+@ns_administrative.route('users/<int:user_id>')
+class ProfileDetail(Resource):
+    @api.marshal_with(model_user)
+    def get(self, user_id):
+        user = user_datastore.get_user(user_id)
+        if not user:
+            abort(404, message="Unable to find user")
+        return {"data": [user]}, 200
+
 @mod.route('/user/<int:user_id>/images/<src>')
 def image(user_id, src):
     logo = security_models.Logo.query.get(src)
