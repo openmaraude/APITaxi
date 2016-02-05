@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..extensions import regions, user_datastore, redis_store
+from ..extensions import regions, user_datastore
 from . import db
 from .security import User
 from APITaxi_utils.mixins import (AsDictMixin, HistoryMixin, unique_constructor,
@@ -170,16 +170,10 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
                 '{} is not a valid status, (valid statuses are {})'\
                     .format(value, status_vehicle_description_enum)
         self._status = value
-        user = user_datastore.get_user(self.added_by)
         from .taxis import Taxi
+        operator = user_datastore.get_user(self.added_by)
         for t in Taxi.query.join(Taxi.vehicle, aliased=True).filter_by(id=self.vehicle_id):
-            taxi_id_operator = "{}:{}".format(t.id, user.email)
-            if self._status == 'free':
-                redis_store.srem(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
-            else:
-                redis_store.sadd(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
+            t.set_avaibility(operator.email, self._status)
 
 
 
