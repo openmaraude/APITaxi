@@ -1,6 +1,6 @@
 #coding: utf-8
 from ..api import api
-from ..models.taxis import Driver
+from APITaxi_models.taxis import Driver
 from APITaxi_utils import fields
 
 driver_fields = api.model('driver_fields_data',

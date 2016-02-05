@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from APITaxi_utils.model_form import ModelForm
-from ..models import administrative
+from APITaxi_models import administrative
 from wtforms import HiddenField, SubmitField
+from wtforms.fields import FormField
+from wtforms_alchemy import ModelFormField
+from wtforms.widgets import ListWidget
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 
 def departements():

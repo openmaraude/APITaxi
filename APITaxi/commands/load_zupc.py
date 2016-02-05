@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..models.administrative import ZUPC
-from ..models.taxis import ADS
+from APITaxi_models.administrative import ZUPC
+from APITaxi_models.taxis import ADS
 from . import manager
 from sqlalchemy import distinct
 from geoalchemy2 import shape

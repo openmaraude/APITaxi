@@ -2,7 +2,7 @@
 from ..extensions import celery, redis_store
 from flask import current_app
 from time import time
-from ..models.taxis import TaxiRedis
+from APITaxi_models.taxis import TaxiRedis
 
 @celery.task()
 def clean_timestamps():

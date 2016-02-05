@@ -1,6 +1,6 @@
 #coding: utf-8
 from ..api import api
-from ..models.vehicle import Vehicle
+from APITaxi_models.vehicle import Vehicle
 from APITaxi_utils import fields
 
 vehicle_model = api.model('vehicle_model_data',

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..models.hail import Hail as HailModel
+from APITaxi_models.hail import Hail as HailModel
 from ..api import api
 from APITaxi_utils import fields
 from .common import coordinates_descriptor
