@@ -3,7 +3,7 @@
 from flask.ext.testing import TestCase
 from json import dumps
 from APITaxi import create_app
-from APITaxi.extensions import (db, redis_store, index_zupc, regions,
+from APITaxi.extensions import (redis_store, index_zupc, regions,
         user_datastore)
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
@@ -25,8 +25,8 @@ class Skeleton(TestCase):
         return create_app()
 
     def setUp(self):
-        db.drop_all()
-        db.create_all()
+        current_app.extensions['sqlalchemy'].db.drop_all()
+        current_app.extensions['sqlalchemy'].db.create_all()
         regions['taxis'].invalidate()
         regions['hails'].invalidate()
         regions['users'].invalidate()
@@ -38,14 +38,14 @@ class Skeleton(TestCase):
             u = user_datastore.create_user(email='user_'+role+'_2',
                                            password=role)
             user_datastore.add_role_to_user(u, r)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
         r = user_datastore.find_role('operateur')
         u = user_datastore.create_user(email='user_apikey',
                 password='operateur')
         u.operator_header_name = 'X-API-KEY'
         u.operator_api_key = 'xxx'
         user_datastore.add_role_to_user(u, r)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
 
     def tearDown(self):
         ids = []
@@ -53,9 +53,9 @@ class Skeleton(TestCase):
             redis_store.delete('taxi:{}'.format(taxi.id))
         redis_store.delete('geoindex')
         redis_store.delete('timestamps')
-        db.session.remove()
-        db.drop_all()
-        db.get_engine(self.app).dispose()
+        current_app.extensions['sqlalchemy'].db.session.remove()
+        current_app.extensions['sqlalchemy'].db.drop_all()
+        current_app.extensions['sqlalchemy'].db.get_engine(self.app).dispose()
         for r in regions.values():
             r.invalidate()
         index_zupc.index_zupc = None
@@ -111,16 +111,16 @@ class Skeleton(TestCase):
         else:
             poly = Polygon([(48,2), (49,2), (49,3), (48,3)])
         zupc.shape = from_shape(MultiPolygon([poly]), srid=4326)
-        db.session.add(zupc)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(zupc)
+        current_app.extensions['sqlalchemy'].db.session.commit()
         zupc.parent_id = zupc.id
 
         zupc2 = ZUPC()
         zupc2.insee = '93048'
         zupc2.nom = 'Montreuil'
         zupc2.parent_id = zupc.id
-        db.session.add(zupc2)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(zupc2)
+        current_app.extensions['sqlalchemy'].db.session.commit()
 
     def check_req_vs_dict(self, req, dict_):
         for k, v in dict_.items():
@@ -171,8 +171,8 @@ class Skeleton(TestCase):
         dep = Departement()
         dep.nom = "Mayenne"
         dep.numero = "53"
-        db.session.add(dep)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(dep)
+        current_app.extensions['sqlalchemy'].db.session.commit()
 
     def assert201(self, request):
         self.assertEqual(request.status_code, 201)

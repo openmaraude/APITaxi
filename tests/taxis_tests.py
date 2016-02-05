@@ -5,8 +5,9 @@ from APITaxi.models.vehicle import Vehicle
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
-from APITaxi.extensions import redis_store, db
+from APITaxi.extensions import redis_store
 import time
+from flask import current_app
 
 class TaxiGet(Skeleton):
     url = '/taxis/'
@@ -19,7 +20,7 @@ class TaxiGet(Skeleton):
         id_taxi = taxi['id']
         taxi_db = Taxi.query.get(id_taxi)
         taxi_db.set_free()
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return id_taxi
 
 class TestTaxiGet(TaxiGet):
@@ -368,7 +369,8 @@ class TestTaxiPost(Skeleton):
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         ads_json = r.json['data'][0]['ads']
-        ads = db.session.query(ADS).filter_by(numero=ads_json['numero']).first()
+        ads = current_app.extensions['sqlalchemy'].db.session.query(ADS)\
+                .filter_by(numero=ads_json['numero']).first()
         self.get('/ads/delete?id={}'.format(ads.id))
         self.assertEqual(len(Taxi.query.all()), 0)
 
@@ -378,7 +380,7 @@ class TestTaxiPost(Skeleton):
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
         driver_json = r.json['data'][0]['driver']
-        driver = db.session.query(Driver).\
+        driver = current_app.extensions['sqlalchemy'].db.session.query(Driver).\
                 filter_by(professional_licence=driver_json['professional_licence']).first()
         r = self.get('/drivers/delete?id={}'.format(driver.id))
         self.assertEqual(len(Taxi.query.all()), 0)

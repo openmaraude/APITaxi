@@ -4,7 +4,6 @@ from .fake_data import dict_driver
 from APITaxi.models.taxis import Driver
 from json import dumps, loads
 from copy import deepcopy
-from APITaxi.extensions import db
 from cStringIO import StringIO
 
 class TestDriverPost(Skeleton):

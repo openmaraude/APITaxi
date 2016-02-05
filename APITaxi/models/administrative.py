@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, regions
+from ..extensions import regions
+from . import db
 from sqlalchemy_defaults import Column
 from APITaxi_utils import MarshalMixin, FilterOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable

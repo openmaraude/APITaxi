@@ -36,7 +36,7 @@ def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
 def create_app(sqlalchemy_uri=None):
-    from .extensions import (db, redis_store, regions, configure_uploads,
+    from .extensions import (redis_store, regions, configure_uploads,
             documents, images, user_datastore)
     app = Flask(__name__)
     app.config.from_object('APITaxi.default_settings')
@@ -57,6 +57,7 @@ def create_app(sqlalchemy_uri=None):
     if sqlalchemy_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
+    from .models import db
     db.init_app(app)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()

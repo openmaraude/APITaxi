@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, index_zupc
+from ..extensions import index_zupc
+from ..api import api
 from ..models import administrative as administrative_models
 from ..forms.administrative import ZUPCreateForm, ZUPCUpdateForm
 from APITaxi_utils import request_wants_json
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask.ext.restplus import reqparse, marshal
 from flask import (Blueprint, request, render_template, redirect, jsonify,
-                   url_for)
+                   url_for, current_app)
 from werkzeug.exceptions import BadRequest
 import json
 from psycopg2.extras import RealDictCursor
@@ -29,7 +30,8 @@ def zupc_search():
     except BadRequest as e:
         return json.dumps(e.data), 400, {"Content-Type": "application/json"}
 
-    cur = db.session.connection().connection.cursor(cursor_factory=RealDictCursor)
+    cur = current_app.extensions['sqlalchemy'].db.session.connection()\
+            .connection.cursor(cursor_factory=RealDictCursor)
     cur.execute("""SELECT active, nom, insee FROM "ZUPC"
         WHERE ST_Contains(shape::geometry, ST_POINT(%s, %s)::geography::geometry)""",
         (args['lon'], args['lat']))
@@ -38,7 +40,8 @@ def zupc_search():
     for zupc in cur.fetchall():
         if any(map(lambda z: zupc['insee'] == z['insee'], to_return)):
             continue
-        to_return.append(marshal(zupc, ZUPC.marshall_obj(filter_id=True, level=1)))
+        to_return.append(marshal(zupc, ZUPC.marshall_obj(filter_id=True,
+            level=1, api=api)))
     return json.dumps({"data": to_return}), 200, {"Content-Type": "application/json"}
 
 
@@ -73,14 +76,14 @@ def zupc_form():
         if request.args.get("id"):
             form.populate_obj(zupc)
             if form.validate():
-                db.session.commit()
+                current_app.extensions['sqlalchemy'].db.session.commit()
                 return redirect(url_for('zupc.zupc'))
         else:
             if form.validate():
                 zupc = administrative_models.ZUPC()
                 form.populate_obj(zupc)
-                db.session.add(zupc)
-                db.session.commit()
+                current_app.extensions['sqlalchemy'].db.session.add(zupc)
+                current_app.extensions['sqlalchemy'].db.session.commit()
                 return redirect(url_for('zupc.zupc'))
     return render_template('forms/ads.html', form=form,
         form_method="POST", submit_value="Modifier")
@@ -95,8 +98,8 @@ def zupc_delete():
     zupc = administrative_models.ZUPC.query.get(request.args.get("id"))
     if not zupc:
         abort(404, message="Unable to find the ZUPC")
-    db.session.delete(zupc)
-    db.session.commit()
+    current_app.extensions['sqlalchemy'].db.session.delete(zupc)
+    current_app.extensions['sqlalchemy'].db.session.commit()
     return redirect(url_for("zupc.zupc"))
 
 
