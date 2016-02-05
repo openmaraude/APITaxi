@@ -27,10 +27,3 @@ index_zupc = IndexZUPC()
 
 from APITaxi_utils.cache_user_datastore import CacheUserDatastore
 user_datastore = CacheUserDatastore()
-
-import shortuuid
-suid = shortuuid.ShortUUID()
-
-def get_short_uuid():
-    return suid.uuid()[:7]
-
