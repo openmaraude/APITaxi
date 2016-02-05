@@ -191,7 +191,7 @@ class TaxiRedis(object):
     def is_fresh(self, operateur=None):
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         if operateur:
-            v = current_app.extensions['redis'].hget('taxi:{}'.format(self.id), operateur)
+            v = redis_store.hget('taxi:{}'.format(self.id), operateur)
             if not v:
                 return False
             p = self.parse_redis(v)
