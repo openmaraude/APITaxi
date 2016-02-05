@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from . import db
 from sqlalchemy_defaults import Column
-from APITaxi_utils.mixins import MarshalMixin, FilterOr404Mixin
+from APITaxi_utils import MarshalMixin, FilterOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable
 from geoalchemy2 import Geography
 from geoalchemy2.shape import to_shape

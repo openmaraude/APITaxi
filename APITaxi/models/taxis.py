@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-
+from ..models import vehicle
 from . import db
-from .vehicle import Vehicle, VehicleDescription, Model, Constructor
-from .administrative import ZUPC, Departement
-from .security import User
-from APITaxi_utils import fields, get_columns_names
-from APITaxi_utils.mixins import (GetOr404Mixin, AsDictMixin, HistoryMixin,
-    FilterOr404Mixin)
+from ..extensions import (regions, user_datastore, redis_store,
+        get_short_uuid)
+from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
+from ..models.administrative import ZUPC, Departement
+from APITaxi_utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
+        get_columns_names)
+from APITaxi_utils.mixins import GetOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
-from APITaxi_utils.get_short_uuid import get_short_uuid
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
@@ -192,7 +192,7 @@ class TaxiRedis(object):
     def is_fresh(self, operateur=None):
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         if operateur:
-            v = current_app.extensions['redis'].hget('taxi:{}'.format(self.id), operateur)
+            v = redis_store.hget('taxi:{}'.format(self.id), operateur)
             if not v:
                 return False
             p = self.parse_redis(v)
@@ -210,7 +210,7 @@ class TaxiRedis(object):
 
     @classmethod
     def retrieve_caracs(cls, id_):
-        _, scan = current_app.extensions['redis'].hscan("taxi:{}".format(id_))
+        _, scan = redis_store.hscan("taxi:{}".format(id_))
         if not scan:
             return []
         return cls.transform_caracs(scan)
@@ -270,7 +270,8 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
     cache_label = 'taxis'
-    query_class = query_callable()
+    cache_regions = regions
+    query_class = query_callable(regions)
 
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
@@ -313,7 +314,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
 
     def is_free(self, min_time=None):
         return self._is_free(self.vehicle.descriptions,
-                lambda desc: User.query.get(desc.added_by).email,
+                lambda desc: user_datastore.get_user(desc.added_by).email,
                 lambda desc: desc.status,
                 min_time)
 
@@ -458,7 +459,7 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
 
     @staticmethod
     def flush(id_):
-        current_app.extensions['redis'].delete((RawTaxi.region, id_))
+        redis_store.delete((RawTaxi.region, id_))
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from APITaxi.extensions import redis_store
+from APITaxi.extensions import redis_store, regions
 from .skeleton import Skeleton
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi.models.hail import (Customer, Hail, rating_ride_reason_enum,

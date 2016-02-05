@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from ..extensions import regions, user_datastore, redis_store
 from . import db
 from .security import User
 from APITaxi_utils.mixins import (AsDictMixin, HistoryMixin, unique_constructor,
@@ -77,7 +78,8 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
     cache_label = 'taxis'
-    query_class = query_callable()
+    cache_regions = regions
+    query_class = query_callable(regions)
 
     def __init__(self, vehicle_id, added_by):
         db.Model.__init__(self)
@@ -168,10 +170,18 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
                 '{} is not a valid status, (valid statuses are {})'\
                     .format(value, status_vehicle_description_enum)
         self._status = value
+        user = user_datastore.get_user(self.added_by)
         from .taxis import Taxi
-        operator = User.query.get(self.added_by)
         for t in Taxi.query.join(Taxi.vehicle, aliased=True).filter_by(id=self.vehicle_id):
-            t.set_avaibility(operator.email, self._status)
+            taxi_id_operator = "{}:{}".format(t.id, user.email)
+            if self._status == 'free':
+                redis_store.srem(current_app.config['REDIS_NOT_AVAILABLE'],
+                    taxi_id_operator)
+            else:
+                redis_store.sadd(current_app.config['REDIS_NOT_AVAILABLE'],
+                    taxi_id_operator)
+
+
 
 
     @classmethod
@@ -213,7 +223,8 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
                     lambda query, licence_plate: query.filter(Vehicle.licence_plate == licence_plate))
 class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
     cache_label = 'taxis'
-    query_class = query_callable()
+    cache_regions = regions
+    query_class = query_callable(regions)
     id = Column(db.Integer, primary_key=True)
     licence_plate = Column(db.String(80), label=u'Immatriculation',
             description=u'Immatriculation du véhicule',
