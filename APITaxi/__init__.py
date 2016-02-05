@@ -79,7 +79,6 @@ def create_app(sqlalchemy_uri=None):
     from . import demo
     demo.create_app(app)
 
-
     from . import tasks
     tasks.init_app(app)
 
