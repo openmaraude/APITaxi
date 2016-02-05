@@ -1,27 +1,24 @@
 # -*- coding: utf-8 -*-
-from flask import request, redirect, url_for, current_app, g
+from flask import request, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
-from ..extensions import db, redis_store
+from ..extensions import redis_store
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
-from ..models.taxis import  Taxi as TaxiModel, RawTaxi, TaxiRedis
+from ..models.taxis import  RawTaxi, TaxiRedis
 from ..models import security as security_models
-import requests, json
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
-from ..utils.request_wants_json import json_mimetype_required
-from ..utils import fields as customFields
-from ..utils.validate_json import ValidatorMixin
+from APITaxi_utils.request_wants_json import json_mimetype_required
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
-from ..utils import influx_db
+from APITaxi_utils import influx_db
 from datetime import datetime
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
-class HailId(Resource, ValidatorMixin):
+class HailId(Resource):
 
     @classmethod
     def filter_access(cls, hail):
@@ -48,7 +45,7 @@ class HailId(Resource, ValidatorMixin):
     @login_required
     @roles_accepted('admin', 'moteur', 'operateur')
     @api.marshal_with(hail_model)
-    @api.expect(hail_expect_put)
+    @api.expect(hail_expect_put, validate=True)
     @json_mimetype_required
     def put(self, hail_id):
         hail = HailModel.get_or_404(hail_id)
@@ -56,7 +53,6 @@ class HailId(Resource, ValidatorMixin):
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
         hj = request.json
-        self.validate(hj)
         hj = hj['data'][0]
 
         #We change the status
@@ -78,22 +74,21 @@ class HailId(Resource, ValidatorMixin):
                 abort(403)
             except ValueError, e:
                 abort(400, message=e.args[0])
-        db.session.add(hail)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(hail)
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return {"data": [hail]}
 
 
 @ns_hail.route('/', endpoint='hail_endpoint')
-class Hail(Resource, ValidatorMixin):
+class Hail(Resource):
 
     @login_required
     @roles_accepted('admin', 'moteur')
-    @api.expect(hail_expect_post)
+    @api.expect(hail_expect_post, validate=True)
     @api.response(201, 'Success', hail_model)
     @json_mimetype_required
     def post(self):
         hj = request.json
-        self.validate(hj)
         hj = hj['data'][0]
 
         operateur = security_models.User.filter_by_or_404(
@@ -111,7 +106,7 @@ class Hail(Resource, ValidatorMixin):
                 operateur_id=current_user.id).first()
         if not customer:
             customer = CustomerModel(hj['customer_id'])
-            db.session.add(customer)
+            current_app.extensions['sqlalchemy'].db.session.add(customer)
         taxi_score = redis_store.zscore(current_app.config['REDIS_GEOINDEX'],
                 '{}:{}'.format(hj['taxi_id'], operateur.email))
         r = redis_store.geodecode(int(taxi_score)) if taxi_score else None
@@ -128,8 +123,8 @@ class Hail(Resource, ValidatorMixin):
         hail.initial_taxi_lon = taxi_pos[1] if r else None
         hail.operateur_id = operateur.id
         hail.status = 'received'
-        db.session.add(hail)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(hail)
+        current_app.extensions['sqlalchemy'].db.session.commit()
 
         send_request_operator.apply_async(args=[hail.id,
             operateur.hail_endpoint(current_app.config['ENV']),

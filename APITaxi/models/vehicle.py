@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, regions, user_datastore, redis_store
-from ..utils import (AsDictMixin, HistoryMixin, unique_constructor,
+from ..extensions import regions, user_datastore
+from . import db
+from APITaxi_utils import (AsDictMixin, HistoryMixin, unique_constructor,
         MarshalMixin, fields, FilterOr404Mixin)
-from ..utils.caching import CacheableMixin, query_callable
+from APITaxi_utils.caching import CacheableMixin, query_callable
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy import UniqueConstraint, and_
 from flask.ext.login import current_user
 from itertools import compress
-from sqlalchemy.orm import validates
 from sqlalchemy.ext.declarative import declared_attr
 from flask import current_app
 
@@ -168,16 +168,10 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
                 '{} is not a valid status, (valid statuses are {})'\
                     .format(value, status_vehicle_description_enum)
         self._status = value
-        user = user_datastore.get_user(self.added_by)
         from .taxis import Taxi
+        operator = user_datastore.get_user(self.added_by)
         for t in Taxi.query.join(Taxi.vehicle, aliased=True).filter_by(id=self.vehicle_id):
-            taxi_id_operator = "{}:{}".format(t.id, user.email)
-            if self._status == 'free':
-                redis_store.srem(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
-            else:
-                redis_store.sadd(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
+            t.set_avaibility(operator.email, self._status)
 
 
 
@@ -237,11 +231,13 @@ class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mi
             self.licence_plate
 
     @classmethod
-    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0, api=None):
         if level >=2:
             return {}
-        return_ = super(Vehicle, cls).marshall_obj(show_all, filter_id, level=level+1)
-        dict_description = VehicleDescription.marshall_obj(show_all, filter_id, level=level+1)
+        return_ = super(Vehicle, cls).marshall_obj(show_all, filter_id,
+                level=level+1, api=api)
+        dict_description = VehicleDescription.marshall_obj(
+                show_all, filter_id, level=level+1, api=api)
         for k, v in dict_description.items():
             dict_description[k].attribute = 'description.{}'.format(k)
         return_.update(dict_description)

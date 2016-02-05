@@ -2,10 +2,10 @@
 from operator import itemgetter
 from rtree import index
 from sqlalchemy import distinct
-from .extensions import db
 from functools import wraps
 from werkzeug.wrappers import Response
 from shapely.geometry import Point
+from flask import current_app
 
 class IndexZUPC(object):
     def __init__(self):
@@ -18,7 +18,7 @@ class IndexZUPC(object):
         from .models.administrative import ZUPC
         self.index_zupc = index.Index()
         insee_list = map(itemgetter(0),
-                db.session.query(distinct(ADS.zupc_id)).all())
+            current_app.extensions['sqlalchemy'].db.session.query(distinct(ADS.zupc_id)).all())
         if len(insee_list) == 0:
             return
         for zupc in ZUPC.query.filter(ZUPC.id.in_(insee_list)).all():

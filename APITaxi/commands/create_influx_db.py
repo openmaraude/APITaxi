@@ -1,6 +1,6 @@
 #coding: utf-8
 from . import manager
-from ..utils import influx_db
+from APITaxi_utils import influx_db
 
 @manager.command
 def create_influx_db(dbname):

@@ -2,9 +2,8 @@
 from flask import current_app
 from flask.ext.restplus import marshal
 from ..models.hail import Hail
-from ..models.security import User
 from ..descriptors.hail import hail_model
-from ..extensions import db, celery
+from ..extensions import celery
 import requests, json
 
 @celery.task()
@@ -29,7 +28,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
         pass
     if not r or r.status_code < 200 or r.status_code >= 300:
         hail.status = 'failure'
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
         current_app.logger.error("Unable to reach hail's endpoint {} of operator {}"\
             .format(endpoint, operator_email))
         return False
@@ -44,5 +43,5 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
         hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
 
     hail.status = 'received_by_operator'
-    db.session.commit()
+    current_app.extensions['sqlalchemy'].db.session.commit()
     return True

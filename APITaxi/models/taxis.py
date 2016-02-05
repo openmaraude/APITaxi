@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
 from ..models import vehicle
-from ..extensions import (regions, db, user_datastore, redis_store,
-        get_short_uuid)
+from . import db
+from ..extensions import (regions, user_datastore)
 from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
 from ..models.administrative import ZUPC, Departement
-from ..utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
+from APITaxi_utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
         get_columns_names)
-from ..utils.mixins import GetOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable, cache_in
+from APITaxi_utils.mixins import GetOr404Mixin
+from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
+from APITaxi_utils.get_short_uuid import get_short_uuid
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
 from six import string_types
-from itertools import compress
-from parse import parse, with_pattern
-import time, operator
-from sqlalchemy.orm import joinedload, sessionmaker, scoped_session
+from parse import with_pattern
+import time
 from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
 from datetime import datetime
@@ -63,10 +62,11 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
         return super(ADS, cls).can_be_listed_by(user) or user.has_role('prefecture')
 
     @classmethod
-    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0, api=None):
         if level >=2:
             return {}
-        return_ = super(ADS, cls).marshall_obj(show_all, filter_id, level=level+1)
+        return_ = super(ADS, cls).marshall_obj(show_all, filter_id,
+                level=level+1, api=api)
         return_['vehicle_id'] = fields.Integer()
         return return_
 
@@ -192,7 +192,7 @@ class TaxiRedis(object):
     def is_fresh(self, operateur=None):
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         if operateur:
-            v = redis_store.hget('taxi:{}'.format(self.id), operateur)
+            v = current_app.extensions['redis'].hget('taxi:{}'.format(self.id), operateur)
             if not v:
                 return False
             p = self.parse_redis(v)
@@ -210,7 +210,7 @@ class TaxiRedis(object):
 
     @classmethod
     def retrieve_caracs(cls, id_):
-        _, scan = redis_store.hscan("taxi:{}".format(id_))
+        _, scan = current_app.extensions['redis'].hscan("taxi:{}".format(id_))
         if not scan:
             return []
         return cls.transform_caracs(scan)
@@ -252,6 +252,16 @@ class TaxiRedis(object):
                 all(map(lambda desc: func_added_by(desc) not in users\
                     or func_status(desc) == 'free',
                     descriptions))
+
+
+    def set_avaibility(self, operator_email, status):
+        taxi_id_operator = "{}:{}".format(self.id, operator_email)
+        if status == 'free':
+            current_app.extensions['redis'].srem(
+                current_app.config['REDIS_NOT_AVAILABLE'], taxi_id_operator)
+        else:
+            current_app.extensions['redis'].sadd(
+                current_app.config['REDIS_NOT_AVAILABLE'], taxi_id_operator)
 
 
 class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
@@ -444,12 +454,13 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
                 for l in cache_in(RawTaxi.request_in, ids,
                             RawTaxi.region, get_id=lambda v: v[0]['taxi_id'],
                             transform_result=lambda r: map(lambda v: list(v[1]),
-                            groupby(r, lambda t: t['taxi_id']),))
+                            groupby(r, lambda t: t['taxi_id']),),
+                            regions=regions)
                if l]
 
     @staticmethod
     def flush(id_):
-        redis_store.delete((RawTaxi.region, id_))
+        current_app.extensions['redis'].delete((RawTaxi.region, id_))
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)

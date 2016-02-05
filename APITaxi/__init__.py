@@ -9,11 +9,10 @@ __version__ = ".".join(map(str, VERSION))
 from flask import Flask, request_started, request, request_finished, g
 from flask_bootstrap import Bootstrap
 import os
-from flask.ext.redis import FlaskRedis
 from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
-from .utils.request_wants_json import request_wants_json
+from APITaxi_utils.request_wants_json import request_wants_json
 from dogpile.cache import make_region
 
 
@@ -37,7 +36,7 @@ def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
 def create_app(sqlalchemy_uri=None):
-    from .extensions import (db, redis_store, regions, configure_uploads,
+    from .extensions import (redis_store, regions, configure_uploads,
             documents, images, user_datastore)
     app = Flask(__name__)
     app.config.from_object('APITaxi.default_settings')
@@ -58,6 +57,7 @@ def create_app(sqlalchemy_uri=None):
     if sqlalchemy_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
+    from .models import db
     db.init_app(app)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()
@@ -73,8 +73,9 @@ def create_app(sqlalchemy_uri=None):
     request_finished.connect(add_version_header, app)
 
     configure_uploads(app, (documents, images))
-    from .utils.login_manager import init_app as init_login_manager
-    init_login_manager(app)
+    from APITaxi_utils.login_manager import init_app as init_login_manager
+    from .forms.login import LoginForm
+    init_login_manager(app, user_datastore, LoginForm)
     from . import demo
     demo.create_app(app)
     for region in regions.keys():
@@ -97,7 +98,8 @@ def create_app(sqlalchemy_uri=None):
     tasks.init_app(app)
 
     from .models import security
-    user_datastore.init_app(db, security.User, security.Role)
+    user_datastore.init_app(db, security.User, security.CachedValue,
+            security.Role)
 
     @app.before_first_request
     def warm_up_redis():

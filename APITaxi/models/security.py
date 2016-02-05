@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
-from ..utils import MarshalMixin, FilterOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable
-from ..extensions import db, regions
+from APITaxi_utils import MarshalMixin, FilterOr404Mixin
+from APITaxi_utils.caching import CacheableMixin, query_callable, CachedValue
+from ..extensions import regions
+from . import db
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from flask import current_app
-from dogpile.cache import make_region
 
 roles_users = db.Table('roles_users',
         db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
@@ -92,3 +91,7 @@ class Logo(db.Model):
     size=db.Column(db.String)
     format_=db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
+class CachedUser(CachedValue, User, UserMixin):
+    base_class = User
+    regions = regions

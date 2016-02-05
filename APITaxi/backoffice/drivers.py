@@ -1,25 +1,19 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, documents
+from ..extensions import documents
 from ..api import api
 from . import ns_administrative
-from ..forms.taxis import DriverCreateForm,\
-        DriverUpdateForm
+from ..forms.taxis import DriverCreateForm, DriverUpdateForm
 from ..models import taxis as taxis_models, administrative as administrative_models
-from ..utils import create_obj_from_json, request_wants_json
-from flask import (Blueprint, render_template, request, redirect, url_for,
-                  render_template, request, redirect, url_for, jsonify,
-                   current_app)
+from ..descriptors.drivers import driver_fields, driver_details_expect
+from APITaxi_utils import create_obj_from_json, request_wants_json
+from flask import Blueprint, render_template, request, redirect, url_for, current_app
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
-from ..utils.make_model import make_model
-from ..utils.slack import slack as slacker
-from ..utils.resource_metadata import ResourceMetadata
+from APITaxi_utils.slack import slack as slacker
+from APITaxi_utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('drivers', __name__)
-
-driver_fields = make_model('taxis', 'Driver')
-driver_details_expect = make_model('taxis', 'Driver', filter_id=True)
 
 @ns_administrative.route('drivers/')
 class Drivers(ResourceMetadata):
@@ -67,11 +61,11 @@ class Drivers(ResourceMetadata):
                 driver_obj.departement_id = departement.id
             except KeyError as e:
                 abort(400, message="Key error")
-            db.session.add(driver_obj)
+            current_app.extensions['sqlalchemy'].db.session.add(driver_obj)
             if driver_obj.id:
                 edited_drivers_id.append(driver_obj.id)
             new_drivers.append(driver_obj)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return marshal({'data': new_drivers}, driver_fields), 201
 
     @api.hide
@@ -109,13 +103,13 @@ def driver_form():
             driver.last_update_at = datetime.now().isoformat()
             form.populate_obj(driver)
             if form.validate():
-                db.session.commit()
+                current_app.extensions['sqlalchemy'].db.session.commit()
                 return redirect(url_for('api.drivers'))
         else:
             driver = taxis_models.Driver()
             form.populate_obj(driver)
-            db.session.add(driver)
-            db.session.commit()
+            current_app.extensions['sqlalchemy'].db.session.add(driver)
+            current_app.extensions['sqlalchemy'].db.session.commit()
             return redirect(url_for('api.drivers'))
     return render_template('forms/driver.html', form=form,
         form_method="POST", submit_value="Modifier")
@@ -133,8 +127,9 @@ def driver_delete():
     if not driver.can_be_deleted_by(current_user):
         abort(403, message="You're not allowed to delete this driver")
     #We need to delete attached taxis
-    for taxi in db.session.query(taxis_models.Taxi).filter_by(driver_id=driver.id):
-        db.session.delete(taxi)
-    db.session.delete(driver)
-    db.session.commit()
+    for taxi in current_app.extensions['sqlalchemy'].db.session\
+            .query(taxis_models.Taxi).filter_by(driver_id=driver.id):
+        current_app.extensions['sqlalchemy'].db.session.delete(taxi)
+    current_app.extensions['sqlalchemy'].db.session.delete(driver)
+    current_app.extensions['sqlalchemy'].db.session.commit()
     return redirect(url_for('api.administrative_drivers'))

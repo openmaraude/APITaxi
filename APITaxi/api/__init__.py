@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-from flask.ext.restplus import apidoc
-from flask import Blueprint, make_response, render_template
-from json import dumps
-from ..utils.api import Api
+from flask.ext.restplus import apidoc, Api
+from flask import Blueprint, render_template
 
 api_blueprint = Blueprint('api', __name__)
 api = Api(api_blueprint, doc=False, catch_all_404s=True, title='API version 2.0')

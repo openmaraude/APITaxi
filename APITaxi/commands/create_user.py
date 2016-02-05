@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, user_datastore
+from ..extensions import user_datastore
 from flask.ext.script import prompt_pass
-from validate_email import validate_email
 from . import manager
+from flask import current_app
 
 def create_user(email, commit=False):
     "Create a user"
@@ -15,14 +15,14 @@ def create_user(email, commit=False):
     password = prompt_pass("Type a password")
     user = user_datastore.create_user(email=email, password=password)
     if commit:
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
     return user
 
 def create_user_role(email, role_name):
     user = create_user(email)
     role = user_datastore.find_or_create_role(role_name)
     user_datastore.add_role_to_user(user, role)
-    db.session.commit()
+    current_app.extensions['sqlalchemy'].db.session.commit()
 
 @manager.command
 def create_operateur(email):

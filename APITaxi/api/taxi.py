@@ -2,34 +2,22 @@
 import calendar, time
 from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, redirect, url_for, jsonify, current_app
-from ..models import (taxis as taxis_models, vehicle as vehicle_models,
-    administrative as administrative_models)
-from ..extensions import (db, redis_store, index_zupc, user_datastore)
+from flask import request, current_app
+from ..models import (taxis as taxis_models, administrative as administrative_models)
+from ..extensions import redis_store, index_zupc
 from ..api import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
-from ..utils.request_wants_json import json_mimetype_required
-from ..utils import arguments
-from ..utils import influx_db
-from ..utils import fields as customFields
-from ..utils.caching import cache_in
+from APITaxi_utils.request_wants_json import json_mimetype_required
 from shapely.geometry import Point
-from sqlalchemy import distinct
-from sqlalchemy.sql.expression import func as func_sql
-from datetime import datetime, timedelta
-from time import mktime, time
-from functools import partial
-from ..utils.validate_json import ValidatorMixin
+from time import time
 import math
-from itertools import islice, groupby
-from collections import deque
-
+from itertools import groupby
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
 
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
-class TaxiId(Resource, ValidatorMixin):
+class TaxiId(Resource):
     def get_descriptions(self, taxi_id):
         taxis = taxis_models.RawTaxi.get([taxi_id])
         if not taxis:
@@ -59,18 +47,18 @@ class TaxiId(Resource, ValidatorMixin):
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'}, model=taxi_model)
-    @api.expect(taxi_put_expect)
+    @api.expect(taxi_put_expect, validate=True)
     @json_mimetype_required
     def put(self, taxi_id):
         hj = request.json
-        self.validate(hj)
         t, last_update_at = self.get_descriptions(taxi_id)
         new_status = hj['data'][0]['status']
         if new_status != t[0]['vehicle_description_status']:
-            cur = db.session.connection().connection.cursor()
+            cur = current_app.extensions['sqlalchemy'].db.session.\
+                    connection().connection.cursor()
             cur.execute("UPDATE vehicle_description SET status=%s WHERE id=%s",
                     (new_status, t[0]['vehicle_description_id']))
-            db.session.commit()
+            current_app.extensions['sqlalchemy'].db.session.commit()
             taxis_models.RawTaxi.flush(taxi_id)
             t[0]['vehicle_description_status'] = new_status
             taxi_id_operator = "{}:{}".format(taxi_id, current_user.email)
@@ -98,7 +86,7 @@ get_parser.add_argument('count', type=int, required=False,
         location='values', default=10)
 
 @ns_taxis.route('/', endpoint="taxi_list")
-class Taxis(Resource, ValidatorMixin):
+class Taxis(Resource):
 
     def filter_not_available(self, fresh_redis, na_redis):
         #As said before there might be non-fresh taxis
@@ -204,11 +192,10 @@ class Taxis(Resource, ValidatorMixin):
     @roles_accepted('admin', 'operateur')
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
-    @api.expect(taxi_model_expect)
+    @api.expect(taxi_model_expect, validate=True)
     @api.marshal_with(taxi_model)
     def post(self):
         hj = request.json
-        self.validate(hj)
         taxi_json = hj['data'][0]
         departement = administrative_models.Departement.filter_by_or_404(
             numero=str(taxi_json['driver']['departement']))
@@ -235,6 +222,6 @@ class Taxis(Resource, ValidatorMixin):
                 taxi.status = taxi_json['status']
             except AssertionError:
                 abort(400, message='Invalid status')
-        db.session.add(taxi)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(taxi)
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return {'data':[taxi]}, 201

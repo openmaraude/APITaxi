@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from APITaxi.models.taxis import ADS, Vehicle
-from APITaxi.extensions import db, index_zupc
+from APITaxi.extensions import index_zupc
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_ads, dict_vehicle

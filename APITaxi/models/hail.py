@@ -3,18 +3,16 @@ from .taxis import Taxi as TaxiM
 from flask.ext.security import login_required, roles_accepted,\
         roles_accepted, current_user
 from datetime import datetime, timedelta
-from ..utils import HistoryMixin, AsDictMixin, fields
-from ..utils.mixins import GetOr404Mixin
-from ..utils.caching import CacheableMixin, query_callable
-from ..utils import influx_db
-from .security import User
+from APITaxi_utils import HistoryMixin, AsDictMixin, fields, influx_db
+from APITaxi_utils.mixins import GetOr404Mixin
+from APITaxi_utils.caching import CacheableMixin, query_callable
+from APITaxi_utils.get_short_uuid import get_short_uuid
 from ..descriptors.common import coordinates_descriptor
-from ..api import api
-from ..extensions import redis_store, db, get_short_uuid, regions
+from ..extensions import regions
+from . import db
 from ..models.security import User
 from flask_principal import RoleNeed, Permission
-from sqlalchemy.orm import validates, joinedload, synonym
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import validates
 from flask import g, current_app
 from sqlalchemy.ext.declarative import declared_attr
 
@@ -54,7 +52,6 @@ incident_taxi_reason_enum = ['no_show', 'address', 'traffic', 'breakdown',
                              'traffic_jam', 'garbage_truck']
 
 class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
-
     @declared_attr
     def added_by(cls):
         return db.Column(db.Integer,db.ForeignKey('user.id'))
@@ -250,11 +247,11 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
 
 
     @classmethod
-    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0, api=None):
         if level >=2:
             return {}
         return_ = super(Hail, cls).marshall_obj(show_all, filter_id,
-                     level=level+1)
+                     level=level+1, api=api)
         return_['operateur'] = fields.String(attribute='operateur.email',
                                 required=True)
         return_['id'] = fields.String()
