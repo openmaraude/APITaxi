@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from ..extensions import documents, index_zupc
-from ..api import api
-from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
 from APITaxi_models import (taxis as taxis_models, vehicle as vehicle_models,

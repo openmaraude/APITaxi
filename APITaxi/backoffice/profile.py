@@ -12,7 +12,6 @@ from flask.ext.restplus import fields as basefields, marshal_with, Resource
 import os
 import uuid
 from PIL import Image
-from . import ns_administrative
 
 mod = Blueprint('profile', __name__)
 @mod.route('/user/form', methods=['GET', 'POST'])

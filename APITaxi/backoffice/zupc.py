@@ -15,49 +15,19 @@ from psycopg2.extras import RealDictCursor
 
 mod = Blueprint('zupc', __name__)
 
-def zupc_list():
+@mod.route('/zupc/_view')
+def zupc():
+    if request.method != "GET":
+        abort(405, message="method now allowed")
+    if request_wants_json():
+        abort(400, message="bad format")
+    roles_accepted = set(['admin', 'mairie', 'prefecture', 'operateur'])
+    if  current_user.is_anonymous() or\
+            len(roles_accepted.intersection(current_user.roles)) == 0:
+        abort(403)
     page = int(request.args.get('page')) if 'page' in request.args else 1
     return render_template('lists/zupc.html',
         zupc_list=administrative_models.ZUPC.query.paginate(page))
-
-
-def zupc_search():
-    parser = reqparse.RequestParser()
-    parser.add_argument('lon', type=float, required=True, location='args')
-    parser.add_argument('lat', type=float, required=True, location='args')
-    try:
-        args = parser.parse_args()
-    except BadRequest as e:
-        return json.dumps(e.data), 400, {"Content-Type": "application/json"}
-
-    cur = current_app.extensions['sqlalchemy'].db.session.connection()\
-            .connection.cursor(cursor_factory=RealDictCursor)
-    cur.execute("""SELECT active, nom, insee FROM "ZUPC"
-        WHERE ST_Contains(shape::geometry, ST_POINT(%s, %s)::geography::geometry)""",
-        (args['lon'], args['lat']))
-    to_return = []
-    ZUPC = administrative_models.ZUPC
-    for zupc in cur.fetchall():
-        if any(map(lambda z: zupc['insee'] == z['insee'], to_return)):
-            continue
-        to_return.append(marshal(zupc, ZUPC.marshall_obj(filter_id=True,
-            level=1, api=api)))
-    return json.dumps({"data": to_return}), 200, {"Content-Type": "application/json"}
-
-
-
-
-@mod.route('/zupc')
-@mod.route('/zupc/')
-def zupc():
-    if request.method == "GET":
-        if request_wants_json():
-            return zupc_search()
-        roles_accepted = set(['admin', 'mairie', 'prefecture', 'operateur'])
-        if not current_user.is_anonymous() and\
-                len(roles_accepted.intersection(current_user.roles)) > 0:
-            return zupc_list()
-    abort(405, message="method now allowed")
 
 
 @mod.route('/zupc/form', methods=['GET', 'POST'])

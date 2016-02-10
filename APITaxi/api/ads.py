@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-from ..backoffice import ns_administrative
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_models import (taxis as taxis_models,
         administrative as administrative_models)
 from flask.ext.security import login_required, roles_accepted, current_user
-from . import api
+from . import api, ns_administrative
 from ..descriptors.ads import ads_model, ads_expect, ads_post
 from flask.ext.restplus import reqparse, abort, marshal
 from flask import jsonify, render_template, request, current_app
-from ..extensions import index_zupc, documents
+from ..extensions import documents
 from APITaxi_utils.slack import slack as slacker
 
 parser = reqparse.RequestParser()
@@ -54,7 +53,6 @@ class ADS(ResourceMetadata):
         403:'You\'re not authorized to view it'})
     @api.expect(ads_expect)
     @api.response(200, 'Success', ads_post)
-    @index_zupc.reinit()
     def post(self):
         if 'file' in request.files:
             filename = "ads-{}-{}.csv".format(current_user.email,

@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..api import api
 
-ns_administrative = api.namespace('administrative',
-        description="Administrative APIs", path='/')
-
 def init_app(app):
     from . import (ads, drivers, home, user_key, vehicle, zupc, profile,
             documents, dash)
