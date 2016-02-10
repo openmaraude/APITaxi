@@ -13,6 +13,6 @@ def swagger_ui():
     return render_template('swagger/index.html')
 
 def init_app(app):
-    from . import hail, taxi, ads
+    from . import hail, taxi, ads, drivers
     app.register_blueprint(api_blueprint)
     app.register_blueprint(apidoc.apidoc)

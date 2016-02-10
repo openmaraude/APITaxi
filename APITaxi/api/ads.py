@@ -10,7 +10,8 @@ from . import api
 from ..descriptors.ads import ads_model, ads_expect, ads_post
 from flask.ext.restplus import reqparse, abort, marshal
 from flask import jsonify, render_template, request, current_app
-from ..extensions import index_zupc
+from ..extensions import index_zupc, documents
+from APITaxi_utils.slack import slack as slacker
 
 parser = reqparse.RequestParser()
 parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=False,
@@ -18,6 +19,7 @@ parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=Fa
 parser.add_argument('insee', type=unicode,
         help=u"Code INSEE de la commune d\'attribution de l'ADS", required=False,
                     location='values')
+
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(ResourceMetadata):
     model = taxis_models.ADS
