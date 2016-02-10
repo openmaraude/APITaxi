@@ -18,6 +18,7 @@ parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=Fa
 parser.add_argument('insee', type=unicode,
         help=u"Code INSEE de la commune d\'attribution de l'ADS", required=False,
                     location='values')
+
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(ResourceMetadata):
     model = taxis_models.ADS

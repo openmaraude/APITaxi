@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 def init_app(app):
     from . import (ads, drivers, home, user_key, zupc, profile,
             documents, dash)
