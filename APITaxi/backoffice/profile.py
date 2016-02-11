@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..extensions import user_datastore
 from APITaxi_models import security as security_models
-from ..forms.user import UserForm
+from .forms.user import UserForm
 
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask import (Blueprint, request, render_template, redirect, jsonify,

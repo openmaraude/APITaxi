@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..extensions import index_zupc
-from ..api import api
 from APITaxi_models import administrative as administrative_models
-from ..forms.administrative import ZUPCreateForm, ZUPCUpdateForm
+from .forms.administrative import ZUPCreateForm, ZUPCUpdateForm
 from APITaxi_utils.request_wants_json import request_wants_json
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask.ext.restplus import reqparse, marshal

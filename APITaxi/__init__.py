@@ -10,8 +10,6 @@ from flask import Flask, request_started, request, request_finished, g
 from flask_bootstrap import Bootstrap
 import os
 from flask.ext.restplus import abort
-from flask.ext.uploads import (UploadSet, configure_uploads,
-            DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from APITaxi_utils.request_wants_json import request_wants_json
 from flask.ext.dogpile_cache import DogpileCache
 
@@ -72,9 +70,10 @@ def create_app(sqlalchemy_uri=None):
     request_started.connect(check_version, app)
     request_finished.connect(add_version_header, app)
 
+    from flask.ext.uploads import configure_uploads
     configure_uploads(app, (documents, images))
     from APITaxi_utils.login_manager import init_app as init_login_manager
-    from .forms.login import LoginForm
+    from .backoffice.forms.login import LoginForm
     init_login_manager(app, user_datastore, LoginForm)
     from . import demo
     demo.create_app(app)

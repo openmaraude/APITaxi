@@ -6,11 +6,6 @@ redis_store = FlaskRedis.from_custom_provider(GeoRedis)
 from flask.ext.celery import Celery
 celery = Celery()
 
-from flask.ext.uploads import (UploadSet, configure_uploads,
-            DOCUMENTS, DATA, ARCHIVES, IMAGES)
-documents = UploadSet('documents', DOCUMENTS + DATA + ARCHIVES)
-images = UploadSet('images', IMAGES)
-
 
 from .index_zupc import IndexZUPC
 index_zupc = IndexZUPC()

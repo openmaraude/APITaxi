@@ -5,8 +5,8 @@ from APITaxi_models import vehicle as vehicle_models, taxis as taxis_models
 from . import api, ns_administrative
 from ..descriptors.vehicle import vehicle_model, vehicle_expect
 from flask.ext.restplus import fields, reqparse, abort
-from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 from APITaxi_utils.resource_metadata import ResourceMetadata
+from APITaxi_utils.populate_obj import create_obj_from_json
 import datetime
 mod = Blueprint('vehicle', __name__)
 
@@ -27,18 +27,25 @@ class Vehicle(ResourceMetadata):
         if len(json['data']) > 250:
             abort(413, message="You can only post 250 vehicles at a time")
         new_vehicles = []
+        db = current_app.extensions['sqlalchemy'].db
         for vehicle in json['data']:
-            form = VehicleForm.from_json(vehicle)
-            v = vehicle_models.Vehicle(form.data['licence_plate'])
+            v = vehicle_models.Vehicle(vehicle['licence_plate'])
             v.last_update_at = datetime.datetime.now()
-            form.populate_obj(v)
-            current_app.extensions['sqlalchemy'].db.session.add(v)
-            current_app.extensions['sqlalchemy'].db.session.commit()
+            create_obj_from_json(vehicle_models.Vehicle, vehicle, v)
+            db.session.add(v)
+            db.session.commit()
             v_description = vehicle_models.VehicleDescription(vehicle_id=v.id,
                     added_by=current_user.id)
+            constructor = vehicle_models.Constructor(vehicle['constructor'])
+            model = vehicle_models.Model(vehicle['model'])
+            db.session.add(model)
+            db.session.add(constructor)
+            db.session.commit()
+            v_description.constructor = constructor
+            v_description.model = model
             v.descriptions.append(v_description)
-            form_description = VehicleDescriptionForm.from_json(vehicle)
-            form_description.populate_obj(v_description)
+            create_obj_from_json(vehicle_models.VehicleDescription,
+                    vehicle, v_description)
             v_description.status = 'off'
             current_app.extensions['sqlalchemy'].db.session.add(v_description)
             new_vehicles.append(v)

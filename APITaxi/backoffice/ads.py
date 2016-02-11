@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..extensions import index_zupc
-from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
+from .forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
 from APITaxi_models import (taxis as taxis_models, vehicle as vehicle_models,
         administrative as administrative_models)
@@ -80,7 +80,8 @@ def ads_form():
         form.ads.form = ADSForm(obj=ads)
         if ads.vehicle:
             form.vehicle.form = VehicleForm(obj=ads.vehicle)
-            form.vehicle_description.form = VehicleDescriptionForm(obj=ads.vehicle.description)
+            form.vehicle_description.form = VehicleDescriptionForm(
+                    obj=ads.vehicle.description)
     else:
         form = ADSCreateForm()
     if request.method == "POST":
