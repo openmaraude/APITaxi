@@ -75,7 +75,7 @@ class TestHailPost(HailMixin):
 
     def test_too_many(self):
         r = self.post([dict_, dict_])
-        self.assertEqual(r.status_code, 413)
+        self.assertEqual(r.status_code, 400)
 
     def test_missing_fields(self):
         dict_ = {
@@ -445,7 +445,7 @@ class TestHailPut(HailMixin):
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role="moteur")
         self.assert400(r)
-        assert('Invalid status' in r.json['message'])
+        assert('validation failed' in r.json['message'])
         self.app.config['ENV'] = prev_env
 
     def test_rating_ride_reason_all_valid_values(self):
