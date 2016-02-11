@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from ..extensions import documents, index_zupc
+from ..extensions import index_zupc
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
 from APITaxi_models import (taxis as taxis_models, vehicle as vehicle_models,
         administrative as administrative_models)
-from ..descriptors.ads import ads_model, ads_expect, ads_post
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.request_wants_json import request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,

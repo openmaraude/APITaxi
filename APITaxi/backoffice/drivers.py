@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from ..extensions import documents
-from ..api import api
 from ..forms.taxis import DriverCreateForm, DriverUpdateForm
 from APITaxi_models import taxis as taxis_models, administrative as administrative_models
 from APITaxi_utils.populate_obj import create_obj_from_json

@@ -9,7 +9,8 @@ from . import api, ns_administrative
 from ..descriptors.ads import ads_model, ads_expect, ads_post
 from flask.ext.restplus import reqparse, abort, marshal
 from flask import jsonify, render_template, request, current_app
-from ..extensions import documents
+from ..extensions import index_zupc
+from .extensions import documents
 from APITaxi_utils.slack import slack as slacker
 
 parser = reqparse.RequestParser()
@@ -53,6 +54,7 @@ class ADS(ResourceMetadata):
         403:'You\'re not authorized to view it'})
     @api.expect(ads_expect)
     @api.response(200, 'Success', ads_post)
+    @index_zupc.reinit()
     def post(self):
         if 'file' in request.files:
             filename = "ads-{}-{}.csv".format(current_user.email,
