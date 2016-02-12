@@ -42,6 +42,7 @@ class Drivers(ResourceMetadata):
 
 
     def post_json(self):
+        db = current_app.extensions['sqlalchemy'].db
         json = request.get_json()
         if "data" not in json:
             abort(400, message="You need data a data object")
@@ -89,6 +90,7 @@ class Drivers(ResourceMetadata):
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
 def driver_form():
+    db = current_app.extensions['sqlalchemy'].db
     form = None
     if request.args.get("id"):
         driver = taxis_models.Driver.query.get(request.args.get("id"))
@@ -120,6 +122,7 @@ def driver_form():
 @roles_accepted('admin', 'operateur', 'prefecture')
 @login_required
 def driver_delete():
+    db = current_app.extensions['sqlalchemy'].db
     if not request.args.get("id"):
         abort(404, message="An id is required")
     driver = taxis_models.Driver.query.get(request.args.get("id"))
