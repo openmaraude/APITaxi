@@ -2,7 +2,7 @@
 from ..extensions import db, index_zupc
 from ..models import administrative as administrative_models
 from ..forms.administrative import ZUPCreateForm, ZUPCUpdateForm
-from APITaxi_utils import request_wants_json
+from APITaxi_utils.request_wants_json import request_wants_json
 from flask.ext.security import login_required, roles_accepted, current_user
 from flask.ext.restplus import reqparse, marshal
 from flask import (Blueprint, request, render_template, redirect, jsonify,

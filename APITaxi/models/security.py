@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
-from APITaxi_utils import MarshalMixin, FilterOr404Mixin
+from APITaxi_utils.mixins import MarshalMixin, FilterOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable, CachedValue
 from ..extensions import db, regions
 from sqlalchemy_defaults import Column
