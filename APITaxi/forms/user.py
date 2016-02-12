@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..utils.model_form import ModelForm
+from APITaxi_utils.model_form import ModelForm
 from ..models import security
 from wtforms import HiddenField, SubmitField
 from wtforms.fields import FormField

@@ -8,11 +8,11 @@ from ..models import (taxis as taxis_models, vehicle as vehicle_models,
 from ..extensions import (db, redis_store, index_zupc, user_datastore)
 from ..api import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
-from ..utils.request_wants_json import json_mimetype_required
-from ..utils import arguments
-from ..utils import influx_db
-from ..utils import fields as customFields
-from ..utils.caching import cache_in
+from APITaxi_utils.request_wants_json import json_mimetype_required
+from APITaxi_utils import arguments
+from APITaxi_utils import influx_db
+from APITaxi_utils import fields as customFields
+from APITaxi_utils.caching import cache_in
 from shapely.geometry import Point
 from sqlalchemy import distinct
 from sqlalchemy.sql.expression import func as func_sql

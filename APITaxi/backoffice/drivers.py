@@ -5,16 +5,16 @@ from . import ns_administrative
 from ..forms.taxis import DriverCreateForm,\
         DriverUpdateForm
 from ..models import taxis as taxis_models, administrative as administrative_models
-from ..utils import create_obj_from_json, request_wants_json
+from APITaxi_utils import create_obj_from_json, request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
                   render_template, request, redirect, url_for, jsonify,
                    current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
-from ..utils.make_model import make_model
-from ..utils.slack import slack as slacker
-from ..utils.resource_metadata import ResourceMetadata
+from APITaxi_utils.make_model import make_model
+from APITaxi_utils.slack import slack as slacker
+from APITaxi_utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('drivers', __name__)
 

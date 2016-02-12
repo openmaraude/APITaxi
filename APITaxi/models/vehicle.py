@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from ..extensions import db, regions, user_datastore, redis_store
-from ..utils import (AsDictMixin, HistoryMixin, unique_constructor,
+from APITaxi_utils import (AsDictMixin, HistoryMixin, unique_constructor,
         MarshalMixin, fields, FilterOr404Mixin)
-from ..utils.caching import CacheableMixin, query_callable
+from APITaxi_utils.caching import CacheableMixin, query_callable
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy import UniqueConstraint, and_
