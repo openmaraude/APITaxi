@@ -2,9 +2,8 @@
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, Blueprint, current_app
 from APITaxi_models import vehicle as vehicle_models, taxis as taxis_models
-from ..api import api
+from . import api, ns_administrative
 from ..descriptors.vehicle import vehicle_model, vehicle_expect
-from . import ns_administrative
 from flask.ext.restplus import fields, reqparse, abort
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 from APITaxi_utils.resource_metadata import ResourceMetadata

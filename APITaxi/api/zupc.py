@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..backoffice import ns_administrative
-from . import api
+from . import api, ns_administrative
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from flask.ext.restplus import reqparse, abort, marshal

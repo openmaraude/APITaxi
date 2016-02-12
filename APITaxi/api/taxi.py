@@ -5,7 +5,7 @@ from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, current_app
 from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
 from ..extensions import redis_store, index_zupc
-from ..api import api
+from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from APITaxi_utils.request_wants_json import json_mimetype_required
 from shapely.geometry import Point
