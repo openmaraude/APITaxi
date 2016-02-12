@@ -98,7 +98,7 @@ def create_app(sqlalchemy_uri=None):
     tasks.init_app(app)
 
     from .models import security
-    user_datastore.init_app(db, security.User, security.CachedValue,
+    user_datastore.init_app(db, security.User, security.CachedUser,
             security.Role)
 
     @app.before_first_request
