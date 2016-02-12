@@ -4,16 +4,14 @@ from flask import request, Blueprint
 from ..models import vehicle as vehicle_models, taxis as taxis_models
 from ..extensions import db
 from ..api import api
+from ..descriptors.vehicle import vehicle_model, vehicle_expect
 from . import ns_administrative
 from flask.ext.restplus import fields, reqparse, abort
-from APITaxi_utils.make_model import make_model
 from ..forms.taxis import VehicleForm, VehicleDescriptionForm
 from APITaxi_utils.resource_metadata import ResourceMetadata
 import datetime
 mod = Blueprint('vehicle', __name__)
 
-vehicle_model = make_model('taxis', 'Vehicle', api=api)
-vehicle_expect = make_model('taxis', 'Vehicle', api=api, filter_id=True)
 @ns_administrative.route('vehicles/', endpoint="vehicle")
 class Vehicle(ResourceMetadata):
     model = vehicle_models.Vehicle

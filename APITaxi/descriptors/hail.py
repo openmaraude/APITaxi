@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 from ..models.hail import Hail as HailModel
-from APITaxi_utils.make_model import make_model
 from ..api import api
 from APITaxi_utils import fields
-hail_model = make_model('hail', 'Hail', api=api)
+
+all_fields = HailModel.marshall_obj()
+
+hail_model = api.model('hail_model_data',
+    {'data':
+        fields.List(fields.Nested(
+            api.model('hail_model', all_fields))
+    )}
+)
 
 puttable_arguments = ['status', 'incident_taxi_reason',
         'reporting_customer', 'reporting_customer_reason', 'customer_lon',
@@ -11,7 +18,7 @@ puttable_arguments = ['status', 'incident_taxi_reason',
         'rating_ride_reason', 'incident_customer_reason']
 
 dict_hail =  dict(filter(lambda f: f[0] in puttable_arguments,
-        HailModel.marshall_obj().items()))
+        all_fields.items()))
 for k in dict_hail.keys():
     dict_hail[k].required = False
 

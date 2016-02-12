@@ -9,7 +9,6 @@ __version__ = ".".join(map(str, VERSION))
 from flask import Flask, request_started, request, request_finished, g
 from flask_bootstrap import Bootstrap
 import os
-from flask.ext.redis import FlaskRedis
 from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)

@@ -7,8 +7,6 @@ from ..extensions import db, regions
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
-from flask import current_app
-from dogpile.cache import make_region
 from ..api import api
 
 roles_users = db.Table('roles_users',

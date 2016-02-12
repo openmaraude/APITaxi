@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..extensions import db, user_datastore
 from flask.ext.script import prompt_pass
-from validate_email import validate_email
 from . import manager
 
 def create_user(email, commit=False):
