@@ -19,9 +19,9 @@ from ..utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('ads', __name__)
 
-ads_model = make_model('taxis', 'ADS')
-ads_expect = make_model('taxis', 'ADS', True, filter_id=True)
-ads_post = make_model('taxis', 'ADS', True)
+ads_model = make_model('taxis', 'ADS', api=api)
+ads_expect = make_model('taxis', 'ADS', show_all=True, filter_id=True, api=api)
+ads_post = make_model('taxis', 'ADS', show_all=True, api=api)
 
 
 @ns_administrative.route('ads/', endpoint="ads")

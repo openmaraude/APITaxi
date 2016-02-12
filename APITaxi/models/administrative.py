@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..extensions import db, regions
+from ..api import api
 from sqlalchemy_defaults import Column
 from ..utils import MarshalMixin, FilterOr404Mixin
 from ..utils.caching import CacheableMixin, query_callable
@@ -11,14 +12,17 @@ from sqlalchemy.orm import joinedload
 from shapely.prepared import prep
 
 class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
+    api = api
     id = Column(db.Integer, primary_key=True)
     nom = Column(db.String(255), label='Nom')
     numero = Column(db.String(3), label='Numero')
+    api = api
 
     def __str__(self):
         return '%s' % (self.numero)
 
 class ZUPC(db.Model, MarshalMixin, CacheableMixin):
+    api = api
     cache_label = 'zupc'
     cache_regions = regions
     query_class = query_callable(regions)

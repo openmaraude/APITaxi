@@ -74,7 +74,8 @@ def create_app(sqlalchemy_uri=None):
 
     configure_uploads(app, (documents, images))
     from .utils.login_manager import init_app as init_login_manager
-    init_login_manager(app)
+    from .forms.login import LoginForm
+    init_login_manager(app, user_datastore, LoginForm)
     from . import demo
     demo.create_app(app)
     for region in regions.keys():
@@ -97,7 +98,8 @@ def create_app(sqlalchemy_uri=None):
     tasks.init_app(app)
 
     from .models import security
-    user_datastore.init_app(db, security.User, security.Role)
+    user_datastore.init_app(db, security.User, security.CachedValue,
+            security.Role)
 
     @app.before_first_request
     def warm_up_redis():
