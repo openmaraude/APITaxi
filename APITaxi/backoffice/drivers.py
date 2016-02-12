@@ -5,7 +5,8 @@ from . import ns_administrative
 from ..forms.taxis import DriverCreateForm, DriverUpdateForm
 from ..models import taxis as taxis_models, administrative as administrative_models
 from ..descriptors.drivers import driver_fields, driver_details_expect
-from APITaxi_utils import create_obj_from_json, request_wants_json
+from APITaxi_utils.populate_obj import create_obj_from_json
+from APITaxi_utils.request_wants_json import request_wants_json
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime

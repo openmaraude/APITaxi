@@ -4,8 +4,8 @@ from ..extensions import (regions, db, user_datastore, redis_store,
         get_short_uuid)
 from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
 from ..models.administrative import ZUPC, Departement
-from APITaxi_utils import (AsDictMixin, HistoryMixin, fields, FilterOr404Mixin,
-        get_columns_names)
+from APITaxi_utils.mixins import AsDictMixin, HistoryMixin, FilterOr404Mixin
+from APITaxi_utils import fields, get_columns_names
 from APITaxi_utils.mixins import GetOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
 from sqlalchemy_defaults import Column
