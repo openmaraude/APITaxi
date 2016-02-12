@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from ..extensions import user_datastore
-from ..api import api
 from APITaxi_models import security as security_models
 from ..forms.user import UserForm
 
@@ -9,8 +8,7 @@ from flask import (Blueprint, request, render_template, redirect, jsonify,
                    url_for, abort, current_app, send_file)
 from APITaxi_utils import fields
 from flask.ext.restplus import fields as basefields, marshal_with, Resource
-import os
-import uuid
+import os, uuid
 from PIL import Image
 
 mod = Blueprint('profile', __name__)
@@ -60,32 +58,6 @@ def profile_form():
 class LogoHref(basefields.Raw):
     def output(self, key, obj):
         return url_for('profile.image', user_id=obj.user_id, src=obj.id)
-
-model_user = api.model("user", {
-    'data': basefields.List(basefields.Nested(
-        api.model("user_model",
-            {
-                "name": fields.String(attribute='commercial_name'),
-                "logos": basefields.List(basefields.Nested(
-                    api.model('logo_model', 
-                        {'href': LogoHref,
-                         'size' : fields.String,
-                         'format': fields.String(attribute='format_'),
-                        }
-                        )
-                    ))
-            }
-        )))
-    })
-
-@ns_administrative.route('users/<int:user_id>')
-class ProfileDetail(Resource):
-    @api.marshal_with(model_user)
-    def get(self, user_id):
-        user = user_datastore.get_user(user_id)
-        if not user:
-            abort(404, message="Unable to find user")
-        return {"data": [user]}, 200
 
 @mod.route('/user/<int:user_id>/images/<src>')
 def image(user_id, src):
