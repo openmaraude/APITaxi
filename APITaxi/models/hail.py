@@ -8,7 +8,6 @@ from APITaxi_utils.mixins import GetOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable
 from APITaxi_utils import influx_db
 from ..descriptors.common import coordinates_descriptor
-from ..api import api
 from ..extensions import db, get_short_uuid, regions
 from ..models.security import User
 from flask_principal import RoleNeed, Permission
@@ -18,7 +17,6 @@ from sqlalchemy.ext.declarative import declared_attr
 
 
 class Customer(HistoryMixin, db.Model, AsDictMixin):
-    api = api
     @declared_attr
     def added_by(cls):
         return db.Column(db.Integer,db.ForeignKey('user.id'))
@@ -53,12 +51,10 @@ incident_taxi_reason_enum = ['no_show', 'address', 'traffic', 'breakdown',
                              'traffic_jam', 'garbage_truck']
 
 class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
-
     @declared_attr
     def added_by(cls):
         return db.Column(db.Integer,db.ForeignKey('user.id'))
 
-    api = api
     cache_label = 'hails'
     cache_regions = regions
     query_class = query_callable(regions)
@@ -250,11 +246,11 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
 
 
     @classmethod
-    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0, api=None):
         if level >=2:
             return {}
         return_ = super(Hail, cls).marshall_obj(show_all, filter_id,
-                     level=level+1)
+                     level=level+1, api=api)
         return_['operateur'] = fields.String(attribute='operateur.email',
                                 required=True)
         return_['id'] = fields.String()

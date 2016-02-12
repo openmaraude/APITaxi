@@ -10,13 +10,11 @@ from flask.ext.login import current_user
 from itertools import compress
 from sqlalchemy.ext.declarative import declared_attr
 from flask import current_app
-from ..api import api
 
 @unique_constructor(db.session,
                     lambda name: name,
                     lambda query, name: query.filter(Constructor.name == name.name) if isinstance(name, Constructor) else query.filter(Constructor.name == name))
 class Constructor(db.Model, AsDictMixin, MarshalMixin):
-    api = api
     id = Column(db.Integer, primary_key=True)
     name = Column(db.String, label=u'Dénomination commerciale de la marque',
                 description=u'Dénomination commerciale de la marque',
@@ -42,7 +40,6 @@ class Constructor(db.Model, AsDictMixin, MarshalMixin):
                     lambda name: name,
                     lambda query, name: query.filter(Model.name == name.name) if isinstance(name, Model) else query.filter(Model.name == name))
 class Model(db.Model, AsDictMixin, MarshalMixin):
-    api = api
 
     id = Column(db.Integer, primary_key=True)
     name = Column(db.String, label=u'Dénomination commerciale du modèle',
@@ -74,7 +71,6 @@ status_vehicle_description_enum = ['free', 'answering', 'occupied', 'oncoming', 
                        VehicleDescription.added_by == added_by)))
 
 class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
-    api = api
     @declared_attr
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
@@ -223,7 +219,6 @@ class VehicleDescription(HistoryMixin, CacheableMixin, db.Model, AsDictMixin):
                     lambda licence_plate: licence_plate,
                     lambda query, licence_plate: query.filter(Vehicle.licence_plate == licence_plate))
 class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mixin):
-    api = api
     cache_label = 'taxis'
     cache_regions = regions
     query_class = query_callable(regions)
@@ -241,11 +236,13 @@ class Vehicle(CacheableMixin, db.Model, AsDictMixin, MarshalMixin, FilterOr404Mi
             self.licence_plate
 
     @classmethod
-    def marshall_obj(cls, show_all=False, filter_id=False, level=0):
+    def marshall_obj(cls, show_all=False, filter_id=False, level=0, api=None):
         if level >=2:
             return {}
-        return_ = super(Vehicle, cls).marshall_obj(show_all, filter_id, level=level+1)
-        dict_description = VehicleDescription.marshall_obj(show_all, filter_id, level=level+1)
+        return_ = super(Vehicle, cls).marshall_obj(show_all, filter_id,
+                level=level+1, api=api)
+        dict_description = VehicleDescription.marshall_obj(
+                show_all, filter_id, level=level+1, api=api)
         for k, v in dict_description.items():
             dict_description[k].attribute = 'description.{}'.format(k)
         return_.update(dict_description)
