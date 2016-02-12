@@ -53,7 +53,7 @@ dict_taxi_expect = \
             {'licence_plate': fields.String}), required=True),
           'ads': fields.Nested(api.model('ads_expect',
               {'numero': fields.String, 'insee': fields.String}), required=True),
-          'driver': fields.Nested(api.model('driver_expect',
+          'driver': fields.Nested(api.model('driver_taxi_expect',
               {'professional_licence': fields.String,
                 'departement': fields.String}), required=True),
           'status': fields.String(enum=authorized_taxi_statuses),
@@ -62,7 +62,7 @@ dict_taxi_expect = \
 
 taxi_model_expect = api.model('taxi_expect',
               {'data':fields.List(
-                  fields.Nested(api.model('taxi_expect_details', dict_taxi_expect)),
+                  fields.Nested(api.model('dict_taxi_expect', dict_taxi_expect)),
                   unique=True)})
 
 taxi_put_expect = api.model('taxi_put_expect',
