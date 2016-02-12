@@ -3,7 +3,7 @@
 from flask.ext.testing import TestCase
 from json import dumps
 from APITaxi import create_app
-from APITaxi.extensions import (redis_store, index_zupc, user_datastore)
+from APITaxi.extensions import (redis_store, user_datastore)
 from APITaxi.api import api
 from APITaxi_models.administrative import Departement, ZUPC
 from APITaxi_models.taxis import Taxi
@@ -54,7 +54,6 @@ class Skeleton(TestCase):
         current_app.extensions['sqlalchemy'].db.drop_all()
         current_app.extensions['sqlalchemy'].db.get_engine(self.app).dispose()
         current_app.extensions['dogpile_cache'].invalidate_all_regions()
-        index_zupc.index_zupc = None
 
 
     def post_taxi(self, role=None, user=None, post_second=False):

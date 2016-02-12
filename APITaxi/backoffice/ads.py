@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from ..extensions import index_zupc
 from .forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
 from APITaxi_models import (taxis as taxis_models, vehicle as vehicle_models,
@@ -67,7 +66,6 @@ def ads_details(numero, insee):
 @mod.route('/ads/form', methods=['GET', 'POST'])
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
-@index_zupc.reinit()
 def ads_form():
     ads = form = None
     if request.args.get("id"):
@@ -116,7 +114,6 @@ def ads_form():
 @mod.route('/ads/delete')
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
-@index_zupc.reinit()
 def ads_delete():
     if not request.args.get("id"):
         abort(404, message="You need to specify an id")
