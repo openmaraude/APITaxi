@@ -3,7 +3,6 @@ from flask.ext.security import UserMixin, RoleMixin
 from flask.ext.security.utils import encrypt_password
 from APITaxi_utils.mixins import MarshalMixin, FilterOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable, CachedValue
-from ..extensions import regions
 from . import db
 from sqlalchemy_defaults import Column
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,8 +14,7 @@ roles_users = db.Table('roles_users',
 
 class Role(CacheableMixin,db.Model, RoleMixin, MarshalMixin):
     cache_label = 'users'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
@@ -36,15 +34,14 @@ class UserBase(object):
 class User(CacheableMixin, db.Model, UserMixin, MarshalMixin, FilterOr404Mixin,
         UserBase):
     cache_label = 'users'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship('Role', secondary=roles_users,
-                            lazy='joined', query_class=query_callable(regions))
+                            lazy='joined', query_class=query_callable())
     apikey = db.Column(db.String(36), nullable=False)
     hail_endpoint_production = Column(db.String, nullable=True,
             label=u'Hail endpoint production',
@@ -94,4 +91,3 @@ class Logo(db.Model):
 
 class CachedUser(CachedValue, User, UserMixin):
     base_class = User
-    regions = regions

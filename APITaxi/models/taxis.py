@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from . import db
-from ..extensions import (regions, user_datastore)
+from ..extensions import user_datastore
 from .vehicle import Vehicle, VehicleDescription, Model, Constructor
 from .administrative import ZUPC, Departement
 from APITaxi_utils.mixins import AsDictMixin, HistoryMixin, FilterOr404Mixin
@@ -269,8 +269,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
     cache_label = 'taxis'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
 
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
