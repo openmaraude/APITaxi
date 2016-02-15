@@ -4,7 +4,7 @@ from ..extensions import (regions, user_datastore)
 from .vehicle import Vehicle, VehicleDescription, Model, Constructor
 from .administrative import ZUPC, Departement
 from APITaxi_utils.mixins import AsDictMixin, HistoryMixin, FilterOr404Mixin
-from APITaxi_utils import fields, get_columns_names
+from APITaxi_utils import fields, get_columns_names, get_short_uuid
 from APITaxi_utils.mixins import GetOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
 from sqlalchemy_defaults import Column
@@ -276,7 +276,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         HistoryMixin.__init__(self)
         kwargs['id'] = kwargs.get('id', None)
         if not kwargs['id']:
-            kwargs['id'] = str(get_short_uuid())
+            kwargs['id'] = str(get_short_uuid.get_short_uuid())
         super(self.__class__, self).__init__(**kwargs)
         HistoryMixin.__init__(self)
         TaxiRedis.__init__(self, self.id)
