@@ -63,11 +63,11 @@ class Drivers(ResourceMetadata):
                 driver_obj.departement_id = departement.id
             except KeyError as e:
                 abort(400, message="Key error")
-            db.session.add(driver_obj)
+            current_app.extensions['sqlalchemy'].db.session.add(driver_obj)
             if driver_obj.id:
                 edited_drivers_id.append(driver_obj.id)
             new_drivers.append(driver_obj)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return marshal({'data': new_drivers}, driver_fields), 201
 
     @api.hide
@@ -106,13 +106,13 @@ def driver_form():
             driver.last_update_at = datetime.now().isoformat()
             form.populate_obj(driver)
             if form.validate():
-                db.session.commit()
+                current_app.extensions['sqlalchemy'].db.session.commit()
                 return redirect(url_for('api.drivers'))
         else:
             driver = taxis_models.Driver()
             form.populate_obj(driver)
-            db.session.add(driver)
-            db.session.commit()
+            current_app.extensions['sqlalchemy'].db.session.add(driver)
+            current_app.extensions['sqlalchemy'].db.session.commit()
             return redirect(url_for('api.drivers'))
     return render_template('forms/driver.html', form=form,
         form_method="POST", submit_value="Modifier")
@@ -131,8 +131,9 @@ def driver_delete():
     if not driver.can_be_deleted_by(current_user):
         abort(403, message="You're not allowed to delete this driver")
     #We need to delete attached taxis
-    for taxi in db.session.query(taxis_models.Taxi).filter_by(driver_id=driver.id):
-        db.session.delete(taxi)
-    db.session.delete(driver)
-    db.session.commit()
+    for taxi in current_app.extensions['sqlalchemy'].db.session\
+            .query(taxis_models.Taxi).filter_by(driver_id=driver.id):
+        current_app.extensions['sqlalchemy'].db.session.delete(taxi)
+    current_app.extensions['sqlalchemy'].db.session.delete(driver)
+    current_app.extensions['sqlalchemy'].db.session.commit()
     return redirect(url_for('api.administrative_drivers'))

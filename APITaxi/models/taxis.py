@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-from ..models import vehicle
 from . import db
-from ..extensions import (regions, user_datastore, redis_store,
-        get_short_uuid)
-from ..models.vehicle import Vehicle, VehicleDescription, Model, Constructor
-from ..models.administrative import ZUPC, Departement
+from ..extensions import (regions, user_datastore)
+from .vehicle import Vehicle, VehicleDescription, Model, Constructor
+from .administrative import ZUPC, Departement
 from APITaxi_utils.mixins import AsDictMixin, HistoryMixin, FilterOr404Mixin
-from APITaxi_utils import fields, get_columns_names
+from APITaxi_utils import fields, get_columns_names, get_short_uuid
 from APITaxi_utils.mixins import GetOr404Mixin
 from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
 from sqlalchemy_defaults import Column
@@ -72,7 +70,7 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 
     @property
     def vehicle(self):
-        return vehicle.Vehicle.query.get(self.vehicle_id)
+        return Vehicle.query.get(self.vehicle_id)
 
     @vehicle.setter
     def vehicle(self, vehicle):
@@ -192,7 +190,7 @@ class TaxiRedis(object):
     def is_fresh(self, operateur=None):
         min_time = int(time.time() - self._DISPONIBILITY_DURATION)
         if operateur:
-            v = redis_store.hget('taxi:{}'.format(self.id), operateur)
+            v = current_app.extensions['redis'].hget('taxi:{}'.format(self.id), operateur)
             if not v:
                 return False
             p = self.parse_redis(v)
@@ -210,7 +208,7 @@ class TaxiRedis(object):
 
     @classmethod
     def retrieve_caracs(cls, id_):
-        _, scan = redis_store.hscan("taxi:{}".format(id_))
+        _, scan = current_app.extensions['redis'].hscan("taxi:{}".format(id_))
         if not scan:
             return []
         return cls.transform_caracs(scan)
@@ -254,6 +252,16 @@ class TaxiRedis(object):
                     descriptions))
 
 
+    def set_avaibility(self, operator_email, status):
+        taxi_id_operator = "{}:{}".format(self.id, operator_email)
+        if status == 'free':
+            current_app.extensions['redis'].srem(
+                current_app.config['REDIS_NOT_AVAILABLE'], taxi_id_operator)
+        else:
+            current_app.extensions['redis'].sadd(
+                current_app.config['REDIS_NOT_AVAILABLE'], taxi_id_operator)
+
+
 class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         TaxiRedis):
     @declared_attr
@@ -268,7 +276,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
         HistoryMixin.__init__(self)
         kwargs['id'] = kwargs.get('id', None)
         if not kwargs['id']:
-            kwargs['id'] = str(get_short_uuid())
+            kwargs['id'] = str(get_short_uuid.get_short_uuid())
         super(self.__class__, self).__init__(**kwargs)
         HistoryMixin.__init__(self)
         TaxiRedis.__init__(self, self.id)
@@ -450,7 +458,7 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
 
     @staticmethod
     def flush(id_):
-        redis_store.delete((RawTaxi.region, id_))
+        current_app.extensions['redis'].delete((RawTaxi.region, id_))
 
 def refresh_taxi(**kwargs):
     id_ = kwargs.get('id_', None)
