@@ -34,8 +34,7 @@ def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
 def create_app(sqlalchemy_uri=None):
-    from .extensions import (redis_store, configure_uploads,
-            documents, images, user_datastore)
+    from .extensions import (redis_store, user_datastore)
     app = Flask(__name__)
     app.config.from_object('APITaxi.default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
@@ -71,6 +70,8 @@ def create_app(sqlalchemy_uri=None):
     request_finished.connect(add_version_header, app)
 
     from flask.ext.uploads import configure_uploads
+    from .api.extensions import documents
+    from .backoffice.extensions import images
     configure_uploads(app, (documents, images))
     from APITaxi_utils.login_manager import init_app as init_login_manager
     from .backoffice.forms.login import LoginForm
