@@ -3,7 +3,7 @@ from flask import request, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
-from ..extensions import db, redis_store
+from ..extensions import redis_store
 from ..api import api
 from ..models.hail import Hail as HailModel, Customer as CustomerModel
 from ..models.taxis import  RawTaxi, TaxiRedis
@@ -74,8 +74,8 @@ class HailId(Resource):
                 abort(403)
             except ValueError, e:
                 abort(400, message=e.args[0])
-        db.session.add(hail)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(hail)
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return {"data": [hail]}
 
 
@@ -106,7 +106,7 @@ class Hail(Resource):
                 operateur_id=current_user.id).first()
         if not customer:
             customer = CustomerModel(hj['customer_id'])
-            db.session.add(customer)
+            current_app.extensions['sqlalchemy'].db.session.add(customer)
         taxi_score = redis_store.zscore(current_app.config['REDIS_GEOINDEX'],
                 '{}:{}'.format(hj['taxi_id'], operateur.email))
         r = redis_store.geodecode(int(taxi_score)) if taxi_score else None
@@ -123,8 +123,8 @@ class Hail(Resource):
         hail.initial_taxi_lon = taxi_pos[1] if r else None
         hail.operateur_id = operateur.id
         hail.status = 'received'
-        db.session.add(hail)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(hail)
+        current_app.extensions['sqlalchemy'].db.session.commit()
 
         send_request_operator.apply_async(args=[hail.id,
             operateur.hail_endpoint(current_app.config['ENV']),

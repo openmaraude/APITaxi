@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, regions, user_datastore, redis_store
+from ..extensions import regions, user_datastore, redis_store
+from . import db
 from APITaxi_utils.mixins import (AsDictMixin, HistoryMixin, unique_constructor,
         MarshalMixin, FilterOr404Mixin)
 from APITaxi_utils import fields

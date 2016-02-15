@@ -1,7 +1,5 @@
 #coding: utf-8
-from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy(session_options={"autoflush":False})
 from APITaxi_utils.redis_geo import GeoRedis
 from flask.ext.redis import FlaskRedis
 redis_store = FlaskRedis.from_custom_provider(GeoRedis)

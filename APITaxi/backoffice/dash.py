@@ -3,7 +3,6 @@ from flask import Blueprint, render_template, current_app
 from flask.ext.login import login_required, current_user
 from APITaxi.models.administrative import ZUPC
 from APITaxi.models.taxis import ADS
-from APITaxi.extensions import db
 
 mod = Blueprint('dash_bo', __name__)
 
@@ -13,7 +12,7 @@ def dashboard():
     zupc_parent_id = set()
     zupc_parent = []
     logger = current_app.logger
-    query = db.session.query(ADS.zupc_id)
+    query = current_app.extensions['sqlalchemy'].db.session.query(ADS.zupc_id)
     if not current_user.has_role('admin'):
         query.filter_by(added_by = current_user.id)
     for zupc_tuple in query.distinct():

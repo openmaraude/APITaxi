@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, documents
+from ..extensions import documents
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import DriverCreateForm, DriverUpdateForm
@@ -7,7 +7,7 @@ from ..models import taxis as taxis_models, administrative as administrative_mod
 from ..descriptors.drivers import driver_fields, driver_details_expect
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.request_wants_json import request_wants_json
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, current_app
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, Resource, reqparse, abort, marshal
@@ -42,6 +42,7 @@ class Drivers(ResourceMetadata):
 
 
     def post_json(self):
+        db = current_app.extensions['sqlalchemy'].db
         json = request.get_json()
         if "data" not in json:
             abort(400, message="You need data a data object")
@@ -89,6 +90,7 @@ class Drivers(ResourceMetadata):
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
 def driver_form():
+    db = current_app.extensions['sqlalchemy'].db
     form = None
     if request.args.get("id"):
         driver = taxis_models.Driver.query.get(request.args.get("id"))
@@ -120,6 +122,7 @@ def driver_form():
 @roles_accepted('admin', 'operateur', 'prefecture')
 @login_required
 def driver_delete():
+    db = current_app.extensions['sqlalchemy'].db
     if not request.args.get("id"):
         abort(404, message="An id is required")
     driver = taxis_models.Driver.query.get(request.args.get("id"))

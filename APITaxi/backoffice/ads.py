@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..extensions import db, documents, index_zupc
+from ..extensions import documents, index_zupc
 from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
@@ -10,7 +10,7 @@ from ..descriptors.ads import ads_model, ads_expect, ads_post
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.request_wants_json import request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
-                   abort, jsonify)
+                   abort, jsonify, current_app)
 from flask.ext.security import login_required, current_user, roles_accepted
 from datetime import datetime
 from flask.ext.restplus import fields, abort, Resource, reqparse, marshal
@@ -128,11 +128,11 @@ class ADS(ResourceMetadata):
                 abort(400, message="Unable to find a ZUPC for insee: {}".format(
                     ads_db.insee))
             ads_db.zupc_id = zupc.parent_id
-            db.session.add(ads_db)
+            current_app.extensions['sqlalchemy'].db.session.add(ads_db)
             if ads_db.id:
                 edited_ads_id.append(ads.id)
             new_ads.append(ads)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return marshal({"data": new_ads}, ads_post), 201
 
 
@@ -179,8 +179,8 @@ def ads_form():
             abort(400, message='Bad owner type')
         form.vehicle.form.populate_obj(ads.vehicle)
         form.vehicle_description.form.populate_obj(ads.vehicle.description)
-        db.session.add(ads)
-        db.session.commit()
+        current_app.extensions['sqlalchemy'].db.session.add(ads)
+        current_app.extensions['sqlalchemy'].db.session.commit()
         return redirect(url_for('api.ads'))
     return render_template('forms/ads.html', form=form)
 
@@ -197,6 +197,7 @@ def ads_delete():
         abort(404, message="Unable to find this ADS")
     if not ads.can_be_deleted_by(current_user):
         abort(403, message="You're not allowed to delete this ADS")
+    db = current_app.extensions['sqlalchemy'].db
     db.session.delete(ads)
     #We need to delete attached taxis
     for taxi in db.session.query(taxis_models.Taxi).filter_by(ads_id=ads.id):
