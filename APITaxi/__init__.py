@@ -54,7 +54,7 @@ def create_app(sqlalchemy_uri=None):
     if sqlalchemy_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
-    from .models import db
+    from APITaxi_models import db
     db.init_app(app)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()
