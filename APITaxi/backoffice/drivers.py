@@ -31,7 +31,7 @@ class Drivers(ResourceMetadata):
             documents.save(request.files['file'], name=filename)
             slack = slacker()
             if slack:
-                slack.chat.post_message('#taxis',
+                slack.chat.post_message(current_app.config['SLACK_CHANNEL'],
                 'Un nouveau fichier conducteurs a été envoyé par {}. {}'.format(
                     current_user.email, url_for('documents.documents',
                         filename=filename, _external=True)))
