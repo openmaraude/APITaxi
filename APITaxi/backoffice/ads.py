@@ -91,7 +91,7 @@ class ADS(ResourceMetadata):
             documents.save(request.files['file'], name=filename)
             slacker = slack()
             if slacker:
-                slacker.chat.post_message('#taxis',
+                slacker.chat.post_message(current_app.config['SLACK_CHANNEL'],
                 'Un nouveau fichier ADS a été envoyé par {}. {}'.format(
                     current_user.email, url_for('documents.documents',
                         filename=filename, _external=True)))

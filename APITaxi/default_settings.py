@@ -59,3 +59,5 @@ INFLUXDB_TAXIS_DB = 'taxis'
 NOW = 'now'
 LIMITED_ZONE = None
 SQLALCHEMY_TRACK_MODIFICATIONS = True
+
+SLACK_CHANNEL = "#taxis-internal"
