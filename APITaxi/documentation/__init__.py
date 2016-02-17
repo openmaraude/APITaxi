@@ -11,3 +11,6 @@ def init_app(app):
     app.register_blueprint(reference.mod)
     from . import examples
     app.register_blueprint(examples.mod)
+    from . import stats
+    app.register_blueprint(stats.mod)
+
