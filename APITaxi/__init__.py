@@ -13,7 +13,7 @@ from flask.ext.restplus import abort
 from flask.ext.uploads import (UploadSet, configure_uploads,
             DOCUMENTS, DATA, ARCHIVES, IMAGES)
 from APITaxi_utils.request_wants_json import request_wants_json
-from dogpile.cache import make_region
+from flask.ext.dogpile_cache import DogpileCache
 
 
 valid_versions = ['1', '2']
@@ -36,8 +36,8 @@ def add_version_header(sender, response, **extra):
     response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
 def create_app(sqlalchemy_uri=None):
-    from .extensions import (redis_store, regions, configure_uploads,
-            documents, images, user_datastore)
+    from .extensions import (redis_store, configure_uploads, documents,
+            images, user_datastore)
     app = Flask(__name__)
     app.config.from_object('APITaxi.default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
@@ -78,21 +78,6 @@ def create_app(sqlalchemy_uri=None):
     init_login_manager(app, user_datastore, LoginForm)
     from . import demo
     demo.create_app(app)
-    for region in regions.keys():
-        backend = app.config['DOGPILE_CACHE_REGIONS'].get(region,
-                app.config['DOGPILE_CACHE_BACKEND'])
-        if not backend:
-            backend = app.config['DOGPILE_CACHE_BACKEND']
-
-        conf = backend if isinstance(backend, dict) else {"backend": backend}
-        if 'wrap' in conf and isinstance(conf['wrap'], str):
-            p = conf['wrap'].rfind('.')
-            path = conf['wrap'][:p]
-            classname = conf['wrap'][p+1:]
-            conf['wrap'] = [getattr(__import__(path, fromlist=[classname]), classname), ]
-        conf.setdefault('arguments', {'distributed_lock': True})
-
-        regions[region] = make_region(region).configure(**conf)
 
     from . import tasks
     tasks.init_app(app)
@@ -100,6 +85,8 @@ def create_app(sqlalchemy_uri=None):
     from .models import security
     user_datastore.init_app(db, security.User, security.CachedUser,
             security.Role)
+    cache = DogpileCache()
+    cache.init_app(app)
 
     @app.before_first_request
     def warm_up_redis():

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+
 from . import db
-from ..extensions import (regions, user_datastore)
 from .vehicle import Vehicle, VehicleDescription, Model, Constructor
 from .administrative import ZUPC, Departement
-from APITaxi_utils.mixins import AsDictMixin, HistoryMixin, FilterOr404Mixin
-from APITaxi_utils import fields, get_columns_names, get_short_uuid
-from APITaxi_utils.mixins import GetOr404Mixin
+from .security import User
+from APITaxi_utils import fields, get_columns_names
+from APITaxi_utils.mixins import (GetOr404Mixin, AsDictMixin, HistoryMixin,
+    FilterOr404Mixin)
 from APITaxi_utils.caching import CacheableMixin, query_callable, cache_in
+from APITaxi_utils.get_short_uuid import get_short_uuid
 from sqlalchemy_defaults import Column
 from sqlalchemy.types import Enum
 from sqlalchemy.orm import validates
@@ -70,7 +72,7 @@ class ADS(HistoryMixin, db.Model, AsDictMixin, FilterOr404Mixin):
 
     @property
     def vehicle(self):
-        return Vehicle.query.get(self.vehicle_id)
+        return vehicle.Vehicle.query.get(self.vehicle_id)
 
     @vehicle.setter
     def vehicle(self, vehicle):
@@ -268,15 +270,14 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
     def added_by(cls):
         return Column(db.Integer,db.ForeignKey('user.id'))
     cache_label = 'taxis'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
 
     def __init__(self, *args, **kwargs):
         db.Model.__init__(self)
         HistoryMixin.__init__(self)
         kwargs['id'] = kwargs.get('id', None)
         if not kwargs['id']:
-            kwargs['id'] = str(get_short_uuid.get_short_uuid())
+            kwargs['id'] = str(get_short_uuid())
         super(self.__class__, self).__init__(**kwargs)
         HistoryMixin.__init__(self)
         TaxiRedis.__init__(self, self.id)
@@ -312,7 +313,7 @@ class Taxi(CacheableMixin, db.Model, HistoryMixin, AsDictMixin, GetOr404Mixin,
 
     def is_free(self, min_time=None):
         return self._is_free(self.vehicle.descriptions,
-                lambda desc: user_datastore.get_user(desc.added_by).email,
+                lambda desc: User.query.get(desc.added_by).email,
                 lambda desc: desc.status,
                 min_time)
 
@@ -452,8 +453,7 @@ WHERE taxi.id IN %s ORDER BY taxi.id""".format(", ".join(
                 for l in cache_in(RawTaxi.request_in, ids,
                             RawTaxi.region, get_id=lambda v: v[0]['taxi_id'],
                             transform_result=lambda r: map(lambda v: list(v[1]),
-                            groupby(r, lambda t: t['taxi_id']),),
-                            regions=regions)
+                            groupby(r, lambda t: t['taxi_id']),))
                if l]
 
     @staticmethod

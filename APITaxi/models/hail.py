@@ -8,7 +8,6 @@ from APITaxi_utils.mixins import GetOr404Mixin, HistoryMixin, AsDictMixin
 from APITaxi_utils.caching import CacheableMixin, query_callable
 from APITaxi_utils.get_short_uuid import get_short_uuid
 from ..descriptors.common import coordinates_descriptor
-from ..extensions import regions
 from . import db
 from .security import User
 from flask_principal import RoleNeed, Permission
@@ -57,8 +56,7 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
         return db.Column(db.Integer,db.ForeignKey('user.id'))
 
     cache_label = 'hails'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
     public_fields = ['creation_datetime', 'customer_address', 'customer_id',
         'customer_lat', 'customer_lon', 'customer_phone_number', 'id',
         'incident_customer_reason', 'incident_taxi_reason', 'last_status_change',
@@ -243,23 +241,6 @@ class Hail(HistoryMixin, CacheableMixin, db.Model, AsDictMixin, GetOr404Mixin):
                 }])
         except Exception as e:
             current_app.logger.error('Influxdb Error: {}'.format(e))
-
-
-
-    @classmethod
-    def marshall_obj(cls, show_all=False, filter_id=False, level=0, api=None):
-        if level >=2:
-            return {}
-        return_ = super(Hail, cls).marshall_obj(show_all, filter_id,
-                     level=level+1, api=api)
-        return_['operateur'] = fields.String(attribute='operateur.email',
-                                required=True)
-        return_['id'] = fields.String()
-        return_['taxi'] = fields.Nested(api.model('hail_taxi',
-                {'position': fields.Nested(coordinates_descriptor),
-                 'last_update': fields.Integer(),
-                 'id': fields.String()}))
-        return return_
 
     def status_changed(self):
         self.last_status_change = datetime.now()

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from ..extensions import regions
 from . import db
 from sqlalchemy_defaults import Column
 from APITaxi_utils.mixins import MarshalMixin, FilterOr404Mixin
@@ -18,8 +17,7 @@ class Departement(db.Model, MarshalMixin, FilterOr404Mixin):
 
 class ZUPC(db.Model, MarshalMixin, CacheableMixin):
     cache_label = 'zupc'
-    cache_regions = regions
-    query_class = query_callable(regions)
+    query_class = query_callable()
 
     id = Column(db.Integer, primary_key=True)
     departement_id = Column(db.Integer, db.ForeignKey('departement.id'))

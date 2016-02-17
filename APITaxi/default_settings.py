@@ -17,14 +17,19 @@ UPLOADED_DOCUMENTS_URL = '/documents/<path:filename>'
 SLACK_API_KEY = None
 
 DOGPILE_CACHE_URLS = ''
-DOGPILE_CACHE_REGIONS = {
-    'zupc': 'dogpile.cache.memory',
-    'users': 'dogpile.cache.memory',
-    'taxis_cache_sql': {'backend': 'dogpile.cache.null',
-        'wrap': 'APITaxi_utils.msgpack_backend.MsgpackProxy'},
-}
+DOGPILE_CACHE_REGIONS = [
+    ('taxis', None,'dogpile.cache.null'),
+    ('hails', None, 'dogpile.cache.null'),
+    ('taxis_zupc', None, 'dogpile.cache.null'),
+    ('taxis_cache_sql', None, 'dogpile.cache.null'),
+    ('zupc', None, 'dogpile.cache.memory'),
+    ('users', None, 'dogpile.cache.memory'),
+    ('taxis_cache_sql', None, 'dogpile.cache.null', None,
+        {'wrap': 'APITaxi_utils.msgpack_backend.MsgpackProxy'})
+]
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'
+DOGPILE_CACHE_URLS = ['redis://localhost:6379/0']
 SQLALCHEMY_POOL_SIZE = 15
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'

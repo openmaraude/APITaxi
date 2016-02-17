@@ -3,8 +3,7 @@
 from flask.ext.testing import TestCase
 from json import dumps
 from APITaxi import create_app
-from APITaxi.extensions import (redis_store, index_zupc, regions,
-        user_datastore)
+from APITaxi.extensions import (redis_store, index_zupc, user_datastore)
 from APITaxi.api import api
 from APITaxi.models.administrative import Departement, ZUPC
 from APITaxi.models.taxis import Taxi
@@ -27,9 +26,7 @@ class Skeleton(TestCase):
     def setUp(self):
         current_app.extensions['sqlalchemy'].db.drop_all()
         current_app.extensions['sqlalchemy'].db.create_all()
-        regions['taxis'].invalidate()
-        regions['hails'].invalidate()
-        regions['users'].invalidate()
+        current_app.extensions['dogpile_cache'].invalidate_all_regions()
         for role in ['admin', 'operateur', 'moteur']:
             r = user_datastore.create_role(name=role)
             u = user_datastore.create_user(email='user_'+role,
@@ -56,8 +53,7 @@ class Skeleton(TestCase):
         current_app.extensions['sqlalchemy'].db.session.remove()
         current_app.extensions['sqlalchemy'].db.drop_all()
         current_app.extensions['sqlalchemy'].db.get_engine(self.app).dispose()
-        for r in regions.values():
-            r.invalidate()
+        current_app.extensions['dogpile_cache'].invalidate_all_regions()
         index_zupc.index_zupc = None
 
 
