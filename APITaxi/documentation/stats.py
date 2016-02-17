@@ -7,7 +7,7 @@ from flask import Blueprint, render_template
 from flask.ext.security import current_user
 from flask.ext.restful import request
 from ..extensions import user_datastore
-from ..extensions import db
+from ..models import db
 from ..models.taxis import Taxi, ADS
 from ..models.hail import Hail
 from ..models.administrative import ZUPC
