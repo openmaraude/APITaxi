@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from flask.ext.restplus import apidoc, Api
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, Response
 
 api_blueprint = Blueprint('api', __name__)
-api = Api(api_blueprint, doc=False, catch_all_404s=True, title='API version 2.0')
+api = Api(api_blueprint, doc=False, catch_all_404s=True,
+        title='API version 2.0')
 
 ns_administrative = api.namespace('administrative',
         description="Administrative APIs", path='/')
@@ -12,7 +13,14 @@ ns_administrative = api.namespace('administrative',
 def swagger_ui():
     return render_template('swagger/index.html')
 
+
 def init_app(app):
     from . import hail, taxi, ads, drivers, zupc, profile, vehicle
+    api.init_app(app, add_specs=False)
     app.register_blueprint(api_blueprint)
     app.register_blueprint(apidoc.apidoc)
+
+    @app.route('/swagger.json', endpoint='api.specs')
+    def swagger():
+        return app.send_static_file('swagger.json'), 200,
+    {'Content-Type': 'application/json'}
