@@ -89,5 +89,5 @@ class Logo(db.Model):
     format_=db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
-class CachedUser(CachedValue, User, UserMixin):
+class CachedUser(CachedValue, UserMixin):
     base_class = User
