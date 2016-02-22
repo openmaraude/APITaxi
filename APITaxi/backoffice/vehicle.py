@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, Blueprint, current_app
-from ..models import vehicle as vehicle_models, taxis as taxis_models
+from APITaxi_models import vehicle as vehicle_models, taxis as taxis_models
 from ..api import api
 from ..descriptors.vehicle import vehicle_model, vehicle_expect
 from . import ns_administrative

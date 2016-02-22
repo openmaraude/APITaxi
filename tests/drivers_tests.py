@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from .fake_data import dict_driver
-from APITaxi.models.taxis import Driver
+from APITaxi_models.taxis import Driver
 from json import dumps, loads
 from copy import deepcopy
 from cStringIO import StringIO

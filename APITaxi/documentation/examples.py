@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, url_for as base_url_for
 from flask.ext.security import current_user
 from ..extensions import user_datastore
-from ..models.taxis import Taxi
+from APITaxi_models.taxis import Taxi
 from functools import partial
 
 mod = Blueprint('examples', __name__)

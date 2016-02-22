@@ -1,6 +1,6 @@
 #coding: utf-8
-from ..models.taxis import Taxi, ADS, Driver
-from ..models.vehicle import Vehicle, VehicleDescription
+from APITaxi_models.taxis import Taxi, ADS, Driver
+from APITaxi_models.vehicle import Vehicle, VehicleDescription
 from ..extensions import user_datastore
 from ..descriptors import (ads as ads_descriptors,
         drivers as drivers_descriptors, vehicle as vehicle_descriptors)

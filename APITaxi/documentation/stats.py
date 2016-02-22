@@ -7,11 +7,11 @@ from flask import Blueprint, render_template
 from flask.ext.security import current_user
 from flask.ext.restful import request
 from ..extensions import user_datastore
-from ..models import db
-from ..models.taxis import Taxi, ADS
-from ..models.hail import Hail
-from ..models.administrative import ZUPC
-from ..models.security import User
+from APITaxi_models import db
+from APITaxi_models.taxis import Taxi, ADS
+from APITaxi_models.hail import Hail
+from APITaxi_models.administrative import ZUPC
+from APITaxi_models.security import User
 
 mod = Blueprint('stats', __name__)
 

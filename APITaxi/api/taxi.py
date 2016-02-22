@@ -3,7 +3,7 @@ import calendar, time
 from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, current_app
-from ..models import (taxis as taxis_models, administrative as administrative_models)
+from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
 from ..extensions import redis_store, index_zupc
 from ..api import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect

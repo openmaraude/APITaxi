@@ -5,9 +5,9 @@ from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
 from ..extensions import redis_store
 from ..api import api
-from ..models.hail import Hail as HailModel, Customer as CustomerModel
-from ..models.taxis import  RawTaxi, TaxiRedis
-from ..models import security as security_models
+from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel
+from APITaxi_models.taxis import  RawTaxi, TaxiRedis
+from APITaxi_models import security as security_models
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
 from APITaxi_utils.request_wants_json import json_mimetype_required

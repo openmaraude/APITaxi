@@ -4,7 +4,7 @@ from ..api import api
 from . import ns_administrative
 from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
-from ..models import (taxis as taxis_models, vehicle as vehicle_models,
+from APITaxi_models import (taxis as taxis_models, vehicle as vehicle_models,
         administrative as administrative_models)
 from ..descriptors.ads import ads_model, ads_expect, ads_post
 from APITaxi_utils.populate_obj import create_obj_from_json

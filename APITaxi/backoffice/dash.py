@@ -1,8 +1,8 @@
 #coding: utf-8
 from flask import Blueprint, render_template, current_app
 from flask.ext.login import login_required, current_user
-from APITaxi.models.administrative import ZUPC
-from APITaxi.models.taxis import ADS
+from APITaxi_models.administrative import ZUPC
+from APITaxi_models.taxis import ADS
 
 mod = Blueprint('dash_bo', __name__)
 

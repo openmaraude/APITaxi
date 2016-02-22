@@ -2,10 +2,10 @@
 from APITaxi.extensions import redis_store
 from .skeleton import Skeleton
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
-from APITaxi.models.hail import (Customer, Hail, rating_ride_reason_enum,
+from APITaxi_models.hail import (Customer, Hail, rating_ride_reason_enum,
         incident_customer_reason_enum, incident_taxi_reason_enum,
         reporting_customer_reason_enum)
-from APITaxi.models.taxis import Taxi
+from APITaxi_models.taxis import Taxi
 from copy import deepcopy
 from werkzeug.exceptions import ServiceUnavailable
 from datetime import datetime, timedelta
@@ -25,7 +25,7 @@ class HailMixin(Skeleton):
     url = '/hails/'
 
     def set_env(self, env, url, user='user_operateur'):
-        from APITaxi.models.security import User
+        from APITaxi_models.security import User
         prev_env = self.app.config['ENV']
         self.app.config['ENV'] = env
         u = User.query.filter_by(email=user).first()

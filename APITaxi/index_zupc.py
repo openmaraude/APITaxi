@@ -14,8 +14,8 @@ class IndexZUPC(object):
 
     def __init_zupc(self):
         self.size = 0
-        from .models.taxis import ADS
-        from .models.administrative import ZUPC
+        from APITaxi_models.taxis import ADS
+        from APITaxi_models.administrative import ZUPC
         self.index_zupc = index.Index()
         insee_list = map(itemgetter(0),
             current_app.extensions['sqlalchemy'].db.session.query(distinct(ADS.zupc_id)).all())

@@ -1,5 +1,5 @@
 from ..extensions import celery, redis_store
-from ..models.taxis import Taxi
+from APITaxi_models.taxis import Taxi
 import time
 from flask import current_app
 
