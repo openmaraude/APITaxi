@@ -169,7 +169,7 @@ def stats_hails(dep):
                      .join(Taxi.ads) \
                      .filter(ADS.insee.like(depattern)) \
                      .filter(Hail.creation_datetime >= last_day) \
-                     .group_by(Hail.operateur_id)
+                     .group_by(Hail.operateur_id) \
 
         nb_hails_ok_d = db.session.query(Hail.operateur_id,
                                          func.count(Hail.id).label('nhails')) \
@@ -178,7 +178,7 @@ def stats_hails(dep):
                         .filter(ADS.insee.like(depattern)) \
                         .filter(Hail.creation_datetime >= last_day) \
                         .filter(Hail._status == 'accepted_by_customer') \
-                        .group_by(Hail.operateur_id)
+                        .group_by(Hail.operateur_id) \
 
         nb_hails_y = db.session.query(Hail.operateur_id,
                                       func.count(Hail.id).label('nhails')) \
@@ -186,7 +186,7 @@ def stats_hails(dep):
                      .join(Taxi.ads) \
                      .filter(ADS.insee.like(depattern)) \
                      .filter(Hail.creation_datetime >= last_year) \
-                     .group_by(Hail.operateur_id)
+                     .group_by(Hail.operateur_id) \
 
         nb_hails_ok_y = db.session.query(Hail.operateur_id,
                                          func.count(Hail.id).label('nhails')) \
@@ -195,7 +195,7 @@ def stats_hails(dep):
                         .filter(ADS.insee.like(depattern)) \
                         .filter(Hail.creation_datetime >= last_year) \
                         .filter(Hail._status == 'accepted_by_customer') \
-                        .group_by(Hail.operateur_id)
+                        .group_by(Hail.operateur_id) \
 
         for ha in nb_hails_d:
              tab_nb_hails[user_datastore.get_user(ha.operateur_id).commercial_name]['nhails_d'] = ha.nhails
@@ -215,7 +215,7 @@ def stats_hails(dep):
                      .filter(ADS.insee.like(depattern)) \
                      .filter(Hail.creation_datetime >= last_day) \
                      .filter(Hail.operateur_id == current_user.id) \
-                     .group_by(Hail.added_by)
+                     .group_by(Hail.added_by) \
 
         nb_hails_ok_d = db.session.query(Hail.added_by,
                                          func.count(Hail.id).label('nhails')) \
@@ -225,7 +225,7 @@ def stats_hails(dep):
                         .filter(Hail.creation_datetime >= last_day) \
                         .filter(Hail._status == 'accepted_by_customer') \
                         .filter(Hail.operateur_id == current_user.id) \
-                        .group_by(Hail.added_by)
+                        .group_by(Hail.added_by) \
 
         nb_hails_y = db.session.query(Hail.added_by,
                                       func.count(Hail.id).label('nhails')) \
@@ -234,7 +234,7 @@ def stats_hails(dep):
                      .filter(ADS.insee.like(depattern)) \
                      .filter(Hail.creation_datetime >= last_year) \
                      .filter(Hail.operateur_id == current_user.id) \
-                     .group_by(Hail.added_by)
+                     .group_by(Hail.added_by) \
 
         nb_hails_ok_y = db.session.query(Hail.added_by,
                                          func.count(Hail.id).label('nhails')) \
@@ -244,7 +244,7 @@ def stats_hails(dep):
                         .filter(Hail.creation_datetime >= last_year) \
                         .filter(Hail._status == 'accepted_by_customer') \
                         .filter(Hail.operateur_id == current_user.id) \
-                        .group_by(Hail.added_by)
+                        .group_by(Hail.added_by) \
 
         for ha in nb_hails_d:
              tab_nb_hails[user_datastore.get_user(ha.added_by).email]['nhails_d'] = ha.nhails
@@ -265,7 +265,7 @@ def stats_hails(dep):
                      .filter(ADS.insee.like(depattern)) \
                      .filter(Hail.creation_datetime >= last_day) \
                      .filter(Hail.added_by == current_user.id) \
-                     .group_by(Hail.operateur_id)
+                     .group_by(Hail.operateur_id) \
 
         nb_hails_ok_d = db.session.query(Hail.operateur_id,
                                          func.count(Hail.id).label('nhails')) \
@@ -275,7 +275,7 @@ def stats_hails(dep):
                         .filter(Hail.creation_datetime >= last_day) \
                         .filter(Hail._status == 'accepted_by_customer') \
                         .filter(Hail.added_by == current_user.id) \
-                        .group_by(Hail.operateur_id)
+                        .group_by(Hail.operateur_id) \
 
         nb_hails_y = db.session.query(Hail.operateur_id,
                                       func.count(Hail.id).label('nhails')) \
@@ -284,7 +284,7 @@ def stats_hails(dep):
                      .filter(ADS.insee.like(depattern)) \
                      .filter(Hail.creation_datetime >= last_year) \
                      .filter(Hail.added_by == current_user.id) \
-                     .group_by(Hail.operateur_id)
+                     .group_by(Hail.operateur_id) \
 
         nb_hails_ok_y = db.session.query(Hail.operateur_id,
                                          func.count(Hail.id).label('nhails')) \
@@ -294,7 +294,7 @@ def stats_hails(dep):
                         .filter(Hail.creation_datetime >= last_year) \
                         .filter(Hail._status == 'accepted_by_customer') \
                         .filter(Hail.added_by == current_user.id) \
-                        .group_by(Hail.operateur_id)
+                        .group_by(Hail.operateur_id) \
 
         for ha in nb_hails_d:
              tab_nb_hails[user_datastore.get_user(ha.operateur_id).commercial_name]['nhails_d'] = ha.nhails
@@ -313,7 +313,7 @@ def stats_hails(dep):
                      .join(Hail.taxi_relation) \
                      .join(Taxi.ads) \
                      .filter(ADS.insee.like(depattern)) \
-                     .filter(Hail.creation_datetime >= last_day)
+                     .filter(Hail.creation_datetime >= last_day) \
 
         nb_hails_ok_d = db.session.query(
                                          func.count(Hail.id).label('nhails')) \
@@ -321,14 +321,14 @@ def stats_hails(dep):
                         .join(Taxi.ads) \
                         .filter(ADS.insee.like(depattern)) \
                         .filter(Hail.creation_datetime >= last_day) \
-                        .filter(Hail._status == 'accepted_by_customer')
+                        .filter(Hail._status == 'accepted_by_customer') \
 
         nb_hails_y = db.session.query(
                                       func.count(Hail.id).label('nhails')) \
                      .join(Hail.taxi_relation) \
                      .join(Taxi.ads) \
                      .filter(ADS.insee.like(depattern)) \
-                     .filter(Hail.creation_datetime >= last_year)
+                     .filter(Hail.creation_datetime >= last_year) \
 
         nb_hails_ok_y = db.session.query(
                                          func.count(Hail.id).label('nhails')) \
@@ -336,7 +336,7 @@ def stats_hails(dep):
                         .join(Taxi.ads) \
                         .filter(ADS.insee.like(depattern)) \
                         .filter(Hail.creation_datetime >= last_year) \
-                        .filter(Hail._status == 'accepted_by_customer')
+                        .filter(Hail._status == 'accepted_by_customer') \
 
         for ha in nb_hails_d:
             tab_nb_hails['Total']['nhails_d'] = ha.nhails
@@ -366,6 +366,7 @@ def list_hails(dep):
                      .join(Taxi.ads) \
                      .filter(ADS.insee.like(depattern)) \
                      .filter(Hail.creation_datetime >= last_year) \
+                     .order_by(Hail.creation_datetime.desc()) \
                      .limit(100) \
                      .all()
 
@@ -378,6 +379,7 @@ def list_hails(dep):
                       .filter(ADS.insee.like(depattern)) \
                       .filter(Hail.creation_datetime >= last_year) \
                       .filter(Hail.operateur_id == current_user.id) \
+                      .order_by(Hail.creation_datetime.desc()) \
                       .limit(100) \
                       .all()
 
@@ -390,6 +392,7 @@ def list_hails(dep):
                       .filter(ADS.insee.like(depattern)) \
                       .filter(Hail.creation_datetime >= last_year) \
                       .filter(Hail.added_by == current_user.id) \
+                      .order_by(Hail.creation_datetime.desc()) \
                       .limit(100) \
                       .all()
     else:
