@@ -8,7 +8,7 @@ mod = Blueprint('home_bo', __name__)
 @mod.route('/')
 @login_required
 def home():
-    if not request_wants_json():
+    if not request_wants_json.request_wants_json():
         return render_template('base.html')
     links = {}
     if current_user.has_role('operateur') or current_user.has_role('admin'):

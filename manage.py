@@ -6,7 +6,6 @@ from APITaxi.commands import register_commands, manager
 app = create_app()
 
 manager.app = app
-
 migrate = Migrate(app, app.extensions['sqlalchemy'].db)
 register_commands(manager)
 

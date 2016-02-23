@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..extensions import documents
-from ..api import api
-from . import ns_administrative
-from ..forms.taxis import DriverCreateForm, DriverUpdateForm
+from .forms.taxis import DriverCreateForm, DriverUpdateForm
 from APITaxi_models import taxis as taxis_models, administrative as administrative_models
-from ..descriptors.drivers import driver_fields, driver_details_expect
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.request_wants_json import request_wants_json
 from flask import Blueprint, render_template, request, redirect, url_for, current_app
@@ -16,74 +12,20 @@ from APITaxi_utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('drivers', __name__)
 
-@ns_administrative.route('drivers/')
-class Drivers(ResourceMetadata):
-    model = taxis_models.Driver
-
-    @login_required
-    @roles_accepted('admin', 'operateur', 'prefecture')
-    @api.expect(driver_details_expect)
-    @api.response(200, 'Success', driver_fields)
-    def post(self):
-        if 'file' in request.files:
-            filename = "conducteurs-{}-{}.csv".format(current_user.email,
-                    str(datetime.now()))
-            documents.save(request.files['file'], name=filename)
-            slack = slacker()
-            if slack:
-                slack.chat.post_message(current_app.config['SLACK_CHANNEL'],
-                'Un nouveau fichier conducteurs a été envoyé par {}. {}'.format(
-                    current_user.email, url_for('documents.documents',
-                        filename=filename, _external=True)))
-            return "OK"
-        if request_wants_json():
-            return self.post_json()
-        abort(400, message="Unable to find file")
-
-
-    def post_json(self):
-        db = current_app.extensions['sqlalchemy'].db
-        json = request.get_json()
-        if "data" not in json:
-            abort(400, message="You need data a data object")
-        if len(json['data']) > 250:
-            abort(413, message="You've reach the limits of 250 objects")
-        edited_drivers_id = []
-        new_drivers = []
-        for driver in json['data']:
-            departement = None
-            if 'numero' in driver['departement']:
-                departement = administrative_models.Departement.\
-                    filter_by_or_404(numero=driver['departement']['numero'])
-            elif 'nom' in driver['departement']:
-                departement = administrative_models.Departement.\
-                    filter_by_or_404(nom=driver['departement']['nom'])
-            try:
-                driver_obj = create_obj_from_json(taxis_models.Driver, driver)
-                driver_obj.departement_id = departement.id
-            except KeyError as e:
-                abort(400, message="Key error")
-            current_app.extensions['sqlalchemy'].db.session.add(driver_obj)
-            if driver_obj.id:
-                edited_drivers_id.append(driver_obj.id)
-            new_drivers.append(driver_obj)
-        current_app.extensions['sqlalchemy'].db.session.commit()
-        return marshal({'data': new_drivers}, driver_fields), 201
-
-    @api.hide
-    @login_required
-    @roles_accepted('admin', 'operateur', 'prefecture', 'stats')
-    def get(self):
-        if not taxis_models.Driver.can_be_listed_by(current_user):
-            if current_user.has_role('stats'):
-                return self.metadata()
-            abort(403, message="You can't list drivers")
-        page = int(request.args.get('page')) if 'page' in request.args else 1
-        q = taxis_models.Driver.query
-        if not current_user.has_role('admin') and not current_user.has_role('prefecture'):
-            q = q.filter_by(added_by=current_user.id)
-        return render_template('lists/drivers.html',
-            driver_list=q.paginate(page))
+@mod.route('/drivers/_view')
+@login_required
+@roles_accepted('admin', 'operateur', 'prefecture', 'stats')
+def drivers_view(self):
+    if not taxis_models.Driver.can_be_listed_by(current_user):
+        if current_user.has_role('stats'):
+            return self.metadata()
+        abort(403, message="You can't list drivers")
+    page = int(request.args.get('page')) if 'page' in request.args else 1
+    q = taxis_models.Driver.query
+    if not current_user.has_role('admin') and not current_user.has_role('prefecture'):
+        q = q.filter_by(added_by=current_user.id)
+    return render_template('lists/drivers.html',
+        driver_list=q.paginate(page))
 
 
 @mod.route('/drivers/form', methods=['GET', 'POST'])

@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-from ..extensions import documents, index_zupc
-from ..api import api
-from . import ns_administrative
-from ..forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
+from ..extensions import index_zupc
+from .forms.taxis import (ADSForm, VehicleForm, ADSCreateForm, ADSUpdateForm,
                           VehicleDescriptionForm)
 from APITaxi_models import (taxis as taxis_models, vehicle as vehicle_models,
         administrative as administrative_models)
-from ..descriptors.ads import ads_model, ads_expect, ads_post
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.request_wants_json import request_wants_json
 from flask import (Blueprint, render_template, request, redirect, url_for,
@@ -19,122 +16,52 @@ from APITaxi_utils.resource_metadata import ResourceMetadata
 
 mod = Blueprint('ads', __name__)
 
-@ns_administrative.route('ads/', endpoint="ads")
-class ADS(ResourceMetadata):
-    model = taxis_models.ADS
-
+@mod.route('/ads/_view')
+@login_required
+@roles_accepted('admin', 'operateur', 'prefecture', 'stats')
+def get_ads_list():
+    if request_wants_json():
+        abort(501, message="You can't ask for JSON")
     parser = reqparse.RequestParser()
     parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=False,
                         location='values')
     parser.add_argument('insee', type=unicode,
             help=u"Code INSEE de la commune d\'attribution de l'ADS", required=False,
-                        location='values')
+                    location='values')
+    args = self.parser.parse_args()
+    if args["numero"] and args["insee"]:
+        return ads_details(args.get("numero"), args.get("insee"))
+    else:
+        return ads_list()
 
-    @login_required
-    @roles_accepted('admin', 'operateur', 'prefecture', 'stats')
-    @api.hide
-    @api.doc(parser=parser, responses={200: ('ADS', ads_model)})
-    def get(self):
-        args = self.parser.parse_args()
-        if args["numero"] and args["insee"]:
-            return self.ads_details(args.get("numero"), args.get("insee"))
-        else:
-            return self.ads_list()
+def ads_list():
+    if not taxis_models.ADS.can_be_listed_by(current_user):
+        if current_user.has_role('stats'):
+            return self.metadata()
+        abort(403, message="You're not allowed to see this page")
+    q = taxis_models.ADS.query
+    if not current_user.has_role('admin') and not current_user.has_role('prefecture'):
+        q = q.filter_by(added_by=current_user.id)
+    page = int(request.args.get('page')) if 'page' in request.args else 1
+    return render_template('lists/ads.html',
+        ads_list=q.paginate(page) if q else None)
 
-    def ads_list(self):
-        if request_wants_json():
-            abort(501, message="You can't ask for JSON")
-        if not taxis_models.ADS.can_be_listed_by(current_user):
-            if current_user.has_role('stats'):
-                return self.metadata()
-            abort(403, message="You're not allowed to see this page")
-        q = taxis_models.ADS.query
-        if not current_user.has_role('admin') and not current_user.has_role('prefecture'):
-            q = q.filter_by(added_by=current_user.id)
-        page = int(request.args.get('page')) if 'page' in request.args else 1
-        return render_template('lists/ads.html',
-            ads_list=q.paginate(page) if q else None)
-
-    def ads_details(self, numero, insee):
-        filters = {
-                "numero": str(numero),
-                "insee": str(insee)
-                }
-        ads = taxis_models.ADS.query.filter_by(**filters).all()
-        if not ads:
-            abort(404, error="Unable to find this couple INSEE/numero")
-        ads = ads[0]
-        d = taxis_models.ADS.__dict__
-        keys_to_show = ads.showable_fields(current_user)
-        is_valid_key = lambda k: hasattr(k, "info") and k.info.has_key("label")\
-                                 and k.info['label'] and k.key in keys_to_show
-        #@TODO: make it dependent of the user's role
-        if request_wants_json():
-            return jsonify({(k[0],
-                getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])})
-        return render_template("details/ads.html",
-                ads=[(k[1].info["label"],
-                    getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])])
-
-
-    @login_required
-    @roles_accepted('admin', 'operateur', 'prefecture')
-    @api.doc(responses={404:'Resource not found',
-        403:'You\'re not authorized to view it'})
-    @api.expect(ads_expect)
-    @api.response(200, 'Success', ads_post)
-    @index_zupc.reinit()
-    def post(self):
-        if 'file' in request.files:
-            filename = "ads-{}-{}.csv".format(current_user.email,
-                    str(datetime.now()))
-            documents.save(request.files['file'], name=filename)
-            slacker = slack()
-            if slacker:
-                slacker.chat.post_message(current_app.config['SLACK_CHANNEL'],
-                'Un nouveau fichier ADS a été envoyé par {}. {}'.format(
-                    current_user.email, url_for('documents.documents',
-                        filename=filename, _external=True)))
-            return "OK"
-        elif request_wants_json():
-            return self.post_json()
-        abort(400, message="File is not present!")
-
-    def post_json(self):
-        json = request.get_json()
-        if "data" not in json:
-            abort(400, message="No data field in request")
-        if len(json['data']) > 250:
-            abort(413, message="You can only pass 250 objects")
-        edited_ads_id = []
-        new_ads = []
-        for ads in json['data']:
-            if ads['vehicle_id'] == 0:
-                ads['vehicle_id'] = None
-            if ads['vehicle_id'] and\
-              not taxis_models.Vehicle.query.get(ads['vehicle_id']):
-                abort(400, message="Unable to find a vehicle with the id: {}"\
-                        .format(ads['vehicle_id']))
-            try:
-                ads_db = create_obj_from_json(taxis_models.ADS, ads)
-            except KeyError as e:
-                abort(400, message="Missing key: "+str(e))
-            except AssertionError as e:
-                abort(400, message='Bad owner_type value, can be: {}'.format(
-                    taxis_models.owner_type_enum
-                    ))
-            zupc = administrative_models.ZUPC.query.filter_by(insee=ads_db.insee).first()
-            if zupc is None:
-                abort(400, message="Unable to find a ZUPC for insee: {}".format(
-                    ads_db.insee))
-            ads_db.zupc_id = zupc.parent_id
-            current_app.extensions['sqlalchemy'].db.session.add(ads_db)
-            if ads_db.id:
-                edited_ads_id.append(ads.id)
-            new_ads.append(ads)
-        current_app.extensions['sqlalchemy'].db.session.commit()
-        return marshal({"data": new_ads}, ads_post), 201
-
+def ads_details(numero, insee):
+    filters = {
+            "numero": str(numero),
+            "insee": str(insee)
+            }
+    ads = taxis_models.ADS.query.filter_by(**filters).all()
+    if not ads:
+        abort(404, error="Unable to find this couple INSEE/numero")
+    ads = ads[0]
+    d = taxis_models.ADS.__dict__
+    keys_to_show = ads.showable_fields(current_user)
+    is_valid_key = lambda k: hasattr(k, "info") and k.info.has_key("label")\
+                             and k.info['label'] and k.key in keys_to_show
+    return render_template("details/ads.html",
+            ads=[(k[1].info["label"],
+                getattr(ads, k[0])) for k in d.iteritems() if is_valid_key(k[1])])
 
 
 @mod.route('/ads/form', methods=['GET', 'POST'])
@@ -153,7 +80,8 @@ def ads_form():
         form.ads.form = ADSForm(obj=ads)
         if ads.vehicle:
             form.vehicle.form = VehicleForm(obj=ads.vehicle)
-            form.vehicle_description.form = VehicleDescriptionForm(obj=ads.vehicle.description)
+            form.vehicle_description.form = VehicleDescriptionForm(
+                    obj=ads.vehicle.description)
     else:
         form = ADSCreateForm()
     if request.method == "POST":
