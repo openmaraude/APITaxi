@@ -90,6 +90,12 @@ class TestADSPost(Skeleton):
         r = self.post([dict_])
         self.assert201(r)
 
+    def test_no_vehicle_id(self):
+        self.init_zupc()
+        dict_ = deepcopy(dict_ads)
+        r = self.post([dict_])
+        self.assert201(r)
+
     def test_bad_owner_type(self):
         self.init_zupc()
         dict_ = deepcopy(dict_ads)
