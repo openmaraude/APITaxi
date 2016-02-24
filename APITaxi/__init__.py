@@ -120,5 +120,4 @@ def create_app(sqlalchemy_uri=None):
         if len(not_available) > 0:
             redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], *not_available)
 
-
     return app
