@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
 from APITaxi_models.taxis import ADS, Vehicle
-from APITaxi.extensions import index_zupc
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_ads, dict_vehicle
@@ -24,7 +23,6 @@ class TestADSPost(Skeleton):
         self.assert400(r)
 
     def test_simple(self):
-        assert(index_zupc.size == 0)
         self.init_zupc()
         dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = None
@@ -36,7 +34,6 @@ class TestADSPost(Skeleton):
         list_ads = ADS.query.all()
         self.assertEqual(len(list_ads), 1)
         assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
-        assert(index_zupc.size == 1)
 
     def test_vehicle(self):
         self.init_zupc()
@@ -94,7 +91,6 @@ class TestADSPost(Skeleton):
         self.assert201(r)
 
     def test_bad_owner_type(self):
-        assert(index_zupc.size == 0)
         self.init_zupc()
         dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = None
@@ -104,7 +100,6 @@ class TestADSPost(Skeleton):
         assert 'Bad owner_type' in r.json['message']
 
     def test_no_owner_type(self):
-        assert(index_zupc.size == 0)
         self.init_zupc()
         dict_ = deepcopy(dict_ads)
         dict_['vehicle_id'] = None

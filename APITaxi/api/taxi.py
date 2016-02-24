@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, current_app
 from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
-from ..extensions import redis_store, index_zupc
+from ..extensions import redis_store
 from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from APITaxi_utils.request_wants_json import json_mimetype_required
@@ -129,7 +129,12 @@ class Taxis(Resource):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        self.zupc_customer = index_zupc.intersection(lon, lat)
+        cur = current_app.extensions['sqlalchemy'].db.session.connection().\
+                connection.cursor()
+        cur.execute("""SELECT id FROM "ZUPC"
+                       WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
+                       (lon, lat))
+        self.zupc_customer = [t[0] for t in cur.fetchall()]
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
@@ -195,6 +200,7 @@ class Taxis(Resource):
     @api.expect(taxi_model_expect, validate=True)
     @api.marshal_with(taxi_model)
     def post(self):
+        db = current_app.extensions['sqlalchemy'].db
         hj = request.json
         taxi_json = hj['data'][0]
         departement = administrative_models.Departement.filter_by_or_404(
@@ -222,6 +228,6 @@ class Taxis(Resource):
                 taxi.status = taxi_json['status']
             except AssertionError:
                 abort(400, message='Invalid status')
-        current_app.extensions['sqlalchemy'].db.session.add(taxi)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.add(taxi)
+        db.session.commit()
         return {'data':[taxi]}, 201

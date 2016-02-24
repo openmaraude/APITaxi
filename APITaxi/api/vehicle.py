@@ -47,13 +47,13 @@ class Vehicle(ResourceMetadata):
             create_obj_from_json(vehicle_models.VehicleDescription,
                     vehicle, v_description)
             v_description.status = 'off'
-            current_app.extensions['sqlalchemy'].db.session.add(v_description)
+            db.session.add(v_description)
             new_vehicles.append(v)
             if not v.id:
                 continue
             for taxi in taxis_models.Taxi.query.filter_by(vehicle_id=v.id).all():
                 taxis_models.RawTaxi.flush(taxi.id)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.commit()
         return {"data": new_vehicles}, 201
 
     @login_required
