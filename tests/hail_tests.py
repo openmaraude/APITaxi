@@ -693,7 +693,6 @@ class TestHailPut(HailMixin):
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
-            hail._status = 'incident_taxi'
             dict_hail['status'] = 'incident_taxi'
             dict_hail['incident_taxi_reason'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -701,6 +700,9 @@ class TestHailPut(HailMixin):
             self.assert200(r)
             assert u'incident_taxi_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_taxi_reason'] == v
+            r = self.get('/taxis/{}/'.format(hail.taxi_id))
+            self.assert200(r)
+            assert r.json['data'][0]['status'] == 'off'
             self.app.config['ENV'] = prev_env
 
     def test_incident_taxi_reason_bad_value(self):
