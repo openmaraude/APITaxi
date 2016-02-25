@@ -621,7 +621,7 @@ class TestHailPut(HailMixin):
         self.app.config['ENV'] = prev_env
 
     def test_incident_customer_reason_all_valid_values(self):
-        valid_values = ['']
+        valid_values = ['', 'mud_river', 'parade', 'earthquake']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
