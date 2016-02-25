@@ -621,7 +621,7 @@ class TestHailPut(HailMixin):
         self.app.config['ENV'] = prev_env
 
     def test_incident_customer_reason_all_valid_values(self):
-        valid_values = ['']
+        valid_values = ['', 'mud_river', 'parade', 'earthquake']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
             prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
@@ -637,6 +637,23 @@ class TestHailPut(HailMixin):
             self.assert200(r)
             assert u'incident_customer_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_customer_reason'] == v
+            self.app.config['ENV'] = prev_env
+
+    def test_force_status_incident_customer(self):
+        valid_values = ['', 'mud_river', 'parade', 'earthquake']
+        for v in valid_values:
+            dict_hail = deepcopy(dict_)
+            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            r = self.send_hail(dict_hail)
+            self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+            dict_hail['incident_customer_reason'] = v
+            r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                    version=2, role='moteur')
+            self.assert200(r)
+            assert u'incident_customer_reason' in r.json['data'][0]
+            assert r.json['data'][0]['incident_customer_reason'] == v
+            assert r.json['data'][0]['status'] == 'incident_customer'
             self.app.config['ENV'] = prev_env
 
     def test_incident_customer_reason_bad_value(self):
@@ -693,7 +710,6 @@ class TestHailPut(HailMixin):
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
             hail = Hail.query.get(r.json['data'][0]['id'])
-            hail._status = 'incident_taxi'
             dict_hail['status'] = 'incident_taxi'
             dict_hail['incident_taxi_reason'] = v
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -701,6 +717,26 @@ class TestHailPut(HailMixin):
             self.assert200(r)
             assert u'incident_taxi_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_taxi_reason'] == v
+            r = self.get('/taxis/{}/'.format(hail.taxi_id))
+            self.assert200(r)
+            assert r.json['data'][0]['status'] == 'off'
+            self.app.config['ENV'] = prev_env
+
+    def test_force_status_incident_taxi(self):
+        valid_values = ['no_show', 'address', 'traffic', 'breakdown']
+        for v in valid_values:
+            dict_hail = deepcopy(dict_)
+            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            r = self.send_hail(dict_hail)
+            self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+            dict_hail['incident_taxi_reason'] = v
+            r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                    version=2, role='operateur')
+            self.assert200(r)
+            assert u'incident_taxi_reason' in r.json['data'][0]
+            assert r.json['data'][0]['incident_taxi_reason'] == v
+            assert r.json['data'][0]['status'] == 'incident_taxi'
             self.app.config['ENV'] = prev_env
 
     def test_incident_taxi_reason_bad_value(self):
