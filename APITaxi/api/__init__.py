@@ -9,11 +9,6 @@ api = Api(api_blueprint, doc=False, catch_all_404s=True,
 ns_administrative = api.namespace('administrative',
         description="Administrative APIs", path='/')
 
-@api_blueprint.route('/doc/', endpoint='doc')
-def swagger_ui():
-    return render_template('swagger/index.html')
-
-
 def init_app(app):
     from . import hail, taxi, ads, drivers, zupc, profile, vehicle
     api.init_app(app, add_specs=False)
