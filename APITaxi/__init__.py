@@ -5,33 +5,11 @@ __contact__ = "vincent.lara@data.gouv.fr"
 __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
 
-
 from flask import Flask, request_started, request, request_finished, g
 from flask_bootstrap import Bootstrap
 import os
 from flask.ext.restplus import abort
-from APITaxi_utils.request_wants_json import request_wants_json
 from flask.ext.dogpile_cache import DogpileCache
-
-
-valid_versions = ['1', '2']
-def check_version(sender, **extra):
-    if not request_wants_json():
-        return
-    if request.url_rule is None:
-        return
-    endpoint = request.url_rule.endpoint
-    if endpoint == 'api.specs' or endpoint == 'static' or endpoint.startswith('js_bo'):
-        return
-    version = request.headers.get('X-VERSION', None)
-    if version not in valid_versions:
-        abort(404, message="Invalid version, valid versions are: {}".format(valid_versions))
-    g.version = int(version)
-
-
-
-def add_version_header(sender, response, **extra):
-    response.headers['X-VERSION'] = request.headers.get('X-VERSION')
 
 def create_app(sqlalchemy_uri=None):
     from .extensions import redis_store, user_datastore
@@ -66,6 +44,7 @@ def create_app(sqlalchemy_uri=None):
     documentation.init_app(app)
     Bootstrap(app)
 
+    from APITaxi_utils.version import check_version, add_version_header
     request_started.connect(check_version, app)
     request_finished.connect(add_version_header, app)
 
