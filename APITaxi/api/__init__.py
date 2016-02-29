@@ -10,7 +10,7 @@ ns_administrative = api.namespace('administrative',
         description="Administrative APIs", path='/')
 
 def init_app(app):
-    from . import hail, taxi, ads, drivers, zupc, profile, vehicle
+    from . import hail, taxi, ads, drivers, zupc, profile, vehicle, documents
     api.init_app(app, add_specs=False)
     app.register_blueprint(api_blueprint)
     app.register_blueprint(apidoc.apidoc)
