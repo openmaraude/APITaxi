@@ -889,3 +889,16 @@ class TestHailPut(HailMixin):
                 version=2)
         self.assert200(r)
         self.app.config['ENV'] = prev_env
+
+    def test_put_customer_operateur(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'received_by_taxi')
+        r = self.put([{'customer_lon':33}], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert200(r)
+        assert r.json['data'][0]['customer_lon'] == dict_hail['customer_lon']
+        self.app.config['ENV'] = prev_env

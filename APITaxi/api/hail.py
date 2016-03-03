@@ -63,6 +63,8 @@ class HailId(Resource):
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
         for ev in puttable_arguments:
+            if current_user.id != hail.added_by and ev.startswith('customer'):
+                continue
             value = hj.get(ev, None)
             if value is None:
                 continue
