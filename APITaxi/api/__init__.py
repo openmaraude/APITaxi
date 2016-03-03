@@ -17,5 +17,5 @@ def init_app(app):
 
     @app.route('/swagger.json', endpoint='api.specs')
     def swagger():
-        return app.send_static_file('swagger.json'), 200,
+        return render_template('swagger.json', host=app.config['SERVER_NAME']), 200,
     {'Content-Type': 'application/json'}
