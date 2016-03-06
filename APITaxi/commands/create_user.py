@@ -23,6 +23,7 @@ def create_user_role(email, role_name):
     role = user_datastore.find_or_create_role(role_name)
     user_datastore.add_role_to_user(user, role)
     current_app.extensions['sqlalchemy'].db.session.commit()
+    return user
 
 @manager.command
 def create_operateur(email):
@@ -34,7 +35,12 @@ def create_moteur(email):
 
 @manager.command
 def create_admin(email):
-    create_user_role(email, 'admin')
+    user = create_user_role(email, 'admin')
+    user_datastore.add_role_to_user(user,
+            user_datastore.find_role('operateur'))
+    user_datastore.add_role_to_user(user,
+            user_datastore.find_role('moteur'))
+    current_app.extensions['sqlalchemy'].db.session.commit()
 
 @manager.command
 def create_mairie(email):
