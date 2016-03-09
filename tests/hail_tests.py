@@ -6,6 +6,7 @@ from APITaxi_models.hail import (Customer, Hail, rating_ride_reason_enum,
         incident_customer_reason_enum, incident_taxi_reason_enum,
         reporting_customer_reason_enum)
 from APITaxi_models.taxis import Taxi
+from APITaxi_models.security import User
 from copy import deepcopy
 from werkzeug.exceptions import ServiceUnavailable
 from datetime import datetime, timedelta
@@ -203,6 +204,44 @@ class TestHailPost(HailMixin):
         self.assert201(r)
         self.app.config['ENV'] = prev_env
 
+    def test_hail_operator_header_dash(self):
+        u = User.query.filter_by(email='user_operateur').first()
+        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        old_value = u.operator_header_name
+        u.operator_header_name = u'X-API-KEY'
+
+        self.test_received_by_operator_apikey()
+
+        u.operator_header_name = old_value
+        u.hail_endpoint_testing = ''
+
+    def test_hail_operator_header_special_char(self):
+        u = User.query.filter_by(email='user_operateur').first()
+        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        old_value = u.operator_header_name
+        u.operator_header_name = u'&é"\'(-è_çà)'
+        r = self.send_hail(dict_)
+        self.assert201(r)
+        u.operator_header_name = old_value
+        u.hail_endpoint_testing = ''
+
+    def test_hail_operator_api_key_dash(self):
+        u = User.query.filter_by(email='user_operateur').first()
+        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        old_value = u.operator_api_key
+        u.operator_api_key = u'-'
+        self.test_received_by_operator_apikey()
+        u.operator_api_key = old_value
+        u.hail_endpoint_testing = ''
+
+    def test_hail_operator_api_key_special_char(self):
+        u = User.query.filter_by(email='user_operateur').first()
+        old_value = u.operator_api_key
+        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        u.operator_api_key = u'&é"\'(-è_çà)'
+        self.test_received_by_operator_apikey()
+        u.operator_api_key = old_value
+        u.hail_endpoint_testing = ''
 
 class  TestHailGet(HailMixin):
     role = 'moteur'
