@@ -53,8 +53,18 @@ def driver_form():
         else:
             driver = taxis_models.Driver()
             form.populate_obj(driver)
-            current_app.extensions['sqlalchemy'].db.session.add(driver)
-            current_app.extensions['sqlalchemy'].db.session.commit()
+            db.session.add(driver)
+            db.session.commit()
+
+            cur = db.session.connection().connection.cursor()
+            cur.execute("""
+                UPDATE taxi set driver_id = %s WHERE driver_id IN (
+                    SELECT id FROM driver WHERE professional_licence = '%s'
+                    AND departement_id = %s
+                )""",
+                (driver.id, driver.professional_licence, driver.departement_id)
+            )
+
             return redirect(url_for('api.drivers'))
     return render_template('forms/driver.html', form=form,
         form_method="POST", submit_value="Modifier")

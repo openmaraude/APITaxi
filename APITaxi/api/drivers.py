@@ -47,6 +47,7 @@ class Drivers(ResourceMetadata):
             abort(413, message="You've reach the limits of 250 objects")
         edited_drivers_id = []
         new_drivers = []
+        db = current_app.extensions['sqlalchemy'].db
         for driver in json['data']:
             departement = None
             if 'numero' in driver['departement']:
@@ -60,9 +61,19 @@ class Drivers(ResourceMetadata):
                 driver_obj.departement_id = departement.id
             except KeyError as e:
                 abort(400, message="Key error")
-            current_app.extensions['sqlalchemy'].db.session.add(driver_obj)
+            db.session.add(driver_obj)
             if driver_obj.id:
                 edited_drivers_id.append(driver_obj.id)
             new_drivers.append(driver_obj)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.commit()
+        for driver in new_drivers:
+            cur = db.session.connection().connection.cursor()
+            cur.execute("""
+                UPDATE taxi set driver_id = %s WHERE driver_id IN (
+                    SELECT id FROM driver WHERE professional_licence = %s
+                    AND departement_id = %s
+                )""",
+                (driver.id, driver.professional_licence, driver.departement_id)
+            )
+
         return marshal({'data': new_drivers}, driver_fields), 201
