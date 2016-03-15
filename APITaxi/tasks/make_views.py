@@ -43,7 +43,7 @@ def store_active_taxis(frequency):
     for l in scan_as_list('taxi:*', redis_store):
         for taxi_id, v in get_data(l, bound, redis_store):
             taxi_id = taxi_id[5:] #We cut the "taxi:" part
-            taxi_db = Taxi.get(taxi_id)
+            taxi_db = Taxi.query.get(taxi_id)
             if taxi_db is None:
                 current_app.logger.error('Taxi: {}, not found in database'.format(
                     taxi_id))
@@ -51,7 +51,7 @@ def store_active_taxis(frequency):
             if taxi_db.ads is None:
                 current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
                 continue
-            zupc = ZUPC.get(taxi_db.ads.zupc_id)
+            zupc = ZUPC.query.get(taxi_db.ads.zupc_id)
             zupc = zupc.parent
             if not zupc:
                 current_app.logger.error('Unable to find zupc: {}'.format(
