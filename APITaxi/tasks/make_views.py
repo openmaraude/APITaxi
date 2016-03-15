@@ -35,8 +35,8 @@ def get_data(taxi_ids, bound, redis_store):
     return ifilter(lambda taxi_operator: len(taxi_operator[1]) > 0, zipped_value)
 
 def store_active_taxis(frequency):
-    now = datetime.now()
-    bound_time -= timedelta(seconds=Taxi._ACTIVITY_TIMEOUT + frequency * 60)
+    now = datetime.utcnow()
+    bound_time = now - timedelta(seconds=Taxi._ACTIVITY_TIMEOUT + frequency * 60)
     bound = mktime(bound_time.timetuple())
     map_operateur_zupc_nb_active = dict()
     map_zupc_nb_active = dict()
