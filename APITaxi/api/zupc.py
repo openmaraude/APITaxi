@@ -25,7 +25,7 @@ class ZUPC(ResourceMetadata):
         cur = current_app.extensions['sqlalchemy'].db.session.connection()\
                 .connection.cursor(cursor_factory=RealDictCursor)
         cur.execute("""SELECT active, nom, insee FROM "ZUPC"
-            WHERE ST_Contains(shape::geometry, ST_POINT(%s, %s)::geography::geometry)""",
+            WHERE ST_Intersects(shape, ST_POINT(%s, %s)::geography)""",
             (args['lon'], args['lat']))
         to_return = []
         ZUPC = administrative_models.ZUPC
