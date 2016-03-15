@@ -59,7 +59,7 @@ for frequency, cron_kwargs in STORE_TAXIS_FREQUENCIES:
 
 INFLUXDB_HOST = 'localhost'
 INFLUXDB_PORT = 8086
-INFLUXDB_USER = ''
+INFLUXDB_USERNAME = ''
 INFLUXDB_PASSWORD = ''
 INFLUXDB_TAXIS_DB = 'taxis'
 NOW = 'now'
