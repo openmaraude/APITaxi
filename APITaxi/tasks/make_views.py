@@ -1,7 +1,7 @@
 #coding: utf-8
 from ..extensions import redis_store, user_datastore
-from APITaxi.models.taxis import Taxi
-from APITaxi.models.administrative import ZUPC
+from APITaxi_models.taxis import Taxi
+from APITaxi_models.administrative import ZUPC
 from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
 from time import mktime, time
