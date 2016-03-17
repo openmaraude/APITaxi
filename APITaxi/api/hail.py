@@ -102,7 +102,7 @@ class Hail(Resource):
                 message='Unable to find the taxi\'s operateur')
 
         descriptions = RawTaxi.get((hj['taxi_id'],), operateur.id)
-        if len(descriptions) == 0:
+        if len(descriptions) == 0 or len(descriptions[0]) == 0:
             abort(404, message='Unable to find taxi {} of {}'.format(
                 hj['taxi_id'], hj['operateur']))
         if descriptions[0][0]['vehicle_description_status'] != 'free' or\
