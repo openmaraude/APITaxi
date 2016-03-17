@@ -134,8 +134,8 @@ class Hail(Resource):
 
         send_request_operator.apply_async(args=[hail.id,
             operateur.hail_endpoint(current_app.config['ENV']),
-            operateur.operator_header_name,
-            operateur.operator_api_key, operateur.email],
+            unicode(operateur.operator_header_name),
+            unicode(operateur.operator_api_key), operateur.email],
             queue='send_hail_'+current_app.config['NOW'])
 
         client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
