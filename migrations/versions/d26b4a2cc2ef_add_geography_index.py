@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 def upgrade():
     op.execute('CREATE INDEX zupc_shape_igx ON "ZUPC" USING GIST (shape)')
-    op.execute('CLUSTER "ZUPC" on zupc_shape_igx')
+    op.execute('CLUSTER "ZUPC" USING zupc_shape_igx')
 
 
 def downgrade():
