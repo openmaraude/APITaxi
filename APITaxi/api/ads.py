@@ -77,6 +77,7 @@ class ADS(ResourceMetadata):
             abort(413, message="You can only pass 250 objects")
         edited_ads_id = []
         new_ads = []
+        db = current_app.extensions['sqlalchemy'].db
         for ads in json['data']:
             if not ads.get('vehicle_id', None) or ads['vehicle_id'] == 0:
                 ads['vehicle_id'] = None
@@ -97,9 +98,18 @@ class ADS(ResourceMetadata):
                 abort(400, message="Unable to find a ZUPC for insee: {}".format(
                     ads_db.insee))
             ads_db.zupc_id = zupc.parent_id
-            current_app.extensions['sqlalchemy'].db.session.add(ads_db)
+            db.session.add(ads_db)
             if ads_db.id:
                 edited_ads_id.append(ads.id)
-            new_ads.append(ads)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+            new_ads.append(ads_db)
+        db.session.commit()
+        for ads in new_ads:
+            cur = db.session.connection().connection.cursor()
+            cur.execute("""
+                UPDATE taxi set ads_id = %s WHERE ads_id IN (
+                    SELECT id FROM "ADS"  WHERE numero = %s
+                    AND insee = %s
+                )""",
+                (ads.id, ads.numero, ads.insee)
+            )
         return marshal({"data": new_ads}, ads_post), 201

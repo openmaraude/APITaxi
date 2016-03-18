@@ -385,3 +385,17 @@ class TestTaxiPost(Skeleton):
         r = self.get('/drivers/delete?id={}'.format(driver.id))
         self.assertEqual(len(Taxi.query.all()), 0)
 
+
+    def test_two_drivers_two_ads_one_taxi(self):
+        self.assertEqual(len(Taxi.query.all()), 0)
+        self.post_taxi()
+        self.post_taxi()
+        drivers = Driver.query.all()
+        ads = ADS.query.all()
+        self.assertEqual(len(drivers), 2)
+        self.assertEqual(len(ads), 2)
+        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(Taxi.query.all()[0].driver_id,
+                max(drivers, key=lambda d: d.added_at).id)
+        self.assertEqual(Taxi.query.all()[0].ads_id,
+                max(ads, key=lambda d: d.added_at).id)
