@@ -17,7 +17,7 @@ dependencies:
         - git clone https://github.com/openmaraude/faker && cd faker && go build && cd ..
         - git clone https://github.com/openmaraude/minimal_operateur_server
         - git clone https://github.com/openmaraude/GeoTaxi
-        - cd GeoTaxi/src && mkdir obj && make && cd ../..
+        - cd GeoTaxi && mkdir obj && make && cd ..
         - ./install_redis.sh
         - ./install_yajl.sh
         - ./install_krmt.sh
