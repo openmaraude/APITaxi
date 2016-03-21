@@ -7,6 +7,7 @@ from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi.extensions import redis_store
 import time
+from datetime import datetime, timedelta
 from flask import current_app
 
 class TaxiGet(Skeleton):
@@ -212,6 +213,29 @@ class TestTaxiPut(Skeleton):
         r = self.get(self.url, user='user_operateur_2')
         self.assert200(r)
         assert r.json['data'][0]['status'] == 'off'
+
+    def test_taxi_update_ttl(self):
+        id_ = self.post_taxi()
+        cur = current_app.extensions['sqlalchemy'].db.session.\
+                connection().connection.cursor()
+        #We are lying, it wasn't updated five hours ago
+        cur.execute("UPDATE taxi set last_update_at = %s WHERE id = %s",
+                (datetime.now() - timedelta(hours=5), id_)
+        )
+        current_app.extensions['sqlalchemy'].db.session.commit()
+        cur.execute("SELECT last_update_at from taxi where id = %s", (id_,))
+        c = cur.fetchall()
+        assert (datetime.now() - c[0][0]) > timedelta(hours=4)
+        dict_ = {'status': 'free'}
+        r = self.put([dict_], self.url)
+        self.assert200(r)
+        #Oh it was updated more than four hours ago, last_update should
+        #be almost now
+        cur.execute("SELECT last_update_at from taxi where id = %s", (id_,))
+        c = cur.fetchall()
+        assert (datetime.now() - c[0][0]) < timedelta(minutes=2)
+
+
 
 
 class TestTaxiPost(Skeleton):
