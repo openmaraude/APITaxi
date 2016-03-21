@@ -9,9 +9,10 @@ def create_user(email, commit=False):
 #    if not validate_email(email):
 #        print("email is not valid")
 #        return
-    if user_datastore.find_user(email=email):
+    user = user_datastore.find_user(email=email)
+    if user:
         print("User has already been created")
-        return
+        return user
     password = prompt_pass("Type a password")
     user = user_datastore.create_user(email=email, password=password)
     if commit:
