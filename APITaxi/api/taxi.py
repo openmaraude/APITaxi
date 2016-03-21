@@ -10,6 +10,7 @@ from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from APITaxi_utils.request_wants_json import json_mimetype_required
 from shapely.geometry import Point
 from time import time
+from datetime import datetime, timedelta
 import math
 from itertools import groupby
 
@@ -53,11 +54,16 @@ class TaxiId(Resource):
         hj = request.json
         t, last_update_at = self.get_descriptions(taxi_id)
         new_status = hj['data'][0]['status']
-        if new_status != t[0]['vehicle_description_status']:
+        if new_status != t[0]['vehicle_description_status'] or\
+                t[0]['taxi_last_update_at'] <= (datetime.now() - timedelta(hours=4)):
             cur = current_app.extensions['sqlalchemy'].db.session.\
                     connection().connection.cursor()
             cur.execute("UPDATE vehicle_description SET status=%s WHERE id=%s",
-                    (new_status, t[0]['vehicle_description_id']))
+                           (new_status, t[0]['vehicle_description_id'])
+            )
+            cur.execute("UPDATE taxi set last_update_at = %s WHERE id = %s",
+                    (datetime.now(), t[0]['taxi_id'])
+            )
             current_app.extensions['sqlalchemy'].db.session.commit()
             taxis_models.RawTaxi.flush(taxi_id)
             t[0]['vehicle_description_status'] = new_status
