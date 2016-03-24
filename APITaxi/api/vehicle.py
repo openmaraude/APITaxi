@@ -29,6 +29,8 @@ class Vehicle(ResourceMetadata):
         new_vehicles = []
         db = current_app.extensions['sqlalchemy'].db
         for vehicle in json['data']:
+            if 'id' in vehicle.keys():
+                del vehicle['id']
             v = vehicle_models.Vehicle(vehicle['licence_plate'])
             v.last_update_at = datetime.datetime.now()
             create_obj_from_json(vehicle_models.Vehicle, vehicle, v)
