@@ -112,4 +112,5 @@ class ADS(ResourceMetadata):
                 )""",
                 (ads.id, ads.numero, ads.insee)
             )
+        db.session.commit()
         return marshal({"data": new_ads}, ads_post), 201

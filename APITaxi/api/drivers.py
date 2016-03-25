@@ -75,5 +75,6 @@ class Drivers(ResourceMetadata):
                 )""",
                 (driver.id, driver.professional_licence, driver.departement_id)
             )
+        db.session.commit()
 
         return marshal({'data': new_drivers}, driver_fields), 201
