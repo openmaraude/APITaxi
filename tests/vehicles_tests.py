@@ -3,6 +3,7 @@ from .skeleton import Skeleton
 from APITaxi_models.taxis import Vehicle
 from json import loads
 from .fake_data import dict_vehicle
+from copy import deepcopy
 
 
 class TestVehiclePost(Skeleton):
@@ -55,3 +56,25 @@ class TestVehiclePost(Skeleton):
     def test_no_data(self):
         r = self.post({"d": None}, envelope_data=False)
         self.assert400(r)
+
+    def test_with_id(self):
+        dict_ = deepcopy(dict_vehicle)
+        dict_['id'] = 0
+        r = self.post([dict_])
+        self.assert201(r)
+        json = r.json
+        self.assertEqual(len(json['data']), 1)
+        vehicle = json['data'][0]
+        del dict_['id']
+        self.check_req_vs_dict(vehicle, dict_)
+        self.assertEqual(len(Vehicle.query.all()), 1)
+        dict_ = deepcopy(dict_vehicle)
+        dict_['id'] = 'aa'
+        r = self.post([dict_])
+        self.assert201(r)
+        json = r.json
+        self.assertEqual(len(json['data']), 1)
+        vehicle = json['data'][0]
+        del dict_['id']
+        self.check_req_vs_dict(vehicle, dict_)
+        self.assertEqual(len(Vehicle.query.all()), 1)
