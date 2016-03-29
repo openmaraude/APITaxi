@@ -36,13 +36,8 @@ def create_app(sqlalchemy_uri=None):
     db.init_app(app)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()
-    from . import backoffice
-    backoffice.init_app(app)
     from . import api
     api.init_app(app)
-    from . import documentation
-    documentation.init_app(app)
-    Bootstrap(app)
 
     from APITaxi_utils.version import check_version, add_version_header
     request_started.connect(check_version, app)
@@ -50,13 +45,9 @@ def create_app(sqlalchemy_uri=None):
 
     from flask.ext.uploads import configure_uploads
     from .api.extensions import documents
-    from .backoffice.extensions import images
-    configure_uploads(app, (documents, images))
+    configure_uploads(app, (documents,))
     from APITaxi_utils.login_manager import init_app as init_login_manager
-    from .backoffice.forms.login import LoginForm
-    init_login_manager(app, user_datastore, LoginForm)
-    from . import demo
-    demo.create_app(app)
+    init_login_manager(app, user_datastore, None)
 
     from . import tasks
     tasks.init_app(app)
