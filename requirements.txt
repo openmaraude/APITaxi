@@ -15,7 +15,6 @@ dogpile.cache==0.5.7
 dogpile.core==0.4.1
 dominate==2.1.16
 Flask==0.10.1
-Flask-Bootstrap==3.3.5.7
 Flask-Celery-Helper==1.1.0
 Flask-Cors==2.1.2
 Flask-Dogpile-Cache==0.2

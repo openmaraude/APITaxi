@@ -5,10 +5,8 @@ __contact__ = "vincent.lara@data.gouv.fr"
 __homepage__ = "https://github.com/"
 __version__ = ".".join(map(str, VERSION))
 
-from flask import Flask, request_started, request, request_finished, g
-from flask_bootstrap import Bootstrap
+from flask import Flask, request_started, request_finished
 import os
-from flask.ext.restplus import abort
 from flask.ext.dogpile_cache import DogpileCache
 
 def create_app(sqlalchemy_uri=None):
