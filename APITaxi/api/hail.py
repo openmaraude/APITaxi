@@ -145,7 +145,7 @@ class Hail(Resource):
                 "tags": {
                     "added_by": current_user.email,
                     "operator": operateur.email,
-                    "zupc": descriptions[0][0]['ads_zupc_id'],
+                    "zupc": descriptions[0][0]['ads_insee'],
                     },
                 "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                 "fields": {
