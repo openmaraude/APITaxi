@@ -1,8 +1,0 @@
-{% set active_page = "ads" %}
-{% extends "base.html" %}
-{% from "bootstrap/pagination.html" import render_pagination %}
-{% block content %}
-{% for k, v in ads %}
-<label>{{k}}</label> : <span>{{v}}</span><br/>
-{% endfor %}
-{% endblock %}

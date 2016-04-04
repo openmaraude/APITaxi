@@ -388,26 +388,30 @@ class TestTaxiPost(Skeleton):
         self.assertEqual(len(Taxi.query.all()), 1)
 
     def test_remove_ads(self):
-        self.init_taxi()
-        r = self.post([dict_taxi])
-        self.assert201(r)
-        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
-        ads_json = r.json['data'][0]['ads']
-        ads = current_app.extensions['sqlalchemy'].db.session.query(ADS)\
-                .filter_by(numero=ads_json['numero']).first()
-        self.get('/ads/delete?id={}'.format(ads.id))
-        self.assertEqual(len(Taxi.query.all()), 0)
+        pass
+        #No longer active
+        #self.init_taxi()
+        #r = self.post([dict_taxi])
+        #self.assert201(r)
+        #self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        #ads_json = r.json['data'][0]['ads']
+        #ads = current_app.extensions['sqlalchemy'].db.session.query(ADS)\
+        #        .filter_by(numero=ads_json['numero']).first()
+        #self.get('/ads/delete?id={}'.format(ads.id))
+        #self.assertEqual(len(Taxi.query.all()), 0)
 
     def test_remove_driver(self):
-        self.init_taxi()
-        r = self.post([dict_taxi])
-        self.assert201(r)
-        self.check_req_vs_dict(r.json['data'][0], dict_taxi)
-        driver_json = r.json['data'][0]['driver']
-        driver = current_app.extensions['sqlalchemy'].db.session.query(Driver).\
-                filter_by(professional_licence=driver_json['professional_licence']).first()
-        r = self.get('/drivers/delete?id={}'.format(driver.id))
-        self.assertEqual(len(Taxi.query.all()), 0)
+        pass
+        #No longer active
+        #self.init_taxi()
+        #r = self.post([dict_taxi])
+        #self.assert201(r)
+        #self.check_req_vs_dict(r.json['data'][0], dict_taxi)
+        #driver_json = r.json['data'][0]['driver']
+        #driver = current_app.extensions['sqlalchemy'].db.session.query(Driver).\
+        #        filter_by(professional_licence=driver_json['professional_licence']).first()
+        #r = self.get('/drivers/delete?id={}'.format(driver.id))
+        #self.assertEqual(len(Taxi.query.all()), 0)
 
 
     def test_two_drivers_two_ads_one_taxi(self):
