@@ -181,7 +181,7 @@ class Taxis(Resource):
         taxis = []
 #Sorting by distance
         sorted_ids = [t.id for t in
-                sorted(self.taxis_redis.values(), key=lambda t: t.distance)]
+                sorted(self.taxis_redis.values(), key=lambda t: float(t.distance))]
         for i in range(0, int(math.ceil(len(sorted_ids)/float(p['count'])))):
             page_ids = sorted_ids[i*p['count']:(i+1)*p['count']]
             taxis_db = taxis_models.RawTaxi.get(page_ids)

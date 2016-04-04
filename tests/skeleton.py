@@ -56,7 +56,7 @@ class Skeleton(TestCase):
         current_app.extensions['dogpile_cache'].invalidate_all_regions()
 
 
-    def post_taxi(self, role=None, user=None, post_second=False):
+    def post_taxi(self, role=None, user=None, post_second=False, custom_ads=None):
         self.init_zupc(post_second)
         post = partial(self.post, role='operateur', user=user)
         self.init_dep()
@@ -71,13 +71,20 @@ class Skeleton(TestCase):
             r = post([dict_vehicle], url='/vehicles/')
         self.assert201(r)
         vehicle_id = r.json['data'][0]['id']
-        if post_second:
+        if custom_ads:
+            dict_ads_ = deepcopy(custom_ads)
+        elif post_second:
             dict_ads_ = deepcopy(dict_ads_2)
         else:
             dict_ads_ = deepcopy(dict_ads)
         dict_ads_['vehicle_id'] = vehicle_id
         post([dict_ads_], url='/ads/')
-        if post_second:
+        if custom_ads:
+            dict_taxi_ = deepcopy(dict_taxi)
+            dict_taxi_["ads"]["insee"] = dict_ads_["insee"]
+            dict_taxi_["ads"]["numero"] = dict_ads_["numero"]
+            r = post([dict_taxi_], url='/taxis/')
+        elif post_second:
             r = post([dict_taxi_2], url='/taxis/')
         else:
             r = post([dict_taxi], url='/taxis/')
@@ -86,8 +93,8 @@ class Skeleton(TestCase):
         return taxi
 
     def post_taxi_and_locate(self, lat=1, lon=1, user='user_operateur',
-            float_=False, post_second=False):
-        taxi = self.post_taxi(user=user, post_second=post_second)
+            float_=False, post_second=False, custom_ads=None):
+        taxi = self.post_taxi(user=user, post_second=post_second, custom_ads=custom_ads)
         timestamp_type = float if float_ else int
         values = [timestamp_type(time.time()), lat, lon, 'free', 'd1', 1]
         redis_store.hset('taxi:{}'.format(taxi['id']), user,

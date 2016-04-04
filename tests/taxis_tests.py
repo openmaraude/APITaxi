@@ -13,11 +13,11 @@ from flask import current_app
 class TaxiGet(Skeleton):
     url = '/taxis/'
 
-    def add(self, lat=2.1, lon=48.5, float_=False, post_second=False):
+    def add(self, lat=2.1, lon=48.5, float_=False, post_second=False, custom_ads=None):
         self.init_zupc()
         self.init_dep()
         taxi = self.post_taxi_and_locate(lat=lat, lon=lon, float_=float_,
-                post_second=post_second)
+                post_second=post_second, custom_ads=custom_ads)
         id_taxi = taxi['id']
         taxi_db = Taxi.query.get(id_taxi)
         taxi_db.set_free()
@@ -110,6 +110,20 @@ class TestTaxisGet(TaxiGet):
         r = self.get('/taxis/?lat=2.2&lon=48.7')
         self.assert200(r)
         assert len(r.json['data']) == 0
+
+    def test_sorted_taxi(self):
+        #Add a taxi at 1.1 kmeters from 29 rue de Meaux
+        id_closer_taxi = self.add(2.370483, 48.870767)
+        #Add a taxi at 10 kmeters
+        custom_ads = deepcopy(dict_ads)
+        custom_ads["numero"] = "2"
+        id_farer_taxi = self.add(2.29344, 48.835864,
+                custom_ads=custom_ads)
+        r = self.get('/taxis/?lat=2.372027635574341&lon=48.87979158428683')
+        self.assert200(r)
+        assert len(r.json['data']) == 2
+        assert r.json['data'][0]['id'] == id_closer_taxi
+        assert r.json['data'][1]['id'] == id_farer_taxi
 
     def test_one_taxi_one_desc(self):
         pass
