@@ -13,7 +13,7 @@ from flask import current_app
 class TaxiGet(Skeleton):
     url = '/taxis/'
 
-    def add(self, lat=2.1, lon=48.5, float_=False, post_second=False, custom_ads=None):
+    def add(self, lat=2.3, lon=48.7, float_=False, post_second=False, custom_ads=None):
         self.init_zupc()
         self.init_dep()
         taxi = self.post_taxi_and_locate(lat=lat, lon=lon, float_=float_,
