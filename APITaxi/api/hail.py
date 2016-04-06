@@ -5,7 +5,7 @@ from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
 from ..extensions import redis_store
 from ..api import api
-from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel
+from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel, HailLog
 from APITaxi_models.taxis import  RawTaxi, TaxiRedis
 from APITaxi_models import security as security_models
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
@@ -49,6 +49,7 @@ class HailId(Resource):
     @json_mimetype_required
     def put(self, hail_id):
         hail = HailModel.get_or_404(hail_id)
+        g.hail_log = HailLog('PUT', hail, request.data)
         self.filter_access(hail)
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
@@ -131,6 +132,8 @@ class Hail(Resource):
         hail.status = 'received'
         current_app.extensions['sqlalchemy'].db.session.add(hail)
         current_app.extensions['sqlalchemy'].db.session.commit()
+
+        g.hail_log = HailLog('POST', hail, request.data)
 
         send_request_operator.apply_async(args=[hail.id,
             operateur.hail_endpoint(current_app.config['ENV']),

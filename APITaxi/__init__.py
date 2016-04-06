@@ -88,4 +88,8 @@ def create_app(sqlalchemy_uri=None):
         if len(not_available) > 0:
             redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], *not_available)
 
+    from APITaxi_models.hail import HailLog
+    app.after_request_funcs.setdefault(None, []).append(
+            HailLog.after_request(redis_store)
+    )
     return app
