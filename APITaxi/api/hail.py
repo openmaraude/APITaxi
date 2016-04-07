@@ -3,6 +3,7 @@ from flask import request, current_app, g
 from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
 from flask.ext.security import (login_required, roles_required,
         roles_accepted, current_user)
+from flask.ext.restplus import reqparse
 from ..extensions import redis_store
 from ..api import api
 from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel, HailLog
@@ -15,6 +16,7 @@ from geopy.distance import vincenty
 from ..tasks import send_request_operator
 from APITaxi_utils import influx_db
 from datetime import datetime
+import json
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -161,3 +163,39 @@ class Hail(Resource):
         result['data'][0]['taxi']['lon'] = hail.initial_taxi_lon
         result['data'][0]['taxi']['lat'] = hail.initial_taxi_lat
         return result, 201
+
+    @login_required
+    @roles_accepted('admin', 'moteur', 'operateur')
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('p', type=int, required=False, default=None,
+                location='values')
+
+        q = HailModel.query
+        if not current_user.has_role('admin') and current_user.has_role('operateur'):
+            if current_user.has_role('moteur'):
+                q = q.filter_by(HailModel.operateur == current_user.id |
+                        HailModel.added_by == current_user.id)
+            else:
+                q = q.filter_by(HailModel.operateur == current_user.id)
+        elif current_user.has_role('admin') and current_user.has_role('moteur'):
+            q = q.filter_by(HailModel.added_by == current_user.id)
+        pagination = q.paginate(page=parser.parse_args()['p'], per_page=30)
+        return {"data": [{
+                "id": hail.id,
+                "added_by": security_models.User.query.get(hail.added_by).email,
+                "operateur": hail.operateur.email,
+                "status": hail.status,
+                "creation_datetime": hail.creation_datetime.strftime("%Y/%m/%d %H:%M:%S"),
+                "taxi_id": hail.taxi_id}
+                for hail in pagination.items
+            ],
+            "meta": {
+                "next_page": pagination.next_num if pagination.has_next else None,
+                "prev_page": pagination.prev_num if pagination.has_prev else None,
+                "pages": pagination.pages,
+                "total": pagination.total
+                }
+            }
+
+
