@@ -17,6 +17,7 @@ from ..tasks import send_request_operator
 from APITaxi_utils import influx_db
 from datetime import datetime
 import json
+from sqlalchemy import or_
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -172,14 +173,14 @@ class Hail(Resource):
                 location='values')
 
         q = HailModel.query
-        if not current_user.has_role('admin') and current_user.has_role('operateur'):
+        filters = []
+        if not current_user.has_role('admin'):
+            if current_user.has_role('operateur'):
+                filters.append(HailModel.operateur_id == current_user.id)
             if current_user.has_role('moteur'):
-                q = q.filter_by(HailModel.operateur == current_user.id |
-                        HailModel.added_by == current_user.id)
-            else:
-                q = q.filter_by(HailModel.operateur == current_user.id)
-        elif current_user.has_role('admin') and current_user.has_role('moteur'):
-            q = q.filter_by(HailModel.added_by == current_user.id)
+                filters.append(HailModel.added_by == current_user.id)
+            q = q.filter(*filters)
+        q = q.order_by(HailModel.creation_datetime.desc())
         pagination = q.paginate(page=parser.parse_args()['p'], per_page=30)
         return {"data": [{
                 "id": hail.id,
