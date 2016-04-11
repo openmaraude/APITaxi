@@ -18,6 +18,7 @@ from APITaxi_utils import influx_db
 from datetime import datetime
 import json
 from sqlalchemy import or_
+from itertools import chain
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -200,3 +201,20 @@ class Hail(Resource):
             }
 
 
+@ns_hail.route('/<string:hail_id>/_log', endpoint='HailLog')
+class Hail(Resource):
+    @login_required
+    def get(self, hail_id):
+        hail = HailModel.query.get_or_404(hail_id)
+        if current_user.id not in (hail.added_by, hail.operateur_id)\
+                and current_user.has_role('admin'):
+            abort(403)
+        hlog = redis_store.zrangebyscore('hail:{}'.format(hail_id), '-inf',
+                '+inf', withscores=True)
+        if not hlog:
+            return {"data": []}
+        return {"data":[
+            {k: v for k,v in chain(json.loads(value).iteritems(), [('datetime', score)])}
+            for value, score in hlog
+            ]
+        }
