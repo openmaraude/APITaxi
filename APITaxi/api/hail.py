@@ -207,7 +207,7 @@ class Hail(Resource):
     def get(self, hail_id):
         hail = HailModel.query.get_or_404(hail_id)
         if current_user.id not in (hail.added_by, hail.operateur_id)\
-                and current_user.has_role('admin'):
+                and not current_user.has_role('admin'):
             abort(403)
         hlog = redis_store.zrangebyscore('hail:{}'.format(hail_id), '-inf',
                 '+inf', withscores=True)
