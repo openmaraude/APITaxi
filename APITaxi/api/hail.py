@@ -180,7 +180,7 @@ class Hail(Resource):
                 filters.append(HailModel.operateur_id == current_user.id)
             if current_user.has_role('moteur'):
                 filters.append(HailModel.added_by == current_user.id)
-            q = q.filter(*filters)
+            q = q.filter(or_(*filters))
         q = q.order_by(HailModel.creation_datetime.desc())
         pagination = q.paginate(page=parser.parse_args()['p'], per_page=30)
         return {"data": [{
