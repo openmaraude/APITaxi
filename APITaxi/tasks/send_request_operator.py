@@ -1,10 +1,11 @@
 #coding: utf-8
 from flask import current_app
 from flask.ext.restplus import marshal
-from APITaxi_models.hail import Hail
+from APITaxi_models.hail import Hail, HailLog
 from ..descriptors.hail import hail_model
-from ..extensions import celery
+from ..extensions import celery, redis_store
 import requests, json
+
 
 @celery.task()
 def send_request_operator(hail_id, endpoint, operator_header_name,
@@ -22,12 +23,15 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
                    'Accept': 'application/json'}
         if operator_header_name is not None and operator_header_name != '':
             headers[operator_header_name] = operator_api_key
+        data = json.dumps(marshal({"data": [hail]}, hail_model))
+        hail_log = HailLog('POST to operator', hail, data)
         r = requests.post(endpoint,
-                data=json.dumps(marshal({"data": [hail]}, hail_model)),
+                data=data,
                 headers=headers
         )
     except requests.exceptions.MissingSchema:
         pass
+    hail_log.store(r, redis_store)
     if not r or r.status_code < 200 or r.status_code >= 300:
         hail.status = 'failure'
         current_app.extensions['sqlalchemy'].db.session.commit()
