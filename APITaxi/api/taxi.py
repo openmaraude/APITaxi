@@ -4,6 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, current_app
 from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
+from APITaxi_utils.caching import cache_single
 from ..extensions import redis_store
 from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
@@ -135,12 +136,10 @@ class Taxis(Resource):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        cur = current_app.extensions['sqlalchemy'].db.session.connection().\
-                connection.cursor()
-        cur.execute("""SELECT id FROM "ZUPC"
-                       WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
-                       (lon, lat))
-        self.zupc_customer = [t[0] for t in cur.fetchall()]
+        self.zupc_customer = cache_single("""SELECT id FROM "ZUPC"
+                            WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
+                            (lon, lat), "zupc_lon_lat",
+                            lambda v: v['id'])
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
