@@ -32,7 +32,6 @@ DOGPILE_CACHE_REGIONS = [
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'
 DOGPILE_CACHE_URLS = ['redis://localhost:6379/0']
 SQLALCHEMY_POOL_SIZE = 15
-
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['pickle']

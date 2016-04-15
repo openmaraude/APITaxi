@@ -89,7 +89,17 @@ def create_app(sqlalchemy_uri=None):
             redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], *not_available)
 
     from APITaxi_models.hail import HailLog
+    def delete_redis_keys(response):
+        from flask import g
+        if not hasattr(g, 'keys_to_delete'):
+            return response
+        redis_store.delete(*g.keys_to_delete)
+        return response
+
     app.after_request_funcs.setdefault(None, []).append(
             HailLog.after_request(redis_store)
+    )
+    app.after_request_funcs.setdefault(None, []).append(
+            delete_redis_keys
     )
     return app

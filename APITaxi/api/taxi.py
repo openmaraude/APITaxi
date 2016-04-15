@@ -2,7 +2,7 @@
 import calendar, time
 from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
-from flask import request, current_app
+from flask import request, current_app, g
 from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
 from APITaxi_utils.caching import cache_single
 from ..extensions import redis_store
@@ -150,11 +150,15 @@ class Taxis(Resource):
         if len(positions) == 0:
             current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
+        g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
+        g.keys_to_delete.append(name_redis)
+
         redis_store.zadd(name_redis, **{id_: d for id_, d, _ in positions})
         #The resulting set may contain unfresh taxi because they haven't be
         #deleted yet
         fresh_redis = 'fresh:'+name_redis
+        g.keys_to_delete.append(fresh_redis)
         nb_fresh_taxis = redis_store.zinterstore(fresh_redis,
                 {name_redis:0, current_app.config['REDIS_TIMESTAMPS']:1}
         )
@@ -172,6 +176,7 @@ class Taxis(Resource):
         self.taxis_redis = {k: taxis_models.TaxiRedis(k, caracs_list=list(v))
             for k, v in groupby(positions, key=lambda k_v: k_v[0].split(':')[0])}
         na_redis = 'na:'+name_redis
+        g.keys_to_delete.append(na_redis)
         self.filter_not_available(fresh_redis, na_redis)
 
         self.zupc_customer = {id_: administrative_models.ZUPC.cache.get(id_)
@@ -194,8 +199,6 @@ class Taxis(Resource):
             taxis.extend(filter(None, l))
             if len(taxis) >= p['count']:
                 break
-        #Clean-up redis
-        redis_store.delete(fresh_redis, na_redis, name_redis)
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required
