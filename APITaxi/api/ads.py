@@ -11,6 +11,7 @@ from flask.ext.restplus import reqparse, abort, marshal
 from flask import jsonify, render_template, request, current_app
 from .extensions import documents
 from APITaxi_utils.slack import slack as slacker
+from datetime import datetime
 
 parser = reqparse.RequestParser()
 parser.add_argument('numero', type=unicode, help=u"Numero de l'ADS", required=False,
