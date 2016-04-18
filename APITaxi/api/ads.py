@@ -57,14 +57,13 @@ class ADS(ResourceMetadata):
     def post(self):
         if 'file' in request.files:
             filename = "ads-{}-{}.csv".format(current_user.email,
-                    str(datetime.now()))
+                    str(datetime.now().strftime("%Y-%m-%dT%H:%M:%S:%f")))
             documents.save(request.files['file'], name=filename)
-            slacker = slack()
-            if slacker:
-                slacker.chat.post_message('#taxis',
+            slack = slacker()
+            if slack:
+                slack.chat.post_message('#taxis-internal',
                 'Un nouveau fichier ADS a été envoyé par {}. {}'.format(
-                    current_user.email, url_for('documents.documents',
-                        filename=filename, _external=True)))
+                    current_user.email, filename))
             return "OK"
         elif request_wants_json():
             return self.post_json()
