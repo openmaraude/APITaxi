@@ -110,14 +110,16 @@ class Taxis(Resource):
     def filter_zone(self, t):
         zupc_id = t['ads_zupc_id']
         if not zupc_id in self.zupc_customer.keys():
-            current_app.logger.debug('Taxi not in customer\'s zone')
+            current_app.logger.debug('Taxi {} not in customer\'s zone'.format(
+                t.get('taxi_id', 'no id')))
             return False
         t_redis = self.taxis_redis[t['taxi_id']]
         if not self.zupc_customer[t['ads_zupc_id']].preped_geom.contains(
                       Point(float(t_redis.lon),
                           float(t_redis.lat))
                       ):
-            current_app.logger.debug('Taxi is not in its zone')
+            current_app.logger.debug('Taxi {} is not in its zone'.format(
+                t.get('taxi_id', 'no id')))
             return False
         return True
 
