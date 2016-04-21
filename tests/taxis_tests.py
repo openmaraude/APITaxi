@@ -2,6 +2,7 @@ from .skeleton import Skeleton
 from APITaxi_models.taxis import Taxi, ADS, Driver
 from APITaxi_models.administrative import Departement
 from APITaxi_models.vehicle import Vehicle
+from APITaxi_models.security import User
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
@@ -141,10 +142,28 @@ class TestTaxisGet(TaxiGet):
         pass
 
     def test_one_taxi_two_desc_one_non_free(self):
-        pass
+        self.add()
+        id_taxi = self.post_taxi_and_locate(user='user_operateur_2', lat=2.3, lon=48.7)['id']
+        r = self.put([{"status": "off"}], '/taxis/{}/'.format(id_taxi),
+                user='user_operateur_2', role='operateur')
+        self.assert200(r)
+        r = self.get('/taxis/?lat=2.3&lon=48.7')
+        self.assert200(r)
+        assert len(r.json['data']) == 0
 
     def test_one_taxi_two_desc_one_non_free_but_timeout(self):
-        pass
+        self.add()
+        id_taxi = self.post_taxi_and_locate(user='user_operateur_2', lat=2.3, lon=48.7)['id']
+#This taxi is now not fresh for operateur_2
+        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'],
+                **{'{}:user_operateur_2'.format(id_taxi):0.0})
+        r = self.put([{"status": "off"}], '/taxis/{}/'.format(id_taxi),
+                user='user_operateur_2', role='operateur')
+        self.assert200(r)
+        r = self.get('/taxis/?lat=2.3&lon=48.7')
+        self.assert200(r)
+#So we should have a taxi
+        assert len(r.json['data']) == 1
 
 class TestTaxiPut(Skeleton):
     url = '/taxis/'
