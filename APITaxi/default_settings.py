@@ -24,14 +24,14 @@ DOGPILE_CACHE_REGIONS = [
     ('taxis_cache_sql', None, 'dogpile.cache.null'),
     ('zupc', None, 'dogpile.cache.memory'),
     ('users', None, 'dogpile.cache.memory'),
-    ('taxis_cache_sql', None, 'dogpile.cache.null', None,
-        {'wrap': 'APITaxi_utils.msgpack_backend.MsgpackProxy'})
+    ('taxis_cache_sql', 5*60, 'dogpile.cache.null', None,
+        {'wrap': 'APITaxi_utils.msgpack_backend.MsgpackProxy'}),
+    ('zupc_lon_lat', None, 'dogpile.cache.memory')#, None,{'url': 'redis://localhost:6379/0'})
 ]
 
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'
 DOGPILE_CACHE_URLS = ['redis://localhost:6379/0']
 SQLALCHEMY_POOL_SIZE = 15
-
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['pickle']
