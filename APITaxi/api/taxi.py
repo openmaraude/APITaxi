@@ -56,6 +56,7 @@ class TaxiId(Resource):
         t, last_update_at = self.get_descriptions(taxi_id)
         new_status = hj['data'][0]['status']
         if new_status != t[0]['vehicle_description_status'] or\
+                t[0]['taxi_last_update_at'] is None or\
                 t[0]['taxi_last_update_at'] <= (datetime.now() - timedelta(hours=4)):
             cur = current_app.extensions['sqlalchemy'].db.session.\
                     connection().connection.cursor()

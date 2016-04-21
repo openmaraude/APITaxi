@@ -249,6 +249,26 @@ class TestTaxiPut(Skeleton):
         c = cur.fetchall()
         assert (datetime.now() - c[0][0]) < timedelta(minutes=2)
 
+    def test_taxi_update_empty(self):
+        id_ = self.post_taxi()
+        cur = current_app.extensions['sqlalchemy'].db.session.\
+                connection().connection.cursor()
+        #We are setting it to something that shouldn't happen, but does happen
+        cur.execute("UPDATE taxi set last_update_at = %s WHERE id = %s",
+                (None, id_)
+        )
+        current_app.extensions['sqlalchemy'].db.session.commit()
+        cur.execute("SELECT last_update_at from taxi where id = %s", (id_,))
+        c = cur.fetchall()
+        assert c[0][0] is None
+        dict_ = {'status': 'free'}
+        r = self.put([dict_], self.url)
+        self.assert200(r)
+        #It should be updated no matter what
+        cur.execute("SELECT last_update_at from taxi where id = %s", (id_,))
+        c = cur.fetchall()
+        assert (datetime.now() - c[0][0]) < timedelta(minutes=2)
+
 
 
 
