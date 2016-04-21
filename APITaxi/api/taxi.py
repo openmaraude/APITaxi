@@ -96,7 +96,7 @@ get_parser.add_argument('count', type=int, required=False,
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
 
-    def filter_not_available(self, fresh_redis, na_redis):
+    def filter_not_available(self, fresh_redis, na_redis, available_ids):
         #As said before there might be non-fresh taxis
         nb_not_available = redis_store.zinterstore(na_redis,
                 {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
@@ -104,6 +104,8 @@ class Taxis(Resource):
         if nb_not_available == 0:
             return
         for v in redis_store.zrange(na_redis, 0, -1):
+            if not v in available_ids:
+                continue
             try:
                 current_app.logger.debug('Taxi {} is not available'.format(v.split(':')[0]))
                 del self.taxis_redis[v.split(':')[0]]
@@ -181,7 +183,7 @@ class Taxis(Resource):
             for k, v in groupby(positions, key=lambda k_v: k_v[0].split(':')[0])}
         na_redis = 'na:'+name_redis
         g.keys_to_delete.append(na_redis)
-        self.filter_not_available(fresh_redis, na_redis)
+        self.filter_not_available(fresh_redis, na_redis, [i[0] for i in positions])
 
         self.zupc_customer = {id_: administrative_models.ZUPC.cache.get(id_)
                             for id_ in self.zupc_customer}
@@ -189,7 +191,7 @@ class Taxis(Resource):
         taxis = []
 #Sorting by distance
         sorted_ids = [t.id for t in
-                sorted(self.taxis_redis.values(), key=lambda t: float(t.distance))]
+            sorted(self.taxis_redis.values(), key=lambda t: float(t.distance))]
         for i in range(0, int(math.ceil(len(sorted_ids)/float(p['count'])))):
             page_ids = sorted_ids[i*p['count']:(i+1)*p['count']]
             taxis_db = taxis_models.RawTaxi.get(page_ids)
