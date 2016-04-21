@@ -103,6 +103,7 @@ class Taxis(Resource):
             return
         for v in redis_store.zrange(na_redis, 0, -1):
             try:
+                current_app.logger.debug('Taxi {} is not available'.format(v.split(':')[0]))
                 del self.taxis_redis[v.split(':')[0]]
             except KeyError:
                 pass
