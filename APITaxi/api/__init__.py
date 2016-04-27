@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask.ext.restplus import apidoc, Api
 from flask import Blueprint, render_template
+from flask_cors import cross_origin
 
 api_blueprint = Blueprint('api', __name__)
 api = Api(api_blueprint, doc=False, catch_all_404s=True,
@@ -16,6 +17,7 @@ def init_app(app):
     app.register_blueprint(apidoc.apidoc)
 
     @app.route('/swagger.json', endpoint='api.specs')
+    @cross_origin()
     def swagger():
         return render_template('swagger.json', host=app.config['SERVER_NAME']), 200,
     {'Content-Type': 'application/json'}
