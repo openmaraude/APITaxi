@@ -50,3 +50,18 @@ class ZUPCAutocomplete(ResourceMetadata):
         return jsonify(suggestions=map(lambda zupc:{'name': zupc.nom, 'id': int(zupc.id)},
                                             response))
 
+@ns_administrative.route('zupc/<int:zupc_id>/_show_temp_geojson')
+@api.hide
+class ZUPCShowTemp(ResourceMetadata):
+    def get(self, zupc_id):
+        cur = current_app.extensions['sqlalchemy'].db.session.connection()\
+                .connection.cursor()
+        cur.execute('SELECT ST_AsGeoJSON(shape) FROM "zupc_temp" WHERE id = %s;',
+                (zupc_id,)
+        )
+        geojson = cur.fetchall()
+        if not geojson:
+            return {"data": None}
+        else:
+            return {"data": json.loads(geojson[0][0])}
+
