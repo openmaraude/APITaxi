@@ -72,8 +72,6 @@ def records(filename):
         yield geom, atr
 
 
-
-
 def load_zupc_temp_table(shape_filename, zupc_obj=None):
     departements = {
         d.numero: d for d in administrative.Departement.query.all()
@@ -134,22 +132,36 @@ def union_zupc(filename, zupc_obj):
     db.session.commit()
     return parent_id
 
-#This needs to be tested in a second part
-#def load_include_geojson(parent_id, geojson_file, zupc_obj):
-    #    if parent_id is None:
-        #        return None
-        #    with open(geojson_file) as f:
-            #        s = shape(json.load(f))
-            #    new_shape = s.union(zupc_obj.query.get(parent_id).shape)
-            #    zupc_obj.query.filter(zupc_obj.parent_id=parent_id).update(
-            #        {'shape': new_shape}
-            #    )
-            #    db.session.commit()
+
+def load_include_geojson(parent_id, geojson_file, zupc_obj):
+    return load_geojson(parent_id, geojson_file, zupc_obj, "union")
+
+
+def load_exclude_geojson(parent_id, geojson_file, zupc_obj):
+    return load_geojson(parent_id, geojson_file, zupc_obj, "difference")
+
+
+def load_geojson(parent_id, geojson_file, zupc_obj, func_name):
+    if parent_id is None:
+        return None
+    with open(geojson_file) as f:
+        s = shape(json.load(f))
+        parent_zupc = zupc_obj.query.get(parent_id)
+        new_shape = getattr(s, func_name)(parent_zupc.shape)
+        parent_zupc.update(
+            {'shape': new_shape}
+        )
+        db.session.commit()
 
 
 def load_dir(dirname, zupc_obj):
+    parent_id = None
     for f in glob.glob(os.path.join(dirname, '*.list')):
-        union_zupc(f, zupc_obj)
+        parent_id = union_zupc(f, zupc_obj)
+    for f in glob.glob(os.path.join(dirname, '*.include')):
+        load_include_geojson(parent_id, f, zupc_obj)
+    for f in glob.glob(os.path.join(dirname, '*.exclude')):
+        load_include_geojson(parent_id, f, zupc_obj)
 
 
 def load_zupc(d, zupc_obj):
@@ -157,6 +169,7 @@ def load_zupc(d, zupc_obj):
         for dir_ in dirs:
             print "Importing zupc {}".format(dir_)
             load_dir(os.path.join(d, dir_), zupc_obj)
+
 
 def get_shape_filename(temp_dir):
     l = glob.glob(os.path.join(temp_dir, '*.shp'))
@@ -168,8 +181,10 @@ def get_shape_filename(temp_dir):
 @manager.command
 def import_zupc():
     temp_dir = '/tmp/temp_contours'
-    if download_wanted(temp_dir):
+    wanted = download_wanted(temp_dir)
+    if wanted:
         download_contours_file(temp_dir)
+
     shape_filename = get_shape_filename(temp_dir)
     if not shape_filename:
         print "No shapefile in {}".format(temp_dir)
