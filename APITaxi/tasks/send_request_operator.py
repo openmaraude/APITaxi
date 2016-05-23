@@ -17,20 +17,29 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
         current_app.logger.error('Unable to find hail: {}'.format(hail_id))
         return False
 
-    r = None
+    headers = {'Content-Type': 'application/json',
+               'Accept': 'application/json'}
+    if operator_header_name is not None and operator_header_name != '':
+        headers[operator_header_name] = operator_api_key
+
+    data = None
     try:
-        headers = {'Content-Type': 'application/json',
-                   'Accept': 'application/json'}
-        if operator_header_name is not None and operator_header_name != '':
-            headers[operator_header_name] = operator_api_key
         data = json.dumps(marshal({"data": [hail]}, hail_model))
+    except ValueError:
+        current_app.logger.error('Unable to dump JSON ({})'.format(hail))
+
+    if data:
+        r = None
         hail_log = HailLog('POST to operator', hail, data)
-        r = requests.post(endpoint,
-                data=data,
-                headers=headers
-        )
-    except requests.exceptions.MissingSchema:
-        pass
+        try:
+            r = requests.post(endpoint,
+                    data=data,
+                    headers=headers
+            )
+        except requests.exceptions.RequestException as e:
+            current_app.logger.error('Error calling: {}, endpoint: {}, headers: {}'.format(
+                operator_email, endpoint, headers))
+            current_app.logger.error(e)
     hail_log.store(r, redis_store)
     if not r or r.status_code < 200 or r.status_code >= 300:
         hail.status = 'failure'
@@ -47,6 +56,9 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
     if r_json and 'data' in r_json and len(r_json['data']) == 1\
             and 'taxi_phone_number' in r_json['data'][0]:
         hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
+    else:
+        current_app.logger.error('No JSON in operator answer of {} : {}'.format(
+            operator_email, r.text))
 
     hail.status = 'received_by_operator'
     current_app.extensions['sqlalchemy'].db.session.commit()
