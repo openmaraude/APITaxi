@@ -19,9 +19,12 @@ def store_active_taxis(frequency):
     insee_zupc_dict = dict()
     prefixed_taxi_ids = []
     convert = lambda d: mktime(d.timetuple())
+    hidden_operator = current_app.config.get('HIDDEN_OPERATOR', 'testing_operator')
     for taxi_id_operator in redis_store.zrangebyscore(
             current_app.config['REDIS_TIMESTAMPS'], bound, time()):
         taxi_id, operator = taxi_id_operator.split(':')
+        if operator == hidden_operator:
+            continue
         active_taxis.add(taxi_id)
         taxi_db = Taxi.query.get(taxi_id)
         if taxi_db is None:
