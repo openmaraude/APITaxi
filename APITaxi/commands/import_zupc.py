@@ -181,11 +181,25 @@ def load_arrondissements(parent_id, arrondissements_file, zupc_obj):
     db.session.commit()
 
 
+def override_name(parent_id, special_name):
+    if parent_id is None:
+        return
+    parent_zupc = zupc_obj.query.get(parent_id)
+    with open(special_name_insee) as f:
+        name, insee = map(lambda s: s.strip(), f.readline().split(','))
+    parent_zupc.name = name
+    parent_zupc.insee = insee
+    db.session.add(parent_zupc)
+    db.session.commit()
+
 
 def load_dir(dirname, zupc_obj):
     parent_id = None
     for f in glob.glob(os.path.join(dirname, '*.list')):
         parent_id = union_zupc(f, zupc_obj)
+    special_name_insee = glob.glob(os.path.join(dirname, 'special_name_insee'))
+    if len(special_name_insee) == 1:
+        override_name(parent_id, special_name_insee)
     for f in glob.glob(os.path.join(dirname, '*.include')):
         load_include_geojson(parent_id, f, zupc_obj)
     for f in glob.glob(os.path.join(dirname, '*.exclude')):
@@ -234,6 +248,7 @@ def merge_zones(temp_zupc_obj):
                        SELECT departement_id, nom, insee, shape, active FROM zupc_temp""")
     db.session.commit()
 
+    print "Updating parent_id in ZUPC"
     zupc_with_parent = temp_zupc_obj.query.filter(
         temp_zupc_obj.parent_id != temp_zupc_obj.id).all()
     for parent_insee, zs in groupby(zupc_with_parent, lambda k: k.parent.insee):
@@ -247,7 +262,6 @@ def merge_zones(temp_zupc_obj):
     db.session.commit()
     print "Updating zupc_id in ADS"
     map_zupc_insee_id = {z.insee: z.id for z in ZUPC.query.filter(ZUPC.id > last_zupc_id).all()}
-    print map_zupc_insee_id
     i = 0
     for ads in taxis.ADS.query.all():
         i += 1
