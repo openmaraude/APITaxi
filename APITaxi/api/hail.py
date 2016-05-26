@@ -172,7 +172,13 @@ class Hail(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('p', type=int, required=False, default=None,
                 location='values')
-
+        parser.add_argument('operateur', type=str, required=False, default=None,
+                            location='values', action='append')
+        parser.add_argument('status', type=str, required=False, default=None,
+                            location='values', action='append')
+        parser.add_argument('moteur', type=str, required=False, default=None,
+                            location='values', action='append')
+        p = parser.parse_args()
         q = HailModel.query
         filters = []
         if not current_user.has_role('admin'):
@@ -180,7 +186,22 @@ class Hail(Resource):
                 filters.append(HailModel.operateur_id == current_user.id)
             if current_user.has_role('moteur'):
                 filters.append(HailModel.added_by == current_user.id)
-            q = q.filter(or_(*filters))
+            if filters:
+                q = q.filter(or_(*filters))
+        else:
+            uq = security_models.User.query
+            if p['operateur']:
+                q = q.filter(or_(*[
+                    HailModel.operateur_id == uq.filter_by(email=email).first().id
+                     for email in p['operateur']]
+                ))
+            if p['moteur']:
+                q = q.filter(or_(*[
+                    HailModel.added_by == uq.filter_by(email=email).first().id
+                     for email in p['moteur']]
+                ))
+        if p['status']:
+            q = q.filter(or_(*[HailModel._status == s for s in p['status']]))
         q = q.order_by(HailModel.creation_datetime.desc())
         pagination = q.paginate(page=parser.parse_args()['p'], per_page=30)
         return {"data": [{
