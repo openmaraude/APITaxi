@@ -2,9 +2,13 @@
 import urllib2, os, zipfile, shapefile, copy, glob
 from . import manager
 from shapely.geometry import shape, MultiPolygon
-from APITaxi_models import db, administrative
+from APITaxi_models import db, administrative, taxis
 from geoalchemy2.shape import from_shape
 from geoalchemy2 import func
+from itertools import groupby
+from sqlalchemy.sql import select
+from sqlalchemy import Table, Column, Boolean
+from sqlalchemy.ext.automap import automap_base
 
 def download_wanted(temp_dir):
     if os.path.isdir(temp_dir):
@@ -47,19 +51,21 @@ def download_contours_file(temp_dir,
 
 
 def create_temp_table(temp_table_name="zupc_temp"):
-    zupc_temp = copy.deepcopy(administrative.ZUPC)
-    zupc_temp.__table__.name = temp_table_name
-    if zupc_temp.__table__.exists(db.engine):
-        zupc_temp.__table__.drop(db.engine)
-    zupc_temp.__table__.create(db.engine)
+    table = Table(temp_table_name, db.metadata,
+                  Column('multiple', Boolean(), default=False),
+                  *[Column(c.name, c.type, autoincrement=c.autoincrement,
+                           default=c.default, key=c.key, index=c.index,
+                           nullable=c.nullable, primary_key=c.primary_key) 
+                    for c in administrative.ZUPC.__table__.columns]
+    )
+    if table.exists(db.engine):
+        table.drop(db.engine)
+    table.create(db.engine)
     db.session.commit()
-    db.engine.execute('ALTER TABLE "%s" ADD COLUMN multiple boolean' % 
-                      (temp_table_name)
-    )
-    db.engine.execute('ALTER TABLE "%s" ALTER COLUMN multiple SET DEFAULT False' %
-                     (temp_table_name)
-    )
-    return zupc_temp
+    db.Model.metadata.reflect(db.engine)
+    Base = automap_base(metadata=db.metadata, declarative_base=db.Model)
+    Base.prepare()
+    return Base.classes[temp_table_name]
 
 
 def records(filename):
@@ -96,6 +102,7 @@ def load_zupc_temp_table(shape_filename, zupc_obj=None):
         z.insee = properties['insee']
         z.departement_id = departement.id
         z.shape = from_shape(MultiPolygon([shape(geom)]), srid=4326)
+        z.active = False
         db.session.add(z)
         if (i%100) == 0:
             db.session.commit()
@@ -105,6 +112,7 @@ def load_zupc_temp_table(shape_filename, zupc_obj=None):
         print status,
 
     db.session.commit()
+    print "%10d zupc ajoutées" %i
 
 
 def union_zupc(filename, zupc_obj):
@@ -115,6 +123,8 @@ def union_zupc(filename, zupc_obj):
             .filter_by(insee=insee_list[0]).first()
     if parent_id is None:
         return None
+    if len(insee_list) == 1:
+        return parent_id
 
     subquery = db.session.query(
         func.ST_Union(func.Geometry(zupc_obj.shape))).filter(
@@ -153,15 +163,49 @@ def load_geojson(parent_id, geojson_file, zupc_obj, func_name):
         )
         db.session.commit()
 
+def load_arrondissements(parent_id, arrondissements_file, zupc_obj):
+    if parent_id is None:
+        return
+    parent_zupc = zupc_obj.query.get(parent_id)
+    with open(arrondissements_file) as f:
+        for insee in f.readlines():
+            insee = insee.strip()
+            if not insee:
+                continue
+            z = zupc_obj()
+            for att in ['departement_id', 'nom', 'shape']:
+                setattr(z, att, getattr(parent_zupc, att))
+            z.insee = insee
+            z.active = False
+            db.session.add(z)
+    db.session.commit()
+
+
+def override_name(parent_id, special_name):
+    if parent_id is None:
+        return
+    parent_zupc = zupc_obj.query.get(parent_id)
+    with open(special_name_insee) as f:
+        name, insee = map(lambda s: s.strip(), f.readline().split(','))
+    parent_zupc.name = name
+    parent_zupc.insee = insee
+    db.session.add(parent_zupc)
+    db.session.commit()
+
 
 def load_dir(dirname, zupc_obj):
     parent_id = None
     for f in glob.glob(os.path.join(dirname, '*.list')):
         parent_id = union_zupc(f, zupc_obj)
+    special_name_insee = glob.glob(os.path.join(dirname, 'special_name_insee'))
+    if len(special_name_insee) == 1:
+        override_name(parent_id, special_name_insee)
     for f in glob.glob(os.path.join(dirname, '*.include')):
         load_include_geojson(parent_id, f, zupc_obj)
     for f in glob.glob(os.path.join(dirname, '*.exclude')):
         load_include_geojson(parent_id, f, zupc_obj)
+    for f in glob.glob(os.path.join(dirname, '*.arrondissements')):
+        load_arrondissements(parent_id, f, zupc_obj)
 
 
 def load_zupc(d, zupc_obj):
@@ -177,6 +221,66 @@ def get_shape_filename(temp_dir):
         return None
     return l[0]
 
+def confirm_zones():
+    print "You can check zones on /zupc/_show_temp"
+    in_ = raw_input("Do you want to confirm this zones ? (y/n)")
+    return in_ == "y"
+
+def merge_zones(temp_zupc_obj):
+    print "Find unmergeable insee codes"
+#Find unmergeable insee codes
+    ZUPC = administrative.ZUPC
+    insee_zupc = set([a.insee
+          for a in db.session.query(taxis.ADS).distinct(taxis.ADS.insee).all()]
+    )
+    insee_temp = set([z.insee
+                      for z in
+                      db.session.query(temp_zupc_obj).distinct(temp_zupc_obj.insee).all()]
+    )
+    diff = insee_zupc.difference(insee_temp)
+    if len(diff) > 0:
+        print "These ZUPC can't be found in temp_zupc: {}".format(diff)
+        return False
+    last_zupc_id = db.session.execute('SELECT max(id) FROM "ZUPC"').fetchall()[0][0]
+    print "Insert temp_zupc in ZUPC"
+    db.session.execute("""INSERT INTO "ZUPC"
+                       (departement_id, nom, insee, shape, active)
+                       SELECT departement_id, nom, insee, shape, active FROM zupc_temp""")
+    db.session.commit()
+
+    print "Updating parent_id in ZUPC"
+    zupc_with_parent = temp_zupc_obj.query.filter(
+        temp_zupc_obj.parent_id != temp_zupc_obj.id).all()
+    for parent_insee, zs in groupby(zupc_with_parent, lambda k: k.parent.insee):
+        parent_id = ZUPC.query.filter(ZUPC_id > last_zupc_id)\
+                .filter(ZUPC.insee==parent_insee).first().id
+        for z in zs:
+            z_to_update = ZUPC.query.filter(ZUPC.id > last_zupc_id)\
+                .filter(ZUPC.insee==z.insee).first()
+            z_to_update.parent_id = parent_id
+            db.session.add(z_to_update)
+    db.session.commit()
+    print "Updating zupc_id in ADS"
+    map_zupc_insee_id = {z.insee: z.id for z in ZUPC.query.filter(ZUPC.id > last_zupc_id).all()}
+    i = 0
+    for ads in taxis.ADS.query.all():
+        i += 1
+        ads.zupc_id = map_zupc_insee_id[ads.insee]
+        if i%100 == 0:
+            db.session.commit()
+            status = "Updated {} ADS".format(i)
+            status = status + chr(8)*(len(status)+1)
+            print status,
+    db.session.commit()
+    print "Removing old ZUPC"
+    db.session.execute("""create table zupc_to_swap (
+                       like "ZUPC" including defaults including constraints
+                       including indexes);
+                       INSERT INTO zupc_to_swap SELECT * FROM "ZUPC" WHERE id > {};
+                       DROP TABLE IF EXISTS old_zupc;
+                       ALTER TABLE "ZUPC" RENAME TO old_zupc;
+                       ALTER TABLE zupc_to_swap RENAME TO "ZUPC";""".format(last_zupc_id))
+    db.session.commit()
 
 @manager.command
 def import_zupc():
@@ -193,3 +297,6 @@ def import_zupc():
     z = create_temp_table()
     load_zupc_temp_table(shape_filename, z)
     load_zupc('/tmp/zupc', z)
+    if not confirm_zones():
+        return
+    merge_zones(z)
