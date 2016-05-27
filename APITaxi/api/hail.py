@@ -203,7 +203,7 @@ class Hail(Resource):
         if p['status']:
             q = q.filter(or_(*[HailModel._status == s for s in p['status']]))
         q = q.order_by(HailModel.creation_datetime.desc())
-        pagination = q.paginate(page=parser.parse_args()['p'], per_page=30)
+        pagination = q.paginate(page=p['p'], per_page=30)
         return {"data": [{
                 "id": hail.id,
                 "added_by": security_models.User.query.get(hail.added_by).email,
@@ -217,6 +217,7 @@ class Hail(Resource):
                 "next_page": pagination.next_num if pagination.has_next else None,
                 "prev_page": pagination.prev_num if pagination.has_prev else None,
                 "pages": pagination.pages,
+                "iter_pages": list(pagination.iter_pages()),
                 "total": pagination.total
                 }
             }
