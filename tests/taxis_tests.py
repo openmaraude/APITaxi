@@ -63,9 +63,8 @@ class TestTaxisGet(TaxiGet):
         for key in ['departement', 'professional_licence']:
             assert key in taxi['driver']
             assert taxi['driver'][key] is not None
-        for key in ['characteristics', 'color', 'licence_plate', 'model', 'nb_seats']:
+        for key in ['characteristics', 'color', 'licence_plate', 'model', 'nb_seats', 'type']:
             assert taxi['vehicle'][key] is not None
-
 
     def test_get_taxis_limited_zone(self):
         from flask import current_app
@@ -104,7 +103,6 @@ class TestTaxisGet(TaxiGet):
                 'characteristics', 'nb_seats']:
             assert key in taxi['vehicle']
             assert taxi['vehicle'][key] is not None
-
 
     def test_get_taxi_out_of_zupc(self):
         self.add(1, 1)
