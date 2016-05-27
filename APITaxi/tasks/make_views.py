@@ -63,17 +63,17 @@ def store_active_taxis(frequency):
         for insee, taxis_ids in insee_taxi_ids.iteritems():
             for ids in izip_longest(*[taxis_ids]*100, fillvalue=None):
                 pipe = redis_store.pipeline()
-                for id_ in ids_:
-                    pipe.sismember(current_app.config['REDIS_TIMESTAMPS'],
-                                   i+':'+operator)
+                for id_ in ids:
+                    pipe.zscore(current_app.config['REDIS_TIMESTAMPS'],
+                                   id_+':'+operator)
                 res = compress(ids, pipe.execute())
-                map_operateur_insee_nb_available(operator, dict()).setdefault(
+                map_operateur_insee_nb_available.setdefault(operator, dict()).setdefault(
                     insee, set()).union(set(res))
                 available_ids.union(set(res))
 
     for operateur, taxis_ids in map_operateur_nb_active.iteritems():
         map_operateur_nb_active.setdefault(operateur, set()).union(
-            set([t+':'+operateur for t in taxis_ids]).intersection(avaliable_ids
+            set([t+':'+operateur for t in taxis_ids]).intersection(available_ids
                 )
         )
 
