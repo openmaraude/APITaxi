@@ -178,6 +178,8 @@ class Hail(Resource):
                             location='values', action='append')
         parser.add_argument('moteur', type=str, required=False, default=None,
                             location='values', action='append')
+        parser.add_argument('date', type=str, required=False, default=None,
+                            location='values')
         p = parser.parse_args()
         q = HailModel.query
         filters = []
@@ -202,6 +204,15 @@ class Hail(Resource):
                 ))
         if p['status']:
             q = q.filter(or_(*[HailModel._status == s for s in p['status']]))
+        if p['date']:
+            date = None
+            try:
+                date = datetime.strptime(p['date'], '%Y/%m/%d %H:%M:%S')
+            except ValueError:
+                current_app.logger.info('Unable to parse date: {}'.format(p['date']))
+            if date:
+                q = q.filter(HailModel.creation_datetime <= date)
+
         q = q.order_by(HailModel.creation_datetime.desc())
         pagination = q.paginate(page=p['p'], per_page=30)
         return {"data": [{
