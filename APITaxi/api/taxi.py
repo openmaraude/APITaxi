@@ -145,7 +145,9 @@ class Taxis(Resource):
         self.zupc_customer = cache_single("""SELECT id FROM "ZUPC"
                             WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
                             (lon, lat), "zupc_lon_lat",
-                            lambda v: v['id'])
+                            lambda v: v['id'],
+                            get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
+                                             float(a[1].split(",")[1][:-1].strip())))
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
