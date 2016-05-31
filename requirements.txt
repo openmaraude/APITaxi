@@ -1,4 +1,4 @@
--e git://github.com/openmaraude/APITaxi_utils.git@fb273988a73819bb3db751e59832b82007db29c8#egg=APITaxi_utils
+-e git://github.com/openmaraude/APITaxi_utils.git@f7ccce89d3b31b6452f8ef8c75c9b66fff9dad32#egg=APITaxi_utils
 -e git://github.com/openmaraude/APITaxi_models.git@b5a98b876512baf360af0edf139e998ebaa91e0a#egg=APITaxi_models
 alembic==0.8.4
 amqp==1.4.8
