@@ -118,9 +118,8 @@ class Hail(Resource):
         if not customer:
             customer = CustomerModel(hj['customer_id'])
             current_app.extensions['sqlalchemy'].db.session.add(customer)
-        taxi_score = redis_store.zscore(current_app.config['REDIS_GEOINDEX'],
+        r = redis_store.geopos(current_app.config['REDIS_GEOINDEX'],
                 '{}:{}'.format(hj['taxi_id'], operateur.email))
-        r = redis_store.geodecode(int(taxi_score)) if taxi_score else None
         taxi_pos = r[0] if r else None
 
         hail = HailModel()
