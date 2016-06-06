@@ -19,13 +19,9 @@ dependencies:
         - git clone https://github.com/openmaraude/GeoTaxi
         - cd GeoTaxi && mkdir obj && make && cd ..
         - ./install_redis.sh
-        - ./install_yajl.sh
-        - ./install_krmt.sh
         - wget https://bootstrap.pypa.io/get-pip.py && python get-pip.py
     cache_directories:
         - redis
-        - yajl
-        - krmt
 
 database:
   post:
@@ -33,7 +29,7 @@ database:
 
 test:
     pre:
-        - ./redis/src/redis-server --module-add krmt/geo.so --port 7777:
+        - ./redis/src/redis-server --port 7777:
             background: true
         - ./GeoTaxi/src/geoloc-server 8080:
             background: true
