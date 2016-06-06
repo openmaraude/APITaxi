@@ -128,8 +128,8 @@ class Hail(Resource):
         hail.customer_address = hj['customer_address']
         hail.customer_phone_number = hj['customer_phone_number']
         hail.taxi_id = hj['taxi_id']
-        hail.initial_taxi_lat = taxi_pos[0] if taxi_pos else None
-        hail.initial_taxi_lon = taxi_pos[1] if taxi_pos else None
+        hail.initial_taxi_lat = taxi_pos[0][0] if taxi_pos else None
+        hail.initial_taxi_lon = taxi_pos[0][1] if taxi_pos else None
         hail.operateur_id = operateur.id
         hail.status = 'received'
         current_app.extensions['sqlalchemy'].db.session.add(hail)
