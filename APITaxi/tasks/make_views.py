@@ -2,11 +2,12 @@
 from ..extensions import redis_store, user_datastore
 from APITaxi_models.taxis import Taxi
 from APITaxi_models.administrative import ZUPC
+from APITaxi_utils import influx_db
+from APITaxi_utils.pager import pager
 from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
 from time import mktime, time
 from flask import current_app
-from APITaxi_utils import influx_db
 from itertools import izip_longest, compress
 
 def store_active_taxis(frequency):
@@ -61,7 +62,7 @@ def store_active_taxis(frequency):
     available_ids = set()
     for operator, insee_taxi_ids in map_operateur_insee_nb_active.iteritems():
         for insee, taxis_ids in insee_taxi_ids.iteritems():
-            for ids in izip_longest(*[taxis_ids]*100, fillvalue=None):
+            for ids in pager(taxis_ids):
                 pipe = redis_store.pipeline()
                 for id_ in ids:
                     pipe.zscore(current_app.config['REDIS_TIMESTAMPS'],
