@@ -637,11 +637,13 @@ class TestHailPut(HailMixin):
         hail = Hail.query.get(r.json['data'][0]['id'])
         hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'accepted_by_customer'
-        dict_hail['rating_ride'] = 2
+        dict_hail['rating_ride'] = 1.
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
         self.assert200(r)
         assert r.json['data'][0]['rating_ride'] == int(dict_hail['rating_ride'])
+        taxi = Taxi.query.get(hail.taxi_id)
+        assert taxi.rating < 4.5
         self.app.config['ENV'] = prev_env
 
     def test_rating_ride_string(self):
