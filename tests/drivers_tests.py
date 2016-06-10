@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
-from .fake_data import dict_driver
+from .fake_data import dict_driver, dict_vehicle, dict_ads, dict_taxi
 from APITaxi_models.taxis import Driver
 from json import dumps, loads
 from copy import deepcopy
@@ -58,3 +58,23 @@ class TestDriverPost(Skeleton):
                 content_type=None, envelope_data=False, accept='text/html')
         self.assert200(r)
 
+    def test_post_after_taxi_post(self):
+        self.init_zupc()
+        self.init_dep()
+        dict_ = deepcopy(dict_driver)
+        r = self.post([dict_])
+        self.assert201(r)
+        r = self.post([dict_vehicle], url='/vehicles/')
+        self.assert201(r)
+        vehicle_id = r.json['data'][0]['id']
+        dict_ads_ = deepcopy(dict_ads)
+        dict_ads_['vehicle_id'] = vehicle_id
+        self.post([dict_ads_], url='/ads/')
+        r = self.post([dict_taxi], url='/taxis/')
+        self.assert201(r)
+
+        dict_ = deepcopy(dict_driver)
+        r = self.post([dict_])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_)
+        self.assertEqual(len(Driver.query.all()), 2)
