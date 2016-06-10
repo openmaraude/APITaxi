@@ -7,7 +7,7 @@ from flask.ext.restplus import reqparse
 from ..extensions import redis_store
 from ..api import api
 from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel, HailLog
-from APITaxi_models.taxis import  RawTaxi, TaxiRedis
+from APITaxi_models.taxis import  RawTaxi, TaxiRedis, Taxi
 from APITaxi_models import security as security_models
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
@@ -15,10 +15,12 @@ from APITaxi_utils.request_wants_json import json_mimetype_required
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
 from APITaxi_utils import influx_db
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import json
 from sqlalchemy import or_
-from itertools import chain
+from itertools import chain, izip
+from math import exp, fsum
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -67,6 +69,7 @@ class HailId(Resource):
                     abort(400, message='Taxi phone number is needed')
                 else:
                     hail.taxi_phone_number = hj['taxi_phone_number']
+        initial_rating = hail.rating_ride
         for ev in puttable_arguments:
             if current_user.id != hail.added_by and ev.startswith('customer'):
                 continue
@@ -87,6 +90,27 @@ class HailId(Resource):
                 abort(400, message=e.args[0])
         current_app.extensions['sqlalchemy'].db.session.add(hail)
         current_app.extensions['sqlalchemy'].db.session.commit()
+        if initial_rating != hail.rating_ride:
+            delta = relativedelta(months=-6)
+            min_date = datetime.now() + delta
+            nb_days = (datetime.now() - min_date).days
+            ratings ={i: [] for i in range(nb_days)}
+            for hail in HailModel.query.filter_by(taxi_id=hail.taxi_id)\
+                        .filter(HailModel.creation_datetime >= min_date):
+                key = nb_days - (hail.creation_datetime - min_date).days - 1
+                ratings[key].append(hail.rating_ride)
+            #We want to fill the ratings when there is no value
+            ratings = {k: v+[4.5]*(3-len(v)) for k, v in ratings.iteritems()}
+            decay_factor = {nb_days-i-1:exp(-float(nb_days-i)/30.) for i in range(nb_days)}
+            total_rating = float(sum(map(lambda rs_f:
+                                         sum(map(lambda r: r*rs_f[1], rs_f[0])),
+                                         izip(ratings.values(), decay_factor.values()))))
+            total_factor = fsum(map(lambda k_v: k_v[1]*len(ratings[k_v[0]]),
+                                    decay_factor.iteritems()))
+            taxi = Taxi.query.get(hail.taxi_id)
+            taxi.rating = total_rating / total_factor
+            current_app.extensions['sqlalchemy'].db.session.add(taxi)
+            current_app.extensions['sqlalchemy'].db.session.commit()
         return {"data": [hail]}
 
 
