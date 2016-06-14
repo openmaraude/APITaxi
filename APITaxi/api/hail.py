@@ -96,7 +96,8 @@ class HailId(Resource):
             nb_days = (datetime.now() - min_date).days
             ratings ={i: [] for i in range(nb_days)}
             for hail in HailModel.query.filter_by(taxi_id=hail.taxi_id)\
-                        .filter(HailModel.creation_datetime >= min_date):
+                        .filter(HailModel.creation_datetime >= min_date)\
+                        .filter(HailModel.rating_ride != None):
                 key = nb_days - (hail.creation_datetime - min_date).days - 1
                 ratings[key].append(hail.rating_ride)
             #We want to fill the ratings when there is no value
