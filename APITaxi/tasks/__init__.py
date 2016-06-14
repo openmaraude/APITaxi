@@ -3,10 +3,6 @@ from ..extensions import celery
 
 def init_app(app):
     celery.init_app(app)
-from .make_views import store_active_taxis as f
+from .make_views import store_active_taxis
 from .clean_geoindex_timestamps import clean_geoindex_timestamps
 from .send_request_operator import send_request_operator
-
-@celery.task()
-def store_active_taxis(frequency):
-    return f(frequency)

@@ -1,6 +1,6 @@
 #coding: utf-8
 from ..extensions import redis_store, user_datastore
-from APITaxi_models.taxis import Taxi
+from APITaxi_models.taxis import Taxi, RawTaxi
 from APITaxi_models.administrative import ZUPC
 from APITaxi_utils import influx_db
 from APITaxi_utils.pager import pager
@@ -9,7 +9,18 @@ from datetime import datetime, timedelta
 from time import mktime, time
 from flask import current_app
 from itertools import izip_longest, compress
+from ..extensions import celery
+from celery import Task
 
+class cache(Task):
+    abstract=True
+
+    def __init__(store_active_taxis):
+        store_active_taxis.insee_zupc_dict = dict()
+
+
+
+@celery.task(name='store_active_taxis', base=cache)
 def store_active_taxis(frequency):
     now = datetime.utcnow()
     bound = time() - (Taxi._ACTIVITY_TIMEOUT + frequency * 60)
@@ -17,44 +28,50 @@ def store_active_taxis(frequency):
     map_operateur_nb_active = dict()
     map_insee_nb_active = dict()
     active_taxis = set()
-    insee_zupc_dict = dict()
     prefixed_taxi_ids = []
     convert = lambda d: mktime(d.timetuple())
     hidden_operator = current_app.config.get('HIDDEN_OPERATOR', 'testing_operator')
-    for taxi_id_operator in redis_store.zrangebyscore(
-            current_app.config['REDIS_TIMESTAMPS'], bound, time()):
-        taxi_id, operator = taxi_id_operator.split(':')
-        if operator == hidden_operator:
-            continue
-        active_taxis.add(taxi_id)
-        taxi_db = Taxi.query.get(taxi_id)
-        if taxi_db is None:
-            current_app.logger.error('Taxi: {}, not found in database'.format(
-                taxi_id))
-            continue
-        if taxi_db.ads is None:
-            current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
-            continue
-#This a cache for insee to zupc.
-        if not taxi_db.ads.insee in insee_zupc_dict:
-            zupc = ZUPC.query.get(taxi_db.ads.zupc_id)
-            if not zupc:
-                current_app.logger.error('Unable to find zupc: {}'.format(
-                    taxi_db.ads.zupc_id))
-            zupc = zupc.parent
-            insee_zupc_dict[zupc.insee] = zupc
-            insee_zupc_dict[taxi_db.ads.insee] = zupc
-        else:
-            zupc = insee_zupc_dict[taxi_db.ads.insee]
-        map_insee_nb_active.setdefault(zupc.insee, set()).add(taxi_id)
-        if operator not in map_operateur_insee_nb_active:
-            u = user_datastore.find_user(email=operator)
-            if not u:
-                current_app.logger.error('User: {} not found'.format(operator))
+    for gen_taxi_ids_operator in pager(redis_store.zrangebyscore(
+            current_app.config['REDIS_TIMESTAMPS'], bound, time()), page_size=100):
+        taxi_ids_operator = list(gen_taxi_ids_operator)
+        taxis = dict()
+        for tm in RawTaxi.get([t.split(':')[0] for t in taxi_ids_operator]):
+            for t in tm:
+                taxis[t['taxi_id']+':'+t['u_email']] = t
+        for taxi_id_operator in taxi_ids_operator:
+            taxi_id, operator = taxi_id_operator.split(':')
+            if operator == hidden_operator:
                 continue
-            map_operateur_insee_nb_active[operator] = dict()
-        map_operateur_insee_nb_active[operator].setdefault(zupc.insee, set()).add(taxi_id)
-        map_operateur_nb_active.setdefault(operator, set()).add(taxi_id)
+            active_taxis.add(taxi_id)
+            taxi_db = taxis.get(taxi_id_operator, None)
+            if taxi_db is None:
+                current_app.logger.error('Taxi: {}, not found in database'.format(
+                    taxi_id))
+                continue
+            if 'ads_insee' not in taxi_db:
+                current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
+                continue
+#This a cache for insee to zupc.
+            if not taxi_db['ads_insee'] in store_active_taxis.insee_zupc_dict:
+                zupc = ZUPC.query.get(taxi_db['ads_zupc_id'])
+                if not zupc:
+                    current_app.logger.error('Unable to find zupc: {}'.format(
+                        taxi_db['ads_zupc_id']))
+                    continue
+                zupc = zupc.parent
+                store_active_taxis.insee_zupc_dict[zupc.insee] = zupc
+                store_active_taxis.insee_zupc_dict[taxi_db['ads_insee']] = zupc
+            else:
+                zupc = store_active_taxis.insee_zupc_dict[taxi_db['ads_insee']]
+            map_insee_nb_active.setdefault(zupc.insee, set()).add(taxi_id)
+            if operator not in map_operateur_insee_nb_active:
+                u = user_datastore.find_user(email=operator)
+                if not u:
+                    current_app.logger.error('User: {} not found'.format(operator))
+                    continue
+                map_operateur_insee_nb_active[operator] = dict()
+            map_operateur_insee_nb_active[operator].setdefault(zupc.insee, set()).add(taxi_id)
+            map_operateur_nb_active.setdefault(operator, set()).add(taxi_id)
 
     map_operateur_insee_nb_available = dict()
     map_operateur_nb_available = dict()
@@ -62,7 +79,7 @@ def store_active_taxis(frequency):
     available_ids = set()
     for operator, insee_taxi_ids in map_operateur_insee_nb_active.iteritems():
         for insee, taxis_ids in insee_taxi_ids.iteritems():
-            for ids in pager(taxis_ids):
+            for ids in pager(taxis_ids, page_size=100):
                 pipe = redis_store.pipeline()
                 for id_ in ids:
                     pipe.zscore(current_app.config['REDIS_TIMESTAMPS'],

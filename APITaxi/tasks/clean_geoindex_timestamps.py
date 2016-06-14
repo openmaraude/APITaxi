@@ -1,9 +1,9 @@
 from ..extensions import celery, redis_store
 from APITaxi_models.taxis import TaxiRedis
-import time
+from time import time
 from flask import current_app
 
-@celery.task
+@celery.task(name='clean_geoindex_timestamps')
 def clean_geoindex_timestamps():
     max_time = time() - TaxiRedis._DISPONIBILITY_DURATION
     redis_store.zremrangebyscore(current_app.config['REDIS_TIMESTAMPS'],
