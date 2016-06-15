@@ -21,6 +21,7 @@ import json
 from sqlalchemy import or_
 from itertools import chain, izip
 from math import exp, fsum
+from sqlalchemy.sql.expression import text
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -39,6 +40,9 @@ class HailId(Resource):
     def get(self, hail_id):
         hail = HailModel.get_or_404(hail_id)
         self.filter_access(hail)
+        hail.taxi_relation = Taxi.query.from_statement(
+            text("SELECT * FROM taxi where id=:taxi_id")
+        ).params(taxi_id=hail.taxi_id).one()
         return_ = marshal({"data": [hail]},hail_model)
         return_['data'][0]['taxi']['crowfly_distance'] = vincenty(
                 (return_['data'][0]['taxi']['position']['lat'],
