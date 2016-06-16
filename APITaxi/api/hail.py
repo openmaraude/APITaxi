@@ -38,6 +38,8 @@ class HailId(Resource):
     @roles_accepted('admin', 'moteur', 'operateur')
     @json_mimetype_required
     def get(self, hail_id):
+        from APITaxi_models import db
+        db.session.expire_all()
         hail = HailModel.get_or_404(hail_id)
         self.filter_access(hail)
         hail.taxi_relation = Taxi.query.from_statement(
