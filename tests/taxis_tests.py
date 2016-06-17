@@ -69,6 +69,7 @@ class TestTaxisGet(TaxiGet):
 
     def test_get_taxis_limited_zone(self):
         from flask import current_app
+        from APITaxi.extensions import redis_store
         from shapely.geometry import Polygon
         current_app.config['LIMITED_ZONE'] = Polygon([
             (43.7, 3.7), (43.7, 4.4), (43.4, 4.4), (43.4, 3.7)])
@@ -156,6 +157,8 @@ class TestTaxisGet(TaxiGet):
 #This taxi is now not fresh for operateur_2
         redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'],
                 **{'{}:user_operateur_2'.format(id_taxi):0.0})
+        from APITaxi.tasks import clean_geoindex_timestamps
+        clean_geoindex_timestamps()
         r = self.put([{"status": "off"}], '/taxis/{}/'.format(id_taxi),
                 user='user_operateur_2', role='operateur')
         self.assert200(r)
