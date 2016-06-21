@@ -119,8 +119,7 @@ class Taxis(Resource):
         redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon,
                               storedistkey=store_key)
         redis_store.zinterstore(store_key, [store_key,
-                                current_app.config['REDIS_TIMESTAMPS']])
-        redis_store.zinterstore(store_key, [store_key,
+                                current_app.config['REDIS_TIMESTAMPS'],
                                 current_app.config['REDIS_NOT_AVAILABLE']])
         self.not_available = {t[0].split(':')[0] for t
                               in redis_store.zscan_iter(store_key)}
