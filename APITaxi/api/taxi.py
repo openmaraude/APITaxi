@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
 from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
-from APITaxi_utils.caching import cache_single
+from APITaxi_utils.caching import cache_single, cache_in
 from ..extensions import redis_store
 from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
@@ -14,6 +14,8 @@ from time import time
 from datetime import datetime, timedelta
 import math
 from itertools import groupby, compress, izip, islice
+from shapely.prepared import prep
+from shapely.wkb import loads as load_wkb
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -105,7 +107,7 @@ class Taxis(Resource):
             current_app.logger.debug('Taxi {} not in customer\'s zone'.format(
                 taxi.get('taxi_id', 'no id')))
             return False
-        if not self.zupc_customer[zupc_id].preped_geom.contains(
+        if not self.zupc_customer[self.parent_zupc[zupc_id]].contains(
                         Point(float(p[1]), float(p[0]))):
             current_app.logger.debug('Taxi {} is not in its zone'.format(
                 taxi.get('taxi_id', 'no id')))
@@ -135,10 +137,10 @@ class Taxis(Resource):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        self.zupc_customer = cache_single("""SELECT id FROM "ZUPC"
+        self.zupc_customer = cache_single("""SELECT id, parent_id FROM "ZUPC"
                             WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
                             (lon, lat), "zupc_lon_lat",
-                            lambda v: v['id'],
+                            lambda v: (v['id'], v['parent_id']),
                             get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
                                              float(a[1].split(",")[1][:-1].strip())))
         if len(self.zupc_customer) == 0:
@@ -154,8 +156,13 @@ class Taxis(Resource):
         if nb_positions == 0:
             current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        self.zupc_customer = {id_: administrative_models.ZUPC.cache.get(id_)
-                            for id_ in self.zupc_customer}
+        self.parent_zupc = {r[0]: r[1] for r in self.zupc_customer}
+        self.zupc_customer = {r[0]: r[1]
+          for r in cache_in(
+              'SELECT id, ST_AsBinary(shape) AS shape FROM "ZUPC" WHERE id in %s',
+               {int(r1[1]) for r1 in self.zupc_customer}, "zupc_parent_shape",
+               lambda v: (v['id'], prep(load_wkb(bytes(v['shape'])))),
+              get_id=lambda v:unicode(v[0]))}
         taxis = []
         offset = 0
         count = p['count'] * 4
