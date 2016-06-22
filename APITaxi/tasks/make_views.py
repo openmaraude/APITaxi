@@ -45,8 +45,8 @@ def store_active_taxis(frequency):
             active_taxis.add(taxi_id)
             taxi_db = taxis.get(taxi_id_operator, None)
             if taxi_db is None:
-                current_app.logger.error('Taxi: {}, not found in database'.format(
-                    taxi_id))
+                current_app.logger.error('Taxi: {}:{}, not found in database'.format(
+                    taxi_id, operator))
                 continue
             if 'ads_insee' not in taxi_db:
                 current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
