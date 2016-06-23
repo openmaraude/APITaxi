@@ -368,7 +368,6 @@ class TestHailPut(HailMixin):
         self.assert400(r)
         self.app.config['ENV'] = prev_env
 
-
     def test_received_by_taxi_ok_version_2(self):
         dict_hail = deepcopy(dict_)
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
@@ -395,6 +394,34 @@ class TestHailPut(HailMixin):
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2)
         self.assert400(r)
+        self.app.config['ENV'] = prev_env
+
+    def received_by_taxi_from_received(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'received')
+        dict_hail['status'] = 'received_by_taxi'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2)
+        self.assert200(r)
+        assert r.json['data'][0]['status'] == 'received_by_taxi'
+        self.app.config['ENV'] = prev_env
+
+    def received_by_operator_from_received_by_taxi(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'received_by_taxi')
+        dict_hail['status'] = 'received_by_operator'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2)
+        self.assert200(r)
+        assert r.json['data'][0]['status'] == 'received_by_taxi'
         self.app.config['ENV'] = prev_env
 
     def test_timeout_taxi_ok(self):
