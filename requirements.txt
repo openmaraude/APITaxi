@@ -1,5 +1,5 @@
 -e git://github.com/openmaraude/APITaxi_utils.git@96b508646f44552e577f0dc212780fd50d2140bf#egg=APITaxi_utils
--e git://github.com/openmaraude/APITaxi_models.git@e7260decfe4411a1f2bed9f697ad56b5cb87ec7f#egg=APITaxi_models
+-e git://github.com/openmaraude/APITaxi_models.git@dfeecaae501e0c254ac08a3bd348be5a20dcbe79#egg=APITaxi_models
 alembic==0.8.4
 amqp==1.4.8
 aniso8601==1.1.0
@@ -37,6 +37,7 @@ functools32==3.2.3.post2
 GeoAlchemy2==0.2.6
 geojson==1.3.1
 geopy==1.11.0
+hiredis==0.2.0
 infinity==1.3
 influxdb==2.10.0
 intervals==0.3.1

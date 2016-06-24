@@ -4,7 +4,7 @@ from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
 from flask.ext.security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
 from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
-from APITaxi_utils.caching import cache_single
+from APITaxi_utils.caching import cache_single, cache_in
 from ..extensions import redis_store
 from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
@@ -13,7 +13,9 @@ from shapely.geometry import Point
 from time import time
 from datetime import datetime, timedelta
 import math
-from itertools import groupby
+from itertools import groupby, compress, izip, islice
+from shapely.prepared import prep
+from shapely.wkb import loads as load_wkb
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -95,40 +97,32 @@ get_parser.add_argument('count', type=int, required=False,
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
-
-    def filter_not_available(self, fresh_redis, na_redis, available_ids):
-        #As said before there might be non-fresh taxis
-        nb_not_available = redis_store.zinterstore(na_redis,
-                {fresh_redis:0, current_app.config['REDIS_NOT_AVAILABLE']:0}
-        )
-        if nb_not_available == 0:
-            return
-        for v in redis_store.zrange(na_redis, 0, -1):
-            if not v in available_ids:
-                continue
-            try:
-                current_app.logger.debug('Taxi {} is not available'.format(v.split(':')[0]))
-                del self.taxis_redis[v.split(':')[0]]
-            except KeyError:
-                pass
-
-    def filter_zone(self, t):
-        zupc_id = t['ads_zupc_id']
+    def filter_zone(self, taxi, p):
+        if not taxi:
+            current_app.logger.debug('Taxi {} not fount in db')
+            return False
+        taxi = taxi[0]
+        zupc_id = taxi['ads_zupc_id']
         if not zupc_id in self.zupc_customer.keys():
             current_app.logger.debug('Taxi {} not in customer\'s zone'.format(
-                t.get('taxi_id', 'no id')))
+                taxi.get('taxi_id', 'no id')))
             return False
-        t_redis = self.taxis_redis[t['taxi_id']]
-        if not self.zupc_customer[t['ads_zupc_id']].preped_geom.contains(
-                      Point(float(t_redis.lon),
-                          float(t_redis.lat))
-                      ):
+        if not self.zupc_customer[self.parent_zupc[zupc_id]].contains(
+                        Point(float(p[1]), float(p[0]))):
             current_app.logger.debug('Taxi {} is not in its zone'.format(
-                t.get('taxi_id', 'no id')))
+                taxi.get('taxi_id', 'no id')))
             return False
         return True
 
-
+    def set_not_available(self, lon, lat, name_redis):
+        store_key = name_redis+'_operateur'
+        redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon,
+                              storedistkey=store_key)
+        redis_store.zinterstore(store_key, [store_key,
+                                current_app.config['REDIS_TIMESTAMPS'],
+                                current_app.config['REDIS_NOT_AVAILABLE']])
+        self.not_available = {t[0].split(':')[0] for t
+                              in redis_store.zscan_iter(store_key)}
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -142,71 +136,71 @@ class Taxis(Resource):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        self.zupc_customer = cache_single("""SELECT id FROM "ZUPC"
+        self.zupc_customer = cache_single("""SELECT id, parent_id FROM "ZUPC"
                             WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
                             (lon, lat), "zupc_lon_lat",
-                            lambda v: v['id'],
+                            lambda v: (v['id'], v['parent_id']),
                             get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
                                              float(a[1].split(",")[1][:-1].strip())))
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
-        #It returns a list of all taxis near the given point
-        #For each taxi you have a tuple with: (id, distance, [lat, lon])
-        positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX'],
-                lat, lon)
-        if len(positions) == 0:
-            current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
-            return {'data': []}
         g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
         g.keys_to_delete.append(name_redis)
-
-        redis_store.zadd(name_redis, **{id_: d for id_, d, _ in positions})
-        #The resulting set may contain unfresh taxi because they haven't be
-        #deleted yet
-        fresh_redis = 'fresh:'+name_redis
-        g.keys_to_delete.append(fresh_redis)
-        nb_fresh_taxis = redis_store.zinterstore(fresh_redis,
-                {name_redis:0, current_app.config['REDIS_TIMESTAMPS']:1}
-        )
-        if nb_fresh_taxis == 0:
-            current_app.logger.debug('No fresh taxi found at {}, {}'.format(lat, lon))
+        #It returns a list of all taxis near the given point
+        #For each taxi you have a tuple with: (id, distance, [lat, lon])
+        nb_positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX_ID'],
+                lat, lon, storedistkey=name_redis)
+        if nb_positions == 0:
+            current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        min_time = int(time()) - taxis_models.TaxiRedis._DISPONIBILITY_DURATION
-        #We select only the fresh taxis
-        timestamps = dict(redis_store.zrangebyscore(fresh_redis, min_time,
-            '+inf', withscores=True))
-
-        #Select only fresh taxis, and add operator and timestamps to the tuple
-        positions = [(v[0], [v[1], v[2], timestamps[v[0]]])
-                        for v in positions if v[0] in timestamps]
-        self.taxis_redis = {k: taxis_models.TaxiRedis(k, caracs_list=list(v))
-            for k, v in groupby(positions, key=lambda k_v: k_v[0].split(':')[0])}
-        na_redis = 'na:'+name_redis
-        g.keys_to_delete.append(na_redis)
-        self.filter_not_available(fresh_redis, na_redis, [i[0] for i in positions])
-
-        self.zupc_customer = {id_: administrative_models.ZUPC.cache.get(id_)
-                            for id_ in self.zupc_customer}
-
+        self.parent_zupc = {r[0]: r[1] for r in self.zupc_customer}
+        self.zupc_customer = {r[0]: r[1]
+          for r in cache_in(
+              'SELECT id, ST_AsBinary(shape) AS shape FROM "ZUPC" WHERE id in %s',
+               {int(r1[1]) for r1 in self.zupc_customer}, "zupc_parent_shape",
+               lambda v: (v['id'], prep(load_wkb(bytes(v['shape'])))),
+              get_id=lambda v:unicode(v[0]))}
         taxis = []
-#Sorting by distance
-        sorted_ids = [t.id for t in
-            sorted(self.taxis_redis.values(), key=lambda t: float(t.distance))]
-        for i in range(0, int(math.ceil(len(sorted_ids)/float(p['count'])))):
-            page_ids = sorted_ids[i*p['count']:(i+1)*p['count']]
-            taxis_db = taxis_models.RawTaxi.get(page_ids)
-            if len(taxis_db) == 0:
-                continue
-            l = [taxis_models.RawTaxi.generate_dict(t,
-                        self.taxis_redis[t[0]['taxi_id']], min_time=min_time,
-                        favorite_operator=p['favorite_operator'])
-                for t in taxis_db if len(t) > 0
-                if self.filter_zone(t[0])]
-            taxis.extend(filter(None, l))
-            if len(taxis) >= p['count']:
+        offset = 0
+        count = p['count'] * 4
+        self.set_not_available(lon, lat, name_redis)
+        while len(taxis) < p['count']:
+            page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
+                                    offset, count, True) if v[0] not in self.not_available]
+            offset += count
+            if len(page_ids_distances) == 0:
                 break
+            page_ids = [v[0] for v in page_ids_distances]
+            distances = [v[1] for v in page_ids_distances]
+            positions = redis_store.geopos(current_app.config['REDIS_GEOINDEX_ID']
+                                           ,*page_ids)
+            taxis_db = taxis_models.RawTaxi.get(page_ids)
+#We get all timestamps
+            pipe = redis_store.pipeline()
+            map(lambda l_taxis:map(
+                lambda t: pipe.zscore(current_app.config['REDIS_TIMESTAMPS'],
+                                      t['taxi_id']+':'+t['u_email']),l_taxis)
+                , taxis_db)
+            timestamps = pipe.execute()
+#If we have taxis_db = [{t_1}, {}, {t_21, t_22}, {t_3}]
+#Then we want timestamps_slices = [(0, 1), (1, 1), (1, 3), (3, 4)]
+            timestamps_slices = []
+            map(lambda i: timestamps_slices.append((0, len(i)))\
+                if not timestamps_slices\
+                else timestamps_slices.append((timestamps_slices[-1][1],
+                                               timestamps_slices[-1][1]+len(i))),
+                taxis_db)
+
+            l = [taxis_models.RawTaxi.generate_dict(t[0],
+                        None, None,
+                        favorite_operator=p['favorite_operator'],
+                        position={"lon": t[1][0], "lat": t[1]},
+                        distance=t[2], timestamps=islice(timestamps, *t[3]))
+                for t in izip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
+                if self.filter_zone(t[0], t[1])]
+            taxis.extend(filter(None, l))
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required

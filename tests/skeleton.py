@@ -48,8 +48,10 @@ class Skeleton(TestCase):
         ids = []
         for taxi in Taxi.query.all():
             redis_store.delete('taxi:{}'.format(taxi.id))
-        redis_store.delete('geoindex')
-        redis_store.delete('timestamps')
+        for k, v in current_app.config.iteritems():
+            if not k.startswith('REDIS'):
+                continue
+            redis_store.delete(v)
         current_app.extensions['sqlalchemy'].db.session.remove()
         current_app.extensions['sqlalchemy'].db.drop_all()
         current_app.extensions['sqlalchemy'].db.get_engine(self.app).dispose()
@@ -102,6 +104,8 @@ class Skeleton(TestCase):
         n = '{}:{}'.format(taxi['id'], user)
         redis_store.geoadd(current_app.config['REDIS_GEOINDEX'], lat, lon, n)
         redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'], **{n:time.time()})
+        redis_store.geoadd(current_app.config['REDIS_GEOINDEX_ID'], lat, lon, taxi['id'])
+        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS_ID'], **{taxi['id']:time.time()})
         return taxi
 
     def init_zupc(self, post_second=False):
