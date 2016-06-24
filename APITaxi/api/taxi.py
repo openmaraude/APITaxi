@@ -196,7 +196,7 @@ class Taxis(Resource):
             l = [taxis_models.RawTaxi.generate_dict(t[0],
                         None, None,
                         favorite_operator=p['favorite_operator'],
-                        position={"lon": t[1][0], "lat": t[1]},
+                        position={"lon": t[1][1], "lat": t[1][0]},
                         distance=t[2], timestamps=islice(timestamps, *t[3]))
                 for t in izip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
                 if self.filter_zone(t[0], t[1])]
