@@ -138,10 +138,10 @@ class Skeleton(TestCase):
 
     def call(self, url, role, user, fun, data=None, envelope_data=None,
             version=2, accept="application/json",
-            content_type='application/json'):
-        if not role:
+            content_type='application/json', headers={}):
+        if not role and not headers:
             role = self.__class__.role
-        if not user:
+        if not user and not headers:
             user = 'user_{}'.format(role)
         authorization = "{}:{}".format(user, role)
         if envelope_data:
@@ -149,29 +149,33 @@ class Skeleton(TestCase):
         data = dumps(data) if data and content_type else data
         if not url:
             url = self.__class__.url
+        if not headers:
+            headers={"Authorization": authorization,
+                     "Accept": accept,
+                     "X-VERSION": version
+            }
+
         with self.app.test_client() as c:
             return getattr(c, fun)(url, data=data,
-                        headers={
-                            "Authorization": authorization,
-                            "Accept": accept,
-                            "X-VERSION": version},
+                        headers=headers,
                         content_type=content_type)
 
-    def get(self, url, role=None, user=None, version=2,
-            accept="application/json"):
+    def get(self, url=None, role=None, user=None, version=2,
+            accept="application/json", headers={}):
         return self.call(url, role, user, "get", version=version,
-                accept=accept)
+                accept=accept, headers=headers)
 
     def post(self, data, url=None, envelope_data=True, role=None, user=None,
             version=2, content_type='application/json',
-            accept='application/json'):
+            accept='application/json', headers={}):
         return self.call(url, role, user, "post", data, envelope_data,
-            version=version, content_type=content_type, accept=accept)
+            version=version, content_type=content_type, accept=accept,
+                         headers=headers)
 
     def put(self, data, url=None, envelope_data=True, role=None, user=None,
-            version=2, content_type='application/json'):
+            version=2, content_type='application/json', headers={}):
         return self.call(url, role, user, "put", data, envelope_data,
-            version=version, content_type=content_type)
+            version=version, content_type=content_type, headers=headers)
 
     def init_dep(self):
         dep = Departement()
