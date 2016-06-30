@@ -75,18 +75,21 @@ def create_app(sqlalchemy_uri=None):
             else:
                 not_available.add(taxi_id_operator)
         to_remove = list()
-        cursor, keys = redis_store.sscan(app.config['REDIS_NOT_AVAILABLE'], 0)
-        keys = set(keys)
-        while cursor != 0:
-            to_remove.extend(keys.intersection(available))
-            not_available.difference_update(keys)
-            cursor, keys = redis_store.sscan(app.config['REDIS_NOT_AVAILABLE'], 
-                    cursor)
-            keys = set(keys)
+        if redis_store.type(app.config['REDIS_NOT_AVAILABLE']) != 'zset':
+            redis_store.delete(app.config['REDIS_NOT_AVAILABLE'])
+        else:
+            cursor, keys = redis_store.zscan(app.config['REDIS_NOT_AVAILABLE'], 0)
+            keys = set([k[0] for k in keys])
+            while cursor != 0:
+                to_remove.extend(keys.intersection(available))
+                not_available.difference_update(keys)
+                cursor, keys = redis_store.zscan(app.config['REDIS_NOT_AVAILABLE'],
+                        cursor)
+                keys = set([k[0] for k in keys])
         if len(to_remove) > 0:
-            redis_store.srem(app.config['REDIS_NOT_AVAILABLE'], to_remove)
+            redis_store.zrem(app.config['REDIS_NOT_AVAILABLE'], to_remove)
         if len(not_available) > 0:
-            redis_store.sadd(app.config['REDIS_NOT_AVAILABLE'], *not_available)
+            redis_store.zadd(app.config['REDIS_NOT_AVAILABLE'], **{k:0 for k in not_available})
 
     from APITaxi_models.hail import HailLog
     def delete_redis_keys(response):

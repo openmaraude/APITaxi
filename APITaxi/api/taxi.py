@@ -73,11 +73,11 @@ class TaxiId(Resource):
             t[0]['vehicle_description_status'] = new_status
             taxi_id_operator = "{}:{}".format(taxi_id, current_user.email)
             if t[0]['vehicle_description_status'] == 'free':
-                redis_store.srem(current_app.config['REDIS_NOT_AVAILABLE'],
+                redis_store.zrem(current_app.config['REDIS_NOT_AVAILABLE'],
                     taxi_id_operator)
             else:
-                redis_store.sadd(current_app.config['REDIS_NOT_AVAILABLE'],
-                    taxi_id_operator)
+                redis_store.zadd(current_app.config['REDIS_NOT_AVAILABLE'],
+                    0., taxi_id_operator)
 
         taxi_m = marshal({'data':[
             taxis_models.RawTaxi.generate_dict(t, operator=current_user.email)]
