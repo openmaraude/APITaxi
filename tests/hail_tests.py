@@ -10,7 +10,7 @@ from APITaxi_models.security import User
 from copy import deepcopy
 from werkzeug.exceptions import ServiceUnavailable
 from datetime import datetime, timedelta
-import time
+import time, json
 from flask import current_app
 
 dict_ = {
@@ -88,8 +88,18 @@ class TestHailPost(HailMixin):
         self.assert400(r)
 
     def test_no_taxi(self):
+        before = set(redis_store.keys("hail:notposted:*"))
         r = self.post([dict_])
         self.assert404(r)
+        after = set(redis_store.keys("hail:notposted:*"))
+        keys = after - before
+        assert len(keys) == 1
+        key = keys.pop()
+        scan = redis_store.zscan_iter(key)
+        val, score = scan.next()
+        j = json.loads(val)
+        assert j['code'] == 404
+
 
     def test_taxi_non_free(self):
         dict_hail = deepcopy(dict_)
@@ -132,7 +142,6 @@ class TestHailPost(HailMixin):
 
     def test_received_by_operator_staging(self):
         self.received_by_operator('STAGING')
-
 
     def test_received_by_operator_apikey(self):
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail_apikey/',

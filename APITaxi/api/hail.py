@@ -139,10 +139,12 @@ class Hail(Resource):
 
         descriptions = RawTaxi.get((hj['taxi_id'],), operateur.id)
         if len(descriptions) == 0 or len(descriptions[0]) == 0:
+            g.hail_log = HailLog('POST', None, request.data)
             abort(404, message='Unable to find taxi {} of {}'.format(
                 hj['taxi_id'], hj['operateur']))
         if descriptions[0][0]['vehicle_description_status'] != 'free' or\
                 not TaxiRedis(hj['taxi_id']).is_fresh(hj['operateur']):
+            g.hail_log = HailLog('POST', None, request.data)
             abort(403, message="The taxi is not available")
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
                 operateur_id=current_user.id).first()
