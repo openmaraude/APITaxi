@@ -3,6 +3,7 @@ ENV = 'DEV'
 SECRET_KEY = 'super-secret'
 SQLALCHEMY_DATABASE_URI = 'postgresql://v:v@localhost/odtaxi'
 REDIS_URL = "redis://:@localhost:6379/0"
+REDIS_HAILLOG_URL = "redis://:@localhost:6379/0"
 REDIS_GEOINDEX = 'geoindex_2'
 REDIS_GEOINDEX_ID = 'geoindex'
 REDIS_TIMESTAMPS = 'timestamps'
