@@ -147,7 +147,7 @@ class Hail(Resource):
             g.hail_log = HailLog('POST', None, request.data)
             abort(403, message="The taxi is not available")
         customer = CustomerModel.query.filter_by(id=hj['customer_id'],
-                operateur_id=current_user.id).first()
+                moteur_id=current_user.id).first()
         if not customer:
             customer = CustomerModel(hj['customer_id'])
             current_app.extensions['sqlalchemy'].db.session.add(customer)
