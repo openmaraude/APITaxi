@@ -15,3 +15,4 @@ def register_commands(manager):
     from .active_tasks import active_tasks
     from .export_taxis import export_taxis
     from .import_zupc import import_zupc
+    from .warm_up_redis import warm_up_redis
