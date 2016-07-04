@@ -252,6 +252,50 @@ class TestHailPost(HailMixin):
         u.operator_api_key = old_value
         u.hail_endpoint_testing = ''
 
+    def test_hail_post_after_reporting_customer(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'accepted_by_customer')
+        dict_hail['reporting_customer'] = True
+        dict_hail['reporting_customer_reason'] = 'payment'
+        #dict_hail['reporting_customer_reason'] = 'payment'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='operateur')
+        self.assert200(r)
+
+        r = self.send_hail(deepcopy(dict_))
+        self.assert403(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_hail_post_after_2_timeouts(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'accepted_by_taxi', timedelta(seconds=31))
+        r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert200(r)
+        print "status: ", r.json['data'][0]['status']
+
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'accepted_by_taxi', timedelta(seconds=31))
+        r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert200(r)
+        print "status: ", r.json['data'][0]['status']
+
+        r = self.send_hail(dict_hail)
+        self.assert403(r)
+        self.app.config['ENV'] = prev_env
+
+
 class  TestHailGet(HailMixin):
     role = 'moteur'
 
