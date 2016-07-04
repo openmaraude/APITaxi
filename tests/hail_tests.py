@@ -68,6 +68,14 @@ class HailMixin(Skeleton):
             time.sleep(i*0.001)
         return r
 
+    def reset_customers(self):
+        for c in Customer.query.all():
+            c.reprieve_end = None
+            c.ban_end = None
+            c.reprieve_begin = None
+            c.ban_begin = None
+            current_app.extensions['sqlalchemy'].db.session.add(c)
+        current_app.extensions['sqlalchemy'].db.session.commit()
 class TestHailPost(HailMixin):
     role = 'moteur'
 
@@ -795,6 +803,7 @@ class TestHailPut(HailMixin):
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='moteur')
             self.assert200(r)
+            self.reset_customers()
             assert u'incident_customer_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_customer_reason'] == v
             assert r.json['data'][0]['status'] == 'incident_customer'
@@ -943,6 +952,7 @@ class TestHailPut(HailMixin):
             self.assert200(r)
             assert u'reporting_customer' in r.json['data'][0]
             assert r.json['data'][0]['reporting_customer'] == v
+            self.reset_customers()
             self.app.config['ENV'] = prev_env
 
     def test_reporting_customer_by_non_operateur(self):
