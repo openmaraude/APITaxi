@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
-from APITaxi_models.taxis import Vehicle
+from APITaxi_models.taxis import Vehicle, VehicleDescription
 from json import loads
 from .fake_data import dict_vehicle
 from copy import deepcopy
@@ -78,3 +78,21 @@ class TestVehiclePost(Skeleton):
         del dict_['id']
         self.check_req_vs_dict(vehicle, dict_)
         self.assertEqual(len(Vehicle.query.all()), 1)
+
+    def test_change_wifi(self):
+        dict_ = dict_vehicle
+        r = self.post([dict_])
+        self.assert201(r)
+        json = r.json
+        self.assertEqual(len(json['data']), 1)
+        self.assertEqual(len(Vehicle.query.all()), 1)
+        dict_['wifi'] = not dict_['wifi']
+        r = self.post([dict_])
+        self.assert201(r)
+        json = r.json
+        self.assertEqual(len(json['data']), 1)
+        self.assertEqual(len(Vehicle.query.all()), 1)
+        self.assertEqual(len(VehicleDescription.query.all()), 1)
+        self.assertEqual(VehicleDescription.query.first().wifi, dict_['wifi'])
+
+
