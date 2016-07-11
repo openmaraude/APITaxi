@@ -46,7 +46,7 @@ class HailMixin(Skeleton):
         dict_hail['taxi_id'] = taxi['id']
         r = None
         try:
-            r = self.post([dict_hail], role=role)
+            r = self.post([dict_hail], role=role, url='/hails/')
         except ServiceUnavailable:
             pass
         return r
