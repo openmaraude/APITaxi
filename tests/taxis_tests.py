@@ -67,6 +67,26 @@ class TestTaxisGet(TaxiGet):
                     'nb_seats', 'type', 'cpam_conventionne']:
             assert taxi['vehicle'][key] is not None
 
+    def test_get_taxis_lonlat_favorite_operator(self):
+        self.add()
+        r = self.get('/taxis/?lat=2.3&lon=48.7&favorite_operator=user_operateur')
+        self.assert200(r)
+        assert len(r.json['data']) == 1
+        taxi = r.json['data'][0]
+        for key in ['id', 'operator', 'position', 'vehicle', 'last_update',
+                'crowfly_distance', 'ads', 'driver', 'rating']:
+            assert key in taxi.keys()
+            assert taxi[key] is not None
+        for key in ['insee', 'numero']:
+            assert key in taxi['ads']
+            assert taxi['ads'][key] is not None
+        for key in ['departement', 'professional_licence']:
+            assert key in taxi['driver']
+            assert taxi['driver'][key] is not None
+        for key in ['characteristics', 'color', 'licence_plate', 'model',
+                    'nb_seats', 'type', 'cpam_conventionne']:
+            assert taxi['vehicle'][key] is not None
+
     def test_get_taxis_limited_zone(self):
         from flask import current_app
         from APITaxi.extensions import redis_store
