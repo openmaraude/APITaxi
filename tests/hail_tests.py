@@ -288,7 +288,6 @@ class TestHailPost(HailMixin):
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
         self.assert200(r)
-        print "status: ", r.json['data'][0]['status']
 
         r = self.send_hail(dict_hail)
         self.assert201(r)
@@ -297,7 +296,6 @@ class TestHailPost(HailMixin):
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
         self.assert200(r)
-        print "status: ", r.json['data'][0]['status']
 
         r = self.send_hail(dict_hail)
         self.assert403(r)
