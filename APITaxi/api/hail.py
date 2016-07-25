@@ -101,11 +101,11 @@ class HailId(Resource):
             min_date = datetime.now() + delta
             nb_days = (datetime.now() - min_date).days
             ratings ={i: [] for i in range(nb_days)}
-            for hail in HailModel.query.filter_by(taxi_id=hail.taxi_id)\
+            for hail_ in HailModel.query.filter_by(taxi_id=hail.taxi_id)\
                         .filter(HailModel.creation_datetime >= min_date)\
                         .filter(HailModel.rating_ride != None):
-                key = nb_days - (hail.creation_datetime - min_date).days - 1
-                ratings[key].append(hail.rating_ride)
+                key = nb_days - (hail_.creation_datetime - min_date).days - 1
+                ratings[key].append(hail_.rating_ride)
             #We want to fill the ratings when there is no value
             ratings = {k: v+[4.5]*(3-len(v)) for k, v in ratings.iteritems()}
             decay_factor = {nb_days-i-1:exp(-float(nb_days-i)/30.) for i in range(nb_days)}
