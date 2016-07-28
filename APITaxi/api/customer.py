@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from . import api
-from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
-from flask.ext.security import login_required, current_user, roles_accepted
+from flask_restplus import Resource, reqparse, fields, abort, marshal
+from flask_security import login_required, current_user, roles_accepted
 from APITaxi_models.hail import Customer as CustomerModel
 from APITaxi_models import db
 from flask import request

@@ -1,6 +1,6 @@
 #coding: utf-8
 from . import ns_administrative, api
-from flask.ext.restplus import Resource, abort, fields as basefields
+from flask_restplus import Resource, abort, fields as basefields
 from APITaxi_utils import fields
 from ..extensions import user_datastore
 

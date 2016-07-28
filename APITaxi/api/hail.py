@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from flask import request, current_app, g
-from flask.ext.restplus import Resource, reqparse, fields, abort, marshal
-from flask.ext.security import (login_required, roles_required,
+from flask_restplus import Resource, reqparse, fields, abort, marshal
+from flask_security import (login_required, roles_required,
         roles_accepted, current_user)
-from flask.ext.restplus import reqparse
+from flask_restplus import reqparse
 from ..extensions import redis_store
 from ..api import api
 from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel, HailLog

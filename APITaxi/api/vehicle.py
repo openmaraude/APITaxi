@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from flask.ext.security import login_required, current_user, roles_accepted
+from flask_security import login_required, current_user, roles_accepted
 from flask import request, Blueprint, current_app
 from APITaxi_models import vehicle as vehicle_models, taxis as taxis_models
 from . import api, ns_administrative
 from ..descriptors.vehicle import vehicle_model, vehicle_expect
-from flask.ext.restplus import fields, reqparse, abort
+from flask_restplus import fields, reqparse, abort
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.populate_obj import create_obj_from_json
 import datetime

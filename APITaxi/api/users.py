@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from ..api import api
-from flask.ext.restplus import Resource
-from flask.ext.security import login_required, roles_required
+from flask_restplus import Resource
+from flask_security import login_required, roles_required
 from APITaxi_models.security import User
 
 ns_users = api.namespace('users', description="Users API")

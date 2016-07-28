@@ -1,6 +1,6 @@
 #coding: utf-8
 from flask import current_app
-from flask.ext.restplus import marshal
+from flask_restplus import marshal
 from APITaxi_models.hail import Hail, HailLog
 from ..descriptors.hail import hail_model
 from ..extensions import celery, redis_store
