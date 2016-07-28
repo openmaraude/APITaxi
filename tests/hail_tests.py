@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from APITaxi.extensions import redis_store
+from APITaxi.extensions import redis_store_haillog
 from .skeleton import Skeleton
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi_models.hail import (Customer, Hail, rating_ride_reason_enum,
@@ -96,14 +96,14 @@ class TestHailPost(HailMixin):
         self.assert400(r)
 
     def test_no_taxi(self):
-        before = set(redis_store.keys("hail:notposted:*"))
+        before = set(redis_store_haillog.keys("hail:notposted:*"))
         r = self.post([dict_])
         self.assert404(r)
-        after = set(redis_store.keys("hail:notposted:*"))
+        after = set(redis_store_haillog.keys("hail:notposted:*"))
         keys = after - before
         assert len(keys) == 1
         key = keys.pop()
-        scan = redis_store.zscan_iter(key)
+        scan = redis_store_haillog.zscan_iter(key)
         val, score = scan.next()
         j = json.loads(val)
         assert j['code'] == 404
