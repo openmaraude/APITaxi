@@ -5,8 +5,8 @@ from ..extensions import user_datastore
 from ..descriptors import (ads as ads_descriptors,
         drivers as drivers_descriptors, vehicle as vehicle_descriptors)
 from . import manager
-from flask.ext.login import login_user
-from flask.ext.restplus import marshal
+from flask_login import login_user
+from flask_restplus import marshal
 from flask import url_for, current_app
 from tempfile import mkdtemp
 import json, tarfile, StringIO, os, requests

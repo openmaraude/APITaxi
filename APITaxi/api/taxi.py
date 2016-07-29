@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import calendar, time
-from flask.ext.restplus import fields, abort, marshal, Resource, reqparse
-from flask.ext.security import login_required, current_user, roles_accepted
+from flask_restplus import fields, abort, marshal, Resource, reqparse
+from flask_security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
 from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
 from APITaxi_utils.caching import cache_single, cache_in

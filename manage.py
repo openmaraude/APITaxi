@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from APITaxi import create_app
-from flask.ext.migrate import Migrate
+from flask_migrate import Migrate
 from APITaxi.commands import register_commands, manager
 
 app = create_app()

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from . import ns_administrative
-from flask.ext.security import login_required, current_user, roles_accepted
+from flask_security import login_required, current_user, roles_accepted
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
@@ -9,7 +9,7 @@ from APITaxi_models import (taxis as taxis_models,
 from . import api
 from ..descriptors.drivers import driver_fields, driver_details_expect
 from flask import request, current_app
-from flask.ext.restplus import marshal, abort
+from flask_restplus import marshal, abort
 from datetime import datetime
 from .extensions import documents
 from APITaxi_utils.slack import slack as slacker

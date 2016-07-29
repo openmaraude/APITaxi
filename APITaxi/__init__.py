@@ -7,7 +7,7 @@ __version__ = ".".join(map(str, VERSION))
 
 from flask import Flask, request_started, request_finished
 import os
-from flask.ext.dogpile_cache import DogpileCache
+from flask_dogpile_cache import DogpileCache
 
 def create_app(sqlalchemy_uri=None):
     from .extensions import redis_store, redis_store_haillog, user_datastore
@@ -43,7 +43,7 @@ def create_app(sqlalchemy_uri=None):
     request_started.connect(check_version, app)
     request_finished.connect(add_version_header, app)
 
-    from flask.ext.uploads import configure_uploads
+    from flask_uploads import configure_uploads
     from .api.extensions import documents
     configure_uploads(app, (documents,))
     from APITaxi_utils.login_manager import init_app as init_login_manager

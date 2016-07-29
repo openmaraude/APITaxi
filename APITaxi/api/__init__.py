@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask.ext.restplus import apidoc, Api
+from flask_restplus import apidoc, Api
 from flask import Blueprint, render_template
 from flask_cors import cross_origin
 

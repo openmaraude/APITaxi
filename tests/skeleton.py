@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask.ext.testing import TestCase
+from flask_testing import TestCase
 from json import dumps
 from APITaxi import create_app
 from APITaxi.extensions import (redis_store, user_datastore)
@@ -14,7 +14,7 @@ from copy import deepcopy
 import time
 from shapely.geometry import Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
-from flask.ext.login import current_user
+from flask_login import current_user
 from flask import current_app
 
 class Skeleton(TestCase):

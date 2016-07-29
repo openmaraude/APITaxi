@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import Blueprint, send_from_directory, current_app
-from flask.ext.security import login_required, roles_accepted
+from flask_security import login_required, roles_accepted
 
 mod = Blueprint('documents', __name__)
 

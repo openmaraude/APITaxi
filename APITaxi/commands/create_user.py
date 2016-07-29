@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..extensions import user_datastore
-from flask.ext.script import prompt_pass
+from flask_script import prompt_pass
 from . import manager
 from flask import current_app
 
