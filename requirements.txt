@@ -14,3 +14,5 @@ geopy==1.11.0
 Flask-Uploads==0.2.1
 Flask-Script==2.0.5
 Flask-Migrate==1.8.1
+Shapely==1.5.13
+pyshp==1.2.3
