@@ -8,6 +8,7 @@ from APITaxi_utils.caching import cache_single, cache_in
 from ..extensions import redis_store
 from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
+from ..tasks import clean_geoindex_timestamps
 from APITaxi_utils.request_wants_json import json_mimetype_required
 from shapely.geometry import Point
 from time import time
@@ -125,6 +126,12 @@ class Taxis(Resource):
         self.not_available = {t[0].split(':')[0] for t
                               in redis_store.zscan_iter(store_key)}
 
+    def check_freshness(self):
+        if redis_store.zcount(current_app.config['REDIS_TIMESTAMPS'], 0,
+                  time() - taxis_models.TaxiRedis._DISPONIBILITY_DURATION) > 0:
+            clean_geoindex_timestamps.apply()
+
+
     @login_required
     @roles_accepted('admin', 'moteur')
     @api.doc(responses={403:'You\'re not authorized to view it'},
@@ -146,6 +153,7 @@ class Taxis(Resource):
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
+        self.check_freshness()
         g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
         g.keys_to_delete.append(name_redis)

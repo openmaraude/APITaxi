@@ -46,13 +46,7 @@ from celery.schedules import crontab
 # (frequency in minute, kwargs) where kwargs in passed to crontab
 STORE_TAXIS_FREQUENCIES = [(1, {'minute': '*/1'}),
     (60,{'minute': 0, 'hour': '*/1'}), (24*60, {'minute': 0, 'hour': 0})]
-CELERYBEAT_SCHEDULE = dict([
-    ('clean_timestamps',
-        {'task': 'APITaxi.tasks.clean_timestamps',
-         'schedule': crontab(minute='*/1'),
-         }
-    )
-])
+CELERYBEAT_SCHEDULE = dict()
 for frequency, cron_kwargs in STORE_TAXIS_FREQUENCIES:
     CELERYBEAT_SCHEDULE['store_active_taxis_every_{}'.format(frequency)] =  {
             'task': 'APITaxi.tasks.store_active_taxis',
