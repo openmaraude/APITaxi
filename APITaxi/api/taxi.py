@@ -116,6 +116,7 @@ class Taxis(Resource):
 
     def set_not_available(self, lon, lat, name_redis):
         store_key = name_redis+'_operateur'
+        g.keys_to_delete.append(store_key)
         redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon,
                               storedistkey=store_key)
         redis_store.zinterstore(store_key, [store_key,
