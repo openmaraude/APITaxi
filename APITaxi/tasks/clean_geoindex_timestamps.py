@@ -11,9 +11,6 @@ def clean_geoindex_timestamps():
     redis_store.zinterstore(current_app.config['REDIS_GEOINDEX'],
                             {current_app.config['REDIS_GEOINDEX']:1,
                              current_app.config['REDIS_TIMESTAMPS']:0})
-    redis_store.zinterstore(current_app.config['REDIS_NOT_AVAILABLE'],
-                            {current_app.config['REDIS_NOT_AVAILABLE']:1,
-                             current_app.config['REDIS_TIMESTAMPS']:0})
 
     redis_store.zremrangebyscore(current_app.config['REDIS_TIMESTAMPS_ID'],
         0, max_time)
