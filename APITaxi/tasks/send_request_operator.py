@@ -3,7 +3,7 @@ from flask import current_app
 from flask_restplus import marshal
 from APITaxi_models.hail import Hail, HailLog
 from ..descriptors.hail import hail_model
-from ..extensions import celery, redis_store
+from ..extensions import celery, redis_store_haillog
 import requests, json
 
 
@@ -40,9 +40,9 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
             current_app.logger.error('Error calling: {}, endpoint: {}, headers: {}'.format(
                 operator_email, endpoint, headers))
             current_app.logger.error(e)
-            hail_log.store(None, redis_store, str(e))
+            hail_log.store(None, redis_store_haillog, str(e))
     if r:
-        hail_log.store(r, redis_store)
+        hail_log.store(r, redis_store_haillog)
     if not r or r.status_code < 200 or r.status_code >= 300:
         hail.status = 'failure'
         current_app.extensions['sqlalchemy'].db.session.commit()
