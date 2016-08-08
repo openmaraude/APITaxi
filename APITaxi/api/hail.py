@@ -4,7 +4,7 @@ from flask_restplus import Resource, reqparse, fields, abort, marshal
 from flask_security import (login_required, roles_required,
         roles_accepted, current_user)
 from flask_restplus import reqparse
-from ..extensions import redis_store, redis_store_haillog
+from ..extensions import redis_store, redis_store_saved
 from ..api import api
 from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel, HailLog
 from APITaxi_models.taxis import  RawTaxi, TaxiRedis, Taxi
@@ -278,7 +278,7 @@ class Hail(Resource):
         if current_user.id not in (hail.added_by, hail.operateur_id)\
                 and not current_user.has_role('admin'):
             abort(403)
-        hlog = redis_store_haillog.zrangebyscore('hail:{}'.format(hail_id), '-inf',
+        hlog = redis_store_saved.zrangebyscore('hail:{}'.format(hail_id), '-inf',
                 '+inf', withscores=True)
         if not hlog:
             return {"data": []}

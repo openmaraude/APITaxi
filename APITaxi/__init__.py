@@ -10,7 +10,7 @@ import os
 from flask_dogpile_cache import DogpileCache
 
 def create_app(sqlalchemy_uri=None):
-    from .extensions import redis_store, redis_store_haillog, user_datastore
+    from .extensions import redis_store, redis_store_saved, user_datastore
     app = Flask(__name__)
     app.config.from_object('APITaxi.default_settings')
     if 'APITAXI_CONFIG_FILE' in os.environ:
@@ -34,8 +34,8 @@ def create_app(sqlalchemy_uri=None):
     db.init_app(app)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()
-    redis_store_haillog.init_app(app)
-    redis_store_haillog.connection_pool.get_connection(0).can_read()
+    redis_store_saved.init_app(app)
+    redis_store_saved.connection_pool.get_connection(0).can_read()
     from . import api
     api.init_app(app)
 
@@ -72,7 +72,7 @@ def create_app(sqlalchemy_uri=None):
         return response
 
     app.after_request_funcs.setdefault(None, []).append(
-            HailLog.after_request(redis_store_haillog)
+            HailLog.after_request(redis_store_saved)
     )
     app.after_request_funcs.setdefault(None, []).append(
             delete_redis_keys
