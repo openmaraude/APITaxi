@@ -53,11 +53,18 @@ class HailMixin(Skeleton):
 
     @classmethod
     def set_hail_status(cls, r, status, last_status_change=None):
-        current_app.extensions['dogpile_cache'].invalidate_region('hails')
-        hail = Hail.cache.get(r.json['data'][0]['id'])
+        hail_id = r.json['data'][0]['id']
+        Hail.cache.flush(hail_id)
+        hail = Hail.cache.get(hail_id)
         hail._status = status
+        setattr(hail, "change_to_" + status, datetime.now())
         if last_status_change:
             hail.last_status_change -= last_status_change
+            for change_to in [v for v in dir(Hail) if v.startswith('change_to')]:
+                val = getattr(hail, change_to)
+                if not val:
+                    continue
+                setattr(hail, change_to,  val - last_status_change)
         current_app.extensions['sqlalchemy'].db.session.commit()
 
     def wait_for_status(self, status, hail_id):
@@ -388,6 +395,73 @@ class  TestHailGet(HailMixin):
             self.assert200(r)
             assert(r.json['data'][0]['status'] == 'failure')
             self.app.config['ENV'] = prev_env
+
+    def test_accepted_by_customer_timeout(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'accepted_by_customer', timedelta(seconds=30*60+1))
+        hail_id = r.json['data'][0]['id']
+        r = self.get('/hails/{}/'.format(hail_id),
+                version=2, role='operateur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        hail = Hail.cache.get(hail_id)
+        print hail._status
+        assert hail._status == 'timeout_accepted_by_customer'
+        self.app.config['ENV'] = prev_env
+
+    def test_customer_on_board(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'accepted_by_customer')
+        hail_id = r.json['data'][0]['id']
+        hail = Hail.cache.get(hail_id)
+        assert hail._status == 'accepted_by_customer'
+        r = self.get('/hails/{}/'.format(hail_id),
+                version=2, role='operateur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        r = self.put([{'status': 'occupied'}],
+                     '/taxis/{}/'.format(dict_hail['taxi_id']),
+                     version=2, role="operateur")
+        hail = Hail.cache.get(hail_id)
+        assert hail._status == 'customer_on_board'
+        r = self.get('/hails/{}/'.format(hail_id),
+                version=2, role='operateur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        self.app.config['ENV'] = prev_env
+
+    def test_finished(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'accepted_by_customer')
+        hail_id = r.json['data'][0]['id']
+        hail = Hail.cache.get(hail_id)
+        assert hail._status == 'accepted_by_customer'
+        r = self.get('/hails/{}/'.format(hail_id),
+                version=2, role='operateur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        r = self.put([{'status': 'free'}],
+                     '/taxis/{}/'.format(dict_hail['taxi_id']),
+                     version=2, role="operateur")
+        hail = Hail.cache.get(hail_id)
+        assert hail._status == 'finished'
+        r = self.get('/hails/{}/'.format(hail_id),
+                version=2, role='operateur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        self.app.config['ENV'] = prev_env
 
 
 class TestHailPut(HailMixin):
