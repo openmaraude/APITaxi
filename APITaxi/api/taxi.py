@@ -3,7 +3,9 @@ import calendar, time
 from flask_restplus import fields, abort, marshal, Resource, reqparse
 from flask_security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
-from APITaxi_models import (taxis as taxis_models, administrative as administrative_models)
+from APITaxi_models import (taxis as taxis_models,
+                            administrative as administrative_models,
+                           hail as hail_models)
 from APITaxi_utils.caching import cache_single, cache_in
 from ..extensions import redis_store
 from . import api
@@ -17,6 +19,7 @@ import math
 from itertools import groupby, compress, izip, islice
 from shapely.prepared import prep
 from shapely.wkb import loads as load_wkb
+from sqlalchemy.sql.expression import text
 
 ns_taxis = api.namespace('taxis', description="Taxi API")
 
@@ -66,9 +69,19 @@ class TaxiId(Resource):
             cur.execute("UPDATE vehicle_description SET status=%s WHERE id=%s",
                            (new_status, t[0]['vehicle_description_id'])
             )
-            cur.execute("UPDATE taxi set last_update_at = %s WHERE id = %s",
-                    (datetime.now(), t[0]['taxi_id'])
-            )
+            to_set = ['last_update_at = %s', [datetime.now()]]
+            if t[0]['taxi_current_hail_id']:
+                hail = hail_models.Hail.query.from_statement(
+                    text("SELECT * from hail where id=:hail_id")
+                ).params(hail_id=t[0]['taxi_current_hail_id']).one()
+                hail_status, current_hail_id = taxis_models.Taxi.get_new_hail_status(
+                    hail.id, new_status, hail.status)
+                if hail_status:
+                    hail.status = hail_status
+                    to_set[0] += ", current_hail_id = %s"
+                    to_set[1].append(current_hail_id)
+            query = "UPDATE taxi SET {} WHERE id = %s".format(to_set[0])
+            cur.execute(query, (to_set[1] + [t[0]['taxi_id']]))
             current_app.extensions['sqlalchemy'].db.session.commit()
             taxis_models.RawTaxi.flush(taxi_id)
             t[0]['vehicle_description_status'] = new_status

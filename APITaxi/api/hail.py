@@ -173,7 +173,12 @@ class Hail(Resource):
         current_app.extensions['sqlalchemy'].db.session.add(hail)
         current_app.extensions['sqlalchemy'].db.session.commit()
 
+        taxi = Taxi.query.get(hail.taxi_id)
+        taxi.current_hail_id = hail.id
+
         g.hail_log = HailLog('POST', hail, request.data)
+        current_app.extensions['sqlalchemy'].db.session.add(hail)
+        current_app.extensions['sqlalchemy'].db.session.commit()
 
         send_request_operator.apply_async(args=[hail.id,
             operateur.hail_endpoint(current_app.config['ENV']),
