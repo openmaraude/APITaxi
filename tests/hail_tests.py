@@ -409,8 +409,10 @@ class  TestHailGet(HailMixin):
         self.assert200(r)
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
         hail = Hail.cache.get(hail_id)
-        print hail._status
         assert hail._status == 'timeout_accepted_by_customer'
+        assert r.json['data'][0]['taxi']['position']['lon'] == 0
+        assert r.json['data'][0]['taxi']['position']['lat'] == 0
+        assert r.json['data'][0]['taxi']['last_update'] == 0
         self.app.config['ENV'] = prev_env
 
     def test_customer_on_board(self):
@@ -436,6 +438,9 @@ class  TestHailGet(HailMixin):
                 version=2, role='operateur')
         self.assert200(r)
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        assert r.json['data'][0]['taxi']['position']['lon'] == 0
+        assert r.json['data'][0]['taxi']['position']['lat'] == 0
+        assert r.json['data'][0]['taxi']['last_update'] == 0
         self.app.config['ENV'] = prev_env
 
     def test_finished(self):
@@ -461,6 +466,9 @@ class  TestHailGet(HailMixin):
                 version=2, role='operateur')
         self.assert200(r)
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        assert r.json['data'][0]['taxi']['position']['lon'] == 0
+        assert r.json['data'][0]['taxi']['position']['lat'] == 0
+        assert r.json['data'][0]['taxi']['last_update'] == 0
         self.app.config['ENV'] = prev_env
 
 
