@@ -19,7 +19,7 @@ old_options =  [ 'emitted', 'received', 'sent_to_operator',
           'received_by_operator', 'received_by_taxi', 'timeout_taxi', 'accepted_by_taxi',
           'timeout_customer', 'incident_taxi', 'declined_by_taxi', 'accepted_by_customer',
           'incident_customer', 'declined_by_customer', 'outdated_customer',
-          'outdated_taxi', 'failure']
+          'outdated_taxi', 'failure', 'customer_banned']
 new_statuses = ['finished', 'customer_on_board', 'timeout_accepted_by_customer']
 new_options = old_options + new_statuses
 
