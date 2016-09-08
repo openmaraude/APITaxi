@@ -46,7 +46,13 @@ class HailId(Resource):
             text("SELECT * FROM taxi where id=:taxi_id")
         ).params(taxi_id=hail.taxi_id).one()
         return_ = marshal({"data": [hail]},hail_model)
-        return_['data'][0]['taxi']['crowfly_distance'] = vincenty(
+        if hail._status in ('finished', 'customer_on_board',
+            'timeout_accepted_by_customer'):
+            return_['data'][0]['taxi']['position']['lon'] = 0.0
+            return_['data'][0]['taxi']['position']['lat'] = 0.0
+            return_['data'][0]['taxi']['last_update'] = 0
+        else:
+            return_['data'][0]['taxi']['crowfly_distance'] = vincenty(
                 (return_['data'][0]['taxi']['position']['lat'],
                 return_['data'][0]['taxi']['position']['lon']),
                 (return_['data'][0]['customer_lat'],
