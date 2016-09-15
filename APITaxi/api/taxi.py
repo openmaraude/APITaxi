@@ -75,7 +75,7 @@ class TaxiId(Resource):
                     text("SELECT * from hail where id=:hail_id")
                 ).params(hail_id=t[0]['taxi_current_hail_id']).one()
                 hail_status, current_hail_id = taxis_models.Taxi.get_new_hail_status(
-                    hail.id, new_status, hail.status)
+                    hail.id, new_status, hail._status)
                 if hail_status:
                     hail.status = hail_status
                     to_set[0] += ", current_hail_id = %s"
