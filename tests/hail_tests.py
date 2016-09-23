@@ -947,6 +947,51 @@ class TestHailPut(HailMixin):
             assert r.json['data'][0]['incident_customer_reason'] == v
             self.app.config['ENV'] = prev_env
 
+    def test_ended_reprieve(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail._status = 'accepted_by_customer'
+        dict_hail['status'] = 'incident_customer'
+        dict_hail['incident_customer_reason'] = 'mud_river'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert200(r)
+        assert u'incident_customer_reason' in r.json['data'][0]
+        assert r.json['data'][0]['incident_customer_reason'] == 'mud_river'
+        customer = Customer.query.filter_by(id=hail.customer_id,
+                                            moteur_id=hail.added_by).first()
+        customer.reprieve_begin -= timedelta(days=1)
+        customer.reprieve_end -= timedelta(days=1)
+        current_app.extensions['sqlalchemy'].db.session.add(customer)
+        current_app.extensions['sqlalchemy'].db.session.commit()
+
+        r = self.send_hail(dict_hail)
+        self.assert201(r)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        hail = Hail.query.get(r.json['data'][0]['id'])
+        hail._status = 'accepted_by_customer'
+        dict_hail['status'] = 'incident_customer'
+        dict_hail['incident_customer_reason'] = 'mud_river'
+        r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                version=2, role='moteur')
+        self.assert200(r)
+        assert u'incident_customer_reason' in r.json['data'][0]
+        assert r.json['data'][0]['incident_customer_reason'] == 'mud_river'
+
+        customer = Customer.query.filter_by(id=hail.customer_id,
+                                            moteur_id=hail.added_by).first()
+        assert customer.ban_begin == None
+        assert customer.ban_end == None
+        assert customer.reprieve_end > datetime.now()
+
+
+        self.app.config['ENV'] = prev_env
+
+
     def test_force_status_incident_customer(self):
         valid_values = ['', 'mud_river', 'parade', 'earthquake']
         for v in valid_values:
