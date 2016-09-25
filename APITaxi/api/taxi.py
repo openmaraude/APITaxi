@@ -7,6 +7,7 @@ from APITaxi_models import (taxis as taxis_models,
                             administrative as administrative_models,
                            hail as hail_models)
 from APITaxi_utils.caching import cache_single, cache_in
+from APITaxi_utils import influx_db
 from ..extensions import redis_store
 from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
@@ -166,6 +167,7 @@ class Taxis(Resource):
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
+        zupc_id = self.zupc_customer[0][0]
         self.check_freshness()
         g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
@@ -223,6 +225,21 @@ class Taxis(Resource):
                 for t in izip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
                 if self.filter_zone(t[0], t[1])]
             taxis.extend(filter(None, l))
+        client = influx_db.get_client()
+        if client:
+            try:
+                client.write_points([{
+                    "measurement": "taxis_returned",
+                    "tags": {
+                        "zupc": zupc_id,
+                        },
+                    "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
+                    "fields": {
+                        "value": len(taxis)
+                    }
+                    }])
+            except Exception as e:
+                current_app.logger.error('Influxdb Error: {}'.format(e))
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required
