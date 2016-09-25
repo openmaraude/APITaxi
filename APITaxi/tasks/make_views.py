@@ -117,7 +117,8 @@ def store_active_taxis(frequency):
         )
         if len(to_insert) == 100:
             current_app.logger.debug('To insert: {}'.format(to_insert))
-            client.write_points(to_insert)
+            if client:
+                client.write_points(to_insert)
             to_insert[:] = []
 
     for operator, zupc_active in map_operateur_insee_nb_active.iteritems():
@@ -141,4 +142,5 @@ def store_active_taxis(frequency):
 
     if len(to_insert) > 0:
         current_app.logger.debug('To insert: {}'.format(to_insert))
-        client.write_points(to_insert)
+        if client:
+            client.write_points(to_insert)
