@@ -17,3 +17,4 @@ Flask-Migrate==1.8.1
 Shapely==1.5.13
 pyshp==1.2.3
 bcrypt
+Geohash

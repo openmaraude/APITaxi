@@ -17,7 +17,7 @@ from ..tasks import send_request_operator
 from APITaxi_utils import influx_db
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-import json
+import json, Geohash
 from sqlalchemy import or_
 from itertools import chain, izip
 from math import exp, fsum
@@ -201,6 +201,7 @@ class Hail(Resource):
                         "added_by": current_user.email,
                         "operator": operateur.email,
                         "zupc": descriptions[0][0]['ads_insee'],
+                        "geohash": Geohash.encode(hail.initial_lat, hail.initial_lon),
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
