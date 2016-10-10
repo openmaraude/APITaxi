@@ -158,7 +158,8 @@ class Taxis(Resource):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        self.zupc_customer = cache_single("""SELECT id, parent_id FROM "ZUPC"
+        self.zupc_customer = cache_single("""SELECT id, parent_id, max_distance
+                                          FROM "ZUPC"
                             WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
                             (lon, lat), "zupc_lon_lat",
                             lambda v: (v['id'], v['parent_id']),
@@ -168,6 +169,7 @@ class Taxis(Resource):
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
         zupc_id = self.zupc_customer[0][0]
+        max_distance = min(filter(lambda v: v>0, [v[2] for v in self.zupc_customer]) + [150000])
         self.check_freshness()
         g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
@@ -175,7 +177,7 @@ class Taxis(Resource):
         #It returns a list of all taxis near the given point
         #For each taxi you have a tuple with: (id, distance, [lat, lon])
         nb_positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX_ID'],
-                lat, lon, storedistkey=name_redis)
+                lat, lon, radius=max_distance, units='m', storedistkey=name_redis)
         if nb_positions == 0:
             current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
