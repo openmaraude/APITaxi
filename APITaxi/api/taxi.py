@@ -227,7 +227,7 @@ class Taxis(Resource):
                 for t in izip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
                 if self.filter_zone(t[0], t[1])]
             taxis.extend(filter(None, l))
-        client = influx_db.get_client()
+        client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
         if client:
             try:
                 client.write_points([{
