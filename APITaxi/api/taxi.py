@@ -177,7 +177,7 @@ class Taxis(Resource):
         #It returns a list of all taxis near the given point
         #For each taxi you have a tuple with: (id, distance, [lat, lon])
         nb_positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX_ID'],
-                lat, lon, radius=max_distance, units='m', storedistkey=name_redis)
+                lat, lon, radius=max_distance/1000.0, units='km', storedistkey=name_redis)
         if nb_positions == 0:
             current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
