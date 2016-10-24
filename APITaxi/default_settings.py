@@ -65,3 +65,8 @@ LIMITED_ZONE = None
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 SLACK_CHANNEL = "#taxis-internal"
+
+#If the first one is higher than the second one, then the inactive period
+#will be min-midnight-max
+INACTIVE_FILTER_PERIOD = (01, 05)
+DEFAULT_MAX_RADIUS = 15*1000 #in meters
