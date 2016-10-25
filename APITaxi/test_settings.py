@@ -9,3 +9,4 @@ INFLUXDB_HOST = None
 SECURITY_PASSWORD_HASH = 'plaintext'
 NOW = 'time_test'
 DOGPILE_CACHE_BACKEND = 'dogpile.cache.null'
+DEFAULT_MAX_RADIUS = 15*1000 #in meters
