@@ -70,3 +70,6 @@ SLACK_CHANNEL = "#taxis-internal"
 #will be min-midnight-max
 INACTIVE_FILTER_PERIOD = (01, 05)
 DEFAULT_MAX_RADIUS = 3*1000 #in meters
+
+AUTOMATIC_RATING_ACTIVATED = True
+AUTOMATIC_RATING = 2
