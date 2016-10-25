@@ -19,8 +19,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import json, Geohash
 from sqlalchemy import or_
-from itertools import chain, izip
-from math import exp, fsum
+from itertools import chain
 from sqlalchemy.sql.expression import text
 
 ns_hail = api.namespace('hails', description="Hail API")
@@ -102,28 +101,6 @@ class HailId(Resource):
                 abort(400, message=e.args[0])
         current_app.extensions['sqlalchemy'].db.session.add(hail)
         current_app.extensions['sqlalchemy'].db.session.commit()
-        if initial_rating != hail.rating_ride:
-            delta = relativedelta(months=-6)
-            min_date = datetime.now() + delta
-            nb_days = (datetime.now() - min_date).days
-            ratings ={i: [] for i in range(nb_days)}
-            for hail_ in HailModel.query.filter_by(taxi_id=hail.taxi_id)\
-                        .filter(HailModel.creation_datetime >= min_date)\
-                        .filter(HailModel.rating_ride != None):
-                key = nb_days - (hail_.creation_datetime - min_date).days - 1
-                ratings[key].append(hail_.rating_ride)
-            #We want to fill the ratings when there is no value
-            ratings = {k: v+[4.5]*(3-len(v)) for k, v in ratings.iteritems()}
-            decay_factor = {nb_days-i-1:exp(-float(nb_days-i)/30.) for i in range(nb_days)}
-            total_rating = float(sum(map(lambda rs_f:
-                                         sum(map(lambda r: r*rs_f[1], rs_f[0])),
-                                         izip(ratings.values(), decay_factor.values()))))
-            total_factor = fsum(map(lambda k_v: k_v[1]*len(ratings[k_v[0]]),
-                                    decay_factor.iteritems()))
-            taxi = Taxi.query.get(hail.taxi_id)
-            taxi.rating = total_rating / total_factor
-            current_app.extensions['sqlalchemy'].db.session.add(taxi)
-            current_app.extensions['sqlalchemy'].db.session.commit()
         return {"data": [hail]}
 
 
