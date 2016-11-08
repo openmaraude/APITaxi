@@ -1021,7 +1021,7 @@ class TestHailPut(HailMixin):
         dict_hail['status'] = 'incident_customer'
         dict_hail['incident_customer_reason'] = 'Une evaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
-                version=2, role='operateur')
+                version=2, role='moteur')
         self.assert400(r)
         self.app.config['ENV'] = prev_env
 
@@ -1196,7 +1196,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail._status = 'reporting_customer'
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'reporting_customer'
         dict_hail['reporting_customer_reason'] = 'Une evaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
@@ -1211,7 +1211,7 @@ class TestHailPut(HailMixin):
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         hail = Hail.query.get(r.json['data'][0]['id'])
-        hail._status = 'reporting_customer'
+        hail._status = 'accepted_by_customer'
         dict_hail['status'] = 'reporting_customer'
         dict_hail['reporting_customer_reason'] = 'Une évaluation'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
