@@ -39,6 +39,7 @@ SQLALCHEMY_POOL_SIZE = 15
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['pickle']
+CELERY_TASK_SERIALIZER = 'pickle'
 CELERYBEAT_SCHEDULE_FILENAME  = '/tmp/celery_beat_schedule'
 
 from celery.schedules import crontab
