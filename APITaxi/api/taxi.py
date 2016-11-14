@@ -250,6 +250,7 @@ class Taxis(Resource):
                     "measurement": "taxis_returned",
                     "tags": {
                         "zupc": zupc_id,
+                        "position": "{:.2f}:{:.2f}".format(float(lon), float(lat))
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
