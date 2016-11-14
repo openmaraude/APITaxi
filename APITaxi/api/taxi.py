@@ -159,7 +159,7 @@ class Taxis(Resource):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
         self.zupc_customer = cache_single(
-            """SELECT id, parent_id, max_distance
+            """SELECT id, parent_id, max_distance, insee
                FROM "ZUPC"
                WHERE ST_INTERSECTS(shape, 'POINT(%s %s)')
                AND parent_id = id
@@ -173,6 +173,7 @@ class Taxis(Resource):
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
         zupc_id = self.zupc_customer[0][0]
+        zupc_insee = self.zupc_customer[0][3]
 #We can deactivate the max radius for a certain zone
         inactive_filter_period = current_app.config['INACTIVE_FILTER_PERIOD']
         hour = datetime.now().hour
@@ -249,7 +250,7 @@ class Taxis(Resource):
                 client.write_points([{
                     "measurement": "taxis_returned",
                     "tags": {
-                        "zupc": zupc_id,
+                        "zupc": zupc_insee,
                         "position": "{:.2f}:{:.2f}".format(float(lon), float(lat))
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
