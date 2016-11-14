@@ -158,13 +158,17 @@ class Taxis(Resource):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        self.zupc_customer = cache_single("""SELECT id, parent_id, max_distance
-                                          FROM "ZUPC"
-                            WHERE ST_INTERSECTS(shape, 'POINT(%s %s)');""",
-                            (lon, lat), "zupc_lon_lat",
-                            lambda v: (v['id'], v['parent_id']),
-                            get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
-                                             float(a[1].split(",")[1][:-1].strip())))
+        self.zupc_customer = cache_single(
+            """SELECT id, parent_id, max_distance
+               FROM "ZUPC"
+               WHERE ST_INTERSECTS(shape, 'POINT(%s %s)')
+               AND parent_id = id
+               ORDER BY max_distance ASC;""",
+            (lon, lat), "zupc_lon_lat",
+            lambda v: (v['id'], v['parent_id']),
+            get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
+                             float(a[1].split(",")[1][:-1].strip()))
+        )
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
