@@ -251,7 +251,7 @@ class Taxis(Resource):
                     "measurement": "taxis_returned",
                     "tags": {
                         "zupc": zupc_insee,
-                        "position": "{:.2f}:{:.2f}".format(float(lon), float(lat))
+                        "position": "{:.3f}:{:.3f}".format(float(lon), float(lat))
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
