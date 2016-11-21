@@ -233,7 +233,7 @@ class Hail(Resource):
         if p['date']:
             date = None
             try:
-                date = datetime.strptime(p['date'], '%Y/%m/%d %H:%M:%S')
+                date = datetime.strptime(p['date'], '%Y/%m/%d')
             except ValueError:
                 current_app.logger.info('Unable to parse date: {}'.format(p['date']))
             if date:
