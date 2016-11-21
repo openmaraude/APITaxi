@@ -206,6 +206,8 @@ class Hail(Resource):
                             location='values', action='append')
         parser.add_argument('date', type=str, required=False, default=None,
                             location='values')
+        parser.add_argument('taxi_id', type=str, required=False, default=None,
+                            location='values')
         p = parser.parse_args()
         q = HailModel.query
         filters = []
@@ -238,6 +240,8 @@ class Hail(Resource):
                 current_app.logger.info('Unable to parse date: {}'.format(p['date']))
             if date:
                 q = q.filter(HailModel.creation_datetime <= date)
+        if p['taxi_id']:
+            q = q.filter(HailModel.taxi_id == p['taxi_id'])
 
         q = q.order_by(HailModel.creation_datetime.desc())
         pagination = q.paginate(page=p['p'], per_page=30)
