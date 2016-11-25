@@ -187,6 +187,31 @@ class TestTaxisGet(TaxiGet):
 #So we should have a taxi
         assert len(r.json['data']) == 1
 
+    def test_one_taxi_two_desc_one_non_free_favorite_operator(self):
+        first_taxi = self.add()
+        id_taxi = self.post_taxi_and_locate(user='user_operateur_2', lat=2.3, lon=48.7)['id']
+        assert first_taxi == id_taxi
+        r = self.put([{"status": "off"}], '/taxis/{}/'.format(id_taxi),
+                user='user_operateur_2', role='operateur')
+        self.assert200(r)
+        r = self.get('/taxis/?lat=2.3&lon=48.7&favorite_operator=user_operateur_2')
+        self.assert200(r)
+        assert len(r.json['data']) == 0
+
+    def test_one_taxi_two_desc_one_non_free_favorite_operator_one_no_location(self):
+        first_taxi = self.add()
+        id_taxi = self.post_taxi(user='user_operateur_2')['id']
+        assert first_taxi == id_taxi
+        r = self.put([{"status": "off"}], '/taxis/{}/'.format(id_taxi),
+                user='user_operateur_2', role='operateur')
+        self.assert200(r)
+        r = self.get('/taxis/?lat=2.3&lon=48.7&favorite_operator=user_operateur_2')
+        self.assert200(r)
+        print r.json
+        assert len(r.json['data']) == 1
+        print r.json['data'][0]['status']
+        assert r.json['data'][0]['status'] == 'free'
+
 class TestTaxiPut(Skeleton):
     url = '/taxis/'
     role = 'operateur'
