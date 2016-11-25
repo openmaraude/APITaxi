@@ -1,6 +1,6 @@
 Cython==0.23.4
 -e git://github.com/openmaraude/APITaxi_utils.git@706d9cde251b0a9f05fe332dcdc0d6ff366d7745#egg=APITaxi_utils
--e git://github.com/openmaraude/APITaxi_models.git@e7a9a50d737fd57163129e3b8538d256adf1f712#egg=APITaxi_models
+-e git://github.com/openmaraude/APITaxi_models.git@3fcf93b6a7154819441f582bbac6108dca1ec47d#egg=APITaxi_models
 nose==1.3.7
 Flask-Testing==0.4.2
 Flask-Dogpile-Cache==0.2
