@@ -227,7 +227,9 @@ class Taxis(Resource):
                                       t['taxi_id']+':'+t['u_email']),l_taxis)
                 , taxis_db)
             timestamps = pipe.execute()
-#If we have taxis_db = [{t_1}, {}, {t_21, t_22}, {t_3}]
+#For each member of timestamp_slices we have the first index of the first element
+#in timestamp, and the index of the last element
+#If we have taxis_db = [{t_1,}, {,}, {t_21, t_22}, {t_3,}]
 #Then we want timestamps_slices = [(0, 1), (1, 1), (1, 3), (3, 4)]
             timestamps_slices = []
             map(lambda i: timestamps_slices.append((0, len(i)))\
