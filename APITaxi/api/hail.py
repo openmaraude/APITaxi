@@ -178,7 +178,7 @@ class Hail(Resource):
                         "added_by": current_user.email,
                         "operator": operateur.email,
                         "zupc": descriptions[0][0]['ads_insee'],
-                        "geohash": Geohash.encode(hail.initial_lat, hail.initial_lon),
+                        "geohash": Geohash.encode(hail.customer_lat, hail.customer_lon),
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
