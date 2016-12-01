@@ -23,7 +23,9 @@ driver_descriptor = api.model('driver_descriptor', {
 taxi_descriptor = api.model('taxi_descriptor',
     {
         "id": fields.String,
-        "internal_id": fields.String,
+        "internal_id": fields.String(
+            attribute=lambda t: t.vehicle.internal_id if type(t) is not dict
+                                                      else t['internal_id']),
         "operator": fields.String,
         "position": fields.Nested(coordinates_descriptor),
         "vehicle": fields.Nested(vehicle_descriptor, required=True),
