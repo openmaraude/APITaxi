@@ -299,6 +299,8 @@ class Taxis(Resource):
                 taxi.status = taxi_json['status']
             except AssertionError:
                 abort(400, message='Invalid status')
+        if 'internal_id' in taxi_json:
+            taxi.internal_id = taxi_json['internal_id']
         db.session.add(taxi)
         db.session.commit()
         return {'data':[taxi]}, 201
