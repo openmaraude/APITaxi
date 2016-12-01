@@ -250,10 +250,11 @@ class Taxis(Resource):
         if client:
             try:
                 client.write_points([{
-                    "measurement": "taxis_returned",
+                    "measurement": "get_taxis_requests",
                     "tags": {
                         "zupc": zupc_insee,
-                        "position": "{:.3f}:{:.3f}".format(float(lon), float(lat))
+                        "position": "{:.3f}:{:.3f}".format(float(lon), float(lat)),
+                        "moteur": current_user.email
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
