@@ -45,6 +45,7 @@ class TaxiId(Resource):
     @json_mimetype_required
     def get(self, taxi_id):
         t, last_update_at = self.get_descriptions(taxi_id)
+        print t
         taxi_m = marshal({'data':[
             taxis_models.RawTaxi.generate_dict(t,
             operator=current_user.email)]}, taxi_model)
@@ -300,6 +301,8 @@ class Taxis(Resource):
                 taxi.status = taxi_json['status']
             except AssertionError:
                 abort(400, message='Invalid status')
+        if 'internal_id' in taxi_json:
+            taxi.vehicle.description.internal_id = taxi_json['internal_id']
         db.session.add(taxi)
         db.session.commit()
         return {'data':[taxi]}, 201

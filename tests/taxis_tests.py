@@ -25,6 +25,7 @@ class TaxiGet(Skeleton):
         current_app.extensions['sqlalchemy'].db.session.commit()
         return id_taxi
 
+
 class TestTaxiGet(TaxiGet):
     role = 'operateur'
 
@@ -207,10 +208,9 @@ class TestTaxisGet(TaxiGet):
         self.assert200(r)
         r = self.get('/taxis/?lat=2.3&lon=48.7&favorite_operator=user_operateur_2')
         self.assert200(r)
-        print r.json
         assert len(r.json['data']) == 1
-        print r.json['data'][0]['status']
         assert r.json['data'][0]['status'] == 'free'
+
 
 class TestTaxiPut(Skeleton):
     url = '/taxis/'
@@ -336,8 +336,6 @@ class TestTaxiPut(Skeleton):
         assert (datetime.now() - c[0][0]) < timedelta(minutes=2)
 
 
-
-
 class TestTaxiPost(Skeleton):
     url = '/taxis/'
     role = 'operateur'
@@ -420,6 +418,35 @@ class TestTaxiPost(Skeleton):
         self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
         self.assertEqual(r.json['data'][0]['id'], 'a')
         self.assertEqual(len(Taxi.query.all()), 1)
+
+    def test_add_taxi_internal(self):
+        self.init_taxi()
+        d = deepcopy(dict_taxi)
+        d['internal_id']= 'INTERNAL_ID'
+        r = self.post([d])
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], d)
+        taxis = Taxi.query.all()
+        self.assertEqual(len(taxis), 1)
+        r = self.get('/taxis/{}/'.format(taxis[0].id))
+        self.assertEqual(r.json['data'][0]['internal_id'], 'INTERNAL_ID')
+        first_id = r.json['data'][0]['id']
+
+        r = self.post([dict_vehicle], url='/vehicles/',
+                     user='user_operateur_2')
+        d = deepcopy(dict_taxi)
+        d['internal_id']= 'INTERNAL_ID_2'
+        r = self.post([d], user='user_operateur_2')
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], d)
+        assert r.json['data'][0]['id'] == first_id
+        taxis = Taxi.query.all()
+        self.assertEqual(len(taxis), 1)
+        r = self.get('/taxis/{}/'.format(taxis[0].id), user='user_operateur_2')
+        self.assertEqual(r.json['data'][0]['internal_id'], 'INTERNAL_ID_2')
+        r = self.get('/taxis/{}/'.format(taxis[0].id))
+        self.assertEqual(r.json['data'][0]['internal_id'], 'INTERNAL_ID')
+
 
     def missing_field(self, field):
         self.init_taxi()
