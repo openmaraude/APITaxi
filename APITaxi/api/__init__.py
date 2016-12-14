@@ -22,3 +22,7 @@ def init_app(app):
     def swagger():
         return render_template('swagger.json', host=app.config['SERVER_NAME']), 200,
     {'Content-Type': 'application/json'}
+
+    @api.errorhandler(AssertionError)
+    def assertion_error(error):
+        return {"message": error.message}, 400

@@ -17,7 +17,7 @@ class TestVehiclePost(Skeleton):
         assert r.json['data'] == []
 
     def test_simple(self):
-        dict_ = dict_vehicle
+        dict_ = deepcopy(dict_vehicle)
         r = self.post([dict_])
         self.assert201(r)
         json = r.json
@@ -27,7 +27,7 @@ class TestVehiclePost(Skeleton):
         self.assertEqual(len(Vehicle.query.all()), 1)
 
     def test_same_vehicle_twice(self):
-        dict_ = dict_vehicle
+        dict_ = deepcopy(dict_vehicle)
         r = self.post([dict_, dict_])
         self.assert201(r)
         json = r.json
@@ -35,7 +35,7 @@ class TestVehiclePost(Skeleton):
         self.assertEqual(len(Vehicle.query.all()), 1)
 
     def test_same_vehicle_twice_two_requests(self):
-        dict_ = dict_vehicle
+        dict_ = deepcopy(dict_vehicle)
         r = self.post([dict_])
         self.assert201(r)
         json = r.json
@@ -48,7 +48,7 @@ class TestVehiclePost(Skeleton):
         self.assertEqual(len(Vehicle.query.all()), 1)
 
     def test_too_many_vehicles(self):
-        dict_ = dict_vehicle
+        dict_ = deepcopy(dict_vehicle)
         r = self.post([dict_ for x in range(0, 251)])
         self.assertEqual(r.status_code, 413)
         self.assertEqual(len(Vehicle.query.all()), 0)
@@ -80,7 +80,7 @@ class TestVehiclePost(Skeleton):
         self.assertEqual(len(Vehicle.query.all()), 1)
 
     def test_change_wifi(self):
-        dict_ = dict_vehicle
+        dict_ = deepcopy(dict_vehicle)
         r = self.post([dict_])
         self.assert201(r)
         json = r.json
@@ -95,4 +95,12 @@ class TestVehiclePost(Skeleton):
         self.assertEqual(len(VehicleDescription.query.all()), 1)
         self.assertEqual(VehicleDescription.query.first().wifi, dict_['wifi'])
 
-
+    def test_bad_date(self):
+        dict_ = deepcopy(dict_vehicle)
+        dict_['date_dernier_ct'] = 'bad'
+        r = self.post([dict_])
+        self.assert400(r)
+        dict_ = deepcopy(dict_vehicle)
+        dict_['date_validite_ct'] = 'bad'
+        r = self.post([dict_])
+        self.assert400(r)

@@ -47,6 +47,13 @@ class TestDriverPost(Skeleton):
         self.assert404(r)
         self.assertEqual(len(Driver.query.all()), 0)
 
+    def test_bad_date(self):
+        self.init_dep()
+        dict_ = deepcopy(dict_driver)
+        dict_['birth_date'] = 'bad'
+        r = self.post([dict_])
+        self.assert400(r)
+
     def test_two_inserts(self):
         self.init_dep()
         r = self.post([dict_driver for x in range(0, 2)])
