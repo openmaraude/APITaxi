@@ -89,10 +89,6 @@ class ADS(ResourceMetadata):
                 ads_db = create_obj_from_json(taxis_models.ADS, ads)
             except KeyError as e:
                 abort(400, message="Missing key: "+str(e))
-            except AssertionError as e:
-                abort(400, message='Bad owner_type value, can be: {}'.format(
-                    taxis_models.owner_type_enum
-                    ))
             zupc = administrative_models.ZUPC.query.filter_by(insee=ads_db.insee).first()
             if zupc is None:
                 abort(400, message="Unable to find a ZUPC for insee: {}".format(

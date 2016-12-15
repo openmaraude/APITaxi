@@ -89,12 +89,6 @@ class HailId(Resource):
                 continue
             try:
                 setattr(hail, ev, value)
-            except AssertionError, e:
-                if e.args:
-                    abort(400, message=e.args[0])
-                else:
-                    abort(400,
-                        message="Unable to set {} to {}, validation failed".format(ev, value))
             except RuntimeError, e:
                 abort(403)
             except ValueError, e:

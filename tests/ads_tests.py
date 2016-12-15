@@ -103,7 +103,7 @@ class TestADSPost(Skeleton):
         dict_['owner_type'] = 'string'
         r = self.post([dict_])
         self.assert400(r)
-        assert 'Bad owner_type' in r.json['message']
+        assert 'Error with field owner_type' in r.json['message']
 
     def test_no_owner_type(self):
         self.init_zupc()

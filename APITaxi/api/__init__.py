@@ -25,4 +25,10 @@ def init_app(app):
 
     @api.errorhandler(AssertionError)
     def assertion_error(error):
-        return {"message": error.message}, 400
+        if error.args:
+            message = error.args[0]
+        elif error.message:
+            message = error.message
+        else:
+            message = "AssertionError"
+        return {"message": message}, 400

@@ -710,7 +710,7 @@ class TestHailPut(HailMixin):
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role="moteur")
         self.assert400(r)
-        assert('validation failed' in r.json['message'])
+        assert('Invalid status' in r.json['message'])
         self.app.config['ENV'] = prev_env
 
     def test_rating_ride_reason_all_valid_values(self):
