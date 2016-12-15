@@ -8,7 +8,7 @@ from flask_security import login_required, roles_accepted, current_user
 from . import api, ns_administrative
 from ..descriptors.ads import ads_model, ads_expect, ads_post
 from flask_restplus import reqparse, abort, marshal
-from flask import jsonify, render_template, request, current_app
+from flask import jsonify, request, current_app
 from .extensions import documents
 from APITaxi_utils.slack import slack as slacker
 from datetime import datetime
@@ -75,7 +75,6 @@ class ADS(ResourceMetadata):
             abort(400, message="No data field in request")
         if len(json['data']) > 250:
             abort(413, message="You can only pass 250 objects")
-        edited_ads_id = []
         new_ads = []
         db = current_app.extensions['sqlalchemy'].db
         for ads in json['data']:
@@ -95,8 +94,6 @@ class ADS(ResourceMetadata):
                     ads_db.insee))
             ads_db.zupc_id = zupc.parent_id
             db.session.add(ads_db)
-            if ads_db.id:
-                edited_ads_id.append(ads.id)
             new_ads.append(ads_db)
         db.session.commit()
         for ads in new_ads:
