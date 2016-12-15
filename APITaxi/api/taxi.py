@@ -297,10 +297,7 @@ class Taxis(Resource):
                     id=taxi_json.get('id', None))
         #This can happen if this is posted with a admin user
         if 'status' in taxi_json and taxi.vehicle.description:
-            try:
-                taxi.status = taxi_json['status']
-            except AssertionError:
-                abort(400, message='Invalid status')
+            taxi.status = taxi_json['status']
         if 'internal_id' in taxi_json:
             taxi.vehicle.description.internal_id = taxi_json['internal_id']
         db.session.add(taxi)
