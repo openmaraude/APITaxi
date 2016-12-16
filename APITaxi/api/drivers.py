@@ -4,7 +4,8 @@ from flask_security import login_required, current_user, roles_accepted
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
-from APITaxi_models import (taxis as taxis_models,
+from APITaxi_utils import reqparse
+from APITaxi_models import (db, taxis as taxis_models,
         administrative as administrative_models)
 from . import api
 from ..descriptors.drivers import driver_fields, driver_details_expect
@@ -40,15 +41,9 @@ class Drivers(ResourceMetadata):
 
 
     def post_json(self):
-        json = request.get_json()
-        if "data" not in json:
-            abort(400, message="You need data a data object")
-        if len(json['data']) > 250:
-            abort(413, message="You've reach the limits of 250 objects")
-        edited_drivers_id = []
+        parser = reqparse.DataJSONParser(max_length=250)
         new_drivers = []
-        db = current_app.extensions['sqlalchemy'].db
-        for driver in json['data']:
+        for driver in parser.get_data():
             departement = None
             if 'numero' in driver['departement']:
                 departement = administrative_models.Departement.\
@@ -62,8 +57,6 @@ class Drivers(ResourceMetadata):
             except KeyError as e:
                 abort(400, message="Key error")
             db.session.add(driver_obj)
-            if driver_obj.id:
-                edited_drivers_id.append(driver_obj.id)
             new_drivers.append(driver_obj)
         db.session.commit()
         for driver in new_drivers:

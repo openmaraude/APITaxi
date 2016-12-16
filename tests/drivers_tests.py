@@ -32,7 +32,7 @@ class TestDriverPost(Skeleton):
     def test_too_many_drivers(self):
         self.init_dep()
         r = self.post([dict_driver for x in range(0, 251)])
-        self.assertEqual(r.status_code, 413)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(len(Driver.query.all()), 0)
 
     def test_no_departement(self):

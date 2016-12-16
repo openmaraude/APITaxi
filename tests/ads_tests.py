@@ -70,7 +70,7 @@ class TestADSPost(Skeleton):
     def test_too_many_ads(self):
         dict_ = deepcopy(dict_ads)
         r = self.post([dict_ for x in range(0, 251)])
-        self.assertEqual(r.status_code, 413)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(len(ADS.query.all()), 0)
 
     def test_no_data(self):

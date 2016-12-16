@@ -50,7 +50,7 @@ class TestVehiclePost(Skeleton):
     def test_too_many_vehicles(self):
         dict_ = deepcopy(dict_vehicle)
         r = self.post([dict_ for x in range(0, 251)])
-        self.assertEqual(r.status_code, 413)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(len(Vehicle.query.all()), 0)
 
     def test_no_data(self):

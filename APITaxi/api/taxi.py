@@ -8,6 +8,7 @@ from APITaxi_models import (taxis as taxis_models,
                            hail as hail_models)
 from APITaxi_utils.caching import cache_single, cache_in
 from APITaxi_utils import influx_db
+from APITaxi_utils.reqparse import DataJSONParser
 from ..extensions import redis_store
 from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
@@ -60,9 +61,9 @@ class TaxiId(Resource):
     @api.expect(taxi_put_expect, validate=True)
     @json_mimetype_required
     def put(self, taxi_id):
-        hj = request.json
+        parser = DataJSONParser()
         t, last_update_at = self.get_descriptions(taxi_id)
-        new_status = hj['data'][0]['status']
+        new_status = parser.get_data()[0]['status']
         if new_status != t[0]['vehicle_description_status'] or\
                 t[0]['taxi_last_update_at'] is None or\
                 t[0]['taxi_last_update_at'] <= (datetime.now() - timedelta(hours=4)):
@@ -274,8 +275,9 @@ class Taxis(Resource):
     @api.marshal_with(taxi_model)
     def post(self):
         db = current_app.extensions['sqlalchemy'].db
-        hj = request.json
-        taxi_json = hj['data'][0]
+
+        parser = DataJSONParser()
+        taxi_json = parser.get_data()[0]
         departement = administrative_models.Departement.filter_by_or_404(
             numero=str(taxi_json['driver']['departement']))
         driver = taxis_models.Driver.filter_by_or_404(
