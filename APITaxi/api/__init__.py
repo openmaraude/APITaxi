@@ -24,11 +24,12 @@ def init_app(app):
     {'Content-Type': 'application/json'}
 
     @api.errorhandler(AssertionError)
+    @api.errorhandler(KeyError)
     def assertion_error(error):
         if error.args:
             message = error.args[0]
         elif error.message:
             message = error.message
         else:
-            message = "AssertionError"
+            message = error.__class__
         return {"message": message}, 400

@@ -51,11 +51,8 @@ class Drivers(ResourceMetadata):
             elif 'nom' in driver['departement']:
                 departement = administrative_models.Departement.\
                     filter_by_or_404(nom=driver['departement']['nom'])
-            try:
-                driver_obj = create_obj_from_json(taxis_models.Driver, driver)
-                driver_obj.departement_id = departement.id
-            except KeyError as e:
-                abort(400, message="Key error")
+            driver_obj = create_obj_from_json(taxis_models.Driver, driver)
+            driver_obj.departement_id = departement.id
             db.session.add(driver_obj)
             new_drivers.append(driver_obj)
         db.session.commit()

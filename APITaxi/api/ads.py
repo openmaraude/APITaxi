@@ -81,10 +81,7 @@ class ADS(ResourceMetadata):
               not taxis_models.Vehicle.query.get(ads['vehicle_id']):
                 abort(400, message="Unable to find a vehicle with the id: {}"\
                         .format(ads['vehicle_id']))
-            try:
-                ads_db = create_obj_from_json(taxis_models.ADS, ads)
-            except KeyError as e:
-                abort(400, message="Missing key: "+str(e))
+            ads_db = create_obj_from_json(taxis_models.ADS, ads)
             zupc = administrative_models.ZUPC.query.filter_by(insee=ads_db.insee).first()
             if zupc is None:
                 abort(400, message="Unable to find a ZUPC for insee: {}".format(
