@@ -3,18 +3,17 @@ from flask import request, current_app, g
 from flask_restplus import Resource, reqparse, fields, abort, marshal
 from flask_security import (login_required, roles_required,
         roles_accepted, current_user)
-from flask_restplus import reqparse
 from ..extensions import redis_store, redis_store_saved
 from ..api import api
 from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel, HailLog
 from APITaxi_models.taxis import  RawTaxi, TaxiRedis, Taxi
-from APITaxi_models import security as security_models
+from APITaxi_models import security as security_models, db
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
 from APITaxi_utils.request_wants_json import json_mimetype_required
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
-from APITaxi_utils import influx_db
+from APITaxi_utils import influx_db, reqparse
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import json, Geohash
@@ -28,7 +27,7 @@ class HailId(Resource):
 
     @classmethod
     def filter_access(cls, hail):
-        if not current_user.id in (hail.operateur_id, hail.added_by) and\
+        if current_user.id not in (hail.operateur_id, hail.added_by) and\
                 not current_user.has_role('admin'):
             abort(403, message="You don't have the authorization to view this hail")
 
@@ -37,7 +36,6 @@ class HailId(Resource):
     @roles_accepted('admin', 'moteur', 'operateur')
     @json_mimetype_required
     def get(self, hail_id):
-        from APITaxi_models import db
         db.session.expire_all()
         hail = HailModel.get_or_404(hail_id)
         self.filter_access(hail)
@@ -70,8 +68,8 @@ class HailId(Resource):
         self.filter_access(hail)
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
-        hj = request.json
-        hj = hj['data'][0]
+        parser = reqparse.DataJSONParser()
+        hj = parser.get_data()[0]
 
         #We change the status
         if 'status' in hj and  hj['status'] == 'accepted_by_taxi':
@@ -107,8 +105,8 @@ class Hail(Resource):
     @api.response(201, 'Success', hail_model)
     @json_mimetype_required
     def post(self):
-        hj = request.json
-        hj = hj['data'][0]
+        parser = reqparse.DataJSONParser()
+        hj = parser.get_data()[0]
 
         operateur = security_models.User.filter_by_or_404(
                 email=hj['operateur'],

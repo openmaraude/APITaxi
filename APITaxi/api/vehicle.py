@@ -7,6 +7,7 @@ from ..descriptors.vehicle import vehicle_model, vehicle_expect
 from flask_restplus import fields, reqparse, abort
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.populate_obj import create_obj_from_json
+from APITaxi_utils import reqparse
 import datetime
 mod = Blueprint('vehicle', __name__)
 
@@ -21,14 +22,10 @@ class Vehicle(ResourceMetadata):
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     def post(self):
-        json = request.get_json()
-        if "data" not in json:
-            abort(400, message="data is required")
-        if len(json['data']) > 250:
-            abort(413, message="You can only post 250 vehicles at a time")
+        parser = reqparse.DataJSONParser(max_length=250)
         new_vehicles = []
         db = current_app.extensions['sqlalchemy'].db
-        for vehicle in json['data']:
+        for vehicle in parser.get_data():
             if 'id' in vehicle.keys():
                 del vehicle['id']
             v = vehicle_models.Vehicle(vehicle['licence_plate'])

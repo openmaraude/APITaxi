@@ -2,6 +2,7 @@
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
+from APITaxi_utils.reqparse import DataJSONParser
 from APITaxi_models import (taxis as taxis_models,
         administrative as administrative_models)
 from flask_security import login_required, roles_accepted, current_user
@@ -70,14 +71,10 @@ class ADS(ResourceMetadata):
         abort(400, message="File is not present!")
 
     def post_json(self):
-        json = request.get_json()
-        if "data" not in json:
-            abort(400, message="No data field in request")
-        if len(json['data']) > 250:
-            abort(413, message="You can only pass 250 objects")
+        data_parser = DataJSONParser(max_length=250)
         new_ads = []
         db = current_app.extensions['sqlalchemy'].db
-        for ads in json['data']:
+        for ads in data_parser.get_data():
             if not ads.get('vehicle_id', None) or ads['vehicle_id'] == 0:
                 ads['vehicle_id'] = None
             if ads['vehicle_id'] and\
