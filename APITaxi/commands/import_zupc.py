@@ -283,8 +283,8 @@ def merge_zones(temp_zupc_obj):
     db.session.commit()
 
 @manager.command
-def import_zupc():
-    temp_dir = '/tmp/temp_contours'
+def import_zupc(zupc_dir='/tmp/zupc', contours_dir='/tmp/temp_contours'):
+    temp_dir = contours_dir
     wanted = download_wanted(temp_dir)
     if wanted:
         download_contours_file(temp_dir)
@@ -296,7 +296,7 @@ def import_zupc():
 
     z = create_temp_table()
     load_zupc_temp_table(shape_filename, z)
-    load_zupc('/tmp/zupc', z)
+    load_zupc(zupc_dir, z)
     if not confirm_zones():
         return
     merge_zones(z)
