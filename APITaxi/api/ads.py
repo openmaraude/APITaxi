@@ -3,6 +3,7 @@ from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.reqparse import DataJSONParser
+from APITaxi_utils.resource_file_or_json import ResourceFileOrJSON
 import APITaxi_models as models
 from flask_security import login_required, roles_accepted, current_user
 from . import api, ns_administrative
@@ -21,8 +22,10 @@ parser.add_argument('insee', type=unicode,
                     location='values')
 
 @ns_administrative.route('ads/', endpoint="ads")
-class ADS(ResourceMetadata):
+class ADS(ResourceMetadata, ResourceFileOrJSON):
     model = models.ADS
+    filetype = 'ADS'
+    documents = documents
 
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture', 'stats')
@@ -55,19 +58,7 @@ class ADS(ResourceMetadata):
     @api.expect(ads_expect)
     @api.response(200, 'Success', ads_post)
     def post(self):
-        if 'file' in request.files:
-            filename = "ads-{}-{}.csv".format(current_user.email,
-                    str(datetime.now().strftime("%Y-%m-%dT%H:%M:%S:%f")))
-            documents.save(request.files['file'], name=filename)
-            slack = slacker()
-            if slack:
-                slack.chat.post_message('#taxis-internal',
-                'Un nouveau fichier ADS a été envoyé par {}. {}'.format(
-                    current_user.email, filename))
-            return "OK"
-        elif request_wants_json():
-            return self.post_json()
-        abort(400, message="File is not present!")
+        return super(ADS, self).post()
 
     def post_json(self):
         data_parser = DataJSONParser(max_length=250)
