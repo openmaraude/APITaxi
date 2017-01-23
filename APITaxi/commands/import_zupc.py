@@ -2,13 +2,16 @@
 import urllib2, os, zipfile, shapefile, copy, glob
 from . import manager
 from shapely.geometry import shape, MultiPolygon
+from shapely.ops import cascaded_union as union
+from shapely import wkt
 from APITaxi_models import db, administrative, taxis
-from geoalchemy2.shape import from_shape
+from geoalchemy2.shape import from_shape, to_shape
 from geoalchemy2 import func
 from itertools import groupby
 from sqlalchemy.sql import select
 from sqlalchemy import Table, Column, Boolean
 from sqlalchemy.ext.automap import automap_base
+import json, sys
 
 def download_wanted(temp_dir):
     if os.path.isdir(temp_dir):
@@ -127,18 +130,15 @@ def union_zupc(filename, zupc_obj):
         return parent_id
 
     subquery = db.session.query(
-        func.ST_Union(func.Geometry(zupc_obj.shape))).filter(
+        func.st_AsText(func.Geography(func.st_Multi(func.ST_Union(func.Geometry(zupc_obj.shape)))))).filter(
             zupc_obj.insee.in_(insee_list)
-        )
+    )
     zupc_obj.query.filter(zupc_obj.insee.in_(insee_list)).update(
         {'shape': subquery.first()[0],
          'parent_id': parent_id
         }, synchronize_session='fetch'
     )
-    query_string = "UPDATE {} SET multiple ='True' where insee in %s;".format(
-        zupc_obj.__table__.name)
-    cur = db.session.connection().connection.cursor()
-    cur.execute(query_string, (tuple(insee_list),))
+    zupc_obj.query.filter(zupc_obj.insee.in_(insee_list)).update({"multiple": True}, synchronize_session='fetch')
     db.session.commit()
     return parent_id
 
@@ -155,11 +155,19 @@ def load_geojson(parent_id, geojson_file, zupc_obj, func_name):
     if parent_id is None:
         return None
     with open(geojson_file) as f:
-        s = shape(json.load(f))
+        jdata = json.load(f)
+        if 'features' in jdata:
+            if len(jdata['features']) == 1:
+                s = shape(jdata['features'][0]['geometry'])
+            else:
+                s = union(map(lambda f: shape(f['geometry']), jdata['features']))
+        else:
+            s = shape(jdata['geometry'])
         parent_zupc = zupc_obj.query.get(parent_id)
-        new_shape = getattr(s, func_name)(parent_zupc.shape)
-        parent_zupc.update(
-            {'shape': new_shape}
+        parent_shape = to_shape(parent_zupc.shape)
+        new_shape = MultiPolygon([getattr(s, func_name)(parent_shape)])
+        parent_zupc.query.filter(id==parent_id).update(
+            {'shape': wkt.dumps(new_shape)}
         )
         db.session.commit()
 
@@ -181,15 +189,18 @@ def load_arrondissements(parent_id, arrondissements_file, zupc_obj):
     db.session.commit()
 
 
-def override_name(parent_id, special_name):
+def override_name(parent_id, special_name_list, zupc_obj):
     if parent_id is None:
         return
     parent_zupc = zupc_obj.query.get(parent_id)
-    with open(special_name_insee) as f:
-        name, insee = map(lambda s: s.strip(), f.readline().split(','))
-    parent_zupc.name = name
-    parent_zupc.insee = insee
-    db.session.add(parent_zupc)
+    for special_name in special_name_list:
+	    with open(special_name) as f:
+                line = f.readline().decode('utf-8')
+                delimiter = ' ' if ' ' in line else ','
+		name, insee = map(lambda s: s.strip(), line.split(delimiter))
+	    parent_zupc.name = name
+	    parent_zupc.insee = insee
+	    db.session.add(parent_zupc)
     db.session.commit()
 
 
@@ -199,7 +210,7 @@ def load_dir(dirname, zupc_obj):
         parent_id = union_zupc(f, zupc_obj)
     special_name_insee = glob.glob(os.path.join(dirname, 'special_name_insee'))
     if len(special_name_insee) == 1:
-        override_name(parent_id, special_name_insee)
+        override_name(parent_id, special_name_insee, zupc_obj)
     for f in glob.glob(os.path.join(dirname, '*.include')):
         load_include_geojson(parent_id, f, zupc_obj)
     for f in glob.glob(os.path.join(dirname, '*.exclude')):
@@ -211,7 +222,7 @@ def load_dir(dirname, zupc_obj):
 def load_zupc(d, zupc_obj):
     for root, dirs, files in os.walk(d):
         for dir_ in dirs:
-            print "Importing zupc {}".format(dir_)
+            print unicode("Importing zupc {}").format(unicode(dir_))
             load_dir(os.path.join(d, dir_), zupc_obj)
 
 
