@@ -1,7 +1,7 @@
 #coding: utf-8
 from ..extensions import redis_store, user_datastore
 from APITaxi_models.taxis import Taxi, RawTaxi
-from APITaxi_models.administrative import ZUPC
+import APITaxi_models as models
 from APITaxi_utils import influx_db
 from APITaxi_utils.pager import pager
 from itertools import izip, ifilter, imap
@@ -53,7 +53,7 @@ def store_active_taxis(frequency):
                 continue
 #This a cache for insee to zupc.
             if not taxi_db['ads_insee'] in store_active_taxis.insee_zupc_dict:
-                zupc = ZUPC.query.get(taxi_db['ads_zupc_id'])
+                zupc = models.ZUPC.query.get(taxi_db['ads_zupc_id'])
                 if not zupc:
                     current_app.logger.error('Unable to find zupc: {}'.format(
                         taxi_db['ads_zupc_id']))

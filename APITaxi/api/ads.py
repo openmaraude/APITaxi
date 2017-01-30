@@ -3,8 +3,8 @@ from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.reqparse import DataJSONParser
-from APITaxi_models import (taxis as taxis_models,
-        administrative as administrative_models)
+from APITaxi_models import (taxis as taxis_models)
+import APITaxi_models as models
 from flask_security import login_required, roles_accepted, current_user
 from . import api, ns_administrative
 from ..descriptors.ads import ads_model, ads_expect, ads_post
@@ -82,7 +82,7 @@ class ADS(ResourceMetadata):
                 abort(400, message="Unable to find a vehicle with the id: {}"\
                         .format(ads['vehicle_id']))
             ads_db = create_obj_from_json(taxis_models.ADS, ads)
-            zupc = administrative_models.ZUPC.query.filter_by(insee=ads_db.insee).first()
+            zupc = models.ZUPC.query.filter_by(insee=ads_db.insee).first()
             if zupc is None:
                 abort(400, message="Unable to find a ZUPC for insee: {}".format(
                     ads_db.insee))

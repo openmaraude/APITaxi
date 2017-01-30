@@ -5,8 +5,8 @@ from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils import reqparse
-from APITaxi_models import (db, taxis as taxis_models,
-        administrative as administrative_models)
+from APITaxi_models import (db, taxis as taxis_models)
+import APITaxi_models as models
 from . import api
 from ..descriptors.drivers import driver_fields, driver_details_expect
 from flask import request, current_app
@@ -46,10 +46,10 @@ class Drivers(ResourceMetadata):
         for driver in parser.get_data():
             departement = None
             if 'numero' in driver['departement']:
-                departement = administrative_models.Departement.\
+                departement = models.Departement.\
                     filter_by_or_404(numero=driver['departement']['numero'])
             elif 'nom' in driver['departement']:
-                departement = administrative_models.Departement.\
+                departement = models.Departement.\
                     filter_by_or_404(nom=driver['departement']['nom'])
             driver_obj = create_obj_from_json(taxis_models.Driver, driver)
             driver_obj.departement_id = departement.id

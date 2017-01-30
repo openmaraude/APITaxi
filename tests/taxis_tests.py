@@ -1,8 +1,8 @@
 from .skeleton import Skeleton
 from APITaxi_models.taxis import Taxi, ADS, Driver
-from APITaxi_models.administrative import Departement
 from APITaxi_models.vehicle import Vehicle
 from APITaxi_models.security import User
+import APITaxi_models as models
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi

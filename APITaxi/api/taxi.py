@@ -4,8 +4,9 @@ from flask_restplus import fields, abort, marshal, Resource, reqparse
 from flask_security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
 from APITaxi_models import (taxis as taxis_models,
-                            administrative as administrative_models,
-                           hail as hail_models)
+                           hail as hail_models,
+                           )
+import APITaxi_models as models
 from APITaxi_utils.caching import cache_single, cache_in
 from APITaxi_utils import influx_db
 from APITaxi_utils.reqparse import DataJSONParser
@@ -278,7 +279,7 @@ class Taxis(Resource):
 
         parser = DataJSONParser()
         taxi_json = parser.get_data()[0]
-        departement = administrative_models.Departement.filter_by_or_404(
+        departement = models.Departement.filter_by_or_404(
             numero=str(taxi_json['driver']['departement']))
         driver = taxis_models.Driver.filter_by_or_404(
                 professional_licence=taxi_json['driver']['professional_licence'],

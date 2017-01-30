@@ -7,7 +7,7 @@ from flask import current_app
 from werkzeug.exceptions import BadRequest
 import json
 from psycopg2.extras import RealDictCursor
-from APITaxi_models import administrative as administrative_models
+import APITaxi_models as models
 
 @ns_administrative.route('zupc/')
 class ZUPC(ResourceMetadata):
@@ -28,7 +28,7 @@ class ZUPC(ResourceMetadata):
             WHERE ST_Intersects(shape, ST_POINT(%s, %s)::geography)""",
             (args['lon'], args['lat']))
         to_return = []
-        ZUPC = administrative_models.ZUPC
+        ZUPC = models.ZUPC
         for zupc in cur.fetchall():
             if any(map(lambda z: zupc['insee'] == z['insee'], to_return)):
                 continue
@@ -45,8 +45,8 @@ class ZUPCAutocomplete(ResourceMetadata):
         term = request.args.get('q')
         like = "%{}%".format(term)
 
-        response = administrative_models.ZUPC.query.filter(
-                administrative_models.ZUPC.nom.ilike(like)).all()
+        response = models.ZUPC.query.filter(
+                models.ZUPC.nom.ilike(like)).all()
         return jsonify(suggestions=map(lambda zupc:{'name': zupc.nom, 'id': int(zupc.id)},
                                             response))
 
