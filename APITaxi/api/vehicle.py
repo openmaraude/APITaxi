@@ -28,23 +28,13 @@ class Vehicle(ResourceMetadata):
         for vehicle in parser.get_data():
             if 'id' in vehicle.keys():
                 del vehicle['id']
-            v = models.Vehicle(vehicle['licence_plate'])
-            v.last_update_at = datetime.datetime.now()
-            create_obj_from_json(models.Vehicle, vehicle, v)
+            v = create_obj_from_json(models.Vehicle, vehicle)
             db.session.add(v)
             db.session.commit()
-            v_description = models.VehicleDescription(vehicle_id=v.id,
-                    added_by=current_user.id)
-            constructor = models.Constructor(vehicle['constructor'])
-            model = models.Model(vehicle['model'])
-            db.session.add(model)
-            db.session.add(constructor)
-            db.session.commit()
-            v_description.constructor = constructor
-            v_description.model = model
-            v.descriptions.append(v_description)
-            create_obj_from_json(models.VehicleDescription,
-                    vehicle, v_description)
+            vehicle['vehicle_id'] = v.id
+            vehicle['added_by'] = current_user.id
+            v_description = create_obj_from_json(models.VehicleDescription,
+                    vehicle)
             v_description.status = 'off'
             db.session.add(v_description)
             new_vehicles.append(v)
