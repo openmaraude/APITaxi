@@ -3,8 +3,7 @@ from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils.populate_obj import create_obj_from_json
 from APITaxi_utils.reqparse import DataJSONParser
-from APITaxi_models import (taxis as taxis_models,
-        administrative as administrative_models)
+import APITaxi_models as models
 from flask_security import login_required, roles_accepted, current_user
 from . import api, ns_administrative
 from ..descriptors.ads import ads_model, ads_expect, ads_post
@@ -23,7 +22,7 @@ parser.add_argument('insee', type=unicode,
 
 @ns_administrative.route('ads/', endpoint="ads")
 class ADS(ResourceMetadata):
-    model = taxis_models.ADS
+    model = models.ADS
 
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture', 'stats')
@@ -37,11 +36,11 @@ class ADS(ResourceMetadata):
                 "numero": str(numero),
                 "insee": str(insee)
                 }
-        ads = taxis_models.ADS.query.filter_by(**filters).all()
+        ads = models.ADS.query.filter_by(**filters).all()
         if not ads:
             abort(404, error="Unable to find this couple INSEE/numero")
         ads = ads[0]
-        d = taxis_models.ADS.__dict__
+        d = models.ADS.__dict__
         keys_to_show = ads.showable_fields(current_user)
         is_valid_key = lambda k: hasattr(k, "info") and k.info.has_key("label")\
                                  and k.info['label'] and k.key in keys_to_show
@@ -78,11 +77,11 @@ class ADS(ResourceMetadata):
             if not ads.get('vehicle_id', None) or ads['vehicle_id'] == 0:
                 ads['vehicle_id'] = None
             if ads['vehicle_id'] and\
-              not taxis_models.Vehicle.query.get(ads['vehicle_id']):
+              not models.Vehicle.query.get(ads['vehicle_id']):
                 abort(400, message="Unable to find a vehicle with the id: {}"\
                         .format(ads['vehicle_id']))
-            ads_db = create_obj_from_json(taxis_models.ADS, ads)
-            zupc = administrative_models.ZUPC.query.filter_by(insee=ads_db.insee).first()
+            ads_db = create_obj_from_json(models.ADS, ads)
+            zupc = models.ZUPC.query.filter_by(insee=ads_db.insee).first()
             if zupc is None:
                 abort(400, message="Unable to find a ZUPC for insee: {}".format(
                     ads_db.insee))

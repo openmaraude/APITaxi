@@ -5,8 +5,7 @@ from json import dumps
 from APITaxi import create_app
 from APITaxi.extensions import (redis_store, user_datastore)
 from APITaxi.api import api
-from APITaxi_models.administrative import Departement, ZUPC
-from APITaxi_models.taxis import Taxi
+import APITaxi_models as models
 from functools import partial
 from .fake_data import (dict_driver, dict_vehicle, dict_ads, dict_taxi,
     dict_driver_2, dict_vehicle_2, dict_ads_2, dict_taxi_2)
@@ -46,7 +45,7 @@ class Skeleton(TestCase):
 
     def tearDown(self):
         ids = []
-        for taxi in Taxi.query.all():
+        for taxi in models.Taxi.query.all():
             redis_store.delete('taxi:{}'.format(taxi.id))
         for k, v in current_app.config.iteritems():
             if not k.startswith('REDIS'):
@@ -109,7 +108,7 @@ class Skeleton(TestCase):
         return taxi
 
     def init_zupc(self, post_second=False):
-        zupc = ZUPC()
+        zupc = models.ZUPC()
         zupc.insee = '75056' if not post_second else '34172'
         zupc.nom = 'Paris' if not post_second else 'Montpellier'
         if post_second:
@@ -121,7 +120,7 @@ class Skeleton(TestCase):
         current_app.extensions['sqlalchemy'].db.session.commit()
         zupc.parent_id = zupc.id
 
-        zupc2 = ZUPC()
+        zupc2 = models.ZUPC()
         zupc2.insee = '93048'
         zupc2.nom = 'Montreuil'
         zupc2.parent_id = zupc.id
@@ -178,7 +177,7 @@ class Skeleton(TestCase):
             version=version, content_type=content_type, headers=headers)
 
     def init_dep(self):
-        dep = Departement()
+        dep = models.Departement()
         dep.nom = "Mayenne"
         dep.numero = "53"
         current_app.extensions['sqlalchemy'].db.session.add(dep)

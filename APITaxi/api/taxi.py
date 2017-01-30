@@ -3,9 +3,7 @@ import calendar, time
 from flask_restplus import fields, abort, marshal, Resource, reqparse
 from flask_security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
-from APITaxi_models import (taxis as taxis_models,
-                            administrative as administrative_models,
-                           hail as hail_models)
+import APITaxi_models as models
 from APITaxi_utils.caching import cache_single, cache_in
 from APITaxi_utils import influx_db
 from APITaxi_utils.reqparse import DataJSONParser
@@ -29,7 +27,7 @@ ns_taxis = api.namespace('taxis', description="Taxi API")
 @ns_taxis.route('/<string:taxi_id>/', endpoint="taxi_id")
 class TaxiId(Resource):
     def get_descriptions(self, taxi_id):
-        taxis = taxis_models.RawTaxi.get([taxi_id])
+        taxis = models.RawTaxi.get([taxi_id])
         if not taxis:
             abort(404, message='Unable to find taxi "{}"'.format(taxi_id))
         taxis = taxis[0]
@@ -48,7 +46,7 @@ class TaxiId(Resource):
         t, last_update_at = self.get_descriptions(taxi_id)
         print t
         taxi_m = marshal({'data':[
-            taxis_models.RawTaxi.generate_dict(t,
+            models.RawTaxi.generate_dict(t,
             operator=current_user.email)]}, taxi_model)
         taxi_m['data'][0]['operator'] = current_user.email
         taxi_m['data'][0]['last_update'] = last_update_at
@@ -74,10 +72,10 @@ class TaxiId(Resource):
             )
             to_set = ['last_update_at = %s', [datetime.now()]]
             if t[0]['taxi_current_hail_id']:
-                hail = hail_models.Hail.query.from_statement(
+                hail = models.Hail.query.from_statement(
                     text("SELECT * from hail where id=:hail_id")
                 ).params(hail_id=t[0]['taxi_current_hail_id']).one()
-                hail_status, current_hail_id = taxis_models.Taxi.get_new_hail_status(
+                hail_status, current_hail_id = models.Taxi.get_new_hail_status(
                     hail.id, new_status, hail._status)
                 if hail_status:
                     hail.status = hail_status
@@ -86,7 +84,7 @@ class TaxiId(Resource):
             query = "UPDATE taxi SET {} WHERE id = %s".format(to_set[0])
             cur.execute(query, (to_set[1] + [t[0]['taxi_id']]))
             current_app.extensions['sqlalchemy'].db.session.commit()
-            taxis_models.RawTaxi.flush(taxi_id)
+            models.RawTaxi.flush(taxi_id)
             t[0]['vehicle_description_status'] = new_status
             taxi_id_operator = "{}:{}".format(taxi_id, current_user.email)
             if t[0]['vehicle_description_status'] == 'free':
@@ -97,7 +95,7 @@ class TaxiId(Resource):
                     0., taxi_id_operator)
 
         taxi_m = marshal({'data':[
-            taxis_models.RawTaxi.generate_dict(t, operator=current_user.email)]
+            models.RawTaxi.generate_dict(t, operator=current_user.email)]
             }, taxi_model)
         taxi_m['data'][0]['operator'] = current_user.email
         taxi_m['data'][0]['last_update'] = last_update_at
@@ -144,7 +142,7 @@ class Taxis(Resource):
 
     def check_freshness(self):
         if redis_store.zcount(current_app.config['REDIS_TIMESTAMPS'], 0,
-                  time() - taxis_models.TaxiRedis._DISPONIBILITY_DURATION) > 0:
+                  time() - models.TaxiRedis._DISPONIBILITY_DURATION) > 0:
             clean_geoindex_timestamps.apply()
 
 
@@ -221,7 +219,7 @@ class Taxis(Resource):
             distances = [v[1] for v in page_ids_distances]
             positions = redis_store.geopos(current_app.config['REDIS_GEOINDEX_ID']
                                            ,*page_ids)
-            taxis_db = taxis_models.RawTaxi.get(page_ids)
+            taxis_db = models.RawTaxi.get(page_ids)
 #We get all timestamps
             pipe = redis_store.pipeline()
             map(lambda l_taxis:map(
@@ -240,7 +238,7 @@ class Taxis(Resource):
                                                timestamps_slices[-1][1]+len(i))),
                 taxis_db)
 
-            l = [taxis_models.RawTaxi.generate_dict(t[0],
+            l = [models.RawTaxi.generate_dict(t[0],
                         None, None,
                         favorite_operator=p['favorite_operator'],
                         position={"lon": t[1][1], "lat": t[1][0]},
@@ -278,24 +276,24 @@ class Taxis(Resource):
 
         parser = DataJSONParser()
         taxi_json = parser.get_data()[0]
-        departement = administrative_models.Departement.filter_by_or_404(
+        departement = models.Departement.filter_by_or_404(
             numero=str(taxi_json['driver']['departement']))
-        driver = taxis_models.Driver.filter_by_or_404(
+        driver = models.Driver.filter_by_or_404(
                 professional_licence=taxi_json['driver']['professional_licence'],
                            departement_id=departement.id)
-        vehicle = taxis_models.Vehicle.filter_by_or_404(
+        vehicle = models.Vehicle.filter_by_or_404(
                 licence_plate=taxi_json['vehicle']['licence_plate'])
-        ads = taxis_models.ADS.filter_by_or_404(
+        ads = models.ADS.filter_by_or_404(
               numero=taxi_json['ads']['numero'],insee=taxi_json['ads']['insee'])
-        taxi = taxis_models.Taxi.query.filter_by(driver_id=driver.id,
+        taxi = models.Taxi.query.filter_by(driver_id=driver.id,
                 vehicle_id=vehicle.id, ads_id=ads.id).first()
         if taxi_json.get('id', None):
             if current_user.has_role('admin'):
-                taxi = taxis_models.Taxi.query.get(taxi_json['id'])
+                taxi = models.Taxi.query.get(taxi_json['id'])
             else:
                 del taxi_json['id']
         if not taxi:
-            taxi = taxis_models.Taxi(driver=driver, vehicle=vehicle, ads=ads,
+            taxi = models.Taxi(driver=driver, vehicle=vehicle, ads=ads,
                     id=taxi_json.get('id', None))
         #This can happen if this is posted with a admin user
         if 'status' in taxi_json and taxi.vehicle.description:

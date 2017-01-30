@@ -1,8 +1,5 @@
 from .skeleton import Skeleton
-from APITaxi_models.taxis import Taxi, ADS, Driver
-from APITaxi_models.administrative import Departement
-from APITaxi_models.vehicle import Vehicle
-from APITaxi_models.security import User
+import APITaxi_models as models
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
@@ -20,7 +17,7 @@ class TaxiGet(Skeleton):
         taxi = self.post_taxi_and_locate(lat=lat, lon=lon, float_=float_,
                 post_second=post_second, custom_ads=custom_ads)
         id_taxi = taxi['id']
-        taxi_db = Taxi.query.get(id_taxi)
+        taxi_db = models.Taxi.query.get(id_taxi)
         taxi_db.set_free()
         current_app.extensions['sqlalchemy'].db.session.commit()
         return id_taxi
@@ -229,7 +226,7 @@ class TestTaxiPut(Skeleton):
         r = self.post([dict_taxi])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
         self.url = '{}{}/'.format(self.__class__.url, r.json['data'][0]['id'])
         return r.json['data'][0]['id']
 
@@ -257,7 +254,7 @@ class TestTaxiPut(Skeleton):
         taxi = r.json['data'][0]
         assert taxi['id'] == id_
         assert taxi['status'] == status
-        statuses = [desc.status for desc in Taxi.query.get(id_).vehicle.descriptions]
+        statuses = [desc.status for desc in models.Taxi.query.get(id_).vehicle.descriptions]
         assert all(map(lambda st: st == status, statuses))
         r = self.get(self.url)
         assert r.json['data'][0]['status'] == status
@@ -284,7 +281,7 @@ class TestTaxiPut(Skeleton):
         dict_ = {'status': 'off'}
         r = self.put([dict_], self.url, user='user_operateur_2')
         self.assert200(r)
-        statuses = [desc.status for desc in Taxi.query.get(id_).vehicle.descriptions]
+        statuses = [desc.status for desc in models.Taxi.query.get(id_).vehicle.descriptions]
         assert any(map(lambda st: st == 'free', statuses))
         assert any(map(lambda st: st == 'off', statuses))
         r = self.get(self.url)
@@ -395,7 +392,7 @@ class TestTaxiPost(Skeleton):
         r = self.post([dict_taxi])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
 
     def test_add_taxi_with_id_normal_user(self):
         self.init_taxi()
@@ -406,7 +403,7 @@ class TestTaxiPost(Skeleton):
         del dict_taxi_['id']
         self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
         self.assertNotEqual(r.json['data'][0]['id'], 'a')
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
 
     def test_add_taxi_with_admin_user(self):
         self.init_taxi()
@@ -417,7 +414,7 @@ class TestTaxiPost(Skeleton):
         del dict_taxi_['status']
         self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
         self.assertEqual(r.json['data'][0]['id'], 'a')
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
 
     def test_add_taxi_internal(self):
         self.init_taxi()
@@ -426,7 +423,7 @@ class TestTaxiPost(Skeleton):
         r = self.post([d])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], d)
-        taxis = Taxi.query.all()
+        taxis = models.Taxi.query.all()
         self.assertEqual(len(taxis), 1)
         r = self.get('/taxis/{}/'.format(taxis[0].id))
         self.assertEqual(r.json['data'][0]['internal_id'], 'INTERNAL_ID')
@@ -440,7 +437,7 @@ class TestTaxiPost(Skeleton):
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], d)
         assert r.json['data'][0]['id'] == first_id
-        taxis = Taxi.query.all()
+        taxis = models.Taxi.query.all()
         self.assertEqual(len(taxis), 1)
         r = self.get('/taxis/{}/'.format(taxis[0].id), user='user_operateur_2')
         self.assertEqual(r.json['data'][0]['internal_id'], 'INTERNAL_ID_2')
@@ -493,18 +490,18 @@ class TestTaxiPost(Skeleton):
         r = self.post([dict_taxi])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
         r = self.post([dict_taxi])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
 
     def test_add_taxi_change_vehicle_description(self):
         self.init_taxi()
         r = self.post([dict_taxi])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_taxi)
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
         taxi_id = r.json['data'][0]['id']
         dict_v = deepcopy(dict_vehicle)
         dict_v['color'] = 'red'
@@ -512,7 +509,7 @@ class TestTaxiPost(Skeleton):
         r = self.get('/taxis/{}/'.format(taxi_id))
         self.assert200(r)
         self.assertEqual(r.json['data'][0]['vehicle']['color'], 'red')
-        self.assertEqual(len(Taxi.query.all()), 1)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
 
     def test_remove_ads(self):
         pass
@@ -542,15 +539,15 @@ class TestTaxiPost(Skeleton):
 
 
     def test_two_drivers_two_ads_one_taxi(self):
-        self.assertEqual(len(Taxi.query.all()), 0)
+        self.assertEqual(len(models.Taxi.query.all()), 0)
         self.post_taxi()
         self.post_taxi()
-        drivers = Driver.query.all()
-        ads = ADS.query.all()
+        drivers = models.Driver.query.all()
+        ads = models.ADS.query.all()
         self.assertEqual(len(drivers), 2)
         self.assertEqual(len(ads), 2)
-        self.assertEqual(len(Taxi.query.all()), 1)
-        self.assertEqual(Taxi.query.all()[0].driver_id,
+        self.assertEqual(len(models.Taxi.query.all()), 1)
+        self.assertEqual(models.Taxi.query.all()[0].driver_id,
                 max(drivers, key=lambda d: d.added_at).id)
-        self.assertEqual(Taxi.query.all()[0].ads_id,
+        self.assertEqual(models.Taxi.query.all()[0].ads_id,
                 max(ads, key=lambda d: d.added_at).id)

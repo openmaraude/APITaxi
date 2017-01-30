@@ -1,7 +1,7 @@
 #coding: utf-8
 from APITaxi_utils import fields
 from ..api import api
-from APITaxi_models.taxis import ADS
+from APITaxi_models import ADS
 
 ads_model = api.model('ADS_model_data',
     {'data': fields.List(fields.Nested(

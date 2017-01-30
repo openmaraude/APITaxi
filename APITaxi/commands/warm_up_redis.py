@@ -36,7 +36,6 @@ def warm_up_redis_func(app=None, db=None, user_model=None, redis_store=None):
 @manager.command
 def warm_up_redis():
     from flask import current_app
-    from APITaxi_models import db
-    from APITaxi_models.security import User as user_model
+    import APITaxi_models as models
     from APITaxi.extensions import redis_store
-    warm_up_redis_func(current_app, db, user_model, redis_store)
+    warm_up_redis_func(current_app, models.db, models.User, redis_store)

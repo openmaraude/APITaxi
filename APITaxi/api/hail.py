@@ -5,9 +5,7 @@ from flask_security import (login_required, roles_required,
         roles_accepted, current_user)
 from ..extensions import redis_store, redis_store_saved
 from ..api import api
-from APITaxi_models.hail import Hail as HailModel, Customer as CustomerModel, HailLog
-from APITaxi_models.taxis import  RawTaxi, TaxiRedis, Taxi
-from APITaxi_models import security as security_models, db
+import APITaxi_models as models
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
 from APITaxi_utils.request_wants_json import json_mimetype_required
@@ -36,10 +34,10 @@ class HailId(Resource):
     @roles_accepted('admin', 'moteur', 'operateur')
     @json_mimetype_required
     def get(self, hail_id):
-        db.session.expire_all()
-        hail = HailModel.get_or_404(hail_id)
+        models.db.session.expire_all()
+        hail = models.Hail.get_or_404(hail_id)
         self.filter_access(hail)
-        hail.taxi_relation = Taxi.query.from_statement(
+        hail.taxi_relation = models.Taxi.query.from_statement(
             text("SELECT * FROM taxi where id=:taxi_id")
         ).params(taxi_id=hail.taxi_id).one()
         return_ = marshal({"data": [hail]},hail_model)
@@ -63,8 +61,8 @@ class HailId(Resource):
     @api.expect(hail_expect_put, validate=True)
     @json_mimetype_required
     def put(self, hail_id):
-        hail = HailModel.get_or_404(hail_id)
-        g.hail_log = HailLog('PUT', hail, request.data)
+        hail = models.Hail.get_or_404(hail_id)
+        g.hail_log = models.HailLog('PUT', hail, request.data)
         self.filter_access(hail)
         if hail.status.startswith("timeout"):
             return {"data": [hail]}
@@ -91,8 +89,8 @@ class HailId(Resource):
                 abort(403)
             except ValueError, e:
                 abort(400, message=e.args[0])
-        current_app.extensions['sqlalchemy'].db.session.add(hail)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        models.db.session.add(hail)
+        models.db.session.commit()
         return {"data": [hail]}
 
 
@@ -108,28 +106,28 @@ class Hail(Resource):
         parser = reqparse.DataJSONParser()
         hj = parser.get_data()[0]
 
-        operateur = security_models.User.filter_by_or_404(
+        operateur = models.security.User.filter_by_or_404(
                 email=hj['operateur'],
                 message='Unable to find the taxi\'s operateur')
 
-        descriptions = RawTaxi.get((hj['taxi_id'],), operateur.id)
+        descriptions = models.RawTaxi.get((hj['taxi_id'],), operateur.id)
         if len(descriptions) == 0 or len(descriptions[0]) == 0:
-            g.hail_log = HailLog('POST', None, request.data)
+            g.hail_log = models.HailLog('POST', None, request.data)
             abort(404, message='Unable to find taxi {} of {}'.format(
                 hj['taxi_id'], hj['operateur']))
         if descriptions[0][0]['vehicle_description_status'] != 'free' or\
-                not TaxiRedis(hj['taxi_id']).is_fresh(hj['operateur']):
-            g.hail_log = HailLog('POST', None, request.data)
+                not models.TaxiRedis(hj['taxi_id']).is_fresh(hj['operateur']):
+            g.hail_log = models.HailLog('POST', None, request.data)
             abort(403, message="The taxi is not available")
-        customer = CustomerModel.query.filter_by(id=hj['customer_id'],
+        customer = models.Customer.query.filter_by(id=hj['customer_id'],
                 moteur_id=current_user.id).first()
         if not customer:
-            customer = CustomerModel(hj['customer_id'])
-            current_app.extensions['sqlalchemy'].db.session.add(customer)
+            customer = models.Customer(hj['customer_id'])
+            models.db.session.add(customer)
         taxi_pos = redis_store.geopos(current_app.config['REDIS_GEOINDEX'],
                 '{}:{}'.format(hj['taxi_id'], operateur.email))
 
-        hail = HailModel()
+        hail = models.Hail()
         hail.customer_id = hj['customer_id']
         hail.customer_lon = hj['customer_lon']
         hail.customer_lat = hj['customer_lat']
@@ -141,19 +139,19 @@ class Hail(Resource):
         hail.operateur_id = operateur.id
         if customer.ban_end and datetime.now() < customer.ban_end:
             hail.status = 'customer_banned'
-            current_app.extensions['sqlalchemy'].db.session.add(hail)
-            current_app.extensions['sqlalchemy'].db.session.commit()
+            models.db.session.add(hail)
+            models.db.session.commit()
             abort(403, message='Customer is banned')
         hail.status = 'received'
-        current_app.extensions['sqlalchemy'].db.session.add(hail)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        models.db.session.add(hail)
+        models.db.session.commit()
 
-        taxi = Taxi.query.get(hail.taxi_id)
+        taxi = models.Taxi.query.get(hail.taxi_id)
         taxi.current_hail_id = hail.id
 
-        g.hail_log = HailLog('POST', hail, request.data)
-        current_app.extensions['sqlalchemy'].db.session.add(hail)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        g.hail_log = models.HailLog('POST', hail, request.data)
+        models.db.session.add(hail)
+        models.db.session.commit()
 
         send_request_operator.apply_async(args=[hail.id,
             operateur.hail_endpoint(current_app.config['ENV']),
@@ -201,29 +199,29 @@ class Hail(Resource):
         parser.add_argument('taxi_id', type=str, required=False, default=None,
                             location='values')
         p = parser.parse_args()
-        q = HailModel.query
+        q = models.Hail.query
         filters = []
         if not current_user.has_role('admin'):
             if current_user.has_role('operateur'):
-                filters.append(HailModel.operateur_id == current_user.id)
+                filters.append(models.Hail.operateur_id == current_user.id)
             if current_user.has_role('moteur'):
-                filters.append(HailModel.added_by == current_user.id)
+                filters.append(models.Hail.added_by == current_user.id)
             if filters:
                 q = q.filter(or_(*filters))
         else:
-            uq = security_models.User.query
+            uq = models.security.User.query
             if p['operateur']:
                 q = q.filter(or_(*[
-                    HailModel.operateur_id == uq.filter_by(email=email).first().id
+                    models.Hail.operateur_id == uq.filter_by(email=email).first().id
                      for email in p['operateur']]
                 ))
             if p['moteur']:
                 q = q.filter(or_(*[
-                    HailModel.added_by == uq.filter_by(email=email).first().id
+                    models.Hail.added_by == uq.filter_by(email=email).first().id
                      for email in p['moteur']]
                 ))
         if p['status']:
-            q = q.filter(or_(*[HailModel._status == s for s in p['status']]))
+            q = q.filter(or_(*[models.Hail._status == s for s in p['status']]))
         if p['date']:
             date = None
             try:
@@ -231,15 +229,15 @@ class Hail(Resource):
             except ValueError:
                 current_app.logger.info('Unable to parse date: {}'.format(p['date']))
             if date:
-                q = q.filter(HailModel.creation_datetime <= date)
+                q = q.filter(models.Hail.creation_datetime <= date)
         if p['taxi_id']:
-            q = q.filter(HailModel.taxi_id == p['taxi_id'])
+            q = q.filter(models.Hail.taxi_id == p['taxi_id'])
 
-        q = q.order_by(HailModel.creation_datetime.desc())
+        q = q.order_by(models.Hail.creation_datetime.desc())
         pagination = q.paginate(page=p['p'], per_page=30)
         return {"data": [{
                 "id": hail.id,
-                "added_by": security_models.User.query.get(hail.added_by).email,
+                "added_by": models.security.User.query.get(hail.added_by).email,
                 "operateur": hail.operateur.email,
                 "status": hail.status,
                 "creation_datetime": hail.creation_datetime.strftime("%Y/%m/%d %H:%M:%S"),
@@ -256,11 +254,11 @@ class Hail(Resource):
             }
 
 
-@ns_hail.route('/<string:hail_id>/_log', endpoint='HailLog')
+@ns_hail.route('/<string:hail_id>/_log', endpoint='models.HailLog')
 class Hail(Resource):
     @login_required
     def get(self, hail_id):
-        hail = HailModel.query.get_or_404(hail_id)
+        hail = models.Hail.query.get_or_404(hail_id)
         if current_user.id not in (hail.added_by, hail.operateur_id)\
                 and not current_user.has_role('admin'):
             abort(403)

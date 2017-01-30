@@ -2,8 +2,7 @@
 from . import api
 from flask_restplus import Resource, fields, abort, marshal
 from flask_security import login_required, current_user, roles_accepted
-from APITaxi_models.hail import Customer as CustomerModel
-from APITaxi_models import db
+from APITaxi_models import db, Customer as CustomerModel
 from APITaxi_utils import reqparse
 from flask import request
 from ..descriptors.customer import customer_model
