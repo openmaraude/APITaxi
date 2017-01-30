@@ -6,7 +6,6 @@ from APITaxi import create_app
 from APITaxi.extensions import (redis_store, user_datastore)
 from APITaxi.api import api
 import APITaxi_models as models
-from APITaxi_models.taxis import Taxi
 from functools import partial
 from .fake_data import (dict_driver, dict_vehicle, dict_ads, dict_taxi,
     dict_driver_2, dict_vehicle_2, dict_ads_2, dict_taxi_2)
@@ -46,7 +45,7 @@ class Skeleton(TestCase):
 
     def tearDown(self):
         ids = []
-        for taxi in Taxi.query.all():
+        for taxi in models.Taxi.query.all():
             redis_store.delete('taxi:{}'.format(taxi.id))
         for k, v in current_app.config.iteritems():
             if not k.startswith('REDIS'):

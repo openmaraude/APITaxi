@@ -1,6 +1,5 @@
 #coding: utf-8
-from APITaxi_models.taxis import Taxi, ADS, Driver
-from APITaxi_models.vehicle import Vehicle, VehicleDescription
+import APITaxi_models as models
 from ..extensions import user_datastore
 from ..descriptors import (ads as ads_descriptors,
         drivers as drivers_descriptors, vehicle as vehicle_descriptors)
@@ -20,11 +19,11 @@ def export_taxis(filename='/tmp/taxis.tar.gz'):
     tar = tarfile.TarFile.open(filename, 'w:gz')
     users = set()
 
-    for taxi in Taxi.query.all():
+    for taxi in models.Taxi.query.all():
         if taxi.vehicle_id is None or taxi.ads_id is None or taxi.driver_id is None:
             continue
-        vehicle = Vehicle.query.get(taxi.vehicle_id)
-        for vehicle_description in VehicleDescription.query.filter_by(vehicle_id=vehicle.id).all():
+        vehicle = models.Vehicle.query.get(taxi.vehicle_id)
+        for vehicle_description in models.VehicleDescription.query.filter_by(vehicle_id=vehicle.id).all():
             users.add(vehicle_description.added_by)
             login_user(user_datastore.get_user(vehicle_description.added_by))
             json_vehicle = json.dumps(marshal({"data":[vehicle]}, model_vehicle))
@@ -33,13 +32,13 @@ def export_taxis(filename='/tmp/taxis.tar.gz'):
             tarinfo.size = len(json_vehicle)
             tar.addfile(tarinfo, StringIO.StringIO(json_vehicle))
 
-        ads = ADS.query.get(taxi.ads_id)
+        ads = models.ADS.query.get(taxi.ads_id)
         json_ads = json.dumps(marshal({"data":[ads]}, model_ads))
         tarinfo = tarfile.TarInfo('{}/ads.json'.format(taxi.id))
         tarinfo.size = len(json_ads)
         tar.addfile(tarinfo, StringIO.StringIO(json_ads))
 
-        driver = Driver.query.get(taxi.driver_id)
+        driver = models.Driver.query.get(taxi.driver_id)
         json_driver = json.dumps(marshal({"data":[driver]}, model_driver))
         tarinfo = tarfile.TarInfo('{}/driver.json'.format(taxi.id))
         tarinfo.size = len(json_driver)

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from APITaxi_models.taxis import ADS
 import APITaxi_models as models
 from . import manager
 from sqlalchemy import distinct
@@ -12,11 +11,11 @@ from flask import current_app
 @manager.command
 def update_zupc():
     insee_list = map(itemgetter(0), current_app.extensions['sqlalchemy'].db\
-            .session.query(distinct(ADS.insee)).all())
+            .session.query(distinct(models.ADS.insee)).all())
     for insee in insee_list:
         zupc = models.ZUPC.query.filter_by(insee=insee).order_by(
             models.ZUPC.id.desc()).first()
-        for ads in ADS.query.filter_by(insee=insee).all():
+        for ads in models.ADS.query.filter_by(insee=insee).all():
             ads.zupc_id = zupc.id
     current_app.extensions['sqlalchemy'].db.session.commit()
 

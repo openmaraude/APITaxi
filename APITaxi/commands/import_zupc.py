@@ -4,7 +4,7 @@ from . import manager
 from shapely.geometry import shape, MultiPolygon
 from shapely.ops import cascaded_union as union
 from shapely import wkt
-from APITaxi_models import db, administrative, taxis
+import APITaxi_models as models
 from geoalchemy2.shape import from_shape, to_shape
 from geoalchemy2 import func
 from itertools import groupby
@@ -54,19 +54,19 @@ def download_contours_file(temp_dir,
 
 
 def create_temp_table(temp_table_name="zupc_temp"):
-    table = Table(temp_table_name, db.metadata,
+    table = Table(temp_table_name, models.db.metadata,
                   Column('multiple', Boolean(), default=False),
                   *[Column(c.name, c.type, autoincrement=c.autoincrement,
                            default=c.default, key=c.key, index=c.index,
                            nullable=c.nullable, primary_key=c.primary_key) 
-                    for c in administrative.ZUPC.__table__.columns]
+                    for c in models.ZUPC.__table__.columns]
     )
-    if table.exists(db.engine):
-        table.drop(db.engine)
-    table.create(db.engine)
-    db.session.commit()
-    db.Model.metadata.reflect(db.engine)
-    Base = automap_base(metadata=db.metadata, declarative_base=db.Model)
+    if table.exists(models.db.engine):
+        table.drop(models.db.engine)
+    table.create(models.db.engine)
+    models.db.session.commit()
+    models.db.Model.metadata.reflect(models.db.engine)
+    Base = automap_base(metadata=models.db.metadata, declarative_base=models.db.Model)
     Base.prepare()
     return Base.classes[temp_table_name]
 
@@ -106,15 +106,15 @@ def load_zupc_temp_table(shape_filename, zupc_obj=None):
         z.departement_id = departement.id
         z.shape = from_shape(MultiPolygon([shape(geom)]), srid=4326)
         z.active = False
-        db.session.add(z)
+        models.db.session.add(z)
         if (i%100) == 0:
-            db.session.commit()
+            models.db.session.commit()
         i += 1
         status = r"%10d zupc ajoutées" % (i)
         status = status + chr(8)*(len(status)+1)
         print status,
 
-    db.session.commit()
+    models.db.session.commit()
     print "%10d zupc ajoutées" %i
 
 
@@ -129,7 +129,7 @@ def union_zupc(filename, zupc_obj):
     if len(insee_list) == 1:
         return parent_id
 
-    subquery = db.session.query(
+    subquery = models.db.session.query(
         func.st_AsText(func.Geography(func.st_Multi(func.ST_Union(func.Geometry(zupc_obj.shape)))))).filter(
             zupc_obj.insee.in_(insee_list)
     )
@@ -139,7 +139,7 @@ def union_zupc(filename, zupc_obj):
         }, synchronize_session='fetch'
     )
     zupc_obj.query.filter(zupc_obj.insee.in_(insee_list)).update({"multiple": True}, synchronize_session='fetch')
-    db.session.commit()
+    models.db.session.commit()
     return parent_id
 
 
@@ -169,7 +169,7 @@ def load_geojson(parent_id, geojson_file, zupc_obj, func_name):
         parent_zupc.query.filter(id==parent_id).update(
             {'shape': wkt.dumps(new_shape)}
         )
-        db.session.commit()
+        models.db.session.commit()
 
 def load_arrondissements(parent_id, arrondissements_file, zupc_obj):
     if parent_id is None:
@@ -185,8 +185,8 @@ def load_arrondissements(parent_id, arrondissements_file, zupc_obj):
                 setattr(z, att, getattr(parent_zupc, att))
             z.insee = insee
             z.active = False
-            db.session.add(z)
-    db.session.commit()
+            models.db.session.add(z)
+    models.db.session.commit()
 
 
 def override_name(parent_id, special_name_list, zupc_obj):
@@ -200,8 +200,8 @@ def override_name(parent_id, special_name_list, zupc_obj):
 		name, insee = map(lambda s: s.strip(), line.split(delimiter))
 	    parent_zupc.name = name
 	    parent_zupc.insee = insee
-	    db.session.add(parent_zupc)
-    db.session.commit()
+	    models.db.session.add(parent_zupc)
+    models.db.session.commit()
 
 
 def load_dir(dirname, zupc_obj):
@@ -240,24 +240,24 @@ def confirm_zones():
 def merge_zones(temp_zupc_obj):
     print "Find unmergeable insee codes"
 #Find unmergeable insee codes
-    ZUPC = administrative.ZUPC
+    ZUPC = models.ZUPC
     insee_zupc = set([a.insee
-          for a in db.session.query(taxis.ADS).distinct(taxis.ADS.insee).all()]
+          for a in models.db.session.query(models.ADS).distinct(models.ADS.insee).all()]
     )
     insee_temp = set([z.insee
                       for z in
-                      db.session.query(temp_zupc_obj).distinct(temp_zupc_obj.insee).all()]
+                      models.db.session.query(temp_zupc_obj).distinct(temp_zupc_obj.insee).all()]
     )
     diff = insee_zupc.difference(insee_temp)
     if len(diff) > 0:
         print "These ZUPC can't be found in temp_zupc: {}".format(diff)
         return False
-    last_zupc_id = db.session.execute('SELECT max(id) FROM "ZUPC"').fetchall()[0][0]
+    last_zupc_id = models.db.session.execute('SELECT max(id) FROM "ZUPC"').fetchall()[0][0]
     print "Insert temp_zupc in ZUPC"
-    db.session.execute("""INSERT INTO "ZUPC"
+    models.db.session.execute("""INSERT INTO "ZUPC"
                        (departement_id, nom, insee, shape, active)
                        SELECT departement_id, nom, insee, shape, active FROM zupc_temp""")
-    db.session.commit()
+    models.db.session.commit()
 
     print "Updating parent_id in ZUPC"
     zupc_with_parent = temp_zupc_obj.query.filter(
@@ -269,29 +269,29 @@ def merge_zones(temp_zupc_obj):
             z_to_update = ZUPC.query.filter(ZUPC.id > last_zupc_id)\
                 .filter(ZUPC.insee==z.insee).first()
             z_to_update.parent_id = parent_id
-            db.session.add(z_to_update)
-    db.session.commit()
+            models.db.session.add(z_to_update)
+    models.db.session.commit()
     print "Updating zupc_id in ADS"
     map_zupc_insee_id = {z.insee: z.id for z in ZUPC.query.filter(ZUPC.id > last_zupc_id).all()}
     i = 0
-    for ads in taxis.ADS.query.all():
+    for ads in models.ADS.query.all():
         i += 1
         ads.zupc_id = map_zupc_insee_id[ads.insee]
         if i%100 == 0:
-            db.session.commit()
+            models.db.session.commit()
             status = "Updated {} ADS".format(i)
             status = status + chr(8)*(len(status)+1)
             print status,
-    db.session.commit()
+    models.db.session.commit()
     print "Removing old ZUPC"
-    db.session.execute("""create table zupc_to_swap (
+    models.db.session.execute("""create table zupc_to_swap (
                        like "ZUPC" including defaults including constraints
                        including indexes);
                        INSERT INTO zupc_to_swap SELECT * FROM "ZUPC" WHERE id > {};
                        DROP TABLE IF EXISTS old_zupc;
                        ALTER TABLE "ZUPC" RENAME TO old_zupc;
                        ALTER TABLE zupc_to_swap RENAME TO "ZUPC";""".format(last_zupc_id))
-    db.session.commit()
+    models.db.session.commit()
 
 @manager.command
 def import_zupc(zupc_dir='/tmp/zupc', contours_dir='/tmp/temp_contours'):

@@ -1,6 +1,5 @@
 #coding: utf-8
 from ..extensions import redis_store, user_datastore
-from APITaxi_models.taxis import Taxi, RawTaxi
 import APITaxi_models as models
 from APITaxi_utils import influx_db
 from APITaxi_utils.pager import pager
@@ -23,7 +22,7 @@ class cache(Task):
 @celery.task(name='store_active_taxis', base=cache)
 def store_active_taxis(frequency):
     now = datetime.utcnow()
-    bound = time() - (Taxi._ACTIVITY_TIMEOUT + frequency * 60)
+    bound = time() - (models.Taxi._ACTIVITY_TIMEOUT + frequency * 60)
     map_operateur_insee_nb_active = dict()
     map_operateur_nb_active = dict()
     map_insee_nb_active = dict()
@@ -35,7 +34,7 @@ def store_active_taxis(frequency):
             current_app.config['REDIS_TIMESTAMPS'], bound, time()), page_size=100):
         taxi_ids_operator = list(gen_taxi_ids_operator)
         taxis = dict()
-        for tm in RawTaxi.get([t.split(':')[0] for t in taxi_ids_operator]):
+        for tm in models.RawTaxi.get([t.split(':')[0] for t in taxi_ids_operator]):
             for t in tm:
                 taxis[t['taxi_id']+':'+t['u_email']] = t
         for taxi_id_operator in taxi_ids_operator:

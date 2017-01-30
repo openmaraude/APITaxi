@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
-from APITaxi_models.taxis import ADS, Vehicle
+import APITaxi_models as models
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_ads, dict_vehicle
@@ -31,7 +31,7 @@ class TestADSPost(Skeleton):
         self.assertEqual(len(r.json['data']), 1)
         ads = r.json['data'][0]
         self.check_req_vs_dict(ads, dict_)
-        list_ads = ADS.query.all()
+        list_ads = models.ADS.query.all()
         self.assertEqual(len(list_ads), 1)
         assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
 
@@ -51,10 +51,10 @@ class TestADSPost(Skeleton):
         ads = r.json['data'][0]
         self.check_req_vs_dict(ads, dict_a)
 
-        list_ads = ADS.query.all()
+        list_ads = models.ADS.query.all()
         self.assertEqual(len(list_ads), 1)
         assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
-        self.assertEquals(len(Vehicle.query.all()), 1)
+        self.assertEquals(len(models.Vehicle.query.all()), 1)
 
     def test_two_ads(self):
         self.init_zupc()
@@ -63,7 +63,7 @@ class TestADSPost(Skeleton):
         r = self.post([dict_, dict_])
         self.assert201(r)
         self.assertEqual(len(r.json['data']), 2)
-        list_ads = ADS.query.all()
+        list_ads = models.ADS.query.all()
         self.assertEqual(len(list_ads), 2)
         assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
 
@@ -71,7 +71,7 @@ class TestADSPost(Skeleton):
         dict_ = deepcopy(dict_ads)
         r = self.post([dict_ for x in range(0, 251)])
         self.assertEqual(r.status_code, 400)
-        self.assertEqual(len(ADS.query.all()), 0)
+        self.assertEqual(len(models.ADS.query.all()), 0)
 
     def test_no_data(self):
         r = self.post({"d": None}, envelope_data=False)

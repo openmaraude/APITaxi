@@ -30,7 +30,7 @@ def create_app(sqlalchemy_uri=None):
     if sqlalchemy_uri:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
-    from APITaxi_models import db
+    from APITaxi_models import db, security, HailLog
     db.init_app(app)
     redis_store.init_app(app)
     redis_store.connection_pool.get_connection(0).can_read()
@@ -52,7 +52,6 @@ def create_app(sqlalchemy_uri=None):
     from . import tasks
     tasks.init_app(app)
 
-    from APITaxi_models import security
     user_datastore.init_app(db, security.User, security.CachedUser,
             security.Role)
     cache = DogpileCache()
@@ -63,7 +62,6 @@ def create_app(sqlalchemy_uri=None):
         from APITaxi.commands.warm_up_redis import warm_up_redis_func
         warm_up_redis_func(app, db, security.User, redis_store)
 
-    from APITaxi_models.hail import HailLog
     def delete_redis_keys(response):
         from flask import g
         if not hasattr(g, 'keys_to_delete'):
