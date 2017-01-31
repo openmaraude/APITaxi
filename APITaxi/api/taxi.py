@@ -44,7 +44,6 @@ class TaxiId(Resource):
     @json_mimetype_required
     def get(self, taxi_id):
         t, last_update_at = self.get_descriptions(taxi_id)
-        print t
         taxi_m = marshal({'data':[
             models.RawTaxi.generate_dict(t,
             operator=current_user.email)]}, taxi_model)
