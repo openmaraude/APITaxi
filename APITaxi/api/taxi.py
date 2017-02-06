@@ -257,7 +257,7 @@ class Taxis(Resource):
                                 request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
                                 if 'X-Forwarded-For' in request.headers
                                 else request.remote_addr or 'untrackable'
-                            ).hexdigest()
+                        ).hexdigest()[:10]
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
