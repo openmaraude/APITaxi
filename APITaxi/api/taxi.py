@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import calendar, time
+import calendar, time, hashlib, math
 from flask_restplus import fields, abort, marshal, Resource, reqparse
 from flask_security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
@@ -15,7 +15,6 @@ from APITaxi_utils.request_wants_json import json_mimetype_required
 from shapely.geometry import Point
 from time import time
 from datetime import datetime, timedelta
-import math
 from itertools import groupby, compress, izip, islice
 from shapely.prepared import prep
 from shapely.wkb import loads as load_wkb
@@ -253,7 +252,8 @@ class Taxis(Resource):
                     "tags": {
                         "zupc": zupc_insee,
                         "position": "{:.3f}:{:.3f}".format(float(lon), float(lat)),
-                        "moteur": current_user.email
+                        "moteur": current_user.email,
+                        "customer": hashlib.sha224(current_user.current_login_ip).hexdigest()
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
