@@ -253,7 +253,11 @@ class Taxis(Resource):
                         "zupc": zupc_insee,
                         "position": "{:.3f}:{:.3f}".format(float(lon), float(lat)),
                         "moteur": current_user.email,
-                        "customer": hashlib.sha224(current_user.current_login_ip).hexdigest()
+                        "customer": hashlib.sha224(
+                                request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
+                                if 'X-Forwarded-For' in request.headers
+                                else request.remote_addr or 'untrackable'
+                            ).hexdigest()
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
                     "fields": {
