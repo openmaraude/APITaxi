@@ -28,18 +28,10 @@ class ADS(ResourceMetadata, ResourceFileOrJSON):
         data_parser = DataJSONParser(max_length=250)
         new_ads = []
         for ads in data_parser.get_data():
-            if not ads.get("vehicle_id", None) or ads["vehicle_id"] == 0:
-                ads["vehicle_id"] = None
-            if ads["vehicle_id"] and\
-              not models.Vehicle.query.get(ads["vehicle_id"]):
-                abort(400, message="Unable to find a vehicle with the id: {}"\
-                        .format(ads["vehicle_id"]))
-            ads_db = create_obj_from_json(models.ADS, ads)
-            zupc = models.ZUPC.query.filter_by(insee=ads_db.insee).first()
-            if zupc is None:
-                abort(400, message="Unable to find a ZUPC for insee: {}".format(
-                    ads_db.insee))
-            ads_db.zupc_id = zupc.parent_id
+            try:
+                ads_db = create_obj_from_json(models.ADS, ads)
+            except KeyError as e:
+                abort(400, message=e)
             models.db.session.add(ads_db)
             new_ads.append(ads_db)
         models.db.session.commit()
