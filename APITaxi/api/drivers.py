@@ -29,15 +29,7 @@ class Drivers(ResourceMetadata, ResourceFileOrJSON):
         parser = reqparse.DataJSONParser(max_length=250)
         new_drivers = []
         for driver in parser.get_data():
-            departement = None
-            if 'numero' in driver['departement']:
-                departement = models.Departement.\
-                    filter_by_or_404(numero=driver['departement']['numero'])
-            elif 'nom' in driver['departement']:
-                departement = models.Departement.\
-                    filter_by_or_404(nom=driver['departement']['nom'])
             driver_obj = create_obj_from_json(models.Driver, driver)
-            driver_obj.departement_id = departement.id
             models.db.session.add(driver_obj)
             new_drivers.append(driver_obj)
         models.db.session.commit()

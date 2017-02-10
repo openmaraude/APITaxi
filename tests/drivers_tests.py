@@ -44,7 +44,7 @@ class TestDriverPost(Skeleton):
         dict_ = deepcopy(dict_driver)
         del dict_['first_name']
         r = self.post([dict_])
-        self.assert404(r)
+        self.assert400(r)
         self.assertEqual(len(Driver.query.all()), 0)
 
     def test_bad_date(self):
