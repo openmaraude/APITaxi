@@ -11,13 +11,14 @@ from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
 from APITaxi_utils.request_wants_json import json_mimetype_required
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
-from APITaxi_utils import influx_db, reqparse
+from APITaxi_utils import influx_db, reqparse, populate_obj
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import json, Geohash
 from sqlalchemy import or_
 from itertools import chain
 from sqlalchemy.sql.expression import text
+
 
 ns_hail = api.namespace('hails', description="Hail API")
 @ns_hail.route('/<string:hail_id>/', endpoint='hailid')
@@ -103,7 +104,7 @@ class Hail(Resource):
     @api.response(201, 'Success', hail_model)
     @json_mimetype_required
     def post(self):
-        parser = reqparse.DataJSONParser()
+        parser = reqparse.DataJSONParser(filter_=hail_expect_post)
         hj = parser.get_data()[0]
 
         operateur = models.security.User.filter_by_or_404(
@@ -119,39 +120,21 @@ class Hail(Resource):
                 not models.TaxiRedis(hj['taxi_id']).is_fresh(hj['operateur']):
             g.hail_log = models.HailLog('POST', None, request.data)
             abort(403, message="The taxi is not available")
-        customer = models.Customer.query.filter_by(id=hj['customer_id'],
-                moteur_id=current_user.id).first()
-        if not customer:
-            customer = models.Customer(hj['customer_id'])
-            models.db.session.add(customer)
         taxi_pos = redis_store.geopos(current_app.config['REDIS_GEOINDEX'],
                 '{}:{}'.format(hj['taxi_id'], operateur.email))
 
-        hail = models.Hail()
-        hail.customer_id = hj['customer_id']
-        hail.customer_lon = hj['customer_lon']
-        hail.customer_lat = hj['customer_lat']
-        hail.customer_address = hj['customer_address']
-        hail.customer_phone_number = hj['customer_phone_number']
-        hail.taxi_id = hj['taxi_id']
-        hail.initial_taxi_lat = taxi_pos[0][0] if taxi_pos else None
-        hail.initial_taxi_lon = taxi_pos[0][1] if taxi_pos else None
-        hail.operateur_id = operateur.id
-        if customer.ban_end and datetime.now() < customer.ban_end:
-            hail.status = 'customer_banned'
-            models.db.session.add(hail)
-            models.db.session.commit()
-            abort(403, message='Customer is banned')
-        hail.status = 'received'
+        if taxi_pos:
+            hj['initial_taxi_lat'], hj['initial_taxi_lon'] = taxi_pos[0]
+        hj['operateur_id'] = operateur.id
+        hj['status'] = 'received'
+        try:
+            hail = populate_obj.create_obj_from_json(models.Hail, hj)
+        except KeyError as e:
+            abort(400, message="Missing key: {}".format(e))
         models.db.session.add(hail)
         models.db.session.commit()
-
-        taxi = models.Taxi.query.get(hail.taxi_id)
-        taxi.current_hail_id = hail.id
 
         g.hail_log = models.HailLog('POST', hail, request.data)
-        models.db.session.add(hail)
-        models.db.session.commit()
 
         send_request_operator.apply_async(args=[hail.id,
             operateur.hail_endpoint(current_app.config['ENV']),
