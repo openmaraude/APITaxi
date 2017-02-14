@@ -33,7 +33,7 @@ postable_arguemnts = ['customer_id', 'customer_lon', 'customer_lat',
     'customer_address', 'customer_phone_number', 'taxi_id', 'operateur']
 dict_hail =  dict(filter(lambda f: f[0] in postable_arguemnts,
         all_fields.items()))
-dict_hail['operateur'] = fields.String(attribute='operateur.email', required=True)
+dict_hail['operateur'] = fields.String(attribute='operateur', required=True)
 dict_hail['taxi_id'] = fields.String(required=True)
 hail_expect_post_details = api.model('hail_expect_post_details',
         deepcopy(dict_hail))
