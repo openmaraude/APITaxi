@@ -13,7 +13,7 @@ vehicle_model = api.model('vehicle_model_data',
 vehicle_expect = api.model('vehicle_expect_data',
     {'data': fields.List(fields.Nested(
         api.model('vehicle_expect', Vehicle.marshall_obj(
-            filter_id=True, api=api))
+            filter_id=True, api=api, add_description=False))
         ))
     }
 )
