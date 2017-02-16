@@ -103,7 +103,7 @@ class TestADSPost(Skeleton):
         dict_['owner_type'] = 'string'
         r = self.post([dict_])
         self.assert400(r)
-        assert 'Error with field owner_type' in r.json['message']
+        assert 'data.0.owner_type' in r.json['errors']
 
     def test_no_owner_type(self):
         self.init_zupc()
@@ -112,5 +112,5 @@ class TestADSPost(Skeleton):
         dict_['owner_type'] = None
         r = self.post([dict_])
         self.assert400(r)
-        assert "Missing key: 'owner_type'" in r.json['message']
+        assert "data.0.owner_type" in r.json['errors']
 

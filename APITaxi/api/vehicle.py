@@ -18,7 +18,7 @@ class Vehicle(ResourceMetadata):
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture')
     @api.marshal_with(vehicle_model)
-    @api.expect(vehicle_expect)
+    @api.expect(vehicle_expect, validate=True)
     @api.doc(responses={404:'Resource not found',
         403:'You\'re not authorized to view it'})
     def post(self):

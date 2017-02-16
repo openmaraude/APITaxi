@@ -19,7 +19,7 @@ class Drivers(ResourceMetadata, ResourceFileOrJSON):
 
     @login_required
     @roles_accepted('admin', 'operateur', 'prefecture')
-    @api.expect(driver_details_expect)
+    @api.expect(driver_details_expect, validate=True)
     @api.response(200, 'Success', driver_fields)
     def post(self):
         return super(Drivers, self).post()
