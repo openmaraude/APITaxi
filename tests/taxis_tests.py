@@ -337,11 +337,11 @@ class TestTaxiPost(Skeleton):
     url = '/taxis/'
     role = 'operateur'
 
-    def init_taxi(self):
+    def init_taxi(self, user='user_operateur', role='operateur'):
         self.init_zupc()
         self.init_dep()
         self.post([dict_driver], url='/drivers/')
-        r = self.post([dict_vehicle], url='/vehicles/')
+        r = self.post([dict_vehicle], url='/vehicles/', user=user, role=role)
         self.assert201(r)
         vehicle_id = r.json['data'][0]['id']
         dict_ads_ = deepcopy(dict_ads)
@@ -405,8 +405,15 @@ class TestTaxiPost(Skeleton):
         self.assertNotEqual(r.json['data'][0]['id'], 'a')
         self.assertEqual(len(models.Taxi.query.all()), 1)
 
-    def test_add_taxi_with_admin_user(self):
+    def test_add_taxi_without_adding_vehicle(self):
         self.init_taxi()
+        dict_taxi_ = deepcopy(dict_taxi)
+        dict_taxi_['id'] = 'a'
+        r = self.post([dict_taxi_], user='user_admin', role='admin')
+        self.assert404(r)
+
+    def test_add_taxi_with_admin_user(self):
+        self.init_taxi(user='user_admin', role='admin')
         dict_taxi_ = deepcopy(dict_taxi)
         dict_taxi_['id'] = 'a'
         r = self.post([dict_taxi_], user='user_admin', role='admin')
