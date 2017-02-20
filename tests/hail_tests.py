@@ -53,6 +53,7 @@ class HailMixin(Skeleton):
 
     @classmethod
     def set_hail_status(cls, r, status, last_status_change=None):
+        assert r.status_code == 200 or r.status_code == 201
         hail_id = r.json['data'][0]['id']
         Hail.cache.flush(hail_id)
         hail = Hail.cache.get(hail_id)

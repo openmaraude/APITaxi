@@ -19,7 +19,7 @@ class ADS(ResourceMetadata, ResourceFileOrJSON):
     @roles_accepted("admin", "operateur", "prefecture")
     @api.doc(responses={404:"Resource not found",
                         403:"You're not authorized to view it"})
-    @api.expect(ads_expect)
+    @api.expect(ads_expect, validate=True)
     @api.response(200, "Success", ads_post)
     def post(self):
         return super(ADS, self).post()
