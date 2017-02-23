@@ -17,12 +17,35 @@ class cache(Task):
     def __init__(store_active_taxis):
         store_active_taxis.insee_zupc_dict = dict()
 
+def get_taxis_ids_operators(frequency):
+    bound = time() - (models.Taxi._ACTIVITY_TIMEOUT + frequency * 60)
+    if frequency <= models.Taxi.TaxiRedis._DISPONIBILITY_DURATION:
+        for gen_taxi_ids_operator in pager(redis_store.zrangebyscore(
+            current_app.config['REDIS_TIMESTAMPS'], bound, time()), page_size=100):
+            yield list(gen_taxi_ids_operator)
+    else:
+        taxis = []
+        for keys in pager(redis_store.keys("taxi:*"), page_size=100):
+            pipe = redis_store.pipeline()
+            for k in keys:
+                pipe.hgetall(k)
+            for k, v in filter(lambda v: v[1] is None,
+                            zip(keys, pipe.execute())):
+                for operator, taxi in v.iteritems():
+                    if float(taxi.split(" ")[0]) >= bound:
+                        taxis.append(u"{}:{}".format(k[5:], operator))
+                if len(taxis) >= 100:
+                    yield taxis
+                    taxis = []
+            if taxis:
+                yield taxis
+
+
 
 
 @celery.task(name='store_active_taxis', base=cache)
 def store_active_taxis(frequency):
     now = datetime.utcnow()
-    bound = time() - (models.Taxi._ACTIVITY_TIMEOUT + frequency * 60)
     map_operateur_insee_nb_active = dict()
     map_operateur_nb_active = dict()
     map_insee_nb_active = dict()
@@ -30,9 +53,7 @@ def store_active_taxis(frequency):
     prefixed_taxi_ids = []
     convert = lambda d: mktime(d.timetuple())
     hidden_operator = current_app.config.get('HIDDEN_OPERATOR', 'testing_operator')
-    for gen_taxi_ids_operator in pager(redis_store.zrangebyscore(
-            current_app.config['REDIS_TIMESTAMPS'], bound, time()), page_size=100):
-        taxi_ids_operator = list(gen_taxi_ids_operator)
+    for taxi_ids_operator in get_taxis_ids_operators(frequency):
         taxis = dict()
         for tm in models.RawTaxi.get([t.split(':')[0] for t in taxi_ids_operator]):
             for t in tm:
