@@ -95,3 +95,13 @@ class TestDriverPost(Skeleton):
         dict_['birth_date'] = '1962-07-26' #postgres cuts the time
         self.check_req_vs_dict(r.json['data'][0], dict_)
         self.assertEqual(len(Driver.query.all()), 1)
+
+    def test_departement(self):
+        self.init_dep()
+        dict_ = deepcopy(dict_driver)
+        dict_['departement']['nom'] = 'MAYENNE'
+        r = self.post([dict_])
+        self.assert201(r)
+        dict_['departement']['nom'] = 'MAYENNE'.capitalize()
+        self.check_req_vs_dict(r.json['data'][0], dict_)
+        self.assertEqual(len(Driver.query.all()), 1)
