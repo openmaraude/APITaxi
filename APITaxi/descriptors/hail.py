@@ -13,6 +13,8 @@ all_fields['taxi'] = fields.Nested(api.model('hail_taxi',
         {'position': fields.Nested(coordinates_descriptor),
          'last_update': fields.Integer(),
          'id': fields.String()}))
+all_fields['creation_datetime'] = fields.DateTime()
+
 
 hail_model = api.model('hail_model_data',
     {'data':
