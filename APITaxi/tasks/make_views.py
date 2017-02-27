@@ -19,17 +19,18 @@ class cache(Task):
 
 def get_taxis_ids_operators(frequency):
     bound = time() - (models.Taxi._ACTIVITY_TIMEOUT + frequency * 60)
-    if frequency <= models.Taxi.TaxiRedis._DISPONIBILITY_DURATION:
+    if frequency <= models.taxis.TaxiRedis._DISPONIBILITY_DURATION:
         for gen_taxi_ids_operator in pager(redis_store.zrangebyscore(
             current_app.config['REDIS_TIMESTAMPS'], bound, time()), page_size=100):
             yield list(gen_taxi_ids_operator)
     else:
         taxis = []
-        for keys in pager(redis_store.keys("taxi:*"), page_size=100):
+        for g_keys in pager(redis_store.keys("taxi:*"), page_size=100):
+            keys = list(g_keys)
             pipe = redis_store.pipeline()
             for k in keys:
                 pipe.hgetall(k)
-            for k, v in filter(lambda v: v[1] is None,
+            for k, v in filter(lambda v: v[1] is not None,
                             zip(keys, pipe.execute())):
                 for operator, taxi in v.iteritems():
                     if float(taxi.split(" ")[0]) >= bound:
@@ -37,8 +38,8 @@ def get_taxis_ids_operators(frequency):
                 if len(taxis) >= 100:
                     yield taxis
                     taxis = []
-            if taxis:
-                yield taxis
+        if taxis:
+            yield taxis
 
 
 
@@ -136,7 +137,6 @@ def store_active_taxis(frequency):
                 }
         )
         if len(to_insert) == 100:
-            current_app.logger.debug('To insert: {}'.format(to_insert))
             if client:
                 client.write_points(to_insert)
             to_insert[:] = []
@@ -161,6 +161,5 @@ def store_active_taxis(frequency):
         insert("", zupc, available, True)
 
     if len(to_insert) > 0:
-        current_app.logger.debug('To insert: {}'.format(to_insert))
         if client:
             client.write_points(to_insert)
