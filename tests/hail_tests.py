@@ -131,13 +131,18 @@ class TestHailPost(HailMixin):
 
     def received_by_operator(self, env):
         prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
-        r = self.send_hail(deepcopy(dict_))
+        d = deepcopy(dict_)
+        r = self.send_hail(d)
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
         self.assertEqual(r.json['data'][0]['status'], 'received')
         assert 'initial_taxi_lat' not in r.json['data'][0]
         assert 'initial_taxi_lon' not in r.json['data'][0]
+        del d['taxi_id']
+        self.check_req_vs_dict(r.json['data'][0], d)
+        assert 'creation_datetime' in r.json['data'][0]
+        assert r.json['data'][0]['creation_datetime'] is not None
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.assertEqual(r.json['data'][0]['status'], 'received_by_operator')
         assert('taxi_phone_number' in r.json['data'][0])
