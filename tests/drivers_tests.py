@@ -54,6 +54,13 @@ class TestDriverPost(Skeleton):
         r = self.post([dict_])
         self.assert400(r)
 
+    def test_no_date(self):
+        self.init_dep()
+        dict_ = deepcopy(dict_driver)
+        del dict_['birth_date']
+        r = self.post([dict_])
+        self.assert201(r)
+
     def test_two_inserts(self):
         self.init_dep()
         r = self.post([dict_driver for x in range(0, 2)])
