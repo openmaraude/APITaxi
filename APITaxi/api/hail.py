@@ -11,7 +11,7 @@ from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
 from APITaxi_utils.request_wants_json import json_mimetype_required
 from geopy.distance import vincenty
 from ..tasks import send_request_operator
-from APITaxi_utils import influx_db, reqparse, populate_obj
+from APITaxi_utils import influx_db, reqparse
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import json, Geohash
@@ -106,40 +106,16 @@ class Hail(Resource):
     def post(self):
         parser = reqparse.DataJSONParser(filter_=hail_expect_post)
         hj = parser.get_data()[0]
-
-        operateur = models.security.User.filter_by_or_404(
-                email=hj['operateur'],
-                message='Unable to find the taxi\'s operateur')
-
-        descriptions = models.RawTaxi.get((hj['taxi_id'],), operateur.id)
-        if len(descriptions) == 0 or len(descriptions[0]) == 0:
-            g.hail_log = models.HailLog('POST', None, request.data)
-            abort(404, message='Unable to find taxi {} of {}'.format(
-                hj['taxi_id'], hj['operateur']))
-        if descriptions[0][0]['vehicle_description_status'] != 'free' or\
-                not models.TaxiRedis(hj['taxi_id']).is_fresh(hj['operateur']):
-            g.hail_log = models.HailLog('POST', None, request.data)
-            abort(403, message="The taxi is not available")
-        taxi_pos = redis_store.geopos(current_app.config['REDIS_GEOINDEX'],
-                '{}:{}'.format(hj['taxi_id'], operateur.email))
-
-        if taxi_pos:
-            hj['initial_taxi_lat'], hj['initial_taxi_lon'] = taxi_pos[0]
-        hj['operateur_id'] = operateur.id
         hj['status'] = 'received'
-        try:
-            hail = populate_obj.create_obj_from_json(models.Hail, hj)
-        except KeyError as e:
-            abort(400, message="Missing key: {}".format(e))
+        hail = models.Hail(**hj)
         models.db.session.add(hail)
         models.db.session.commit()
 
         g.hail_log = models.HailLog('POST', hail, request.data)
-
         send_request_operator.apply_async(args=[hail.id,
-            operateur.hail_endpoint(current_app.config['ENV']),
-            unicode(operateur.operator_header_name),
-            unicode(operateur.operator_api_key), operateur.email],
+            hail.operateur.hail_endpoint(current_app.config['ENV']),
+            unicode(hail.operateur.operator_header_name),
+            unicode(hail.operateur.operator_api_key), hail.operateur.email],
             queue='send_hail_'+current_app.config['NOW'])
 
         client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
@@ -150,7 +126,7 @@ class Hail(Resource):
                     "tags": {
                         "added_by": current_user.email,
                         "operator": operateur.email,
-                        "zupc": descriptions[0][0]['ads_insee'],
+                        "zupc": hail.ads_insee,
                         "geohash": Geohash.encode(hail.customer_lat, hail.customer_lon),
                         },
                     "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
