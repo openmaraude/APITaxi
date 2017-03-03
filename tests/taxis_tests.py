@@ -450,6 +450,9 @@ class TestTaxiPost(Skeleton):
         self.assertEqual(r.json['data'][0]['internal_id'], 'INTERNAL_ID_2')
         r = self.get('/taxis/{}/'.format(taxis[0].id))
         self.assertEqual(r.json['data'][0]['internal_id'], 'INTERNAL_ID')
+        self.assertEqual(len(taxis[0].vehicle.descriptions), 2)
+        assert any([d.internal_id == 'INTERNAL_ID' for d in taxis[0].vehicle.descriptions])
+        assert any([d.internal_id =='INTERNAL_ID_2' for d in taxis[0].vehicle.descriptions])
 
 
     def missing_field(self, field):
