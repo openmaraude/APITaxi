@@ -276,28 +276,9 @@ class Taxis(Resource):
     @api.marshal_with(taxi_model)
     def post(self):
         db = current_app.extensions['sqlalchemy'].db
-
         parser = DataJSONParser()
         taxi_json = parser.get_data()[0]
-        departement = models.Departement.filter_by_or_404(
-            numero=str(taxi_json['driver']['departement']))
-        driver = models.Driver.filter_by_or_404(
-                professional_licence=taxi_json['driver']['professional_licence'],
-                           departement_id=departement.id)
-        vehicle = models.Vehicle.filter_by_or_404(
-                licence_plate=taxi_json['vehicle']['licence_plate'])
-        ads = models.ADS.filter_by_or_404(
-              numero=taxi_json['ads']['numero'],insee=taxi_json['ads']['insee'])
-        taxi = models.Taxi.query.filter_by(driver_id=driver.id,
-                vehicle_id=vehicle.id, ads_id=ads.id).first()
-        if taxi_json.get('id', None):
-            if current_user.has_role('admin'):
-                taxi = models.Taxi.query.get(taxi_json['id'])
-            else:
-                del taxi_json['id']
-        if not taxi:
-            taxi = models.Taxi(driver=driver, vehicle=vehicle, ads=ads,
-                    id=taxi_json.get('id', None))
+        taxi = models.Taxi(**taxi_json)
         #This can happen if this is posted with a admin user
         if 'status' in taxi_json and taxi.vehicle.description:
             taxi.status = taxi_json['status']
