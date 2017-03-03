@@ -279,11 +279,6 @@ class Taxis(Resource):
         parser = DataJSONParser()
         taxi_json = parser.get_data()[0]
         taxi = models.Taxi(**taxi_json)
-        #This can happen if this is posted with a admin user
-        if 'status' in taxi_json and taxi.vehicle.description:
-            taxi.status = taxi_json['status']
-        if 'internal_id' in taxi_json:
-            taxi.vehicle.description.internal_id = taxi_json['internal_id']
         db.session.add(taxi)
         db.session.commit()
         return {'data':[taxi]}, 201
