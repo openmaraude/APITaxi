@@ -17,7 +17,9 @@ class Vehicle(resource_metadata.ResourceMetadata):
         403:'You\'re not authorized to view it'})
     def post(self):
         parser = reqparse.DataJSONParser(max_length=250, filter_=vehicle_expect)
-        return {"data": [models.Vehicle(**v) for v in parser.get_data()]}, 201
+        r = [models.Vehicle(**v) for v in parser.get_data()]
+        models.db.session.commit()
+        return {"data": r}, 201
 
     @login_required
     @roles_accepted('stats')
