@@ -184,7 +184,11 @@ class Skeleton(TestCase):
         current_app.extensions['sqlalchemy'].db.session.commit()
 
     def assert201(self, request):
-        self.assertEqual(request.status_code, 201)
+        try:
+            self.assertEqual(request.status_code, 201)
+        except AssertionError as e:
+            print request.json
+            raise e
 
     def assert503(self, request):
         self.assertEqual(request.status_code, 503)
