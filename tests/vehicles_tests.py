@@ -26,6 +26,18 @@ class TestVehiclePost(Skeleton):
         self.check_req_vs_dict(vehicle, dict_)
         self.assertEqual(len(Vehicle.query.all()), 1)
 
+    def test_string_for_int(self):
+        dict_ = deepcopy(dict_vehicle)
+        dict_['horse_power'] = str(dict_['horse_power'])
+        r = self.post([dict_])
+        self.assert201(r)
+        json = r.json
+        dict_['horse_power'] = float(dict_['horse_power'])
+        self.assertEqual(len(json['data']), 1)
+        vehicle = json['data'][0]
+        self.check_req_vs_dict(vehicle, dict_)
+        self.assertEqual(len(Vehicle.query.all()), 1)
+
     def test_same_vehicle_twice(self):
         dict_ = deepcopy(dict_vehicle)
         r = self.post([dict_, dict_])
