@@ -139,6 +139,7 @@ class TestHailPost(HailMixin):
         self.assertEqual(r.json['data'][0]['status'], 'received')
         assert 'initial_taxi_lat' not in r.json['data'][0]
         assert 'initial_taxi_lon' not in r.json['data'][0]
+        assert 'creation_datetime' in r.json['data'][0]
         del d['taxi_id']
         self.check_req_vs_dict(r.json['data'][0], d)
         assert 'creation_datetime' in r.json['data'][0]
@@ -326,6 +327,7 @@ class  TestHailGet(HailMixin):
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']), role='moteur')
         self.assert200(r)
         self.assertGreater(r.json['data'][0]['taxi']['crowfly_distance'], 1)
+        assert 'creation_datetime' in r.json['data'][0]
         self.app.config['ENV'] = prev_env
 
     def test_access_operateur(self):
@@ -335,6 +337,7 @@ class  TestHailGet(HailMixin):
         self.assert201(r)
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']), role='operateur')
         self.assert200(r)
+        assert 'creation_datetime' in r.json['data'][0]
         self.app.config['ENV'] = prev_env
 
     def test_no_access_moteur(self):
@@ -603,6 +606,7 @@ class TestHailPut(HailMixin):
                 version=2)
         self.assert200(r)
         assert r.json['data'][0]['status'] == 'received_by_taxi'
+        assert 'creation_datetime' in r.json['data'][0]
         self.app.config['ENV'] = prev_env
 
     def received_by_operator_from_received_by_taxi(self):
