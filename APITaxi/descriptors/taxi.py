@@ -60,7 +60,7 @@ dict_taxi_expect = \
               {'professional_licence': fields.String,
                 'departement': fields.String}), required=True),
           'status': fields.String(enum=authorized_taxi_statuses),
-          'id': fields.String(required=False)
+          #'id': fields.String(required=False)
          }
 
 taxi_model_expect = api.model('taxi_expect',
