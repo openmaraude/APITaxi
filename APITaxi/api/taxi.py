@@ -278,7 +278,7 @@ class Taxis(Resource):
         db = current_app.extensions['sqlalchemy'].db
         parser = DataJSONParser(filter_=taxi_model_expect)
         taxi_json = parser.get_data()[0]
-        if not current_user.has_role('admin'):
+        if not current_user.has_role('admin') and "id" in taxi_json:
             del taxi_json['id']
         taxi = models.Taxi(**taxi_json)
         db.session.add(taxi)
