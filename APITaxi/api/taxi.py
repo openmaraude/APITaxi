@@ -276,8 +276,10 @@ class Taxis(Resource):
     @api.marshal_with(taxi_model)
     def post(self):
         db = current_app.extensions['sqlalchemy'].db
-        parser = DataJSONParser()
+        parser = DataJSONParser(filter_=taxi_model_expect)
         taxi_json = parser.get_data()[0]
+        if not current_user.has_role('admin'):
+            del taxi_json['id']
         taxi = models.Taxi(**taxi_json)
         db.session.add(taxi)
         db.session.commit()

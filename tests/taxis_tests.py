@@ -405,6 +405,19 @@ class TestTaxiPost(Skeleton):
         self.assertNotEqual(r.json['data'][0]['id'], 'a')
         self.assertEqual(len(models.Taxi.query.all()), 1)
 
+    def test_add_taxi_twice_with_id_normal_user(self):
+        self.init_taxi()
+        dict_taxi_ = deepcopy(dict_taxi)
+        r = self.post([dict_taxi_])
+        self.assert201(r)
+        dict_taxi_['id'] = 'a'
+        r = self.post([dict_taxi_])
+        self.assert201(r)
+        del dict_taxi_['id']
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
+        self.assertNotEqual(r.json['data'][0]['id'], 'a')
+        self.assertEqual(len(models.Taxi.query.all()), 1)
+
     def test_add_taxi_without_adding_vehicle(self):
         self.init_taxi()
         dict_taxi_ = deepcopy(dict_taxi)
@@ -415,6 +428,19 @@ class TestTaxiPost(Skeleton):
     def test_add_taxi_with_admin_user(self):
         self.init_taxi(user='user_admin', role='admin')
         dict_taxi_ = deepcopy(dict_taxi)
+        dict_taxi_['id'] = 'a'
+        r = self.post([dict_taxi_], user='user_admin', role='admin')
+        self.assert201(r)
+        del dict_taxi_['status']
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
+        self.assertEqual(r.json['data'][0]['id'], 'a')
+        self.assertEqual(len(models.Taxi.query.all()), 1)
+
+    def test_add_taxi_twice_with_admin_user(self):
+        self.init_taxi(user='user_admin', role='admin')
+        dict_taxi_ = deepcopy(dict_taxi)
+        r = self.post([dict_taxi_], user='user_admin', role='admin')
+        self.assert201(r)
         dict_taxi_['id'] = 'a'
         r = self.post([dict_taxi_], user='user_admin', role='admin')
         self.assert201(r)
