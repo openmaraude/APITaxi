@@ -425,9 +425,19 @@ class TestTaxiPost(Skeleton):
         r = self.post([dict_taxi_], user='user_admin', role='admin')
         self.assert404(r)
 
-    def test_add_taxi_with_admin_user(self):
+    def test_add_taxi_without_id_admin_user(self):
         self.init_taxi(user='user_admin', role='admin')
         dict_taxi_ = deepcopy(dict_taxi)
+        r = self.post([dict_taxi_], user='user_admin', role='admin')
+        self.assert201(r)
+        self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
+        self.assertEqual(len(models.Taxi.query.all()), 1)
+
+    def test_add_taxi_with_id_admin_user(self):
+        self.init_taxi(user='user_admin', role='admin')
+        dict_taxi_ = deepcopy(dict_taxi)
+        r = self.post([dict_taxi_], user='user_admin', role='admin')
+        self.assert201(r)
         dict_taxi_['id'] = 'a'
         r = self.post([dict_taxi_], user='user_admin', role='admin')
         self.assert201(r)
