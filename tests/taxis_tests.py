@@ -405,17 +405,6 @@ class TestTaxiPost(Skeleton):
         self.assertNotEqual(r.json['data'][0]['id'], 'a')
         self.assertEqual(len(models.Taxi.query.all()), 1)
 
-    def test_add_taxi_with_id_int_normal_user(self):
-        self.init_taxi()
-        dict_taxi_ = deepcopy(dict_taxi)
-        dict_taxi_['id'] = 1
-        r = self.post([dict_taxi_])
-        self.assert201(r)
-        del dict_taxi_['id']
-        self.check_req_vs_dict(r.json['data'][0], dict_taxi_)
-        self.assertNotEqual(r.json['data'][0]['id'], 'a')
-        self.assertEqual(len(models.Taxi.query.all()), 1)
-
     def test_add_taxi_without_adding_vehicle(self):
         self.init_taxi()
         dict_taxi_ = deepcopy(dict_taxi)
