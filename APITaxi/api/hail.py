@@ -125,7 +125,7 @@ class Hail(Resource):
                     "measurement": "hails_created",
                     "tags": {
                         "added_by": current_user.email,
-                        "operator": operateur.email,
+                        "operator": hail.operateur.email,
                         "zupc": hail.ads_insee,
                         "geohash": Geohash.encode(hail.customer_lat, hail.customer_lon),
                         },
