@@ -57,7 +57,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
 
     if r_json and 'data' in r_json and len(r_json['data']) == 1\
             and 'taxi_phone_number' in r_json['data'][0]:
-        hail.taxi_phone_number = r_json['data'][0]['taxi_phone_number']
+        hail.taxi_phone_number = unicode(r_json['data'][0]['taxi_phone_number'])
     else:
         current_app.logger.error('No JSON in operator answer of {} : {}'.format(
             operator_email, r.text))
