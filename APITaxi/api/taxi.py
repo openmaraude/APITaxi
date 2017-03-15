@@ -244,28 +244,20 @@ class Taxis(Resource):
                 for t in izip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
                 if self.filter_zone(t[0], t[1])]
             taxis.extend(filter(None, l))
-        client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
-        if client:
-            try:
-                client.write_points([{
-                    "measurement": "get_taxis_requests",
-                    "tags": {
-                        "zupc": zupc_insee,
-                        "position": "{:.3f}:{:.3f}".format(float(lon), float(lat)),
-                        "moteur": current_user.email,
-                        "customer": hashlib.sha224(
-                                request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
-                                if 'X-Forwarded-For' in request.headers
-                                else request.remote_addr or 'untrackable'
-                        ).hexdigest()[:10]
-                        },
-                    "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
-                    "fields": {
-                        "value": len(taxis)
-                    }
-                    }])
-            except Exception as e:
-                current_app.logger.error('Influxdb Error: {}'.format(e))
+
+        influx_db.write_point(current_app.config['INFLUXDB_TAXIS_DB'],
+                             "get_taxis_requests",
+                             {
+                                 "zupc": zupc_insee,
+                                 "position": "{:.3f}:{:.3f}".format(float(lon), float(lat)),
+                                 "moteur": current_user.email,
+                                 "customer": hashlib.sha224(
+                                    request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
+                                      if 'X-Forwarded-For' in request.headers
+                                      else request.remote_addr or 'untrackable'
+                                 ).hexdigest()[:10]
+                             }
+        )
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required
