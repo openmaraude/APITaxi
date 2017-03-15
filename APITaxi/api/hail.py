@@ -118,24 +118,15 @@ class Hail(Resource):
             unicode(hail.operateur.operator_api_key), hail.operateur.email],
             queue='send_hail_'+current_app.config['NOW'])
 
-        client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
-        if client:
-            try:
-                client.write_points([{
-                    "measurement": "hails_created",
-                    "tags": {
-                        "added_by": current_user.email,
-                        "operator": hail.operateur.email,
-                        "zupc": hail.ads_insee,
-                        "geohash": Geohash.encode(hail.customer_lat, hail.customer_lon),
-                        },
-                    "time": datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
-                    "fields": {
-                        "value": 1
-                    }
-                    }])
-            except Exception as e:
-                current_app.logger.error('Influxdb Error: {}'.format(e))
+        influx_db.write_point(current_app.config['INFLUXDB_TAXIS_DB'],
+                             "hails_created",
+                             {
+                                 "added_by": current_user.email,
+                                 "operator": hail.operateur.email,
+                                 "zupc": hail.ads_insee,
+                                 "geohash": Geohash.encode(hail.customer_lat, hail.customer_lon),
+                             }
+        )
         result = marshal({"data": [hail]}, hail_model)
         result['data'][0]['taxi']['lon'] = hail.initial_taxi_lon
         result['data'][0]['taxi']['lat'] = hail.initial_taxi_lat
