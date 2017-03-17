@@ -256,7 +256,8 @@ class Taxis(Resource):
                                       if 'X-Forwarded-For' in request.headers
                                       else request.remote_addr or 'untrackable'
                                  ).hexdigest()[:10]
-                             }
+                             },
+                              value=len(taxis)
         )
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
