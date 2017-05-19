@@ -471,6 +471,7 @@ class  TestHailGet(HailMixin):
                      version=2, role="operateur")
         hail = Hail.cache.get(hail_id)
         assert hail._status == 'finished'
+        assert hail.change_to_finished != None
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
         self.assert200(r)
