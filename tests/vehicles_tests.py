@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from .skeleton import Skeleton
-from APITaxi_models.taxis import Vehicle, VehicleDescription
+from APITaxi_models import Vehicle, VehicleDescription
 from json import loads
 from .fake_data import dict_vehicle
 from copy import deepcopy
