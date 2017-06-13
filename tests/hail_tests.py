@@ -697,6 +697,22 @@ class TestHailPut(HailMixin):
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
         self.app.config['ENV'] = prev_env
 
+
+    def test_no_ban(self):
+        dict_hail = deepcopy(dict_)
+        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        for i in range(3):
+            r = self.send_hail(dict_hail)
+            self.assert201(r)
+            r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+            self.set_hail_status(r, 'accepted_by_taxi')
+            dict_hail['status'] = 'accepted_by_customer'
+            r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
+                    version=2, role="moteur")
+            self.assert200(r)
+            assert(r.json['data'][0]['status'] == 'accepted_by_customer')
+        self.app.config['ENV'] = prev_env
+
     def test_declined_by_customer(self):
         dict_hail = deepcopy(dict_)
         prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
