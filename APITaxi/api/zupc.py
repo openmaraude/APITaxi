@@ -2,12 +2,16 @@
 from . import api, ns_administrative
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
+from APITaxi_utils.caching import cache_single
+from APITaxi_utils import influx_db
 from flask_restplus import reqparse, abort, marshal
 from flask import current_app
 from werkzeug.exceptions import BadRequest
 import json
 from psycopg2.extras import RealDictCursor
 import APITaxi_models as models
+from influxdb.exceptions import InfluxDBClientError
+
 
 @ns_administrative.route('zupc/')
 class ZUPC(ResourceMetadata):
@@ -22,18 +26,37 @@ class ZUPC(ResourceMetadata):
         except BadRequest as e:
             return json.dumps(e.data), 400, {"Content-Type": "application/json"}
 
-        cur = current_app.extensions['sqlalchemy'].db.session.connection()\
-                .connection.cursor(cursor_factory=RealDictCursor)
-        cur.execute("""SELECT active, nom, insee FROM "ZUPC"
-            WHERE ST_Intersects(shape, ST_POINT(%s, %s)::geography)""",
-            (args['lon'], args['lat']))
+        zupc_list = cache_single(
+            """SELECT insee, active, nom
+               FROM "ZUPC"
+               WHERE ST_INTERSECTS(shape, 'POINT(%s %s)')
+               AND parent_id = id
+               ORDER BY max_distance ASC;""",
+            (args.get('lon'), args.get('lat')), "zupc_lon_lat",
+            lambda v: (v['id'], v['parent_id']),
+            get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
+                             float(a[1].split(",")[1][:-1].strip()))
+        )
         to_return = []
-        ZUPC = models.ZUPC
-        for zupc in cur.fetchall():
-            if any(map(lambda z: zupc['insee'] == z['insee'], to_return)):
+        client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
+        for zupc in zupc_list:
+            if any(map(lambda z: zupc[0] == z['insee'], to_return)):
                 continue
-            to_return.append(marshal(zupc, ZUPC.marshall_obj(filter_id=True,
-                level=1, api=api)))
+            to_return.append({"insee": zupc[0], "active": zupc[1], "nom": zupc[2]})
+            if not client:
+                continue
+            try:
+                r = client.query("""SELECT "value" FROM "nb_taxis_every_1"
+                                WHERE "zupc" = '{}' AND "operator" !~ /.?/ 
+                                AND time > now() - 1m  fill(null) 
+                                LIMIT 1;""".format(zupc['insee'])
+                )
+            except InfluxDBClientError:
+                continue
+            points = list(r.get_points())
+            if len(points) > 0:
+                continue
+            to_return[-1]['nb_active'] = points[0].get('value')
         return {"data": to_return}, 200
 
 
