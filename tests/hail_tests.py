@@ -450,6 +450,13 @@ class  TestHailGet(HailMixin):
         assert r.json['data'][0]['taxi']['position']['lon'] == 0
         assert r.json['data'][0]['taxi']['position']['lat'] == 0
         assert r.json['data'][0]['taxi']['last_update'] == 0
+        r = self.get('/hails/{}/'.format(hail_id),
+                version=3, role='operateur')
+        self.assert200(r)
+        assert(r.json['data'][0]['status'] == 'customer_on_board')
+        assert r.json['data'][0]['taxi']['position']['lon'] == 0
+        assert r.json['data'][0]['taxi']['position']['lat'] == 0
+        assert r.json['data'][0]['taxi']['last_update'] == 0
         self.app.config['ENV'] = prev_env
 
     def test_finished(self):
