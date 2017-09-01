@@ -32,7 +32,7 @@ class ZUPC(ResourceMetadata):
                WHERE ST_INTERSECTS(shape, 'POINT(%s %s)')
                AND parent_id = id
                ORDER BY max_distance ASC;""",
-            (args.get('lon'), args.get('lat')), "zupc_lon_lat",
+            (args.get('lon'), args.get('lat')), "zupc_list",
             lambda v: (v['id'], v['parent_id']),
             get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
                              float(a[1].split(",")[1][:-1].strip()))
@@ -54,7 +54,7 @@ class ZUPC(ResourceMetadata):
             except InfluxDBClientError:
                 continue
             points = list(r.get_points())
-            if len(points) > 0:
+            if len(points) <= 0:
                 continue
             to_return[-1]['nb_active'] = points[0].get('value')
         return {"data": to_return}, 200
