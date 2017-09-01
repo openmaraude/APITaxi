@@ -107,6 +107,8 @@ get_parser.add_argument('favorite_operator', type=unicode, required=False,
     location='values')
 get_parser.add_argument('count', type=int, required=False,
         location='values', default=10)
+get_parser.add_argument('ghost_mode', type=bool, required=False,
+                        location='values', default=False)
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
@@ -152,6 +154,7 @@ class Taxis(Resource):
     def get(self):
         p = get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
+        ghost_mode = p['ghost_mode'] and current_user.has_role('admin')
         if current_app.config['LIMITED_ZONE'] and\
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
@@ -209,7 +212,7 @@ class Taxis(Resource):
         self.set_not_available(lon, lat, name_redis)
         while len(taxis) < p['count']:
             page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
-                                    offset, count, True) if v[0] not in self.not_available]
+                                offset, count, True) if v[0] not in self.not_available or ghost_mode]
             offset += count
             if len(page_ids_distances) == 0:
                 break
