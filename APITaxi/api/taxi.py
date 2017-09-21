@@ -79,6 +79,7 @@ class TaxiId(Resource):
                     hail.status = hail_status
                     to_set[0] += ", current_hail_id = %s"
                     to_set[1].append(current_hail_id)
+                current_app.extensions['sqlalchemy'].db.session.add(hail)
             query = "UPDATE taxi SET {} WHERE id = %s".format(to_set[0])
             cur.execute(query, (to_set[1] + [t[0]['taxi_id']]))
             current_app.extensions['sqlalchemy'].db.session.commit()
@@ -91,6 +92,11 @@ class TaxiId(Resource):
             else:
                 redis_store.zadd(current_app.config['REDIS_NOT_AVAILABLE'],
                     0., taxi_id_operator)
+            current_app.extensions['redis_saved'].zadd(
+                'taxi_status:{}'.format(taxi_id),
+                float(time()),
+                '{}_{}'.format(new_status, time()),
+            )
 
         taxi_m = marshal({'data':[
             models.RawTaxi.generate_dict(t, operator=current_user.email)]
