@@ -524,7 +524,8 @@ class  TestHailGet(HailMixin):
                 prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
                 r = self.send_hail(dict_hail)
                 self.assert201(r)
-                r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+                r = self.wait_for_status('received_by_operator',
+                                         r.json['data'][0]['id'])
                 self.set_hail_status(r, hail_status)
                 hail_id = r.json['data'][0]['id']
                 hail = Hail.cache.get(hail_id)
@@ -543,6 +544,7 @@ class  TestHailGet(HailMixin):
                 self.assert200(r)
                 assert(r.json['data'][0]['status'] == hail_status)
                 taxi = Taxi.cache.get(dict_hail['taxi_id'])
+                print taxi_status, hail_status, taxi.current_hail
                 assert taxi.current_hail == None
 
 
