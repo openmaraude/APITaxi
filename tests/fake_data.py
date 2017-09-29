@@ -73,3 +73,13 @@ dict_taxi_2 = {
         "driver": {"professional_licence": "kkppkk", "departement": "53"},
         "ads": {"insee": "34172", "numero": "2"}
 }
+
+dict_hail = {
+    'customer_id': 'aa',
+    'customer_lon': 4.4,
+    'customer_lat': 0,
+    'customer_address': 'Pas loin, Paris',
+    'customer_phone_number': '067372727',
+    'taxi_id': 'aa',
+    'operateur': 'user_operateur'
+}
