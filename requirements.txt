@@ -7,7 +7,7 @@ Flask-Dogpile-Cache==0.2
 Flask-Redis==0.3.0
 Flask-Celery-Helper==1.1.0
 Flask-Cors==2.1.2
-psycopg2==2.6.1
+psycopg2==2.7.4
 geopy==1.11.0
 Flask-Uploads==0.2.1
 Flask-Script==2.0.5
