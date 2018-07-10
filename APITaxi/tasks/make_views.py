@@ -10,6 +10,8 @@ from flask import current_app
 from itertools import izip_longest, compress
 from ..extensions import celery
 from celery import Task
+from influxdb.exceptions import InfluxDBClientError
+
 
 class cache(Task):
     abstract=True
@@ -66,17 +68,17 @@ def store_active_taxis(frequency):
             active_taxis.add(taxi_id)
             taxi_db = taxis.get(taxi_id_operator, None)
             if taxi_db is None:
-                current_app.logger.error('Taxi: {}:{}, not found in database'.format(
+                current_app.logger.debug(u'Taxi: {}:{}, not found in database'.format(
                     taxi_id, operator))
                 continue
             if 'ads_insee' not in taxi_db:
-                current_app.logger.error('Taxi: {} is invalid'.format(taxi_id))
+                current_app.logger.debug('Taxi: {} is invalid'.format(taxi_id))
                 continue
 #This a cache for insee to zupc.
             if not taxi_db['ads_insee'] in store_active_taxis.insee_zupc_dict:
                 zupc = models.ZUPC.query.get(taxi_db['ads_zupc_id'])
                 if not zupc:
-                    current_app.logger.error('Unable to find zupc: {}'.format(
+                    current_app.logger.debug('Unable to find zupc: {}'.format(
                         taxi_db['ads_zupc_id']))
                     continue
                 zupc = zupc.parent
@@ -88,7 +90,7 @@ def store_active_taxis(frequency):
             if operator not in map_operateur_insee_nb_active:
                 u = user_datastore.find_user(email=operator)
                 if not u:
-                    current_app.logger.error('User: {} not found'.format(operator))
+                    current_app.logger.debug('User: {} not found'.format(operator))
                     continue
                 map_operateur_insee_nb_active[operator] = dict()
             map_operateur_insee_nb_active[operator].setdefault(zupc.insee, set()).add(taxi_id)
@@ -138,7 +140,11 @@ def store_active_taxis(frequency):
         )
         if len(to_insert) == 100:
             if client:
-                client.write_points(to_insert)
+                try:
+		    client.write_points(to_insert)
+                except InfluxDBClientError, e:
+                    current_app.logger.debug(e)
+
             to_insert[:] = []
 
     for operator, zupc_active in map_operateur_insee_nb_active.iteritems():

@@ -41,20 +41,21 @@ class ZUPC(ResourceMetadata):
         client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
         for zupc in zupc_list:
             if any(map(lambda z: zupc[0] == z['insee'], to_return)):
+                current_app.logger.debug("ZUPC {} already added, skipping it".format(zupc[0]))
                 continue
             to_return.append({"insee": zupc[0], "active": zupc[1], "nom": zupc[2]})
             if not client:
+                current_app.logger.error("No influxdb client")
                 continue
+            request = """SELECT "value" FROM "nb_taxis_every_1" WHERE "zupc" = '{}' AND "operator" = ''  AND time > now() - 1m  fill(null) LIMIT 1;""".format(zupc['insee'])
             try:
-                r = client.query("""SELECT "value" FROM "nb_taxis_every_1"
-                                WHERE "zupc" = '{}' AND "operator" !~ /.?/ 
-                                AND time > now() - 1m  fill(null) 
-                                LIMIT 1;""".format(zupc['insee'])
-                )
-            except InfluxDBClientError:
+                r = client.query(request)
+            except InfluxDBClientError, e:
+                current_app.logger.error(e)
                 continue
             points = list(r.get_points())
             if len(points) <= 0:
+                current_app.logger.debug("No stat points found, request: \"{}\"".format(request))
                 continue
             to_return[-1]['nb_active'] = points[0].get('value')
         return {"data": to_return}, 200
