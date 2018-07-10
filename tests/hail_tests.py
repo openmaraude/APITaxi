@@ -199,9 +199,6 @@ class TestHailPost(HailMixin):
         r = self.send_hail(hail)
         self.assert400(r)
 
-    def test_no_address(self):
-        self.no_hail_field('customer_address')
-
     def test_no_phone_number(self):
         self.no_hail_field('customer_phone_number')
 

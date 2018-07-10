@@ -133,11 +133,11 @@ class Taxis(Resource):
             return False
         return True
 
-    def set_not_available(self, lon, lat, name_redis):
+    def set_not_available(self, lon, lat, name_redis, radius):
         store_key = name_redis+'_operateur'
         g.keys_to_delete.append(store_key)
-        redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon,
-                              storedistkey=store_key)
+        redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lat, lon, radius, 'm',
+                              store_dist=store_key)
         redis_store.zinterstore(store_key, [store_key,
                                 current_app.config['REDIS_TIMESTAMPS'],
                                 current_app.config['REDIS_NOT_AVAILABLE']])
@@ -198,7 +198,7 @@ class Taxis(Resource):
         #It returns a list of all taxis near the given point
         #For each taxi you have a tuple with: (id, distance, [lat, lon])
         nb_positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX_ID'],
-                lat, lon, radius=max_distance/1000.0, units='km', storedistkey=name_redis)
+                lat, lon, radius=max_distance/1000.0, unit='km', store_dist=name_redis)
         if nb_positions == 0:
             current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
@@ -212,7 +212,7 @@ class Taxis(Resource):
         taxis = []
         offset = 0
         count = p['count'] * 4
-        self.set_not_available(lon, lat, name_redis)
+        self.set_not_available(lon, lat, name_redis, max_distance)
         while len(taxis) < p['count']:
             page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
                                     offset, count, True) if v[0] not in self.not_available]

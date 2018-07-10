@@ -1,9 +1,7 @@
 #coding: utf-8
-from APITaxi_utils.redis_geo import GeoRedis
 from flask_redis import FlaskRedis
-redis_store = FlaskRedis.from_custom_provider(GeoRedis)
-redis_store_saved = FlaskRedis.from_custom_provider(GeoRedis,
-                                        config_prefix='REDIS_SAVED')
+redis_store = FlaskRedis()
+redis_store_saved = FlaskRedis(config_prefix='REDIS_SAVED')
 
 from flask_celery import Celery
 celery = Celery()
