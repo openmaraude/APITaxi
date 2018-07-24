@@ -556,7 +556,7 @@ class  TestHailGet(HailMixin):
                         version=2, role='operateur')
                 self.assert200(r)
                 assert(r.json['data'][0]['status'] == hail_status)
-                taxi = Taxi.cache.get(dict_hail['taxi_id'])
+                taxi = Taxi.query.get(dict_hail['taxi_id'])
                 assert taxi.current_hail == None
         #test timeout taxi
         for taxi_status in ['free', 'off', 'occupied']:
@@ -581,7 +581,7 @@ class  TestHailGet(HailMixin):
                     version=2, role='operateur')
             self.assert200(r)
             assert(r.json['data'][0]['status'] == 'timeout_taxi')
-            taxi = Taxi.cache.get(dict_hail['taxi_id'])
+            taxi = Taxi.query.get(dict_hail['taxi_id'])
             assert taxi.current_hail == None
         #test timeout customer
         for taxi_status in ['free', 'off', 'occupied']:
@@ -609,7 +609,7 @@ class  TestHailGet(HailMixin):
                     version=2, role='operateur')
             self.assert200(r)
             assert(r.json['data'][0]['status'] == 'timeout_customer')
-            taxi = Taxi.cache.get(dict_hail['taxi_id'])
+            taxi = Taxi.query.get(dict_hail['taxi_id'])
             assert taxi.current_hail == None
 
 
