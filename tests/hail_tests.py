@@ -46,8 +46,7 @@ class HailMixin(Skeleton):
     def set_hail_status(cls, r, status, last_status_change=None):
         assert r.status_code == 200 or r.status_code == 201
         hail_id = r.json['data'][0]['id']
-        Hail.cache.flush(hail_id)
-        hail = Hail.cache.get(hail_id)
+        hail = Hail.query.get(hail_id)
         hail._status = status
         setattr(hail, "change_to_" + status, datetime.now())
         if last_status_change:
@@ -405,7 +404,7 @@ class  TestHailGet(HailMixin):
                 version=2, role='operateur')
         self.assert200(r)
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
-        hail = Hail.cache.get(hail_id)
+        hail = Hail.query.get(hail_id)
         assert hail._status == 'timeout_accepted_by_customer'
         assert r.json['data'][0]['taxi']['position']['lon'] == 0
         assert r.json['data'][0]['taxi']['position']['lat'] == 0
@@ -420,7 +419,7 @@ class  TestHailGet(HailMixin):
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_customer')
         hail_id = r.json['data'][0]['id']
-        hail = Hail.cache.get(hail_id)
+        hail = Hail.query.get(hail_id)
         assert hail._status == 'accepted_by_customer'
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
@@ -429,7 +428,7 @@ class  TestHailGet(HailMixin):
         r = self.put([{'status': 'occupied'}],
                      '/taxis/{}/'.format(dict_hail['taxi_id']),
                      version=2, role="operateur")
-        hail = Hail.cache.get(hail_id)
+        hail = Hail.query.get(hail_id)
         assert hail._status == 'customer_on_board'
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
@@ -455,7 +454,7 @@ class  TestHailGet(HailMixin):
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_customer')
         hail_id = r.json['data'][0]['id']
-        hail = Hail.cache.get(hail_id)
+        hail = Hail.query.get(hail_id)
         assert hail._status == 'accepted_by_customer'
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
@@ -464,7 +463,7 @@ class  TestHailGet(HailMixin):
         r = self.put([{'status': 'free'}],
                      '/taxis/{}/'.format(dict_hail['taxi_id']),
                      version=2, role="operateur")
-        hail = Hail.cache.get(hail_id)
+        hail = Hail.query.get(hail_id)
         assert hail._status == 'finished'
         assert hail.change_to_finished != None
         r = self.get('/hails/{}/'.format(hail_id),
@@ -487,7 +486,7 @@ class  TestHailGet(HailMixin):
                 r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
                 self.set_hail_status(r, hail_status)
                 hail_id = r.json['data'][0]['id']
-                hail = Hail.cache.get(hail_id)
+                hail = Hail.query.get(hail_id)
                 assert hail._status == hail_status
                 r = self.get('/hails/{}/'.format(hail_id),
                         version=2, role='operateur')
@@ -496,7 +495,7 @@ class  TestHailGet(HailMixin):
                 r = self.put([{'status': taxi_status}],
                              '/taxis/{}/'.format(dict_hail['taxi_id']),
                              version=2, role="operateur")
-                hail = Hail.cache.get(hail_id)
+                hail = Hail.query.get(hail_id)
                 assert hail._status == hail_status
                 r = self.get('/hails/{}/'.format(hail_id),
                         version=2, role='operateur')
@@ -542,7 +541,7 @@ class  TestHailGet(HailMixin):
                                          r.json['data'][0]['id'])
                 self.set_hail_status(r, hail_status)
                 hail_id = r.json['data'][0]['id']
-                hail = Hail.cache.get(hail_id)
+                hail = Hail.query.get(hail_id)
                 assert hail._status == hail_status
                 r = self.get('/hails/{}/'.format(hail_id),
                         version=2, role='operateur')
@@ -551,7 +550,7 @@ class  TestHailGet(HailMixin):
                 r = self.put([{'status': taxi_status}],
                              '/taxis/{}/'.format(dict_hail['taxi_id']),
                              version=2, role="operateur")
-                hail = Hail.cache.get(hail_id)
+                hail = Hail.query.get(hail_id)
                 assert hail._status == hail_status
                 r = self.get('/hails/{}/'.format(hail_id),
                         version=2, role='operateur')
@@ -576,7 +575,7 @@ class  TestHailGet(HailMixin):
             r = self.put([{'status': taxi_status}],
                          '/taxis/{}/'.format(dict_hail['taxi_id']),
                          version=2, role="operateur")
-            hail = Hail.cache.get(hail_id)
+            hail = Hail.query.get(hail_id)
             assert hail._status == 'timeout_taxi'
             r = self.get('/hails/{}/'.format(hail_id),
                     version=2, role='operateur')
@@ -604,7 +603,7 @@ class  TestHailGet(HailMixin):
             r = self.put([{'status': taxi_status}],
                          '/taxis/{}/'.format(dict_hail['taxi_id']),
                          version=2, role="operateur")
-            hail = Hail.cache.get(hail_id)
+            hail = Hail.query.get(hail_id)
             assert hail._status == 'timeout_customer'
             r = self.get('/hails/{}/'.format(hail_id),
                     version=2, role='operateur')
