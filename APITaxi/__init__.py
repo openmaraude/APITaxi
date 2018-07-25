@@ -52,8 +52,7 @@ def create_app(sqlalchemy_uri=None):
     from . import tasks
     tasks.init_app(app)
 
-    user_datastore.init_app(db, security.User, security.CachedUser,
-            security.Role)
+    user_datastore.init_app(db, security.User, security.Role)
     cache = DogpileCache()
     cache.init_app(app)
 
