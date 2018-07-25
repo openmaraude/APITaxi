@@ -83,7 +83,6 @@ class TaxiId(Resource):
             query = "UPDATE taxi SET {} WHERE id = %s".format(to_set[0])
             cur.execute(query, (to_set[1] + [t[0]['taxi_id']]))
             current_app.extensions['sqlalchemy'].db.session.commit()
-            models.RawTaxi.flush(taxi_id)
             t[0]['vehicle_description_status'] = new_status
             taxi_id_operator = "{}:{}".format(taxi_id, current_user.email)
             if t[0]['vehicle_description_status'] == 'free':
