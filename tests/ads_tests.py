@@ -4,6 +4,7 @@ import APITaxi_models as models
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_ads, dict_vehicle
+from cStringIO import StringIO
 
 
 class TestADSPost(Skeleton):
@@ -114,3 +115,7 @@ class TestADSPost(Skeleton):
         self.assert400(r)
         assert "data.0.owner_type" in r.json['errors']
 
+    def test_post_file(self):
+        r = self.post(dict(file=(StringIO('test file'), 'test.csv'),),
+                content_type=None, envelope_data=False, accept='text/html')
+        self.assert200(r)
