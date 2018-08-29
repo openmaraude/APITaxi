@@ -6,6 +6,7 @@ from APITaxi import create_app
 from APITaxi.extensions import (redis_store, user_datastore)
 from APITaxi.api import api
 import APITaxi_models as models
+from APITaxi_models import db
 from functools import partial
 from .fake_data import (dict_driver, dict_vehicle, dict_ads, dict_taxi,
     dict_driver_2, dict_vehicle_2, dict_ads_2, dict_taxi_2)
@@ -23,9 +24,9 @@ class Skeleton(TestCase):
         return create_app()
 
     def setUp(self):
-        current_app.extensions['sqlalchemy'].db.drop_all()
-        current_app.extensions['sqlalchemy'].db.create_all()
         current_app.extensions['dogpile_cache'].invalidate_all_regions()
+        db.drop_all()
+        db.create_all()
         for role in ['admin', 'operateur', 'moteur']:
             r = user_datastore.create_role(name=role)
             u = user_datastore.create_user(email='user_'+role,
@@ -34,14 +35,14 @@ class Skeleton(TestCase):
             u = user_datastore.create_user(email='user_'+role+'_2',
                                            password=role)
             user_datastore.add_role_to_user(u, r)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.commit()
         r = user_datastore.find_role('operateur')
         u = user_datastore.create_user(email='user_apikey',
                 password='operateur')
         u.operator_header_name = 'X-API-KEY'
         u.operator_api_key = 'xxx'
         user_datastore.add_role_to_user(u, r)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.commit()
 
     def tearDown(self):
         ids = []
@@ -116,16 +117,16 @@ class Skeleton(TestCase):
         else:
             poly = Polygon([(48,2), (49,2), (49,3), (48,3)])
         zupc.shape = from_shape(MultiPolygon([poly]), srid=4326)
-        current_app.extensions['sqlalchemy'].db.session.add(zupc)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.add(zupc)
+        db.session.commit()
         zupc.parent_id = zupc.id
 
         zupc2 = models.ZUPC()
         zupc2.insee = '93048'
         zupc2.nom = 'Montreuil'
         zupc2.parent_id = zupc.id
-        current_app.extensions['sqlalchemy'].db.session.add(zupc2)
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.add(zupc2)
+        db.session.commit()
 
     def check_req_vs_dict(self, req, dict_):
         for k, v in dict_.items():

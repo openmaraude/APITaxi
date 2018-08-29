@@ -4,7 +4,7 @@ from flask_restplus import fields, abort, marshal, Resource, reqparse
 from flask_security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
 import APITaxi_models as models
-from APITaxi_utils.caching import cache_single, cache_in
+from APITaxi_models import db
 from APITaxi_utils import influx_db
 from APITaxi_utils.reqparse import DataJSONParser
 from ..extensions import redis_store
@@ -161,21 +161,16 @@ class Taxis(Resource):
             not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
             #It must be 403, but I don't know how our clients will react:
             return {'data': []}
-        self.zupc_customer = cache_single(
+        self.zupc_customer = db.session.execute(
             """SELECT id, parent_id, max_distance, insee
                FROM "ZUPC"
-               WHERE ST_INTERSECTS(shape, 'POINT(%s %s)')
+               WHERE ST_INTERSECTS(shape, 'POINT(:lon :lat)')
                AND parent_id = id
-               ORDER BY max_distance ASC;""",
-            (lon, lat), "zupc_lon_lat",
-            lambda v: (v['id'], v['parent_id']),
-            get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
-                             float(a[1].split(",")[1][:-1].strip()))
-        )
+               ORDER BY max_distance ASC;""", {"lon": lon, "lat": lat}
+        ).fetchall()
         if len(self.zupc_customer) == 0:
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
-        zupc_id = self.zupc_customer[0][0]
         zupc_insee = self.zupc_customer[0][3]
 #We can deactivate the max radius for a certain zone
         inactive_filter_period = current_app.config['INACTIVE_FILTER_PERIOD']
@@ -203,11 +198,9 @@ class Taxis(Resource):
             return {'data': []}
         self.parent_zupc = {r[0]: r[1] for r in self.zupc_customer}
         self.zupc_customer = {r[0]: r[1]
-          for r in cache_in(
-              'SELECT id, ST_AsBinary(shape) AS shape FROM "ZUPC" WHERE id in %s',
-               {int(r1[1]) for r1 in self.zupc_customer}, "zupc_parent_shape",
-               lambda v: (v['id'], prep(load_wkb(bytes(v['shape'])))),
-              get_id=lambda v:unicode(v[0]))}
+          for r in  [(v[0], prep(load_wkb(bytes(v[1])))) for v in db.session.execute(
+              'SELECT id, ST_AsBinary(shape) AS shape FROM "ZUPC" WHERE id in :zupc_list',
+              {"zupc_list": tuple((int(r1[1]) for r1 in self.zupc_customer))}).fetchall()]}
         taxis = []
         offset = 0
         count = p['count'] * 4
