@@ -2,8 +2,8 @@
 from . import api, ns_administrative
 from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
-from APITaxi_utils.caching import cache_single
 from APITaxi_utils import influx_db
+from APITaxi_models import db
 from flask_restplus import reqparse, abort, marshal
 from flask import current_app
 from werkzeug.exceptions import BadRequest
@@ -26,17 +26,13 @@ class ZUPC(ResourceMetadata):
         except BadRequest as e:
             return json.dumps(e.data), 400, {"Content-Type": "application/json"}
 
-        zupc_list = cache_single(
+        zupc_list = db.session.execute(
             """SELECT insee, active, nom
                FROM "ZUPC"
-               WHERE ST_INTERSECTS(shape, 'POINT(%s %s)')
+               WHERE ST_INTERSECTS(shape, 'POINT(:lon :lat)')
                AND parent_id = id
                ORDER BY max_distance ASC;""",
-            (args.get('lon'), args.get('lat')), "zupc_list",
-            lambda v: (v['id'], v['parent_id']),
-            get_id=lambda a:(float(a[1].split(",")[0][1:].strip()),
-                             float(a[1].split(",")[1][:-1].strip()))
-        )
+            args).fetchall()
         to_return = []
         client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
         for zupc in zupc_list:
