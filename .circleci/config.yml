@@ -1,0 +1,49 @@
+version: 2
+jobs:
+    build:
+        docker:
+            - image: circleci/python:2.7.15-stretch
+            - image: circleci/postgres:10.5-postgis-ram
+              environment:
+                  POSTGRES_USER: ubuntu
+                  POSTGRES_DB: circle_test
+            - image: redis:4.0.1
+            - image: openmaraude/geotaxi:latest
+        environment:
+            SQLALCHEMY_DATABASE_URI: 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
+            REDIS_URL: "redis://:@localhost:6379/0"
+            SECURITY_PASSWORD_HASH: 'plaintext'
+            APITAXI_CONFIG_FILE: 'test_settings.py'
+        steps:
+            - checkout
+            - run: sudo apt-get install golang-go libgeos-dev
+            - run: git clone https://github.com/openmaraude/faker && cd faker && go build && cd ..
+            - run: git clone https://github.com/openmaraude/minimal_operateur_server
+            - run:
+                name: install dependencies
+                command: |
+                    mkdir -p ./venv
+                    virtualenv ./venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+            - run:
+                name: Fake positions
+                command: ./faker/faker
+                background: true
+            - run:
+                name: Launch minimal operateur server
+                command: |
+                    . venv/bin/activate
+                    python minimal_operateur_server/api.py
+                background: true
+            - run:
+                name: Launch worker
+                command: |
+                    . venv/bin/activate
+                    celery worker --app=celery_worker.celery -Q send_hail_time_test
+                background: true
+            - run:
+                name: Run tests
+                command: |
+                    . venv/bin/activate
+                    nosetests --stop
