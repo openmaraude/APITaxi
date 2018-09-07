@@ -5,7 +5,7 @@ from ..descriptors.vehicle import vehicle_model, vehicle_expect
 import APITaxi_models as models
 from APITaxi_utils import reqparse, resource_metadata
 
-@ns_administrative.route('vehicles/', endpoint="vehicle")
+@ns_administrative.route('/vehicles/', endpoint="vehicle")
 class Vehicle(resource_metadata.ResourceMetadata):
     model = models.Vehicle
 
