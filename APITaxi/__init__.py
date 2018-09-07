@@ -7,7 +7,6 @@ __version__ = ".".join(map(str, VERSION))
 
 from flask import Flask, request_started, request_finished
 import os
-from flask_dogpile_cache import DogpileCache
 
 def create_app(sqlalchemy_uri=None):
     from .extensions import redis_store, redis_store_saved, user_datastore
@@ -53,8 +52,6 @@ def create_app(sqlalchemy_uri=None):
     tasks.init_app(app)
 
     user_datastore.init_app(db, security.User, security.Role)
-    cache = DogpileCache()
-    cache.init_app(app)
 
     @app.before_first_request
     def warm_up_redis():
