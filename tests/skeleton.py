@@ -24,7 +24,6 @@ class Skeleton(TestCase):
         return create_app()
 
     def setUp(self):
-        current_app.extensions['dogpile_cache'].invalidate_all_regions()
         db.drop_all()
         db.create_all()
         for role in ['admin', 'operateur', 'moteur']:
@@ -55,7 +54,6 @@ class Skeleton(TestCase):
         current_app.extensions['sqlalchemy'].db.session.remove()
         current_app.extensions['sqlalchemy'].db.drop_all()
         current_app.extensions['sqlalchemy'].db.get_engine(self.app).dispose()
-        current_app.extensions['dogpile_cache'].invalidate_all_regions()
 
 
     def post_taxi(self, role=None, user=None, post_second=False, custom_ads=None):
