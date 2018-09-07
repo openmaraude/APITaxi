@@ -25,7 +25,7 @@ model_user = api.model("user", {
         )))
     })
 
-@ns_administrative.route('users/<int:user_id>')
+@ns_administrative.route('/users/<int:user_id>')
 class ProfileDetail(Resource):
     @api.marshal_with(model_user)
     def get(self, user_id):

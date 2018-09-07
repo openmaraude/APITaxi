@@ -13,7 +13,7 @@ import APITaxi_models as models
 from influxdb.exceptions import InfluxDBClientError
 
 
-@ns_administrative.route('zupc/')
+@ns_administrative.route('/zupc/')
 class ZUPC(ResourceMetadata):
     def get(self):
         if not request_wants_json():
@@ -70,7 +70,7 @@ class ZUPCAutocomplete(ResourceMetadata):
         return jsonify(suggestions=map(lambda zupc:{'name': zupc.nom, 'id': int(zupc.id)},
                                             response))
 
-@ns_administrative.route('zupc/<int:zupc_id>/_show_temp_geojson')
+@ns_administrative.route('/zupc/<int:zupc_id>/_show_temp_geojson')
 @api.hide
 class ZUPCShowTemp(ResourceMetadata):
     def get(self, zupc_id):

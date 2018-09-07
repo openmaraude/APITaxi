@@ -8,7 +8,7 @@ from ..descriptors.drivers import driver_fields, driver_details_expect
 from flask_restplus import marshal
 from .extensions import documents
 
-@ns_administrative.route('drivers/')
+@ns_administrative.route('/drivers/')
 class Drivers(resource_metadata.ResourceMetadata, resource_file_or_json.ResourceFileOrJSON):
     model = models.Driver
     filetype = 'conducteur'

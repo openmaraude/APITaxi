@@ -6,7 +6,7 @@ from . import api, ns_administrative, extensions
 from ..descriptors.ads import ads_expect, ads_post
 from flask_restplus import marshal
 
-@ns_administrative.route("ads/", endpoint="ads")
+@ns_administrative.route("/ads/", endpoint="ads")
 class ADS(resource_metadata.ResourceMetadata, resource_file_or_json.ResourceFileOrJSON):
     model = models.ADS
     filetype = "ADS"
@@ -23,4 +23,4 @@ class ADS(resource_metadata.ResourceMetadata, resource_file_or_json.ResourceFile
 
     def post_json(self):
         parser = reqparse.DataJSONParser(max_length=250, filter_=ads_expect)
-        return marshal({"data": [models.ADS(**a) for a in parser.get_data()]}, ads_post), 201
+        return marshal({"data": [models.ADS(**a) for a in parser.get_data() or []]}, ads_post), 201
