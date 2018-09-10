@@ -204,7 +204,7 @@ class Hail(Resource):
             }
 
 
-@ns_hail.route('/<string:hail_id>/_log', endpoint='models.HailLog')
+@ns_hail.route('/<string:hail_id>/_log', endpoint='models_HailLog')
 class Hail(Resource):
     @login_required
     def get(self, hail_id):
