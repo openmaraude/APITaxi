@@ -14,6 +14,7 @@ all_fields['taxi'] = fields.Nested(api.model('hail_taxi',
          'last_update': fields.Integer(),
          'id': fields.String()}))
 all_fields['creation_datetime'] = fields.DateTime()
+all_fields['customer_id'] = fields.String(required=True)
 
 
 hail_model = api.model('hail_model_data',
