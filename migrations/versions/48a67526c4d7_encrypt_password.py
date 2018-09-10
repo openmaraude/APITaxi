@@ -13,7 +13,7 @@ down_revision = '4e62a5e5f592'
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from flask.ext.security.utils import encrypt_password
+from flask_security.utils import encrypt_password
 
 user_table = sa.Table('user', sa.MetaData(),
         sa.Column('id', sa.Integer, primary_key=True),
