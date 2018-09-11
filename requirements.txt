@@ -1,7 +1,7 @@
 Cython==0.23.4
 enum34
 -e git://github.com/openmaraude/APITaxi_utils.git@2a0a202754a6128a625cdfb2936844fea0ed3e2b#egg=APITaxi_utils
--e git://github.com/openmaraude/APITaxi_models.git@c843661711496de1a2f053d054aa790364a3eb9c#egg=APITaxi_models
+-e git://github.com/openmaraude/APITaxi_models.git@64250240890525ed6b9238a1762bf190931078ac#egg=APITaxi_models
 nose==1.3.7
 Flask-Testing==0.7.1
 Flask-Redis==0.3.0
@@ -12,7 +12,7 @@ geopy==1.16.0
 Flask-Uploads==0.2.1
 Flask-Script==2.0.6
 Flask-Migrate==2.2.1
-Shapely==1.5.16
+Shapely==1.6.4.post2
 pyshp==1.2.12
 bcrypt==3.1.4
 Geohash==1.0
