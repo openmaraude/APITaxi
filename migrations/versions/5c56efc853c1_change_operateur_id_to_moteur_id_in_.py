@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 def upgrade():
-    op.drop_constraint(u'customer_operateur_id_fkey', 'customer', type_='foreignkey')
+    op.drop_constraint('customer_operateur_id_fkey', 'customer', type_='foreignkey')
     op.alter_column('customer', 'operateur_id', new_column_name='moteur_id')
     op.create_foreign_key('customer_primary_key', 'customer', 'user', ['moteur_id'], ['id'])
 
@@ -23,4 +23,4 @@ def upgrade():
 def downgrade():
     op.drop_constraint('customer_primary_key', 'customer', type_='foreignkey')
     op.alter_column('customer', 'moteur_id', new_column_name='operateur_id')
-    op.create_foreign_key(u'customer_operateur_id_fkey', 'customer', 'user', ['operateur_id'], ['id'])
+    op.create_foreign_key('customer_operateur_id_fkey', 'customer', 'user', ['operateur_id'], ['id'])

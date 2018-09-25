@@ -16,7 +16,6 @@ all_fields['taxi'] = fields.Nested(api.model('hail_taxi',
 all_fields['creation_datetime'] = fields.DateTime()
 all_fields['customer_id'] = fields.String(required=True)
 
-
 hail_model = api.model('hail_model_data',
     {'data':
         fields.List(fields.Nested(
@@ -29,13 +28,11 @@ puttable_arguments = ['status', 'incident_taxi_reason',
         'customer_lat', 'customer_address', 'customer_phone_number', 'rating_ride',
         'rating_ride_reason', 'incident_customer_reason']
 
-dict_hail =  dict(filter(lambda f: f[0] in puttable_arguments,
-        all_fields.items()))
+dict_hail =  dict([f for f in list(all_fields.items()) if f[0] in puttable_arguments])
 
 postable_arguemnts = ['customer_id', 'customer_lon', 'customer_lat',
     'customer_address', 'customer_phone_number', 'taxi_id', 'operateur']
-dict_hail =  dict(filter(lambda f: f[0] in postable_arguemnts,
-        all_fields.items()))
+dict_hail =  dict([f for f in list(all_fields.items()) if f[0] in postable_arguemnts])
 dict_hail['operateur'] = fields.String(attribute='operateur', required=True)
 dict_hail['taxi_id'] = fields.String(required=True)
 hail_expect_post_details = api.model('hail_expect_post_details',
@@ -45,7 +42,7 @@ hail_expect_post = api.model('hail_expect_post',
             unique=True)})
 
 dict_put = deepcopy(dict_hail)
-for k in dict_put.keys():
+for k in list(dict_put.keys()):
     dict_put[k].required = False
 
 hail_expect_put_details = api.model('hail_expect_put_details', dict_put)

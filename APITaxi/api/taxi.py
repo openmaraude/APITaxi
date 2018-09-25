@@ -15,7 +15,7 @@ from APITaxi_utils.request_wants_json import json_mimetype_required
 from shapely.geometry import Point
 from time import time
 from datetime import datetime, timedelta
-from itertools import groupby, compress, izip, islice
+from itertools import groupby, compress, islice
 from shapely.prepared import prep
 from shapely.wkb import loads as load_wkb
 from sqlalchemy.sql.expression import text
@@ -33,8 +33,8 @@ class TaxiId(Resource):
         t = [t for t in taxis if current_user.id == t['vehicle_description_added_by']]
         if not t:
             abort(403, message='You\'re not authorized to view this taxi')
-        v = redis_store.hget('taxi:{}'.format(taxi_id), current_user.email)
-        return t, int(v.split(' ')[0]) if v else None
+        v = redis_store.hget('taxi:{}'.format(taxi_id).encode(), current_user.email)
+        return t, int(v.decode().split(' ')[0]) if v else None
 
     @login_required
     @roles_accepted('admin', 'operateur')
@@ -108,7 +108,7 @@ class TaxiId(Resource):
 get_parser = reqparse.RequestParser()
 get_parser.add_argument('lon', type=float, required=True, location='values')
 get_parser.add_argument('lat', type=float, required=True, location='values')
-get_parser.add_argument('favorite_operator', type=unicode, required=False,
+get_parser.add_argument('favorite_operator', type=str, required=False,
     location='values')
 get_parser.add_argument('count', type=int, required=False,
         location='values', default=10)
@@ -121,7 +121,7 @@ class Taxis(Resource):
             return False
         taxi = taxi[0]
         zupc_id = taxi['ads_zupc_id']
-        if not zupc_id in self.zupc_customer.keys():
+        if not zupc_id in list(self.zupc_customer.keys()):
             current_app.logger.debug('Taxi {} not in customer\'s zone'.format(
                 taxi.get('taxi_id', 'no id')))
             return False
@@ -140,7 +140,7 @@ class Taxis(Resource):
         redis_store.zinterstore(store_key, [store_key,
                                 current_app.config['REDIS_TIMESTAMPS'],
                                 current_app.config['REDIS_NOT_AVAILABLE']])
-        self.not_available = {t[0].split(':')[0] for t
+        self.not_available = {t[0].decode().split(':')[0] for t
                               in redis_store.zscan_iter(store_key)}
 
     def check_freshness(self):
@@ -183,7 +183,7 @@ class Taxis(Resource):
         if is_inactive:
             max_distance = current_app.config['DEFAULT_MAX_RADIUS']
         else:
-            max_distance = min(filter(lambda v: v>0, [v[2] for v in self.zupc_customer])
+            max_distance = min([v for v in [v[2] for v in self.zupc_customer] if v>0]
                            + [current_app.config['DEFAULT_MAX_RADIUS']])
         self.check_freshness()
         g.keys_to_delete = []
@@ -207,41 +207,40 @@ class Taxis(Resource):
         self.set_not_available(lon, lat, name_redis, max_distance)
         while len(taxis) < p['count']:
             page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
-                                    offset, count, True) if v[0] not in self.not_available]
+                                    offset, count, True) if v[0].decode() not in self.not_available]
             offset += count
             if len(page_ids_distances) == 0:
                 break
-            page_ids = [v[0] for v in page_ids_distances]
+            page_ids = [v[0].decode() for v in page_ids_distances]
             distances = [v[1] for v in page_ids_distances]
             positions = redis_store.geopos(current_app.config['REDIS_GEOINDEX_ID']
                                            ,*page_ids)
             taxis_db = models.RawTaxi.get(page_ids)
 #We get all timestamps
             pipe = redis_store.pipeline()
-            map(lambda l_taxis:map(
-                lambda t: pipe.zscore(current_app.config['REDIS_TIMESTAMPS'],
-                                      t['taxi_id']+':'+t['u_email']),l_taxis)
-                , taxis_db)
+            list(map(lambda l_taxis:[pipe.zscore(current_app.config['REDIS_TIMESTAMPS'],
+                                      t['taxi_id']+':'+t['u_email']) for t in l_taxis]
+                , taxis_db))
             timestamps = pipe.execute()
 #For each member of timestamp_slices we have the first index of the first element
 #in timestamp, and the index of the last element
 #If we have taxis_db = [{t_1,}, {,}, {t_21, t_22}, {t_3,}]
 #Then we want timestamps_slices = [(0, 1), (1, 1), (1, 3), (3, 4)]
             timestamps_slices = []
-            map(lambda i: timestamps_slices.append((0, len(i)))\
+            list(map(lambda i: timestamps_slices.append((0, len(i)))\
                 if not timestamps_slices\
                 else timestamps_slices.append((timestamps_slices[-1][1],
                                                timestamps_slices[-1][1]+len(i))),
-                taxis_db)
+                taxis_db))
 
             l = [models.RawTaxi.generate_dict(t[0],
                         None, None,
                         favorite_operator=p['favorite_operator'],
                         position={"lon": t[1][1], "lat": t[1][0]},
                         distance=t[2], timestamps=islice(timestamps, *t[3]))
-                for t in izip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
+                for t in zip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
                 if self.filter_zone(t[0], t[1])]
-            taxis.extend(filter(None, l))
+            taxis.extend([_f for _f in l if _f])
 
         influx_db.write_point(current_app.config['INFLUXDB_TAXIS_DB'],
                              "get_taxis_requests",
@@ -250,9 +249,11 @@ class Taxis(Resource):
                                  "position": "{:.3f}:{:.3f}".format(float(lon), float(lat)),
                                  "moteur": current_user.email,
                                  "customer": hashlib.sha224(
-                                    request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
-                                      if 'X-Forwarded-For' in request.headers
-                                      else request.remote_addr or 'untrackable'
+                                     str(
+                                        request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
+                                        if 'X-Forwarded-For' in request.headers
+                                        else request.remote_addr.encode('utf-8') or 'untrackable'
+                                        ).encode('utf-8')
                                  ).hexdigest()[:10]
                              },
                               value=len(taxis)

@@ -1,7 +1,7 @@
 #coding: utf-8
 from flask import current_app
 from flask_restplus import marshal
-from APITaxi_models.hail import Hail, HailLog
+from APITaxi_models.hail import Hail, HailLog, db
 from ..descriptors.hail import hail_model
 from ..extensions import celery, redis_store_saved
 import requests, json
@@ -45,7 +45,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
         hail_log.store(r, redis_store_saved)
     if not r or r.status_code < 200 or r.status_code >= 300:
         hail.status = 'failure'
-        current_app.extensions['sqlalchemy'].db.session.commit()
+        db.session.commit()
         current_app.logger.error("Unable to reach hail's endpoint {} of operator {}"\
             .format(endpoint, operator_email))
         return False
@@ -53,15 +53,19 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
     try:
         r_json = r.json()
     except ValueError:
+        current_app.logger.error("unable to get json")
         pass
 
     if r_json and 'data' in r_json and len(r_json['data']) == 1\
             and 'taxi_phone_number' in r_json['data'][0]:
-        hail.taxi_phone_number = unicode(r_json['data'][0]['taxi_phone_number'])
+        hail.taxi_phone_number = str(r_json['data'][0]['taxi_phone_number'])
     else:
         current_app.logger.error('No JSON in operator answer of {} : {}'.format(
             operator_email, r.text))
 
     hail.status = 'received_by_operator'
-    current_app.extensions['sqlalchemy'].db.session.commit()
+    db.session.add(hail)
+    db.session.commit()
+
+    h = Hail.query.get(hail.id)
     return True

@@ -4,7 +4,7 @@ from .fake_data import dict_driver, dict_vehicle, dict_ads, dict_taxi
 from APITaxi_models import Driver
 from json import dumps, loads
 from copy import deepcopy
-from cStringIO import StringIO
+from io import BytesIO
 
 class TestDriverPost(Skeleton):
     url = '/drivers/'
@@ -68,7 +68,7 @@ class TestDriverPost(Skeleton):
         self.assertEqual(len(Driver.query.all()), 2)
 
     def test_post_file(self):
-        r = self.post(dict(file=(StringIO('test file'), 'test.csv'),),
+        r = self.post(dict(file=(BytesIO(b'test file'), 'test.csv'),),
                 content_type=None, envelope_data=False, accept='text/html')
         self.assert200(r)
 

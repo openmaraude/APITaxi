@@ -53,7 +53,7 @@ class TestTaxisGet(TaxiGet):
         taxi = r.json['data'][0]
         for key in ['id', 'operator', 'position', 'vehicle', 'last_update',
                 'crowfly_distance', 'ads', 'driver', 'rating']:
-            assert key in taxi.keys()
+            assert key in list(taxi.keys())
             assert taxi[key] is not None
         for key in ['insee', 'numero']:
             assert key in taxi['ads']
@@ -73,7 +73,7 @@ class TestTaxisGet(TaxiGet):
         taxi = r.json['data'][0]
         for key in ['id', 'operator', 'position', 'vehicle', 'last_update',
                 'crowfly_distance', 'ads', 'driver', 'rating']:
-            assert key in taxi.keys()
+            assert key in list(taxi.keys())
             assert taxi[key] is not None
         for key in ['insee', 'numero']:
             assert key in taxi['ads']
@@ -111,7 +111,7 @@ class TestTaxisGet(TaxiGet):
         taxi = r.json['data'][0]
         for key in ['id', 'operator', 'position', 'vehicle', 'last_update',
                 'crowfly_distance', 'ads', 'driver', 'rating', 'status']:
-            assert key in taxi.keys()
+            assert key in list(taxi.keys())
             assert taxi[key] is not None
         for key in ['insee', 'numero']:
             assert key in taxi['ads']
@@ -255,7 +255,7 @@ class TestTaxiPut(Skeleton):
         assert taxi['id'] == id_
         assert taxi['status'] == status
         statuses = [desc.status for desc in models.Taxi.query.get(id_).vehicle.descriptions]
-        assert all(map(lambda st: st == status, statuses))
+        assert all([st == status for st in statuses])
         r = self.get(self.url)
         assert r.json['data'][0]['status'] == status
 
@@ -282,8 +282,8 @@ class TestTaxiPut(Skeleton):
         r = self.put([dict_], self.url, user='user_operateur_2')
         self.assert200(r)
         statuses = [desc.status for desc in models.Taxi.query.get(id_).vehicle.descriptions]
-        assert any(map(lambda st: st == 'free', statuses))
-        assert any(map(lambda st: st == 'off', statuses))
+        assert any([st == 'free' for st in statuses])
+        assert any([st == 'off' for st in statuses])
         r = self.get(self.url)
         self.assert200(r)
         assert r.json['data'][0]['status'] == 'free'

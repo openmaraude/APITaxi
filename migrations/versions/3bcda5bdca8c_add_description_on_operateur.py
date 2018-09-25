@@ -23,11 +23,11 @@ def upgrade():
         sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
         sa.PrimaryKeyConstraint('id')
     )
-    op.add_column(u'user', sa.Column('commercial_name', sa.String(), nullable=True))
-    op.add_column(u'user', sa.Column('phone_number', sa.String(), nullable=True))
+    op.add_column('user', sa.Column('commercial_name', sa.String(), nullable=True))
+    op.add_column('user', sa.Column('phone_number', sa.String(), nullable=True))
 
 
 def downgrade():
-    op.drop_column(u'user', 'phone_number')
-    op.drop_column(u'user', 'commercial_name')
+    op.drop_column('user', 'phone_number')
+    op.drop_column('user', 'commercial_name')
     op.drop_table('logo')

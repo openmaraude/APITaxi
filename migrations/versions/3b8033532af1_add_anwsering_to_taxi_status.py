@@ -33,7 +33,7 @@ def upgrade():
     tmp_enum.drop(op.get_bind(), checkfirst=False)
 
 def downgrade():
-    op.execute(taxi.update().where(taxi.c.status==u'answering')
+    op.execute(taxi.update().where(taxi.c.status=='answering')
                .values(status='free'))
     tmp_enum.create(op.get_bind(), checkfirst=False)
     op.execute('ALTER TABLE taxi ALTER COLUMN status TYPE _status_taxi_enum'

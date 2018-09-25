@@ -36,7 +36,7 @@ class ZUPC(ResourceMetadata):
         to_return = []
         client = influx_db.get_client(current_app.config['INFLUXDB_TAXIS_DB'])
         for zupc in zupc_list:
-            if any(map(lambda z: zupc[0] == z['insee'], to_return)):
+            if any([zupc[0] == z['insee'] for z in to_return]):
                 current_app.logger.debug("ZUPC {} already added, skipping it".format(zupc[0]))
                 continue
             to_return.append({"insee": zupc[0], "active": zupc[1], "nom": zupc[2]})
@@ -46,7 +46,7 @@ class ZUPC(ResourceMetadata):
             request = """SELECT "value" FROM "nb_taxis_every_1" WHERE "zupc" = '{}' AND "operator" = ''  AND time > now() - 1m  fill(null) LIMIT 1;""".format(zupc['insee'])
             try:
                 r = client.query(request)
-            except InfluxDBClientError, e:
+            except InfluxDBClientError as e:
                 current_app.logger.error(e)
                 continue
             points = list(r.get_points())
@@ -67,8 +67,7 @@ class ZUPCAutocomplete(ResourceMetadata):
 
         response = models.ZUPC.query.filter(
                 models.ZUPC.nom.ilike(like)).all()
-        return jsonify(suggestions=map(lambda zupc:{'name': zupc.nom, 'id': int(zupc.id)},
-                                            response))
+        return jsonify(suggestions=[{'name': zupc.nom, 'id': int(zupc.id)} for zupc in response])
 
 @ns_administrative.route('/zupc/<int:zupc_id>/_show_temp_geojson')
 @api.hide

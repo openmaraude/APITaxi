@@ -3,11 +3,10 @@ from ..extensions import redis_store, user_datastore
 import APITaxi_models as models
 from APITaxi_utils import influx_db
 from APITaxi_utils.pager import pager
-from itertools import izip, ifilter, imap
 from datetime import datetime, timedelta
 from time import mktime, time
 from flask import current_app
-from itertools import izip_longest, compress
+from itertools import compress
 from ..extensions import celery
 from celery import Task
 from influxdb.exceptions import InfluxDBClientError
@@ -32,11 +31,10 @@ def get_taxis_ids_operators(frequency):
             pipe = redis_store.pipeline()
             for k in keys:
                 pipe.hgetall(k)
-            for k, v in filter(lambda v: v[1] is not None,
-                            zip(keys, pipe.execute())):
-                for operator, taxi in v.iteritems():
+            for k, v in [v for v in zip(keys, pipe.execute()) if v[1] is not None]:
+                for operator, taxi in v.items():
                     if float(taxi.split(" ")[0]) >= bound:
-                        taxis.append(u"{}:{}".format(k[5:], operator))
+                        taxis.append("{}:{}".format(k[5:], operator))
                 if len(taxis) >= 100:
                     yield taxis
                     taxis = []
@@ -68,7 +66,7 @@ def store_active_taxis(frequency):
             active_taxis.add(taxi_id)
             taxi_db = taxis.get(taxi_id_operator, None)
             if taxi_db is None:
-                current_app.logger.debug(u'Taxi: {}:{}, not found in database'.format(
+                current_app.logger.debug('Taxi: {}:{}, not found in database'.format(
                     taxi_id, operator))
                 continue
             if 'ads_insee' not in taxi_db:
@@ -100,8 +98,8 @@ def store_active_taxis(frequency):
     map_operateur_nb_available = dict()
 
     available_ids = set()
-    for operator, insee_taxi_ids in map_operateur_insee_nb_active.iteritems():
-        for insee, taxis_ids in insee_taxi_ids.iteritems():
+    for operator, insee_taxi_ids in map_operateur_insee_nb_active.items():
+        for insee, taxis_ids in insee_taxi_ids.items():
             for ids in pager(taxis_ids, page_size=100):
                 pipe = redis_store.pipeline()
                 for id_ in ids:
@@ -112,7 +110,7 @@ def store_active_taxis(frequency):
                     insee, set()).union(set(res))
                 available_ids.union(set(res))
 
-    for operateur, taxis_ids in map_operateur_nb_active.iteritems():
+    for operateur, taxis_ids in map_operateur_nb_active.items():
         map_operateur_nb_active.setdefault(operateur, set()).union(
             set([t+':'+operateur for t in taxis_ids]).intersection(available_ids
                 )
@@ -141,29 +139,29 @@ def store_active_taxis(frequency):
         if len(to_insert) == 100:
             if client:
                 try:
-		    client.write_points(to_insert)
-                except InfluxDBClientError, e:
+                    client.write_points(to_insert)
+                except InfluxDBClientError as e:
                     current_app.logger.debug(e)
 
             to_insert[:] = []
 
-    for operator, zupc_active in map_operateur_insee_nb_active.iteritems():
-        for zupc, active in zupc_active.iteritems():
+    for operator, zupc_active in map_operateur_insee_nb_active.items():
+        for zupc, active in zupc_active.items():
             insert(operator, zupc, active)
 
-    for zupc, active in map_insee_nb_active.iteritems():
+    for zupc, active in map_insee_nb_active.items():
         insert("", zupc, active)
 
-    for operateur, active in map_operateur_nb_active.iteritems():
+    for operateur, active in map_operateur_nb_active.items():
         insert(operateur, "", active)
 
     insert("", "", active_taxis)
 
-    for operator, zupc_available in map_operateur_insee_nb_active.iteritems():
-        for zupc, available in zupc_active.iteritems():
+    for operator, zupc_available in map_operateur_insee_nb_active.items():
+        for zupc, available in zupc_active.items():
             insert(operator, zupc, available, True)
 
-    for zupc, available in map_insee_nb_active.iteritems():
+    for zupc, available in map_insee_nb_active.items():
         insert("", zupc, available, True)
 
     if len(to_insert) > 0:

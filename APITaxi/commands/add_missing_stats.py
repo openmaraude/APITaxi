@@ -32,7 +32,7 @@ def add_missing_stats():
     for h in q.all():
         previous_status = None
         statuses = [(f[len("change_to_"):], getattr(h, f)) for f in fields]
-        statuses = filter(lambda v: v[1], statuses)
+        statuses = [v for v in statuses if v[1]]
         statuses = sorted(statuses, key=lambda v: v[1])
         for status in statuses:
             c.write_points([{"measurement" : "hails_status_changed_with_id",

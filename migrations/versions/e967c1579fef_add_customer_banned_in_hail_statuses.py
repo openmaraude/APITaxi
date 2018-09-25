@@ -44,7 +44,7 @@ def upgrade():
     tmp_type.drop(op.get_bind(), checkfirst=False)
 
 def downgrade():
-    op.execute(tcr.update().where(tcr.c.status==u'customer_banned')
+    op.execute(tcr.update().where(tcr.c.status=='customer_banned')
                .values(status='failure'))
     # Create a tempoary "_status" type, convert and drop the "new" type
     tmp_type.create(op.get_bind(), checkfirst=False)
