@@ -250,7 +250,7 @@ class Taxis(Resource):
                                  "moteur": current_user.email,
                                  "customer": hashlib.sha224(
                                      str(
-                                        request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
+                                        request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1] or 'untrackable'
                                         if 'X-Forwarded-For' in request.headers
                                         else request.remote_addr.encode('utf-8') or 'untrackable'
                                         ).encode('utf-8')
