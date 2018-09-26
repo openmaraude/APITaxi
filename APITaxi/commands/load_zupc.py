@@ -10,8 +10,8 @@ from flask import current_app
 
 @manager.command
 def update_zupc():
-    insee_list = map(itemgetter(0), current_app.extensions['sqlalchemy'].db\
-            .session.query(distinct(models.ADS.insee)).all())
+    insee_list = list(map(itemgetter(0), current_app.extensions['sqlalchemy'].db\
+            .session.query(distinct(models.ADS.insee)).all()))
     for insee in insee_list:
         zupc = models.ZUPC.query.filter_by(insee=insee).order_by(
             models.ZUPC.id.desc()).first()
@@ -58,7 +58,7 @@ def load_zupc(zupc_path):
 
 @manager.command
 def add_airport_zupc(zupc_file_path, insee):
-    if isinstance(insee, str) or isinstance(insee, unicode):
+    if isinstance(insee, str) or isinstance(insee, str):
         insee = [insee]
     with open(zupc_file_path) as f_zupc:
         geojson = json.load(f_zupc)

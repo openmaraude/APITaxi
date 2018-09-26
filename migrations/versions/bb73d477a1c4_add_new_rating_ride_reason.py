@@ -42,7 +42,7 @@ def upgrade():
 
 
 def downgrade():
-    op.execute(hail.update().where(hail.c.rating_ride_reason==u'automatic_rating')
+    op.execute(hail.update().where(hail.c.rating_ride_reason=='automatic_rating')
                .values(rating_ride_reason='ko'))
     tmp_type.create(op.get_bind(), checkfirst=False)
     op.execute('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {tmp_name}'

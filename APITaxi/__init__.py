@@ -22,7 +22,7 @@ def create_app(sqlalchemy_uri=None):
         ('PROD', 'STAGING', 'DEV') your's is: {}""".format(app.config['env']))
         return None
     #Load configuration from environment variables
-    for k in app.config.keys():
+    for k in list(app.config.keys()):
         if not k in os.environ:
             continue
         app.config[k] = os.environ[k]

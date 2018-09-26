@@ -47,7 +47,7 @@ class Skeleton(TestCase):
         ids = []
         for taxi in models.Taxi.query.all():
             redis_store.delete('taxi:{}'.format(taxi.id))
-        for k, v in current_app.config.iteritems():
+        for k, v in list(current_app.config.items()):
             if not k.startswith('REDIS'):
                 continue
             redis_store.delete(v)
@@ -98,7 +98,7 @@ class Skeleton(TestCase):
         timestamp_type = float if float_ else int
         values = [timestamp_type(time.time()), lat, lon, 'free', 'd1', 1]
         redis_store.hset('taxi:{}'.format(taxi['id']), user,
-                ' '.join(map(lambda v: str(v), values)))
+                ' '.join([str(v) for v in values]))
         n = '{}:{}'.format(taxi['id'], user)
         redis_store.geoadd(current_app.config['REDIS_GEOINDEX'], lat, lon, n)
         redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'], **{n:time.time()})
@@ -127,7 +127,7 @@ class Skeleton(TestCase):
         db.session.commit()
 
     def check_req_vs_dict(self, req, dict_):
-        for k, v in dict_.items():
+        for k, v in list(dict_.items()):
             self.assertIn(k, req)
             if type(req[k]) is dict:
                 self.check_req_vs_dict(req[k], dict_[k])
@@ -186,7 +186,7 @@ class Skeleton(TestCase):
         try:
             self.assertEqual(request.status_code, 201)
         except AssertionError as e:
-            print request.json
+            print(request.json)
             raise e
 
     def assert503(self, request):

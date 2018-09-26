@@ -56,10 +56,11 @@ class HailMixin(Skeleton):
                 if not val:
                     continue
                 setattr(hail, change_to,  val - last_status_change)
+        current_app.extensions['sqlalchemy'].db.session.add(hail)
         current_app.extensions['sqlalchemy'].db.session.commit()
 
     def wait_for_status(self, status, hail_id):
-        for i in range(1, 40):
+        for i in range(1, 10):
             r = self.get('hails/{}/'.format(hail_id))
             if r.status_code == 200 and r.json['data'][0]['status'] == status:
                 break
@@ -102,7 +103,7 @@ class TestHailPost(HailMixin):
         assert len(keys) == 1
         key = keys.pop()
         scan = redis_store_saved.zscan_iter(key)
-        val, score = scan.next()
+        val, score = next(scan)
         j = json.loads(val)
         assert j['code'] == 404
 
@@ -226,7 +227,7 @@ class TestHailPost(HailMixin):
         u = User.query.filter_by(email='user_operateur').first()
         u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
         old_value = u.operator_header_name
-        u.operator_header_name = u'X-API-KEY'
+        u.operator_header_name = 'X-API-KEY'
 
         self.test_received_by_operator_apikey()
 
@@ -237,7 +238,7 @@ class TestHailPost(HailMixin):
         u = User.query.filter_by(email='user_operateur').first()
         u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
         old_value = u.operator_header_name
-        u.operator_header_name = u'&é"\'(-è_çà)'
+        u.operator_header_name = '&é"\'(-è_çà)'
         r = self.send_hail(dict_)
         self.assert201(r)
         u.operator_header_name = old_value
@@ -247,7 +248,7 @@ class TestHailPost(HailMixin):
         u = User.query.filter_by(email='user_operateur').first()
         u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
         old_value = u.operator_api_key
-        u.operator_api_key = u'-'
+        u.operator_api_key = '-'
         self.test_received_by_operator_apikey()
         u.operator_api_key = old_value
         u.hail_endpoint_testing = ''
@@ -256,7 +257,7 @@ class TestHailPost(HailMixin):
         u = User.query.filter_by(email='user_operateur').first()
         old_value = u.operator_api_key
         u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
-        u.operator_api_key = u'&é"\'(-è_çà)'
+        u.operator_api_key = '&é"\'(-è_çà)'
         self.test_received_by_operator_apikey()
         u.operator_api_key = old_value
         u.hail_endpoint_testing = ''
@@ -828,7 +829,7 @@ class TestHailPut(HailMixin):
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='moteur')
             self.assert200(r)
-            assert u'rating_ride_reason' in r.json['data'][0]
+            assert 'rating_ride_reason' in r.json['data'][0]
             assert r.json['data'][0]['rating_ride_reason'] == v
             self.app.config['ENV'] = prev_env
 
@@ -1042,7 +1043,7 @@ class TestHailPut(HailMixin):
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='moteur')
             self.assert200(r)
-            assert u'incident_customer_reason' in r.json['data'][0]
+            assert 'incident_customer_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_customer_reason'] == v
             self.app.config['ENV'] = prev_env
 
@@ -1059,7 +1060,7 @@ class TestHailPut(HailMixin):
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
         self.assert200(r)
-        assert u'incident_customer_reason' in r.json['data'][0]
+        assert 'incident_customer_reason' in r.json['data'][0]
         assert r.json['data'][0]['incident_customer_reason'] == 'mud_river'
         customer = Customer.query.filter_by(id=hail.customer_id,
                                             moteur_id=hail.added_by).first()
@@ -1078,7 +1079,7 @@ class TestHailPut(HailMixin):
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2, role='moteur')
         self.assert200(r)
-        assert u'incident_customer_reason' in r.json['data'][0]
+        assert 'incident_customer_reason' in r.json['data'][0]
         assert r.json['data'][0]['incident_customer_reason'] == 'mud_river'
 
         customer = Customer.query.filter_by(id=hail.customer_id,
@@ -1103,7 +1104,7 @@ class TestHailPut(HailMixin):
                     version=2, role='moteur')
             self.assert200(r)
             self.reset_customers()
-            assert u'incident_customer_reason' in r.json['data'][0]
+            assert 'incident_customer_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_customer_reason'] == v
             assert r.json['data'][0]['status'] == 'incident_customer'
             self.app.config['ENV'] = prev_env
@@ -1166,7 +1167,7 @@ class TestHailPut(HailMixin):
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='operateur')
             self.assert200(r)
-            assert u'incident_taxi_reason' in r.json['data'][0]
+            assert 'incident_taxi_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_taxi_reason'] == v
             r = self.get('/taxis/{}/'.format(hail.taxi_id))
             self.assert200(r)
@@ -1185,7 +1186,7 @@ class TestHailPut(HailMixin):
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='operateur')
             self.assert200(r)
-            assert u'incident_taxi_reason' in r.json['data'][0]
+            assert 'incident_taxi_reason' in r.json['data'][0]
             assert r.json['data'][0]['incident_taxi_reason'] == v
             assert r.json['data'][0]['status'] == 'incident_taxi'
             self.app.config['ENV'] = prev_env
@@ -1248,7 +1249,7 @@ class TestHailPut(HailMixin):
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='operateur')
             self.assert200(r)
-            assert u'reporting_customer' in r.json['data'][0]
+            assert 'reporting_customer' in r.json['data'][0]
             assert r.json['data'][0]['reporting_customer'] == v
             self.reset_customers()
             self.app.config['ENV'] = prev_env
@@ -1282,7 +1283,7 @@ class TestHailPut(HailMixin):
             r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                     version=2, role='operateur')
             self.assert200(r)
-            assert u'reporting_customer_reason' in r.json['data'][0]
+            assert 'reporting_customer_reason' in r.json['data'][0]
             assert r.json['data'][0]['reporting_customer_reason'] == v
             self.app.config['ENV'] = prev_env
 

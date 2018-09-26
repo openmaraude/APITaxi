@@ -14,7 +14,8 @@ from ..tasks import send_request_operator
 from APITaxi_utils import influx_db, reqparse
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-import json, Geohash
+import json
+import geohash2 as Geohash
 from sqlalchemy import or_
 from itertools import chain
 from sqlalchemy.sql.expression import text
@@ -41,7 +42,7 @@ class HailId(Resource):
         hail.taxi_relation = models.Taxi.query.from_statement(
             text("SELECT * FROM taxi where id=:taxi_id")
         ).params(taxi_id=hail.taxi_id).one()
-        return_ = marshal({"data": [hail]},hail_model)
+        return_ = marshal({"data": [hail]}, hail_model)
         if hail._status in ('finished', 'customer_on_board',
             'timeout_accepted_by_customer'):
             return_['data'][0]['taxi']['position']['lon'] = 0.0
@@ -86,9 +87,9 @@ class HailId(Resource):
                 continue
             try:
                 setattr(hail, ev, value)
-            except RuntimeError, e:
+            except RuntimeError as e:
                 abort(403)
-            except ValueError, e:
+            except ValueError as e:
                 abort(400, message=e.args[0])
         models.db.session.add(hail)
         models.db.session.commit()
@@ -114,8 +115,8 @@ class Hail(Resource):
         g.hail_log = models.HailLog('POST', hail, request.data)
         send_request_operator.apply_async(args=[hail.id,
             hail.operateur.hail_endpoint(current_app.config['ENV']),
-            unicode(hail.operateur.operator_header_name),
-            unicode(hail.operateur.operator_api_key), hail.operateur.email],
+            str(hail.operateur.operator_header_name),
+            str(hail.operateur.operator_api_key), hail.operateur.email],
             queue='send_hail_'+current_app.config['NOW'])
 
         influx_db.write_point(current_app.config['INFLUXDB_TAXIS_DB'],
@@ -217,7 +218,7 @@ class Hail(Resource):
         if not hlog:
             return {"data": []}
         return {"data":[
-            {k: v for k,v in chain(json.loads(value).iteritems(), [('datetime', score)])}
+            {k: v for k,v in chain(iter(json.loads(value).items()), [('datetime', score)])}
             for value, score in hlog
             ]
         }

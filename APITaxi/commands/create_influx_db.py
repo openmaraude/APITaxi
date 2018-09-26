@@ -8,4 +8,4 @@ def create_influx_db(dbname):
     if c:
         c.create_database(dbname)
     else:
-        print "There is no client"
+        print("There is no client")

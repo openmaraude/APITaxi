@@ -8,7 +8,8 @@ from flask_login import login_user
 from flask_restplus import marshal
 from flask import url_for, current_app
 from tempfile import mkdtemp
-import json, tarfile, StringIO, os, requests
+import json, tarfile, os, requests
+from io import StringIO
 
 
 @manager.command
@@ -73,7 +74,7 @@ def import_taxis(filename='/tmp/taxis.tar.gz'):
         users_dict = json.loads(f.read())
 
     users_apikey = dict([(id_, user_datastore.find_user(email=email).apikey)
-        for (id_, email) in users_dict.items()])
+        for (id_, email) in list(users_dict.items())])
     admin_apikey = None
     for user in user_datastore.user_model.query.all():
         if user.has_role('admin'):

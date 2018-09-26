@@ -14,8 +14,8 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-status_enum = postgresql.ENUM(u'free', u'answering', u'occupied', u'oncoming', u'off', name='status_vehicle_enum')
-status_enum_taxi = postgresql.ENUM(u'free', u'answering', u'occupied', u'oncoming', u'off', name='status_taxi_enum')
+status_enum = postgresql.ENUM('free', 'answering', 'occupied', 'oncoming', 'off', name='status_vehicle_enum')
+status_enum_taxi = postgresql.ENUM('free', 'answering', 'occupied', 'oncoming', 'off', name='status_taxi_enum')
 def upgrade():
     op.drop_column('taxi', 'status')
     status_enum_taxi.drop(op.get_bind())

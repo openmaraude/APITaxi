@@ -8,7 +8,7 @@ class TestUsersGet(Skeleton):
         self.assert200(r)
         data = r.json['data']
         assert len(data) == 7
-        assert all(map(lambda d: 'apikey' in d and 'name' in d, data))
+        assert all(['apikey' in d and 'name' in d for d in data])
 
     def test_get_operateur_user(self):
         r = self.get(role='operateur')

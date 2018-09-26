@@ -4,7 +4,7 @@ import APITaxi_models as models
 from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_ads, dict_vehicle
-from cStringIO import StringIO
+from io import BytesIO
 
 
 class TestADSPost(Skeleton):
@@ -34,7 +34,7 @@ class TestADSPost(Skeleton):
         self.check_req_vs_dict(ads, dict_)
         list_ads = models.ADS.query.all()
         self.assertEqual(len(list_ads), 1)
-        assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
+        assert all([ads.zupc_id is not None for ads in list_ads])
 
     def test_vehicle(self):
         self.init_zupc()
@@ -54,8 +54,8 @@ class TestADSPost(Skeleton):
 
         list_ads = models.ADS.query.all()
         self.assertEqual(len(list_ads), 1)
-        assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
-        self.assertEquals(len(models.Vehicle.query.all()), 1)
+        assert all([ads.zupc_id is not None for ads in list_ads])
+        self.assertEqual(len(models.Vehicle.query.all()), 1)
 
     def test_two_ads(self):
         self.init_zupc()
@@ -66,7 +66,7 @@ class TestADSPost(Skeleton):
         self.assertEqual(len(r.json['data']), 2)
         list_ads = models.ADS.query.all()
         self.assertEqual(len(list_ads), 2)
-        assert all(map(lambda ads: ads.zupc_id is not None, list_ads))
+        assert all([ads.zupc_id is not None for ads in list_ads])
 
     def test_too_many_ads(self):
         dict_ = deepcopy(dict_ads)
@@ -116,6 +116,6 @@ class TestADSPost(Skeleton):
         assert "data.0.owner_type" in r.json['errors']
 
     def test_post_file(self):
-        r = self.post(dict(file=(StringIO('test file'), 'test.csv'),),
+        r = self.post(dict(file=(BytesIO(b'test file'), 'test.csv'),),
                 content_type=None, envelope_data=False, accept='text/html')
         self.assert200(r)

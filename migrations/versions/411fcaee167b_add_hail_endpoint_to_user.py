@@ -41,7 +41,7 @@ def upgrade():
 
 
 def downgrade():
-    op.execute(hail.update().where(hail.c.status==u'failure')
+    op.execute(hail.update().where(hail.c.status=='failure')
                .values(status='outdated_taxi'))
     tmp_type.create(op.get_bind(), checkfirst=False)
     op.execute('ALTER TABLE hail ALTER COLUMN status TYPE hail__status'

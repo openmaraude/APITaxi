@@ -100,7 +100,7 @@ def downgrade():
                existing_type=sa.INTEGER(),
                nullable=True)
     op.alter_column('ADS', 'added_via',
-               existing_type=postgresql.ENUM(u'form', u'api', name='via'),
+               existing_type=postgresql.ENUM('form', 'api', name='via'),
                nullable=True)
     op.drop_column('ADS', 'owner_type')
     op.drop_column('ADS', 'owner_name')
