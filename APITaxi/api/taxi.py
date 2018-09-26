@@ -183,7 +183,7 @@ class Taxis(Resource):
         if is_inactive:
             max_distance = current_app.config['DEFAULT_MAX_RADIUS']
         else:
-            max_distance = min([v for v in [v[2] for v in self.zupc_customer] if v>0]
+            max_distance = min([v for v in [v[2] for v in self.zupc_customer] if v and v>0]
                            + [current_app.config['DEFAULT_MAX_RADIUS']])
         self.check_freshness()
         g.keys_to_delete = []
