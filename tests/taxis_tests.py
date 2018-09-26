@@ -65,6 +65,16 @@ class TestTaxisGet(TaxiGet):
                     'nb_seats', 'type', 'cpam_conventionne']:
             assert taxi['vehicle'][key] is not None
 
+    def test_get_taxis_lonlat_two_zupc(self):
+        self.add()
+        models.db.session.execute("""
+         UPDATE "ZUPC" SET max_distance=NULL where id=parent_id AND insee='75056'
+         """)
+        models.db.session.commit()
+        r = self.get('/taxis/?lat=2.3&lon=48.7')
+        self.assert200(r)
+        assert len(r.json['data']) == 1
+
     def test_get_taxis_lonlat_favorite_operator(self):
         self.add()
         r = self.get('/taxis/?lat=2.3&lon=48.7&favorite_operator=user_operateur')
