@@ -17,3 +17,4 @@ def register_commands(manager):
     from .export_taxis import export_taxis
     from .import_zupc import import_zupc
     from .warm_up_redis import warm_up_redis
+    from .remove_old_ads import remove_old_ads, restore_old_ads
