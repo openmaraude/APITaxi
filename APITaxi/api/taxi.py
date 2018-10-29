@@ -126,7 +126,7 @@ class Taxis(Resource):
                 taxi.get('taxi_id', 'no id')))
             return False
         if not self.zupc_customer[self.parent_zupc[zupc_id]].contains(
-                        Point(float(p[1]), float(p[0]))):
+                        Point(float(p[0]), float(p[1]))):
             current_app.logger.debug('Taxi {} is not in its zone'.format(
                 taxi.get('taxi_id', 'no id')))
             return False
@@ -192,7 +192,7 @@ class Taxis(Resource):
         #It returns a list of all taxis near the given point
         #For each taxi you have a tuple with: (id, distance, [lat, lon])
         nb_positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX_ID'],
-                lat, lon, radius=max_distance/1000.0, unit='km', store_dist=name_redis)
+                lon, lat, radius=max_distance, unit='m', store_dist=name_redis)
         if nb_positions == 0:
             current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
@@ -232,11 +232,10 @@ class Taxis(Resource):
                 else timestamps_slices.append((timestamps_slices[-1][1],
                                                timestamps_slices[-1][1]+len(i))),
                 taxis_db))
-
             l = [models.RawTaxi.generate_dict(t[0],
                         None, None,
                         favorite_operator=p['favorite_operator'],
-                        position={"lon": t[1][1], "lat": t[1][0]},
+                        position={"lon": t[1][0], "lat": t[1][1]},
                         distance=t[2], timestamps=islice(timestamps, *t[3]))
                 for t in zip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
                 if self.filter_zone(t[0], t[1])]

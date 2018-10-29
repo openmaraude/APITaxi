@@ -11,7 +11,7 @@ from flask import current_app
 class TaxiGet(Skeleton):
     url = '/taxis/'
 
-    def add(self, lat=2.3, lon=48.7, float_=False, post_second=False, custom_ads=None):
+    def add(self, lon=2.3, lat=48.7, float_=False, post_second=False, custom_ads=None):
         self.init_zupc()
         self.init_dep()
         taxi = self.post_taxi_and_locate(lat=lat, lon=lon, float_=float_,
@@ -181,7 +181,7 @@ class TestTaxisGet(TaxiGet):
 
     def test_one_taxi_two_desc_one_non_free_but_timeout(self):
         self.add()
-        id_taxi = self.post_taxi_and_locate(user='user_operateur_2', lat=2.3, lon=48.7)['id']
+        id_taxi = self.post_taxi_and_locate(user='user_operateur_2', lon=2.3, lat=48.7)['id']
 #This taxi is now not fresh for operateur_2
         redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'],
                 **{'{}:user_operateur_2'.format(id_taxi):0.0})
