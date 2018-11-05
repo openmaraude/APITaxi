@@ -10,8 +10,6 @@ import requests, json
 @celery.task()
 def send_request_operator(hail_id, endpoint, operator_header_name,
         operator_api_key, operator_email):
-    operator_api_key = operator_api_key.encode('utf-8')
-    operator_header_name = operator_header_name.encode('utf-8')
     hail = Hail.query.get(hail_id)
     if not hail:
         current_app.logger.error('Unable to find hail: {}'.format(hail_id))
