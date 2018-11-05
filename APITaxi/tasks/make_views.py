@@ -24,6 +24,7 @@ def get_taxis_ids_operators(frequency):
         for gen_taxi_ids_operator in pager(redis_store.zrangebyscore(
             current_app.config['REDIS_TIMESTAMPS'], bound, time()), page_size=100):
             yield list(gen_taxi_ids_operator)
+            yield list([t.decode('utf-8') for t in gen_taxi_ids_operator])
     else:
         taxis = []
         for g_keys in pager(redis_store.keys("taxi:*"), page_size=100):
@@ -35,6 +36,8 @@ def get_taxis_ids_operators(frequency):
                 for operator, taxi in v.items():
                     if float(taxi.split(" ")[0]) >= bound:
                         taxis.append("{}:{}".format(k[5:], operator))
+                        taxi_id_operator = "{}:{}".format(k[5:].decode('utf-8'), operator)
+                        taxis.append(taxi_id_operator.decode('utf-8'))
                 if len(taxis) >= 100:
                     yield taxis
                     taxis = []

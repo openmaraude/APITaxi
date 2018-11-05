@@ -218,7 +218,7 @@ class Hail(Resource):
         if not hlog:
             return {"data": []}
         return {"data":[
-            {k: v for k,v in chain(iter(json.loads(value).items()), [('datetime', score)])}
+            {k: v for k,v in chain(iter(json.loads(value.decode('utf-8')).items()), [('datetime', score)])}
             for value, score in hlog
             ]
         }
