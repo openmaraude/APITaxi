@@ -54,3 +54,7 @@ def create_prefecture(email):
 @manager.command
 def create_stats(email):
     create_user_role(email, 'stats')
+
+@manager.command
+def create_aeroport(email):
+    create_user_role(email, 'aeroport')
