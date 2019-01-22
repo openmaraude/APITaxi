@@ -23,7 +23,6 @@ def get_taxis_ids_operators(frequency):
     if frequency <= models.taxis.TaxiRedis._DISPONIBILITY_DURATION:
         for gen_taxi_ids_operator in pager(redis_store.zrangebyscore(
             current_app.config['REDIS_TIMESTAMPS'], bound, time()), page_size=100):
-            yield list(gen_taxi_ids_operator)
             yield list([t.decode('utf-8') for t in gen_taxi_ids_operator])
     else:
         taxis = []
@@ -34,8 +33,7 @@ def get_taxis_ids_operators(frequency):
                 pipe.hgetall(k)
             for k, v in [v for v in zip(keys, pipe.execute()) if v[1] is not None]:
                 for operator, taxi in v.items():
-                    if float(taxi.split(" ")[0]) >= bound:
-                        taxis.append("{}:{}".format(k[5:], operator))
+                    if float(taxi.decode('utf-8').split(" ")[0]) >= bound:
                         taxi_id_operator = "{}:{}".format(k[5:].decode('utf-8'), operator)
                         taxis.append(taxi_id_operator.decode('utf-8'))
                 if len(taxis) >= 100:
@@ -43,9 +41,6 @@ def get_taxis_ids_operators(frequency):
                     taxis = []
         if taxis:
             yield taxis
-
-
-
 
 @celery.task(name='store_active_taxis', base=cache)
 def store_active_taxis(frequency):
@@ -69,8 +64,8 @@ def store_active_taxis(frequency):
             active_taxis.add(taxi_id)
             taxi_db = taxis.get(taxi_id_operator, None)
             if taxi_db is None:
-                current_app.logger.debug('Taxi: {}:{}, not found in database'.format(
-                    taxi_id, operator))
+                current_app.logger.debug('Taxi: {}, not found in database'.format(
+                    taxi_id_operator))
                 continue
             if 'ads_insee' not in taxi_db:
                 current_app.logger.debug('Taxi: {} is invalid'.format(taxi_id))
@@ -144,7 +139,9 @@ def store_active_taxis(frequency):
                 try:
                     client.write_points(to_insert)
                 except InfluxDBClientError as e:
-                    current_app.logger.debug(e)
+                    current_app.logger.error(e)
+            else:
+                current_app.logger.error("No influx db client")
 
             to_insert[:] = []
 
