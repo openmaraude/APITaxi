@@ -34,8 +34,8 @@ def get_taxis_ids_operators(frequency):
             for k, v in [v for v in zip(keys, pipe.execute()) if v[1] is not None]:
                 for operator, taxi in v.items():
                     if float(taxi.decode('utf-8').split(" ")[0]) >= bound:
-                        taxi_id_operator = "{}:{}".format(k[5:].decode('utf-8'), operator)
-                        taxis.append(taxi_id_operator.decode('utf-8'))
+                        taxi_id_operator = "{}:{}".format(k[5:].decode('utf-8'), operator.decode('utf-8'))
+                        taxis.append(taxi_id_operator)
                 if len(taxis) >= 100:
                     yield taxis
                     taxis = []
