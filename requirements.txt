@@ -1,4 +1,4 @@
-Cython==0.23.4
+Cython==0.28.5
 enum34
 -e git://github.com/openmaraude/APITaxi_utils.git@ec259241034a653712d31491bd708603204e92b1#egg=APITaxi_utils
 -e git://github.com/openmaraude/APITaxi_models.git@7706bd2cb1b67f36eaa5643e29a5863e1cba7643#egg=APITaxi_models
