@@ -184,7 +184,7 @@ class TestTaxisGet(TaxiGet):
         id_taxi = self.post_taxi_and_locate(user='user_operateur_2', lon=2.3, lat=48.7)['id']
 #This taxi is now not fresh for operateur_2
         redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'],
-                **{'{}:user_operateur_2'.format(id_taxi):0.0})
+                {'{}:user_operateur_2'.format(id_taxi):0.0})
         from APITaxi.tasks import clean_geoindex_timestamps
         clean_geoindex_timestamps()
         r = self.put([{"status": "off"}], '/taxis/{}/'.format(id_taxi),

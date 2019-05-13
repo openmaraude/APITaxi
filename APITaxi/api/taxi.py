@@ -90,11 +90,10 @@ class TaxiId(Resource):
                     taxi_id_operator)
             else:
                 redis_store.zadd(current_app.config['REDIS_NOT_AVAILABLE'],
-                    0., taxi_id_operator)
+                                 {taxi_id_operator: 0.})
             current_app.extensions['redis_saved'].zadd(
                 'taxi_status:{}'.format(taxi_id),
-                float(time()),
-                '{}_{}'.format(new_status, time()),
+                {'{}_{}'.format(new_status, time()): float(time())}
             )
 
         taxi_m = marshal({'data':[
