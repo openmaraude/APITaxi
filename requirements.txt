@@ -7,7 +7,7 @@ Flask-Testing==0.7.1
 Flask-Redis==0.3.0
 Flask-Celery-Helper==1.1.0
 Flask-Cors==3.0.6
-psycopg2-binary==2.7.5
+psycopg2==2.8.2
 geopy==1.16.0
 Flask-Uploads==0.2.1
 Flask-Script==2.0.6
