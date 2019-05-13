@@ -46,6 +46,8 @@ def send_request_operator(hail_id, endpoint, operator_header_name,
         db.session.commit()
         current_app.logger.error("Unable to reach hail's endpoint {} of operator {}"\
             .format(endpoint, operator_email))
+        current_app.logger.info("Status code: {}".format(r.status_code))
+        current_app.logger.info(r.text)
         return False
     r_json = None
     try:
