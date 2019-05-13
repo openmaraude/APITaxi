@@ -31,7 +31,7 @@ def warm_up_redis_func(app=None, db=None, user_model=None, redis_store=None):
     if len(to_remove) > 0:
         redis_store.zrem(app.config['REDIS_NOT_AVAILABLE'], to_remove)
     if len(not_available) > 0:
-        redis_store.zadd(app.config['REDIS_NOT_AVAILABLE'], **{k:0 for k in not_available})
+        redis_store.zadd(app.config['REDIS_NOT_AVAILABLE'], {k:0 for k in not_available})
 
 @manager.command
 def warm_up_redis():

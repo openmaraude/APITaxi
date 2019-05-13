@@ -101,9 +101,9 @@ class Skeleton(TestCase):
                 ' '.join([str(v) for v in values]))
         n = '{}:{}'.format(taxi['id'], user)
         redis_store.geoadd(current_app.config['REDIS_GEOINDEX'], lat, lon, n)
-        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'], **{n:time.time()})
+        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'], {n:time.time()})
         redis_store.geoadd(current_app.config['REDIS_GEOINDEX_ID'], lat, lon, taxi['id'])
-        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS_ID'], **{taxi['id']:time.time()})
+        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS_ID'], {taxi['id']:time.time()})
         return taxi
 
     def init_zupc(self, post_second=False):
