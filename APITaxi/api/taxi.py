@@ -114,17 +114,6 @@ get_parser.add_argument('count', type=int, required=False,
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
-    def set_not_available(self, lon, lat, name_redis, radius):
-        store_key = name_redis+'_operateur'
-        g.keys_to_delete.append(store_key)
-        redis_store.georadius(current_app.config['REDIS_GEOINDEX'], lon, lat, radius, 'm',
-                              store_dist=store_key)
-        redis_store.zinterstore(store_key, [store_key,
-                                current_app.config['REDIS_TIMESTAMPS'],
-                                current_app.config['REDIS_NOT_AVAILABLE']])
-        self.not_available = {t[0].decode().split(':')[0] for t
-                              in redis_store.zscan_iter(store_key)}
-
     def check_freshness(self):
         if redis_store.zcount(current_app.config['REDIS_TIMESTAMPS'], 0,
                   time() - models.TaxiRedis._DISPONIBILITY_DURATION) > 0:
@@ -185,7 +174,9 @@ class Taxis(Resource):
         taxis = []
         offset = 0
         count = p['count'] * 4
-        self.set_not_available(lon, lat, name_redis, max_distance)
+        store_key = name_redis+'_operateur'
+        g.keys_to_delete.append(store_key)
+        self.not_available = models.TaxiRedis.not_available_ids(lon, lat, name_redis, max_distance, store_key)
         while len(taxis) < p['count']:
             page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
                                     offset, count, True) if v[0].decode() not in self.not_available]
