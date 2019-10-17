@@ -24,13 +24,13 @@ def download_wanted(temp_dir):
 
 
 def download_contours_file(temp_dir,
-    url = "http://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20160119-shp.zip"):
+    url = "http://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20190101-shp.zip"):
     file_name = url.split('/')[-1]
     u = urllib.request.urlopen(url)
     full_file_name = os.path.join(temp_dir, file_name)
     f = open(full_file_name, 'wb')
     meta = u.info()
-    file_size = int(meta.getheaders("Content-Length")[0])
+    file_size = int(meta["Content-Length"])
     print("Downloading: %s Bytes: %s" % (file_name, file_size))
 
     file_size_dl = 0
@@ -83,7 +83,7 @@ def records(filename):
 
 def load_zupc_temp_table(shape_filename, zupc_obj=None):
     departements = {
-        d.numero: d for d in administrative.Departement.query.all()
+        d.numero: d for d in models.Departement.query.all()
     }
 
 
