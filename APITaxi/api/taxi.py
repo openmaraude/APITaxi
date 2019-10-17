@@ -142,19 +142,7 @@ class Taxis(Resource):
             current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
             return {'data': []}
         zupc_insee = self.zupc_customer[0][3]
-#We can deactivate the max radius for a certain zone
-        inactive_filter_period = current_app.config['INACTIVE_FILTER_PERIOD']
-        hour = datetime.now().hour
-        if inactive_filter_period[0] > inactive_filter_period[1]:
-            is_inactive = hour >= inactive_filter_period[0] or\
-                    hour <= inactive_filter_period[1]
-        else:
-            is_inactive = inactive_filter_period[0] <= hour <= inactive_filter_period[1]
-        if is_inactive:
-            max_distance = current_app.config['DEFAULT_MAX_RADIUS']
-        else:
-            max_distance = min([v for v in [v[2] for v in self.zupc_customer] if v and v>0]
-                           + [current_app.config['DEFAULT_MAX_RADIUS']])
+        max_distance = models.ZUPC.get_max_distance(self.zupc_customer)
         self.check_freshness()
         g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
