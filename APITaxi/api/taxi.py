@@ -114,23 +114,6 @@ get_parser.add_argument('count', type=int, required=False,
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
-    def filter_zone(self, taxi, p):
-        if not taxi:
-            current_app.logger.debug('Taxi {} not fount in db')
-            return False
-        taxi = taxi[0]
-        zupc_id = taxi['ads_zupc_id']
-        if not zupc_id in list(self.zupc_customer.keys()):
-            current_app.logger.debug('Taxi {} not in customer\'s zone'.format(
-                taxi.get('taxi_id', 'no id')))
-            return False
-        if not self.zupc_customer[self.parent_zupc[zupc_id]].contains(
-                        Point(float(p[0]), float(p[1]))):
-            current_app.logger.debug('Taxi {} is not in its zone'.format(
-                taxi.get('taxi_id', 'no id')))
-            return False
-        return True
-
     def set_not_available(self, lon, lat, name_redis, radius):
         store_key = name_redis+'_operateur'
         g.keys_to_delete.append(store_key)
@@ -146,7 +129,6 @@ class Taxis(Resource):
         if redis_store.zcount(current_app.config['REDIS_TIMESTAMPS'], 0,
                   time() - models.TaxiRedis._DISPONIBILITY_DURATION) > 0:
             clean_geoindex_timestamps.apply()
-
 
     @login_required
     @roles_accepted('admin', 'moteur')
@@ -237,7 +219,7 @@ class Taxis(Resource):
                         position={"lon": t[1][0], "lat": t[1][1]},
                         distance=t[2], timestamps=islice(timestamps, *t[3]))
                 for t in zip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
-                if self.filter_zone(t[0], t[1])]
+                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], self.zupc_customer, self.parent_zupc)]
             taxis.extend([_f for _f in l if _f])
 
         influx_db.write_point(current_app.config['INFLUXDB_TAXIS_DB'],
