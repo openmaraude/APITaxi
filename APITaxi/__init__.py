@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-VERSION = (0, 1, 0)
+
 __author__ = 'Vincent Lara'
 __contact__ = "vincent.lara@data.gouv.fr"
 __homepage__ = "https://github.com/"
-__version__ = ".".join(map(str, VERSION))
+__version__ = '0.1.0'
+__doc__ = 'Flask application to serve APITaxi'
 
 from flask import Flask, request_started, request_finished
 import os
