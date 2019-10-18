@@ -9,7 +9,7 @@ __doc__ = 'Flask application to serve APITaxi'
 from flask import Flask, request_started, request_finished
 import os
 
-def create_app(sqlalchemy_uri=None):
+def create_app():
     from .extensions import redis_store, redis_store_saved, user_datastore
     app = Flask(__name__)
     app.config.from_object('APITaxi.default_settings')
@@ -27,8 +27,6 @@ def create_app(sqlalchemy_uri=None):
         if not k in os.environ:
             continue
         app.config[k] = os.environ[k]
-    if sqlalchemy_uri:
-        app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_uri
 
     from APITaxi_models import db, security, HailLog
     db.init_app(app)
