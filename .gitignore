@@ -1,3 +1,4 @@
 *.pyc
 dev_settings.py
 .idea/
+*.egg-info
