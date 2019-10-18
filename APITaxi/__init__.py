@@ -33,9 +33,7 @@ def create_app(sqlalchemy_uri=None):
     from APITaxi_models import db, security, HailLog
     db.init_app(app)
     redis_store.init_app(app)
-    redis_store.connection_pool.get_connection(0).can_read()
     redis_store_saved.init_app(app)
-    redis_store_saved.connection_pool.get_connection(0).can_read()
     from . import api
     api.init_app(app)
 
