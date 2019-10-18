@@ -22,23 +22,38 @@ __version__ = '0.1.0'
 __doc__ = 'Flask application to serve APITaxi'
 
 
-def create_app():
-    app = Flask(__name__)
+def load_configuration(app):
+    """Load application configuration:
+
+    - from default_settings.py
+    - from the settings file set in the environment variable
+      APITAXI_CONFIG_FILE
+    - from variables set in environment
+    """
     app.config.from_object('APITaxi.default_settings')
+
     if 'APITAXI_CONFIG_FILE' in os.environ:
         app.config.from_envvar('APITAXI_CONFIG_FILE')
+
     if 'ENV' not in app.config:
-        app.logger.error('ENV is needed in the configuration')
-        return None
-    if app.config['ENV'] not in ('PROD', 'STAGING', 'DEV'):
-        app.logger.error("""Here are the possible values for conf['ENV']:
-        ('PROD', 'STAGING', 'DEV') your's is: {}""".format(app.config['env']))
-        return None
-    # Load configuration from environment variables
-    for k in list(app.config.keys()):
-        if k not in os.environ:
+        raise ValueError('Configuration variable ENV is required')
+
+    valid_env = ('PROD', 'STAGING', 'DEV')
+    if app.config['ENV'] not in valid_env:
+        raise ValueError('ENV {} invalid, must be any of {}'.format(
+            app.config['ENV'], valid_env
+        ))
+
+    for param in app.config:
+        if param not in os.environ:
             continue
-        app.config[k] = os.environ[k]
+        app.config[param] = os.environ[param]
+
+
+def create_app():
+    app = Flask(__name__)
+
+    load_configuration(app)
 
     db.init_app(app)
     redis_store.init_app(app)
