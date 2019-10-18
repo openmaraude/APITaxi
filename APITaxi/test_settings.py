@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 SECRET_KEY = 'super-secret'
 SQLALCHEMY_DATABASE_URI = 'postgresql://apitaxi:vincent@localhost/odtaxi_test'
 REDIS_URL = "redis://:@localhost:6379/0"
