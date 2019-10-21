@@ -58,8 +58,8 @@ class Skeleton(TestCase):
 
     def post_taxi(self, role=None, user=None, post_second=False, custom_ads=None):
         self.init_zupc(post_second)
-        self.init_dep()
         post = partial(self.post, role='operateur', user=user)
+        self.init_dep()
         if post_second:
             r = post([dict_driver_2], url='/drivers/')
         else:
@@ -176,7 +176,7 @@ class Skeleton(TestCase):
             version=version, content_type=content_type, headers=headers)
 
     def init_dep(self):
-        if models.Departement.query.filter_by(numero="53").count() > 0:
+        if not models.Departement.query.filter_by(numero="53").first() is None:
             return
         dep = models.Departement(nom="Mayenne", numero="53")
         current_app.extensions['sqlalchemy'].db.session.add(dep)
