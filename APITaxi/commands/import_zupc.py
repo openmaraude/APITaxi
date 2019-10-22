@@ -1,314 +1,388 @@
-#coding: utf-8
-import urllib.request, urllib.error, urllib.parse, os, zipfile, shapefile, copy, glob
-from . import manager
-from shapely.geometry import shape, MultiPolygon
-from shapely.ops import cascaded_union as union
-from shapely import wkt
-import APITaxi_models as models
+# -*- coding: utf-8 -*-
+
+import csv
+import glob
+import json
+import logging
+import os
+import requests
+import sys
+from urllib.parse import urlparse
+import zipfile
+
+from geoalchemy2 import Geography
 from geoalchemy2.shape import from_shape, to_shape
-from geoalchemy2 import func
-from itertools import groupby
-from sqlalchemy.sql import select
-from sqlalchemy import Table, Column, Boolean
-from sqlalchemy.ext.automap import automap_base
-import json, sys
+from shapely import wkt
+from shapely.geometry import shape, MultiPolygon
+from shapely.ops import cascaded_union
+from sqlalchemy import Column, func
+from sqlalchemy.orm.exc import NoResultFound
+import shapefile
 
-def download_wanted(temp_dir):
-    if os.path.isdir(temp_dir):
-        in_ = input("contours has already been downloaded, do you want to download it again ? [y/n]")
-        if in_ == "n":
-            return False
+from APITaxi_models import db, Departement, ADS, ZUPC
+
+from . import manager
+
+
+logger = logging.getLogger(__name__)
+
+
+# Archive downloaded and extracted to CONTOURS_DIR
+CONTOURS_DEFAULT_URL = "http://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20190101-shp.zip"
+
+# Temporary path where CONTOURS_URL is downloaded
+CONTOURS_DEFAULT_TMPDIR = '/tmp/temp_contours'
+
+# Directory where https://github.com/openmaraude/ZUPC has been cloned
+ZUPC_DEFAULT_DIRECTORY = '/tmp/ZUPC'
+
+# Environment variable value considered as true
+TRUE_VARS = ('1', 'y', 'yes')
+
+
+def download_zipfile(url, download_path):
+    """Download and extract ZIP file from `url` to `download_path`.
+    """
+    filename = os.path.basename(urlparse(url).path)
+    fullpath = os.path.join(download_path, filename)
+
+    download = True
+
+    if os.path.exists(fullpath):
+        ok = input("%s has already been downloaded, do you want to download it again ? [y/n]" % filename)
+        if ok.lower() not in ('y', 'yes'):
+            download = False
     else:
-        os.mkdir(temp_dir)
-    return True
+        os.makedirs(download_path)
+
+    if download:
+        logger.info('Download %s to %s', url, fullpath)
+        r = requests.get(url)
+        with open(fullpath, 'wb') as handle:
+            handle.write(r.content)
+
+    with zipfile.ZipFile(fullpath) as archive:
+        logger.info('Extract %s to %s', fullpath, download_path)
+        archive.extractall(download_path)
 
 
-def download_contours_file(temp_dir,
-    url = "http://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20190101-shp.zip"):
-    file_name = url.split('/')[-1]
-    u = urllib.request.urlopen(url)
-    full_file_name = os.path.join(temp_dir, file_name)
-    f = open(full_file_name, 'wb')
-    meta = u.info()
-    file_size = int(meta["Content-Length"])
-    print("Downloading: %s Bytes: %s" % (file_name, file_size))
-
-    file_size_dl = 0
-    block_sz = 8192
-    while True:
-        buffer = u.read(block_sz)
-        if not buffer:
-            break
-
-        file_size_dl += len(buffer)
-        f.write(buffer)
-        status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-        status = status + chr(8)*(len(status)+1)
-        print(status)
-    f.close()
-
-    with zipfile.ZipFile(full_file_name, "r") as z:
-        z.extractall(temp_dir)
-
-    return os.path.join(temp_dir, file_name.split(".")[0])
+def find_files_by_extension(path, extension):
+    """Get the list of files with `extension` from `path`.
+    """
+    for name in os.listdir(path):
+        if name.endswith('.' + extension):
+            yield os.path.join(path, name)
 
 
-def create_temp_table(temp_table_name="zupc_temp"):
-    table = Table(temp_table_name, models.db.metadata,
-                  Column('multiple', Boolean(), default=False),
-                  *[Column(c.name, c.type, autoincrement=c.autoincrement,
-                           default=c.default, key=c.key, index=c.index,
-                           nullable=c.nullable, primary_key=c.primary_key) 
-                    for c in models.ZUPC.__table__.columns]
-    )
-    if table.exists(models.db.engine):
-        table.drop(models.db.engine)
-    table.create(models.db.engine)
-    models.db.session.commit()
-    models.db.Model.metadata.reflect(models.db.engine)
-    Base = automap_base(metadata=models.db.metadata, declarative_base=models.db.Model)
-    Base.prepare()
-    return Base.classes[temp_table_name]
+def get_records_from_shapefile(shape_filename):
+    """Yield records from `shape_filename`.
+    """
+    reader = shapefile.Reader(shape_filename)
+    for shape_record in reader.iterShapeRecords():
+        feature = shape_record.__geo_interface__
+        yield feature['geometry'], feature['properties']
 
 
-def records(filename):
-    reader = shapefile.Reader(filename[:-4])
-    fields = reader.fields[1:]
-    field_names = [field[0] for field in fields]
-    for sr in reader.iterShapeRecords():
-        geom = sr.shape.__geo_interface__
-        atr = dict(list(zip(field_names, sr.record)))
-        yield geom, atr
+def get_departement_from_INSEE(departements, insee_code):
+    """Get the departement code from the INSEE code.
+
+    `departements` is a dictionary where keys are the "numero" of the departement, and values the object in database.
+
+    XXX: this function is not working for all cases, as departements and INSEE code might be completely different. For
+    example, Saint-Pierre-Laval has the "code postal" 42620 but INSEE code 03250.
+    """
+    for i in range(len(insee_code)):
+        if insee_code[:i] in departements:
+            return departements[insee_code[:i]]
 
 
-def load_zupc_temp_table(shape_filename, zupc_obj=None):
+class ZUPC_tmp(db.Model):
+
+    __tablename__ = 'zupc_temp'
+
+    id = Column(db.Integer, primary_key=True)
+    departement_id = Column(db.Integer, db.ForeignKey('departement.id'))
+    nom = Column(db.String(255))
+    insee = Column(db.String(), nullable=True)
+    shape = Column(Geography(geometry_type='MULTIPOLYGON', srid=4326, spatial_index=False))
+    parent_id = Column(db.Integer, db.ForeignKey('zupc_temp.id'))
+    parent = db.relationship('ZUPC_tmp', remote_side=[id], lazy='joined')
+
+    multiple = Column(db.Boolean, server_default='false')
+
+
+def recreate_zupc_tmp_table():
+    table = ZUPC_tmp.__table__
+
+    if table.exists(db.engine):
+        logger.info('Drop temporary table %s' % table.name)
+        table.drop(db.engine)
+    logger.info('Create temporary table %s' % table.name)
+    table.create(db.engine)
+
+
+def fill_zupc_tmp_table_from_contours(shape_filename):
+    """Build ZUPC temporary table. Rows only contain data from the contours database and need to be "completed" with
+    data from the ZUPC repository.
+    """
     departements = {
-        d.numero: d for d in models.Departement.query.all()
+        departement.numero: departement
+        for departement in Departement.query.all()
     }
 
-
-    def find_departement(p):
-        for i in range(0, len(p['insee'])):
-            if p['insee'][:i] in departements:
-                return departements[p['insee'][:i]]
-        return None
-
-    i = 0
-
-    for geom, properties in records(shape_filename):
-        departement = find_departement(properties)
+    for geom, properties in get_records_from_shapefile(shape_filename):
+        departement = get_departement_from_INSEE(departements, properties['insee'])
         if not departement:
-            print("Unable to find departement for insee: {}".format(properties['insee']))
+            logger.warning('Unable to find departement of INSEE code %s', properties['insee'])
             continue
-        z = zupc_obj()
-        z.nom = properties['nom']
-        z.insee = properties['insee']
-        z.departement_id = departement.id
-        z.shape = from_shape(MultiPolygon([shape(geom)]), srid=4326)
-        z.active = False
-        models.db.session.add(z)
-        if (i%100) == 0:
-            models.db.session.commit()
-        i += 1
-        status = r"%10d zupc ajoutées" % (i)
-        status = status + chr(8)*(len(status)+1)
-        print(status)
 
-    models.db.session.commit()
-    print("%10d zupc ajoutées" %i)
-
-
-def union_zupc(filename, zupc_obj):
-    with open(filename) as f:
-        insee_list = [s.strip('\n') for s in f.readlines()]
-
-    parent_id = zupc_obj.query.with_entities(zupc_obj.id)\
-            .filter_by(insee=insee_list[0]).first()
-    if parent_id is None:
-        return None
-    if len(insee_list) == 1:
-        return parent_id
-
-    subquery = models.db.session.query(
-        func.st_AsText(func.Geography(func.st_Multi(func.ST_Union(func.Geometry(zupc_obj.shape)))))).filter(
-            zupc_obj.insee.in_(insee_list)
-    )
-    zupc_obj.query.filter(zupc_obj.insee.in_(insee_list)).update(
-        {'shape': subquery.first()[0],
-         'parent_id': parent_id
-        }, synchronize_session='fetch'
-    )
-    zupc_obj.query.filter(zupc_obj.insee.in_(insee_list)).update({"multiple": True}, synchronize_session='fetch')
-    models.db.session.commit()
-    return parent_id
-
-
-def load_include_geojson(parent_id, geojson_file, zupc_obj):
-    return load_geojson(parent_id, geojson_file, zupc_obj, "union")
-
-
-def load_exclude_geojson(parent_id, geojson_file, zupc_obj):
-    return load_geojson(parent_id, geojson_file, zupc_obj, "difference")
-
-
-def load_geojson(parent_id, geojson_file, zupc_obj, func_name):
-    if parent_id is None:
-        return None
-    with open(geojson_file) as f:
-        jdata = json.load(f)
-        if 'features' in jdata:
-            if len(jdata['features']) == 1:
-                s = shape(jdata['features'][0]['geometry'])
-            else:
-                s = union([shape(f['geometry']) for f in jdata['features']])
-        else:
-            s = shape(jdata['geometry'])
-        parent_zupc = zupc_obj.query.get(parent_id)
-        parent_shape = to_shape(parent_zupc.shape)
-        new_shape = MultiPolygon([getattr(s, func_name)(parent_shape)])
-        parent_zupc.query.filter(id==parent_id).update(
-            {'shape': wkt.dumps(new_shape)}
+        obj = ZUPC_tmp(
+            nom=properties['nom'],
+            insee=properties['insee'],
+            departement_id=departement.id,
+            # 4326 is a reference to https://spatialreference.org/ref/epsg/wgs-84/
+            shape=from_shape(MultiPolygon([shape(geom)]), srid=4326)
         )
-        models.db.session.commit()
 
-def load_arrondissements(parent_id, arrondissements_file, zupc_obj):
-    if parent_id is None:
-        return
-    parent_zupc = zupc_obj.query.get(parent_id)
-    with open(arrondissements_file) as f:
-        for insee in f.readlines():
-            insee = insee.strip()
-            if not insee:
-                continue
-            z = zupc_obj()
-            for att in ['departement_id', 'nom', 'shape']:
-                setattr(z, att, getattr(parent_zupc, att))
-            z.insee = insee
-            z.active = False
-            models.db.session.add(z)
-    models.db.session.commit()
+        db.session.add(obj)
+
+    db.session.commit()
 
 
-def override_name(parent_id, special_name_list, zupc_obj):
-    if parent_id is None:
-        return
-    parent_zupc = zupc_obj.query.get(parent_id)
-    for special_name in special_name_list:
-        with open(special_name) as f:
-            line = f.readline().decode('utf-8')
-            delimiter = ' ' if ' ' in line else ','
-            name, insee = [s.strip() for s in line.split(delimiter)]
+def fill_zupc_union(filename):
+    """zupc_temp table contains one row per INSEE code. In reality, one ZUPC can cover several INSEE codes. For example,
+    the ZUPC of Paris cover the INSEE codes 75056, 92002, 92004, 93..., 94...
 
-            parent_zupc.name = name
-            parent_zupc.insee = insee
-            models.db.session.add(parent_zupc)
-    models.db.session.commit()
+    The file "insee.list" from the ZUPC repository (eg. ZUPC/75_Paris/insee.list) contains this list of INSEE codes
+    covered by each ZUPC. This function reads the file "insee.list" and:
 
+    - if there is only one INSEE code covered by the ZUPC, return the ZUPC object
+    - if there are several, update the shape of all the ZUPC entries to cover all INSEE codes, and set their parent
+      to the first ZUPC of the list.
 
-def load_dir(dirname, zupc_obj):
-    parent_id = None
-    for f in glob.glob(os.path.join(dirname, '*.list')):
-        parent_id = union_zupc(f, zupc_obj)
-    special_name_insee = glob.glob(os.path.join(dirname, 'special_name_insee'))
-    if len(special_name_insee) == 1:
-        override_name(parent_id, special_name_insee, zupc_obj)
-    for f in glob.glob(os.path.join(dirname, '*.include')):
-        load_include_geojson(parent_id, f, zupc_obj)
-    for f in glob.glob(os.path.join(dirname, '*.exclude')):
-        load_include_geojson(parent_id, f, zupc_obj)
-    for f in glob.glob(os.path.join(dirname, '*.arrondissements')):
-        load_arrondissements(parent_id, f, zupc_obj)
+    This behavior is to keep backward compatibility where one "real" ZUPC is represented by several entries in database.
+    We should instead probably store one ZUPC entry per "real" ZUPC, related to one or several INSEE codes.
+    """
+    with open(filename) as handle:
+        insee_codes = handle.read().split()
 
-
-def load_zupc(d, zupc_obj):
-    for root, dirs, files in os.walk(d):
-        for dir_ in dirs:
-            print(str("Importing zupc {}").format(str(dir_)))
-            load_dir(os.path.join(d, dir_), zupc_obj)
-
-
-def get_shape_filename(temp_dir):
-    l = glob.glob(os.path.join(temp_dir, '*.shp'))
-    if len(l) == 0:
+    try:
+        parent = ZUPC_tmp.query.filter_by(insee=insee_codes[0]).one()
+    # Can happen in the case the referenced INSEE code has been previously "renamed" in "special_name_insee".
+    except NoResultFound:
+        logger.error('File %s references ZUPC %s which does not exist', filename, insee_codes[0])
         return None
-    return l[0]
 
-def confirm_zones():
-    print("You can check zones on /zupc/_show_temp")
-    in_ = input("Do you want to confirm this zones ? (y/n)")
-    return in_ == "y"
+    if len(insee_codes) == 1:
+        return parent
 
-def merge_zones(temp_zupc_obj):
-    print("Find unmergeable insee codes")
-#Find unmergeable insee codes
-    ZUPC = models.ZUPC
-    insee_zupc = set([a.insee
-          for a in models.db.session.query(models.ADS).distinct(models.ADS.insee).all()]
-    )
-    insee_temp = set([z.insee
-                      for z in
-                      models.db.session.query(temp_zupc_obj).distinct(temp_zupc_obj.insee).all()]
-    )
-    diff = insee_zupc.difference(insee_temp)
-    if len(diff) > 0:
-        print("These ZUPC can't be found in temp_zupc: {}".format(diff))
-        return False
-    last_zupc_id = models.db.session.execute('SELECT max(id) FROM "ZUPC"').fetchall()[0][0]
-    print("Insert temp_zupc in ZUPC")
-    models.db.session.execute("""INSERT INTO "ZUPC"
-                       (departement_id, nom, insee, shape, active)
-                       SELECT departement_id, nom, insee, shape, active FROM zupc_temp""")
-    models.db.session.commit()
+    shape = db.session.query(
+        func.st_AsText(func.Geography(func.st_Multi(func.ST_Union(func.Geometry(ZUPC_tmp.shape))))).label('shape')
+    ).filter(ZUPC_tmp.insee.in_(insee_codes)).one()
 
-    print("Updating parent_id in ZUPC")
-    zupc_with_parent = temp_zupc_obj.query.filter(
-        temp_zupc_obj.parent_id != temp_zupc_obj.id).all()
-    for parent_insee, zs in groupby(zupc_with_parent, lambda k: k.parent.insee):
-        parent_id = ZUPC.query.filter(ZUPC_id > last_zupc_id)\
-                .filter(ZUPC.insee==parent_insee).first().id
-        for z in zs:
-            z_to_update = ZUPC.query.filter(ZUPC.id > last_zupc_id)\
-                .filter(ZUPC.insee==z.insee).first()
-            z_to_update.parent_id = parent_id
-            models.db.session.add(z_to_update)
-    models.db.session.commit()
-    print("Updating zupc_id in ADS")
-    map_zupc_insee_id = {z.insee: z.id for z in ZUPC.query.filter(ZUPC.id > last_zupc_id).all()}
-    i = 0
-    for ads in models.ADS.query.all():
-        i += 1
-        ads.zupc_id = map_zupc_insee_id[ads.insee]
-        if i%100 == 0:
-            models.db.session.commit()
-            status = "Updated {} ADS".format(i)
-            status = status + chr(8)*(len(status)+1)
-            print(status)
-    models.db.session.commit()
-    print("Removing old ZUPC")
-    models.db.session.execute("""create table zupc_to_swap (
-                       like "ZUPC" including defaults including constraints
-                       including indexes);
-                       INSERT INTO zupc_to_swap SELECT * FROM "ZUPC" WHERE id > {};
-                       DROP TABLE IF EXISTS old_zupc;
-                       ALTER TABLE "ZUPC" RENAME TO old_zupc;
-                       ALTER TABLE zupc_to_swap RENAME TO "ZUPC";""".format(last_zupc_id))
-    models.db.session.commit()
+    ZUPC_tmp.query.filter(ZUPC_tmp.insee.in_(insee_codes)).update({
+        'shape': shape,
+        'parent_id': parent.id,
+        'multiple': True
+    }, synchronize_session='fetch')
+    db.session.flush()
 
-@manager.command
-def import_zupc(zupc_dir='/tmp/zupc', contours_dir='/tmp/temp_contours'):
-    temp_dir = contours_dir
-    wanted = download_wanted(temp_dir)
-    if wanted:
-        download_contours_file(temp_dir)
+    return parent
 
-    shape_filename = get_shape_filename(temp_dir)
-    if not shape_filename:
-        print("No shapefile in {}".format(temp_dir))
+
+def fill_zupc_special_name(filename, parent_zupc):
+    """File "special_name_insee" from the ZUPC repository can be used to override the name and INSEE code of a ZUPC.
+    """
+    with open(filename) as handle:
+        lines = list(csv.reader(handle))
+
+    if len(lines) != 1:
+        raise ValueError('CSV file %s should contain exactly one line' % filename)
+    insee, name = lines[0]
+
+    parent_zupc.nom = name
+    parent_zupc.insee = insee
+    db.session.add(parent_zupc)
+    db.session.flush()
+
+
+def fill_zupc_update_shape(filename, parent_zupc, action):
+    """Update shape of `parent_zupc` with the shapes defined in `filename`. `action` is a string that is either
+    'include' or 'exclude'.
+
+    If 'include', shapes of `filename` are added to `parent_zupc.shape`.
+    If 'exclude', shapes of `filename` are removed from`parent_zupc.shape`.
+    """
+    assert action in ('include', 'exclude')
+
+    with open(filename) as handle:
+        data = json.load(handle)
+
+    if data['type'] not in ('Feature', 'FeatureCollection'):
+        raise ValueError('Unable to handle geojson type %s in %s' % (data['type'], filename))
+
+    all_shapes = []
+    if data['type'] == 'Feature':  # only one shape
+        all_shapes = [shape(data['geometry'])]
+    else:  # FeatureCollection: list of shapes
+        all_shapes = [shape(part['geometry']) for part in data['features']]
+
+    # new_shape = covering all polygons of all_shapes
+    new_shape = cascaded_union(all_shapes)
+
+    if action == 'include':
+        update = new_shape.union(to_shape(parent_zupc.shape))
+    else:
+        update = new_shape.difference(to_shape(parent_zupc.shape))
+
+    parent_zupc.shape = wkt.dumps(MultiPolygon([update]))
+
+    # wkt.dumps returns a string, refreshing the session fetches the object from database to render parent_zupc.shape as
+    # a geoalchemy2.elements.WKBElement.
+    db.session.refresh(parent_zupc)
+
+    db.session.add(parent_zupc)
+    db.session.flush()
+
+
+def fill_zupc(zupc_dir):
+    """Insert informations into zupc_temp table.
+    """
+    logger.debug('Fill ZUPC temporary table with %s', zupc_dir)
+
+    insee_list_filename = os.path.join(zupc_dir, 'insee.list')
+    if not os.path.exists(insee_list_filename):
+        logger.debug('No insee.list file in %s, nothing to do', zupc_dir)
         return
 
-    z = create_temp_table()
-    load_zupc_temp_table(shape_filename, z)
-    load_zupc(zupc_dir, z)
-    if not confirm_zones():
+    parent_zupc = fill_zupc_union(insee_list_filename)
+    if not parent_zupc:
         return
-    merge_zones(z)
+
+    special_name_filename = os.path.join(zupc_dir, 'special_name_insee')
+    if os.path.exists(special_name_filename):
+        fill_zupc_special_name(special_name_filename, parent_zupc)
+
+    for filename in glob.glob(os.path.join(zupc_dir, '*.include')):
+        fill_zupc_update_shape(filename, parent_zupc, 'include')
+
+    for filename in glob.glob(os.path.join(zupc_dir, '*.exclude')):
+        fill_zupc_update_shape(filename, parent_zupc, 'exclude')
+
+    db.session.commit()
+
+
+def fill_zupc_tmp_table_from_arretes(zupc_repo):
+    """Fill informations in ZUPC tmp table from "arrêtés" stored in --zupc_repo.
+
+    Each folder in the root directory of the ZUPC repository contains the files describing a ZUPC.
+    """
+    for zupc_dir in os.listdir(zupc_repo):
+        fullpath = os.path.join(zupc_repo, zupc_dir)
+
+        # Skip hidden directories and extra files
+        if zupc_dir.startswith('.') or os.path.isfile(fullpath):
+            continue
+
+        fill_zupc(fullpath)
+
+
+def load_zupc_tmp_table(shape_filename, zupc_repo):
+    recreate_zupc_tmp_table()
+    fill_zupc_tmp_table_from_contours(shape_filename)
+    fill_zupc_tmp_table_from_arretes(zupc_repo)
+
+
+def merge_zupc_tmp_table():
+    """zupc_temp table contains the entries to insert into table ZUPC.
+
+    - insert all entries from zupc_temp to ZUPC (so each new ZUPC gets a new id)
+    - update the new ZUPC field "parent_id" to reference the parent
+    - update table ADS to reference the new ZUPC
+    - remove "old" ZUPC entries
+    """
+    if db.session.query(ADS) \
+                 .outerjoin(ZUPC_tmp, ADS.insee == ZUPC_tmp.insee) \
+                 .filter(ZUPC_tmp.id.is_(None)) \
+                 .count() > 0:
+        raise ValueError('Some INSEE codes referenced in table ADS do not exist in table zupc_temp')
+
+    last_zupc_id = db.session.query(func.MAX(ZUPC.id)).one()[0]
+
+    logger.info('Insert data from zupc_temp to ZUPC')
+    db.session.execute('''
+        INSERT INTO "ZUPC"(departement_id, nom, insee, shape, active)
+        SELECT departement_id, nom, insee, shape, false FROM zupc_temp
+    ''')
+
+    db.session.flush()
+
+    # For each ZUPC that has a parent in table zupc_temp:
+    # - find the parent created just before in table ZUPC
+    # - find the child
+    # - update the child with the parent's id
+    query = db.session.query(ZUPC_tmp).filter(ZUPC_tmp.parent_id != ZUPC_tmp.id)
+    logger.info('Update ZUPC.parent_id of %s rows', query.count())
+    for row in query:
+        parent_zupc = db.session.query(ZUPC) \
+                                .filter(ZUPC.id > last_zupc_id) \
+                                .filter(ZUPC.insee == row.parent.insee).one()
+
+        zupc = db.session.query(ZUPC) \
+                         .filter(ZUPC.id > last_zupc_id) \
+                         .filter(ZUPC.insee == row.insee).one()
+
+        zupc.parent_id = parent_zupc.id
+        db.session.add(zupc)
+
+    # Update ADS to reference the new ZUPC
+    insee_zupc = {
+        zupc.insee: zupc.id
+        for zupc in
+        db.session.query(ZUPC.id, ZUPC.insee).filter(ZUPC.id > last_zupc_id)
+    }
+    query = db.session.query(ADS)
+    logger.info('Update ADS.zupc_id of %s rows', query.count())
+    for ads in query:
+        ads.zupc_id = insee_zupc[ads.insee]
+        db.session.add(ads)
+
+    # Remove old ZUPC entries
+    query = db.session.query(ZUPC).filter(ZUPC.id <= last_zupc_id)
+    logger.info('Remove %s outdated ZUPC', query.count())
+    query.delete()
+
+    db.session.commit()
+
+
+@manager.option(
+    '--contours-url',
+    help='Contours URL to download, default=%s' % CONTOURS_DEFAULT_URL,
+    default=CONTOURS_DEFAULT_URL
+)
+@manager.option(
+    '--contours-tmpdir',
+    help='Where --contours-url is downloaded and extracted, default=%s' % CONTOURS_DEFAULT_TMPDIR,
+    default=CONTOURS_DEFAULT_TMPDIR
+)
+@manager.option(
+    '--zupc-repo',
+    help='Directory where https://github.com/openmaraude/ZUPC has been cloned, default=%s' % ZUPC_DEFAULT_DIRECTORY,
+    default=ZUPC_DEFAULT_DIRECTORY
+)
+def import_zupc(contours_url, contours_tmpdir, zupc_repo):
+    # Ensure zupc_repo has been cloned
+    if not os.path.exists(zupc_repo):
+        raise ValueError('Please clone https://github.com/openmaraude/ZUPC to %s or set --zupc-dir option to the '
+                         'cloned directory' % zupc_repo)
+
+    # Developers: set CONTOURS_DONT_DOWNLOAD=1 if files have already been downloaded.
+    if os.environ.get('CONTOURS_DONT_DOWNLOAD') not in TRUE_VARS:
+        download_zipfile(contours_url, contours_tmpdir)
+
+    shape_filenames = list(find_files_by_extension(contours_tmpdir, 'shp'))
+    if len(shape_filenames) != 1:
+        raise RuntimeError('None or more than one shapefile .shp in %s' % contours_tmpdir)
+
+    load_zupc_tmp_table(shape_filenames[0], zupc_repo)
+    merge_zupc_tmp_table()
