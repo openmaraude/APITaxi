@@ -49,6 +49,8 @@ def load_configuration(app):
             continue
         app.config[param] = os.environ[param]
 
+    app.url_map.strict_slashes = False
+
 
 def print_url_map(url_map):
     for rule in sorted(url_map.iter_rules(), key=lambda r: r.rule):
