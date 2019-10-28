@@ -137,12 +137,7 @@ class Taxis(Resource):
         g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
         g.keys_to_delete.append(name_redis)
-        #It returns a list of all taxis near the given point
-        #For each taxi you have a tuple with: (id, distance, [lat, lon])
-        nb_positions = redis_store.georadius(current_app.config['REDIS_GEOINDEX_ID'],
-                lon, lat, radius=max_distance, unit='m', store_dist=name_redis)
-        if nb_positions == 0:
-            current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
+        if models.TaxiRedis.store_positions(lon, lat, max_distance, t, redis_store) == 0:
             return {'data': []}
         self.parent_zupc = {r[0]: r[1] for r in zupc_customer}
         zupc_customer = {r[0]: r[1]
