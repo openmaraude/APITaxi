@@ -127,32 +127,26 @@ class Taxis(Resource):
     @json_mimetype_required
     def get(self):
         p = get_parser.parse_args()
+        t = time()
         lon, lat = p['lon'], p['lat']
         zupc_customer = models.ZUPC.get(lon, lat)
-        if len(zupc_customer) == 0:
+        if not zupc_customer:
             return {'data': []}
-        zupc_insee = zupc_customer[0][3]
         max_distance = models.ZUPC.get_max_distance(zupc_customer)
         self.check_freshness()
-        g.keys_to_delete = []
-        name_redis = '{}:{}:{}'.format(lon, lat, time())
-        g.keys_to_delete.append(name_redis)
         if models.TaxiRedis.store_positions(lon, lat, max_distance, t, redis_store) == 0:
             return {'data': []}
-        self.parent_zupc = {r[0]: r[1] for r in zupc_customer}
-        zupc_customer = {r[0]: r[1]
-          for r in  [(v[0], prep(load_wkb(bytes(v[1])))) for v in db.session.execute(
-              'SELECT id, ST_AsBinary(shape) AS shape FROM "ZUPC" WHERE id in :zupc_list',
-              {"zupc_list": tuple((int(r1[1]) for r1 in zupc_customer))}).fetchall()]}
+        parent_zupc = {r.id: r.parent_id for r in zupc_customer}
         taxis = []
         offset = 0
         count = p['count'] * 4
-        store_key = name_redis+'_operateur'
+        name_redis = '{}:{}:{}'.format(lon, lat, t)
+        store_key = name_redis +'_operateur'
         g.keys_to_delete.append(store_key)
-        self.not_available = models.TaxiRedis.not_available_ids(lon, lat, name_redis, max_distance, store_key, redis_store)
+        not_available = models.TaxiRedis.not_available_ids(lon, lat, name_redis, max_distance, store_key, redis_store)
         while len(taxis) < p['count']:
             page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
-                                    offset, count, True) if v[0].decode() not in self.not_available]
+                                    offset, count, True) if v[0].decode() not in not_available]
             offset += count
             if len(page_ids_distances) == 0:
                 break
@@ -183,7 +177,7 @@ class Taxis(Resource):
                         position={"lon": t[1][0], "lat": t[1][1]},
                         distance=t[2], timestamps=islice(timestamps, *t[3]))
                 for t in zip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
-                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], zupc_customer, self.parent_zupc)]
+                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], zupc_customer, parent_zupc)]
             taxis.extend([_f for _f in l if _f])
 
         influx_db.write_get_taxis(zupc_customer[0].insee, lon, lat, current_user.email, request, len(taxis))
