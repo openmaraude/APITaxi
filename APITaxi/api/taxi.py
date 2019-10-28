@@ -191,24 +191,8 @@ class Taxis(Resource):
                 if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], zupc_customer, self.parent_zupc)]
             taxis.extend([_f for _f in l if _f])
 
-        influx_db.write_point(current_app.config['INFLUXDB_TAXIS_DB'],
-                             "get_taxis_requests",
-                             {
-                                 "zupc": zupc_insee,
-                                 "position": "{:.3f}:{:.3f}".format(float(lon), float(lat)),
-                                 "moteur": current_user.email,
-                                 "customer": hashlib.sha224(
-                                     str(
-                                         (
-                                            request.headers.getlist("X-Forwarded-For")[0].rpartition(' ')[-1]
-                                            if 'X-Forwarded-For' in request.headers
-                                            else request.remote_addr
-                                         ) or 'untrackable'
-                                        ).encode('utf-8')
-                                 ).hexdigest()[:10]
-                             },
-                              value=len(taxis)
-        )
+        influx_db.write_get_taxis(zupc_customer[0].insee, lon, lat, current_user.email, request, len(taxis))
+
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
 
     @login_required
