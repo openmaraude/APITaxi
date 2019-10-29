@@ -134,26 +134,22 @@ class Taxis(Resource):
             return {'data': []}
         max_distance = models.ZUPC.get_max_distance(zupc_customer)
         self.check_freshness()
-        if models.TaxiRedis.store_positions(lon, lat, max_distance, t, redis_store) == 0:
+        positions_redis = '{}:{}:{}'.format(lon, lat, t)
+        if models.TaxiRedis.store_positions(lon, lat, max_distance, t, redis_store, positions_redis) == 0:
             return {'data': []}
         parent_zupc = {r.id: r.parent_id for r in zupc_customer}
+        models.TaxiRedis.remove_not_available(lon, lat, positions_redis, max_distance, redis_store)
         taxis = []
         offset = 0
         count = p['count'] * 4
-        name_redis = '{}:{}:{}'.format(lon, lat, t)
-        store_key = name_redis +'_operateur'
-        g.keys_to_delete.append(store_key)
-        not_available = models.TaxiRedis.not_available_ids(lon, lat, name_redis, max_distance, store_key, redis_store)
         while len(taxis) < p['count']:
-            page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
-                                    offset, count, True) if v[0].decode() not in not_available]
-            offset += count
+            page_ids_distances = redis_store.zrangebyscore(positions_redis, 0., '+inf', offset, count, True)
             if len(page_ids_distances) == 0:
                 break
             page_ids = [v[0].decode() for v in page_ids_distances]
             distances = [v[1] for v in page_ids_distances]
-            positions = redis_store.geopos(current_app.config['REDIS_GEOINDEX_ID']
-                                           ,*page_ids)
+            offset += count
+            positions = redis_store.geopos(current_app.config['REDIS_GEOINDEX_ID'], *page_ids)
             taxis_db = models.RawTaxi.get(page_ids)
 #We get all timestamps
             pipe = redis_store.pipeline()
