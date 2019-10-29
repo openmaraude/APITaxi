@@ -114,7 +114,9 @@ get_parser.add_argument('count', type=int, required=False,
 
 @ns_taxis.route('/', endpoint="taxi_list")
 class Taxis(Resource):
-    def check_freshness(self):
+
+    @staticmethod
+    def check_freshness():
         if redis_store.zcount(current_app.config['REDIS_TIMESTAMPS'], 0,
                   time() - models.TaxiRedis._DISPONIBILITY_DURATION) > 0:
             clean_geoindex_timestamps.apply()
