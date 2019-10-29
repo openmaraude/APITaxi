@@ -12,7 +12,6 @@ from . import api
 from ..descriptors.taxi import taxi_model, taxi_model_expect, taxi_put_expect
 from ..tasks import clean_geoindex_timestamps
 from APITaxi_utils.request_wants_json import json_mimetype_required
-from shapely.geometry import Point
 from time import time
 from datetime import datetime, timedelta
 from itertools import groupby, compress, islice
@@ -129,22 +128,11 @@ class Taxis(Resource):
     def get(self):
         p = get_parser.parse_args()
         lon, lat = p['lon'], p['lat']
-        if current_app.config['LIMITED_ZONE'] and\
-            not Point(lon, lat).intersects(current_app.config['LIMITED_ZONE']):
-            #It must be 403, but I don't know how our clients will react:
+        zupc_customer = models.ZUPC.get(lon, lat)
+        if len(zupc_customer) == 0:
             return {'data': []}
-        self.zupc_customer = db.session.execute(
-            """SELECT id, parent_id, max_distance, insee
-               FROM "ZUPC"
-               WHERE ST_INTERSECTS(shape, 'POINT(:lon :lat)')
-               AND parent_id = id
-               ORDER BY max_distance ASC;""", {"lon": lon, "lat": lat}
-        ).fetchall()
-        if len(self.zupc_customer) == 0:
-            current_app.logger.debug('No zone found at {}, {}'.format(lat, lon))
-            return {'data': []}
-        zupc_insee = self.zupc_customer[0][3]
-        max_distance = models.ZUPC.get_max_distance(self.zupc_customer)
+        zupc_insee = zupc_customer[0][3]
+        max_distance = models.ZUPC.get_max_distance(zupc_customer)
         self.check_freshness()
         g.keys_to_delete = []
         name_redis = '{}:{}:{}'.format(lon, lat, time())
@@ -156,17 +144,17 @@ class Taxis(Resource):
         if nb_positions == 0:
             current_app.logger.debug('No taxi found at {}, {}'.format(lat, lon))
             return {'data': []}
-        self.parent_zupc = {r[0]: r[1] for r in self.zupc_customer}
-        self.zupc_customer = {r[0]: r[1]
+        self.parent_zupc = {r[0]: r[1] for r in zupc_customer}
+        zupc_customer = {r[0]: r[1]
           for r in  [(v[0], prep(load_wkb(bytes(v[1])))) for v in db.session.execute(
               'SELECT id, ST_AsBinary(shape) AS shape FROM "ZUPC" WHERE id in :zupc_list',
-              {"zupc_list": tuple((int(r1[1]) for r1 in self.zupc_customer))}).fetchall()]}
+              {"zupc_list": tuple((int(r1[1]) for r1 in zupc_customer))}).fetchall()]}
         taxis = []
         offset = 0
         count = p['count'] * 4
         store_key = name_redis+'_operateur'
         g.keys_to_delete.append(store_key)
-        self.not_available = models.TaxiRedis.not_available_ids(lon, lat, name_redis, max_distance, store_key)
+        self.not_available = models.TaxiRedis.not_available_ids(lon, lat, name_redis, max_distance, store_key, redis_store)
         while len(taxis) < p['count']:
             page_ids_distances = [v for v in redis_store.zrangebyscore(name_redis, 0., '+inf',
                                     offset, count, True) if v[0].decode() not in self.not_available]
@@ -200,7 +188,7 @@ class Taxis(Resource):
                         position={"lon": t[1][0], "lat": t[1][1]},
                         distance=t[2], timestamps=islice(timestamps, *t[3]))
                 for t in zip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
-                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], self.zupc_customer, self.parent_zupc)]
+                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], zupc_customer, self.parent_zupc)]
             taxis.extend([_f for _f in l if _f])
 
         influx_db.write_point(current_app.config['INFLUXDB_TAXIS_DB'],
