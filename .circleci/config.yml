@@ -52,6 +52,24 @@ jobs:
             . venv/bin/activate
             nosetests --stop
 
+  build:
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build docker image
+          command: |
+            docker build -t openmaraude/apitaxi:${CIRCLE_TAG} .
+            docker tag openmaraude/apitaxi:${CIRCLE_TAG} openmaraude/apitaxi:latest
+      - run:
+          name: Publish docker Image to hub.docker.com
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push openmaraude/apitaxi:${CIRCLE_TAG}
+            docker push openmaraude/apitaxi:latest
+
 workflows:
   version: 2
 
@@ -59,3 +77,20 @@ workflows:
   test:
     jobs:
       - test
+
+  # Build artifacts
+  artifacts:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+
+      - build:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /.*/
