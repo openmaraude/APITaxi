@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  build:
+  test:
     docker:
       - image: circleci/python:3.6.6-stretch
       - image: circleci/postgres:10.5-postgis-ram
@@ -54,6 +54,8 @@ jobs:
 
 workflows:
   version: 2
-  transport:
+
+  # Run unittest
+  test:
     jobs:
-      - build
+      - test
