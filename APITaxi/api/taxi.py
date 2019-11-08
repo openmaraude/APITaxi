@@ -126,6 +126,15 @@ class Taxis(Resource):
             parser=get_parser, model=taxi_model)
     @json_mimetype_required
     def get(self):
+        """
+        This function gets the taxi's zones of the position sent in the request.
+        And then gets taxis around this position and filter them with the following rules:
+         - Is the taxi available?
+         - Is the position fresh enough?
+         - Can this taxi operate here?
+        Then it will gets some information from the database.
+        The taxis will be ordered by growing distance from the request's position
+        """
         p = get_parser.parse_args()
         t = time()
         lon, lat = p['lon'], p['lat']
