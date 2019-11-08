@@ -115,7 +115,7 @@ get_parser.add_argument('count', type=int, required=False,
 class Taxis(Resource):
 
     @staticmethod
-    def check_freshness():
+    def clean_taxis_timestamps():
         if redis_store.zcount(current_app.config['REDIS_TIMESTAMPS'], 0,
                   time() - models.TaxiRedis._DISPONIBILITY_DURATION) > 0:
             clean_geoindex_timestamps.apply()
@@ -133,7 +133,7 @@ class Taxis(Resource):
         if not zupc_customer:
             return {'data': []}
         max_distance = models.ZUPC.get_max_distance(zupc_customer)
-        self.check_freshness()
+        self.clean_taxis_timestamps()
         positions_redis = '{}:{}:{}'.format(lon, lat, t)
         if models.TaxiRedis.store_positions(lon, lat, max_distance, t, redis_store, positions_redis) == 0:
             return {'data': []}
