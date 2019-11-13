@@ -146,7 +146,6 @@ class Taxis(Resource):
         positions_redis = '{}:{}:{}'.format(lon, lat, t)
         if models.TaxiRedis.store_positions(lon, lat, max_distance, t, redis_store, positions_redis) == 0:
             return {'data': []}
-        parent_zupc = {r.id: r.parent_id for r in zupc_customer}
         models.TaxiRedis.remove_not_available(lon, lat, positions_redis, max_distance, redis_store)
         taxis = []
         offset = 0
@@ -182,7 +181,7 @@ class Taxis(Resource):
                         position={"lon": t[1][0], "lat": t[1][1]},
                         distance=t[2], timestamps=islice(timestamps, *t[3]))
                 for t in zip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
-                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], zupc_customer, parent_zupc)]
+                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], zupc_customer)]
             taxis.extend([_f for _f in l if _f])
 
         influx_db.write_get_taxis(zupc_customer[0].insee, lon, lat, current_user.email, request, len(taxis))
