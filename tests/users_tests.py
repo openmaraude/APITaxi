@@ -22,4 +22,4 @@ class TestUsersGet(Skeleton):
         r = self.get(headers={"X-API-KEY": "aa",
                               "Accept": "application/json",
                               "X-VERSION": 2})
-        assert r.status_code == 302
+        assert r.status_code == 401

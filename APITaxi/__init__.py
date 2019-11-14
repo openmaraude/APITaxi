@@ -3,6 +3,7 @@
 import os
 
 from flask import Flask, g, request_started, request_finished
+from flask_restplus import abort
 from flask_uploads import configure_uploads
 
 from APITaxi_models import db, security, HailLog
@@ -58,6 +59,14 @@ def print_url_map(url_map):
         print(('\t%-45s -> %s' % (rule.rule, ', '.join(methods))))
 
 
+def unauthorized():
+    """By default, @login_required returns HTTP/301 HTML response to redirect
+    the browser to the login form. Since we are in the context of an API,
+    clients are expecting a JSON response.
+    """
+    abort(401, error='You are not logged in. Please provide a valid X-Api-Key header.')
+
+
 def create_app():
     app = Flask(__name__)
 
@@ -76,7 +85,9 @@ def create_app():
     request_finished.connect(add_version_header, app)
 
     configure_uploads(app, (documents,))
+
     init_login_manager(app, user_datastore, None)
+    app.login_manager.unauthorized_handler(unauthorized)
 
     tasks.init_app(app)
 
