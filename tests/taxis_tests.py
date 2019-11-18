@@ -4,7 +4,7 @@ from json import dumps, loads
 from copy import deepcopy
 from .fake_data import dict_vehicle, dict_ads, dict_driver, dict_taxi
 from APITaxi.extensions import redis_store
-import time
+import time, math
 from datetime import datetime, timedelta
 from flask import current_app
 
@@ -64,6 +64,15 @@ class TestTaxisGet(TaxiGet):
         for key in ['characteristics', 'color', 'licence_plate', 'model',
                     'nb_seats', 'type', 'cpam_conventionne']:
             assert taxi['vehicle'][key] is not None
+
+    def test_get_taxis_bad_id(self):
+        self.add()
+        self.locate_taxi('existepas', 48.75, 2.35, 'existepas')
+        r = self.get('/taxis/?lat=2.35&lon=48.75')
+        self.assert200(r)
+        assert len(r.json['data']) == 1
+        assert math.isclose(r.json['data'][0]['position']['lat'], 2.3, rel_tol=1e-6)
+        assert math.isclose(r.json['data'][0]['position']['lon'], 48.7, rel_tol=1e-6)
 
     def test_get_taxis_lonlat_two_zupc(self):
         self.add()
