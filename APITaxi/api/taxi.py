@@ -151,39 +151,52 @@ class Taxis(Resource):
         offset = 0
         count = p['count'] * 4
         while len(taxis) < p['count']:
-            page_ids_distances = redis_store.zrangebyscore(positions_redis, 0., '+inf', offset, count, True)
-            if len(page_ids_distances) == 0:
-                break
-            page_ids = [v[0].decode() for v in page_ids_distances]
-            distances = [v[1] for v in page_ids_distances]
+            #page_taxis is a dict. the key is an id of a taxi, the value is also a dict with info on this taxi
+            #First we get the position of the taxis
+            page_taxis = {
+                v[0].decode(): {'distance': v[1]}
+                for v in redis_store.zrangebyscore(positions_redis, 0., '+inf', offset, count, True)
+            }
             offset += count
-            positions = redis_store.geopos(current_app.config['REDIS_GEOINDEX_ID'], *page_ids)
-            taxis_db = models.RawTaxi.get(page_ids)
-#We get all timestamps
+            if len(page_taxis) == 0:
+                break
+            #We add the position of each taxis
+            for id_, pos in zip(page_taxis.keys(), redis_store.geopos(current_app.config['REDIS_GEOINDEX_ID'], *page_taxis.keys())):
+                page_taxis[id_]['position'] = pos
+            #Then we get information from the database for each taxi
+            #If a taxi has several operators we'll have several descriptions, so we have a S at descriptions !
+            for taxi in models.RawTaxi.get(page_taxis.keys()):
+                page_taxis[taxi[0]['taxi_id']]['descriptions'] = taxi
+            #If there's a bad id in redis, we now know it, so we can remove this taxi from the dict of taxis
+            page_taxis = dict(filter(lambda t: 'descriptions' in t[1], page_taxis.items()))
+            #We get all timestamps for each taxi, and each operator
+            #We do it in a redis pipe, so we'll get all the results in a list
+            #To deal with it we store in piped the position of each request
             pipe = redis_store.pipeline()
-            list(map(lambda l_taxis:[pipe.zscore(current_app.config['REDIS_TIMESTAMPS'],
-                                      t['taxi_id']+':'+t['u_email']) for t in l_taxis]
-                , taxis_db))
+            pipe_count = 0
+            for id_, values in page_taxis.items():
+                for desc in values['descriptions']:
+                    pipe.zscore(current_app.config['REDIS_TIMESTAMPS'], desc['taxi_id'] + ':' + desc['u_email'])
+                    page_taxis[id_].setdefault('piped', []).append(pipe_count)
+                    pipe_count += 1
             timestamps = pipe.execute()
-#For each member of timestamp_slices we have the first index of the first element
-#in timestamp, and the index of the last element
-#If we have taxis_db = [{t_1,}, {,}, {t_21, t_22}, {t_3,}]
-#Then we want timestamps_slices = [(0, 1), (1, 1), (1, 3), (3, 4)]
-            timestamps_slices = []
-            list(map(lambda i: timestamps_slices.append((0, len(i)))\
-                if not timestamps_slices\
-                else timestamps_slices.append((timestamps_slices[-1][1],
-                                               timestamps_slices[-1][1]+len(i))),
-                taxis_db))
-            l = [models.RawTaxi.generate_dict(t[0],
+            #We iterate on taxis and get the timestamps
+            for id_, taxi in page_taxis.items():
+                page_taxis[id_]['timestamps'] = [timestamps[i] for i in taxi['piped']]
+
+            #Filter of taxis that are not in the customer's zone or not in there zone
+            #Generation of the response
+            l = [models.RawTaxi.generate_dict(t['descriptions'],
                         None, None,
                         favorite_operator=p['favorite_operator'],
-                        position={"lon": t[1][0], "lat": t[1][1]},
-                        distance=t[2], timestamps=islice(timestamps, *t[3]))
-                for t in zip(taxis_db, positions, distances, timestamps_slices) if len(t) > 0
-                if models.Taxi.is_in_zone(t[0], t[1][0], t[1][1], zupc_customer)]
+                        position={"lon": t['position'][0], "lat": t['position'][1]},
+                        distance=t['distance'], timestamps=t['timestamps'])
+                for t in page_taxis.values()
+                if models.Taxi.is_in_zone(t['descriptions'], t['position'][0], t['position'][1], zupc_customer)
+            ]
             taxis.extend([_f for _f in l if _f])
-
+        
+        taxis = taxis[:count]
         influx_db.write_get_taxis(zupc_customer[0].insee, lon, lat, current_user.email, request, len(taxis))
 
         return {'data': sorted(taxis, key=lambda t: t['crowfly_distance'])[:p['count']]}
