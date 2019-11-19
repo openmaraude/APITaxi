@@ -20,10 +20,12 @@ def init_app(app):
     CORS(app)
 
     @app.route('/swagger.json', endpoint='api.specs')
-    @cross_origin()
     def swagger():
-        return render_template('swagger.json', host=app.config['SERVER_NAME']), 200,
-    {'Content-Type': 'application/json'}
+        return (
+            render_template('swagger.json', host=app.config['SERVER_NAME']),
+            200,
+            {'Content-Type': 'application/json'}
+        )
 
     @api.errorhandler(AssertionError)
     @api.errorhandler(KeyError)
