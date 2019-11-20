@@ -37,8 +37,8 @@ jobs:
           name: Launch minimal operateur server
           command: |
             . venv/bin/activate
-            pip install -r minimal_operateur_server/requirements.txt
-            python minimal_operateur_server/api.py
+            pip install ./minimal_operateur_server
+            FLASK_APP=minimal_operateur_server.api flask run --port 5001
           background: true
       - run:
           name: Launch worker
