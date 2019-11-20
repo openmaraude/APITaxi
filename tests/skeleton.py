@@ -58,8 +58,8 @@ class Skeleton(TestCase):
 
     def post_taxi(self, role=None, user=None, post_second=False, custom_ads=None):
         self.init_zupc(post_second)
-        self.init_dep()
         post = partial(self.post, role='operateur', user=user)
+        self.init_dep()
         if post_second:
             r = post([dict_driver_2], url='/drivers/')
         else:
@@ -95,16 +95,19 @@ class Skeleton(TestCase):
     def post_taxi_and_locate(self, lat=1, lon=1, user='user_operateur',
             float_=False, post_second=False, custom_ads=None):
         taxi = self.post_taxi(user=user, post_second=post_second, custom_ads=custom_ads)
+        self.locate_taxi(taxi['id'], lat, lon, user, float_)
+        return taxi
+
+    def locate_taxi(self, id_, lat, lon, operator, float_=False):
         timestamp_type = float if float_ else int
         values = [timestamp_type(time.time()), lat, lon, 'free', 'd1', 1]
-        redis_store.hset('taxi:{}'.format(taxi['id']), user,
+        redis_store.hset('taxi:{}'.format(id_), operator,
                 ' '.join([str(v) for v in values]))
-        n = '{}:{}'.format(taxi['id'], user)
+        n = '{}:{}'.format(id_, operator)
         redis_store.geoadd(current_app.config['REDIS_GEOINDEX'], lat, lon, n)
         redis_store.zadd(current_app.config['REDIS_TIMESTAMPS'], {n:time.time()})
-        redis_store.geoadd(current_app.config['REDIS_GEOINDEX_ID'], lat, lon, taxi['id'])
-        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS_ID'], {taxi['id']:time.time()})
-        return taxi
+        redis_store.geoadd(current_app.config['REDIS_GEOINDEX_ID'], lat, lon, id_)
+        redis_store.zadd(current_app.config['REDIS_TIMESTAMPS_ID'], {id_:time.time()})
 
     def init_zupc(self, post_second=False):
         zupc = models.ZUPC()
@@ -176,7 +179,7 @@ class Skeleton(TestCase):
             version=version, content_type=content_type, headers=headers)
 
     def init_dep(self):
-        if models.Departement.query.filter_by(numero="53").count() > 0:
+        if not models.Departement.query.filter_by(numero="53").first() is None:
             return
         dep = models.Departement(nom="Mayenne", numero="53")
         current_app.extensions['sqlalchemy'].db.session.add(dep)
