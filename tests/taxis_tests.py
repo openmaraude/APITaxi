@@ -609,8 +609,8 @@ class TestTaxiPost(Skeleton):
         self.post_taxi()
         drivers = models.Driver.query.all()
         ads = models.ADS.query.all()
-        self.assertEqual(len(drivers), 2)
-        self.assertEqual(len(ads), 2)
+        self.assertEqual(len(drivers), 1)
+        self.assertEqual(len(ads), 1)
         self.assertEqual(len(models.Taxi.query.all()), 1)
         self.assertEqual(models.Taxi.query.all()[0].driver_id,
                 max(drivers, key=lambda d: d.added_at).id)

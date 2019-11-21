@@ -65,7 +65,7 @@ class TestADSPost(Skeleton):
         self.assert201(r)
         self.assertEqual(len(r.json['data']), 2)
         list_ads = models.ADS.query.all()
-        self.assertEqual(len(list_ads), 2)
+        self.assertEqual(len(list_ads), 1)
         assert all([ads.zupc_id is not None for ads in list_ads])
 
     def test_too_many_ads(self):
