@@ -65,7 +65,7 @@ class TestDriverPost(Skeleton):
         self.init_dep()
         r = self.post([dict_driver for x in range(0, 2)])
         self.assert201(r)
-        self.assertEqual(len(Driver.query.all()), 2)
+        self.assertEqual(len(Driver.query.all()), 1)
 
     def test_post_file(self):
         r = self.post(dict(file=(BytesIO(b'test file'), 'test.csv'),),
@@ -91,7 +91,7 @@ class TestDriverPost(Skeleton):
         r = self.post([dict_])
         self.assert201(r)
         self.check_req_vs_dict(r.json['data'][0], dict_)
-        self.assertEqual(len(Driver.query.all()), 2)
+        self.assertEqual(len(Driver.query.all()), 1)
 
     def test_datetime(self):
         self.init_dep()
