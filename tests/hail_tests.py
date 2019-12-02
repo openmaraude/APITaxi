@@ -10,23 +10,31 @@ from APITaxi_models.security import User
 from copy import deepcopy
 from werkzeug.exceptions import ServiceUnavailable
 from datetime import datetime, timedelta
-import time, json
+import time, json, os
 from flask import current_app
+from urllib.parse import urljoin
 
 class HailMixin(Skeleton):
     url = '/hails/'
 
-    def set_env(self, env, url, user='user_operateur'):
+    def make_request_url(self, path):
+        return urljoin(
+            os.environ.get('TEST_POST_URL', 'http://127.0.0.1:5001/'),
+            path
+        )
+
+    def set_env(self, env, path, user='user_operateur'):
         from APITaxi_models.security import User
         prev_env = self.app.config['ENV']
         self.app.config['ENV'] = env
         u = User.query.filter_by(email=user).first()
         if env == 'PROD':
-            u.hail_endpoint_production = url
+            u.hail_endpoint_production = self.make_request_url(path)
         elif env == 'DEV':
-            u.hail_endpoint_testing = url
+            u.hail_endpoint_testing = self.make_request_url(path)
         elif env == 'STAGING':
-            u.hail_endpoint_staging = url
+            u.hail_endpoint_staging = self.make_request_url(path)
+        print(u.hail_endpoint_testing)
         current_app.extensions['sqlalchemy'].db.session.add(u)
         current_app.extensions['sqlalchemy'].db.session.commit()
         return prev_env
@@ -121,7 +129,7 @@ class TestHailPost(HailMixin):
         self.assert403(r)
 
     def received_by_operator(self, env):
-        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env(env, '/hail/')
         d = deepcopy(dict_)
         r = self.send_hail(d)
         self.assert201(r)
@@ -157,7 +165,7 @@ class TestHailPost(HailMixin):
         self.received_by_operator('STAGING')
 
     def test_received_by_operator_apikey(self):
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail_apikey/',
+        prev_env = self.set_env('PROD', '/hail_apikey/',
                 'user_apikey')
         dict__ = deepcopy(dict_)
         dict__['operateur'] = 'user_apikey'
@@ -174,7 +182,7 @@ class TestHailPost(HailMixin):
         self.app.config['ENV'] = prev_env
 
     def failure_operator(self, env):
-        prev_env = self.set_env(env, 'http://127.0.0.1:5001/hail_failure/')
+        prev_env = self.set_env(env, '/hail_failure/')
         r = self.send_hail(deepcopy(dict_))
         self.assert201(r)
         self.assertEqual(len(Customer.query.all()), 1)
@@ -193,7 +201,7 @@ class TestHailPost(HailMixin):
         self.failure_operator('STAGING')
 
     def no_hail_field(self, k):
-        prev_env = self.set_env('DEV', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('DEV', '/hail/')
         hail = deepcopy(dict_)
         del hail[k]
         r = self.send_hail(hail)
@@ -212,20 +220,20 @@ class TestHailPost(HailMixin):
         self.no_hail_field('customer_lat')
 
     def test_server_empty_answer(self):
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail_empty/')
+        prev_env = self.set_env('PROD', '/hail_empty/')
         r = self.send_hail(dict_)
         self.assert201(r)
         self.app.config['ENV'] = prev_env
 
     def test_server_empty_taxi(self):
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail_empty_taxi/')
+        prev_env = self.set_env('PROD', '/hail_empty_taxi/')
         r = self.send_hail(dict_)
         self.assert201(r)
         self.app.config['ENV'] = prev_env
 
     def test_hail_operator_header_dash(self):
         u = User.query.filter_by(email='user_operateur').first()
-        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        u.hail_endpoint_testing = self.make_request_url('/hail/')
         old_value = u.operator_header_name
         u.operator_header_name = 'X-API-KEY'
 
@@ -236,7 +244,7 @@ class TestHailPost(HailMixin):
 
     def test_hail_operator_header_special_char(self):
         u = User.query.filter_by(email='user_operateur').first()
-        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        u.hail_endpoint_testing = self.make_request_url('/hail/')
         old_value = u.operator_header_name
         u.operator_header_name = '&é"\'(-è_çà)'
         r = self.send_hail(dict_)
@@ -246,7 +254,7 @@ class TestHailPost(HailMixin):
 
     def test_hail_operator_api_key_dash(self):
         u = User.query.filter_by(email='user_operateur').first()
-        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        u.hail_endpoint_testing = self.make_request_url('/hail/')
         old_value = u.operator_api_key
         u.operator_api_key = '-'
         self.test_received_by_operator_apikey()
@@ -256,7 +264,7 @@ class TestHailPost(HailMixin):
     def test_hail_operator_api_key_special_char(self):
         u = User.query.filter_by(email='user_operateur').first()
         old_value = u.operator_api_key
-        u.hail_endpoint_testing = 'http://127.0.0.1:5001/hail/'
+        u.hail_endpoint_testing = self.make_request_url('/hail/')
         u.operator_api_key = '&é"\'(-è_çà)'
         self.test_received_by_operator_apikey()
         u.operator_api_key = old_value
@@ -264,7 +272,7 @@ class TestHailPost(HailMixin):
 
     def test_hail_post_after_reporting_customer(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -282,7 +290,7 @@ class TestHailPost(HailMixin):
 
     def test_hail_post_after_2_timeouts(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -309,7 +317,7 @@ class  TestHailGet(HailMixin):
 
     def test_access_moteur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']), role='moteur')
@@ -320,7 +328,7 @@ class  TestHailGet(HailMixin):
 
     def test_access_operateur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']), role='operateur')
@@ -330,7 +338,7 @@ class  TestHailGet(HailMixin):
 
     def test_no_access_moteur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
@@ -340,7 +348,7 @@ class  TestHailGet(HailMixin):
 
     def test_no_access_operateur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.get('/hails/{}/'.format(r.json['data'][0]['id']),
@@ -355,7 +363,7 @@ class  TestHailGet(HailMixin):
 
     def test_customer_timeout(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -368,7 +376,7 @@ class  TestHailGet(HailMixin):
 
     def test_taxi_timeout(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -381,7 +389,7 @@ class  TestHailGet(HailMixin):
 
     def test_technical_timeout(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         for status in ['received_by_operator', 'sent_to_operator']:
             r = self.send_hail(dict_hail)
             self.assert201(r)
@@ -395,17 +403,19 @@ class  TestHailGet(HailMixin):
 
     def test_accepted_by_customer_timeout(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
-        self.set_hail_status(r, 'accepted_by_customer', timedelta(seconds=30*60+1))
+        self.set_hail_status(r, 'accepted_by_customer', timedelta(seconds=30*60+10))
         hail_id = r.json['data'][0]['id']
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
         self.assert200(r)
+        print(r.json)
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
         hail = Hail.query.get(hail_id)
+        print(f"hail.__dict__ {hail.__dict__}")
         assert hail._status == 'timeout_accepted_by_customer'
         assert r.json['data'][0]['taxi']['position']['lon'] == 0
         assert r.json['data'][0]['taxi']['position']['lat'] == 0
@@ -414,7 +424,7 @@ class  TestHailGet(HailMixin):
 
     def test_customer_on_board(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -449,7 +459,7 @@ class  TestHailGet(HailMixin):
 
     def test_finished(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -481,7 +491,7 @@ class  TestHailGet(HailMixin):
             for hail_status in [ 'emitted', 'received', 'sent_to_operator',
                                 'received_by_operator', 'received_by_taxi']:
                 dict_hail = deepcopy(dict_)
-                prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+                prev_env = self.set_env('PROD', '/hail/')
                 r = self.send_hail(dict_hail)
                 self.assert201(r)
                 r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -505,7 +515,7 @@ class  TestHailGet(HailMixin):
 
     def test_taxi_update_sync_hail_status(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail_id = r.json['data'][0]['id']
@@ -535,7 +545,7 @@ class  TestHailGet(HailMixin):
                                 'incident_taxi', 'declined_by_customer',
                                 'failure']:
                 dict_hail = deepcopy(dict_)
-                prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+                prev_env = self.set_env('PROD', '/hail/')
                 r = self.send_hail(dict_hail)
                 self.assert201(r)
                 r = self.wait_for_status('received_by_operator',
@@ -547,6 +557,7 @@ class  TestHailGet(HailMixin):
                 r = self.get('/hails/{}/'.format(hail_id),
                         version=2, role='operateur')
                 self.assert200(r)
+                print(r.json)
                 assert(r.json['data'][0]['status'] == hail_status)
                 r = self.put([{'status': taxi_status}],
                              '/taxis/{}/'.format(dict_hail['taxi_id']),
@@ -562,7 +573,7 @@ class  TestHailGet(HailMixin):
         #test timeout taxi
         for taxi_status in ['free', 'off', 'occupied']:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator',
@@ -590,7 +601,7 @@ class  TestHailGet(HailMixin):
             dict_hail['customer_id'] = '{}:{}'.format(dict_hail['customer_id'],
                                                       time.time())
 
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator',
@@ -619,7 +630,7 @@ class TestHailPut(HailMixin):
 
     def test_received_by_taxi_ok_version_1(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -632,7 +643,7 @@ class TestHailPut(HailMixin):
 
     def test_received_by_taxi_no_phone_number_version_1(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -644,7 +655,7 @@ class TestHailPut(HailMixin):
 
     def test_received_by_taxi_ok_version_2(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -659,7 +670,7 @@ class TestHailPut(HailMixin):
 
     def test_received_by_taxi_no_phone_number_version_2(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -672,7 +683,7 @@ class TestHailPut(HailMixin):
 
     def received_by_taxi_from_received(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -687,7 +698,7 @@ class TestHailPut(HailMixin):
 
     def received_by_operator_from_received_by_taxi(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -701,7 +712,7 @@ class TestHailPut(HailMixin):
 
     def test_timeout_taxi_ok(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -716,7 +727,7 @@ class TestHailPut(HailMixin):
 
     def test_timeout_taxi_ko(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -731,7 +742,7 @@ class TestHailPut(HailMixin):
 
     def test_timeout_customer_ok(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -745,7 +756,7 @@ class TestHailPut(HailMixin):
 
     def test_timeout_customer_ko(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -760,8 +771,9 @@ class TestHailPut(HailMixin):
 
     def test_accepted_by_customer(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
+        print(r.json)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi')
@@ -774,7 +786,7 @@ class TestHailPut(HailMixin):
 
     def test_no_ban(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         for i in range(3):
             r = self.send_hail(dict_hail)
             self.assert201(r)
@@ -789,7 +801,7 @@ class TestHailPut(HailMixin):
 
     def test_declined_by_customer(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -803,7 +815,7 @@ class TestHailPut(HailMixin):
 
     def test_invalid_status(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -818,7 +830,7 @@ class TestHailPut(HailMixin):
         valid_values = ['ko', 'payment', 'courtesy', 'route', 'cleanliness']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -835,7 +847,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_bad_value(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -850,7 +862,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_bad_value_with_accent(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -865,7 +877,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_by_non_moteur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -879,7 +891,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -896,7 +908,7 @@ class TestHailPut(HailMixin):
     def test_rating_ride_2_hails(self):
         self.test_rating_ride()
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -913,7 +925,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_one_null(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -936,7 +948,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_no_status(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         hail = Hail.query.get(r.json['data'][0]['id'])
@@ -950,7 +962,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_min(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -966,7 +978,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_max(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -982,7 +994,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_bad_value(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -997,7 +1009,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_float(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1015,7 +1027,7 @@ class TestHailPut(HailMixin):
 
     def test_rating_ride_string(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1032,7 +1044,7 @@ class TestHailPut(HailMixin):
         valid_values = ['', 'mud_river', 'parade', 'earthquake']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1049,7 +1061,7 @@ class TestHailPut(HailMixin):
 
     def test_ended_reprieve(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1095,7 +1107,7 @@ class TestHailPut(HailMixin):
         valid_values = ['', 'mud_river', 'parade', 'earthquake']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1111,7 +1123,7 @@ class TestHailPut(HailMixin):
 
     def test_incident_customer_reason_bad_value(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1126,7 +1138,7 @@ class TestHailPut(HailMixin):
 
     def test_incident_customer_reason_bad_value_with_accent(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1141,7 +1153,7 @@ class TestHailPut(HailMixin):
 
     def test_incident_customer_by_non_moteur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1157,7 +1169,7 @@ class TestHailPut(HailMixin):
         valid_values = ['no_show', 'address', 'traffic', 'breakdown']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1178,7 +1190,7 @@ class TestHailPut(HailMixin):
         valid_values = ['no_show', 'address', 'traffic', 'breakdown']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1193,7 +1205,7 @@ class TestHailPut(HailMixin):
 
     def test_incident_taxi_reason_bad_value(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1208,7 +1220,7 @@ class TestHailPut(HailMixin):
 
     def test_incident_taxi_reason_bad_value_with_accent(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1223,7 +1235,7 @@ class TestHailPut(HailMixin):
 
     def test_incident_taxi_by_non_operateur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1238,7 +1250,7 @@ class TestHailPut(HailMixin):
     def test_reporting_customer(self):
         for v in [True, False]:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1256,7 +1268,7 @@ class TestHailPut(HailMixin):
 
     def test_reporting_customer_by_non_operateur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1272,7 +1284,7 @@ class TestHailPut(HailMixin):
         valid_values = ['ko', 'payment', 'courtesy', 'route', 'cleanliness']
         for v in valid_values:
             dict_hail = deepcopy(dict_)
-            prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+            prev_env = self.set_env('PROD', '/hail/')
             r = self.send_hail(dict_hail)
             self.assert201(r)
             r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1289,7 +1301,7 @@ class TestHailPut(HailMixin):
 
     def test_reporting_customer_reason_bad_value(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1304,7 +1316,7 @@ class TestHailPut(HailMixin):
 
     def test_reporting_customer_reason_bad_value_with_accent(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1319,7 +1331,7 @@ class TestHailPut(HailMixin):
 
     def test_reporting_customer_reason_by_non_operateur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1333,7 +1345,7 @@ class TestHailPut(HailMixin):
 
     def test_empty_dict(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1345,7 +1357,7 @@ class TestHailPut(HailMixin):
 
     def test_put_customer_operateur(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
@@ -1358,7 +1370,7 @@ class TestHailPut(HailMixin):
 
     def test_received_by_customer(self):
         dict_hail = deepcopy(dict_)
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
