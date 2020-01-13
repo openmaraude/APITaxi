@@ -1,5 +1,10 @@
-Dockerfile
-.git
-*.egg-info
 **/*.pyc
 **/__pycache__
+*.egg-info
+*.pyc
+.dockerignore
+.eggs
+.git
+.tox
+Dockerfile
+Makefile

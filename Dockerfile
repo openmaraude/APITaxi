@@ -1,64 +1,49 @@
-# Build variables to override (with docker build --build-arg) to choose the version of dependencies to install:
+# Example of uwsgi.ini to mount in /uwsgi.ini:
 #
-# - API_TAXI_{UTILS,MODELS}_REPO: default https://github.com/openmaraude/APITaxi_xxx
-# - API_TAXI_{UTILS,MODELS}_COMMIT: default master
-# - API_TAXI_{UTILS,MODELS}: default ${API_TAXI_xx_REPO}/archive/${API_TAXI_xx_COMMIT}.tar.gz
-#
-# Volumes to mount on run:
-#
-# - /etc/uwsgi-emperor/vassals: contains uWSGI configuration files
-#
-# Example of uWSGI configuration file:
-#
-# $> cat /etc/uwsgi-emperor/vassals/api-taxi.ini
 # [uwsgi]
 #
 # master = true
-# processes = 6
+# processes = 24
 # plugin = python3
 # module = APITaxi:create_app()
-# socket = /share/api-taxi.sock
-# stats = /share/api-taxi-stats.sock
-#
-# Example of run command:
-#
-# $> docker run -d -v /abs/path/to/api-taxi.ini:/etc/uwsgi-emperor/vassals/api-taxi.ini:ro -v `pwd`/share:/share $(docker build -q --build-arg API_TAXI_UTILS_COMMIT=master .)
+# socket = 0.0.0.0:5000
+# stats = 0.0.0.0:5007 --stats-http
 
-FROM debian
+FROM ubuntu
 
-RUN apt-get update && apt-get install -y \
-  uwsgi \
-  python3-pip \
-  libpq-dev \
-  uwsgi-emperor \
-  uwsgi-plugin-python3
-
-# Download dependencies (APITaxi_utils and APITaxi_models) to /code
-ARG API_TAXI_UTILS_REPO=https://github.com/openmaraude/APITaxi_utils
-ARG API_TAXI_MODELS_REPO=https://github.com/openmaraude/APITaxi_models
-
-ARG API_TAXI_UTILS_COMMIT=master
+ARG API_TAXI_MODELS_URL=https://github.com/openmaraude/APITaxi_models
 ARG API_TAXI_MODELS_COMMIT=master
 
-ARG API_TAXI_UTILS=${API_TAXI_UTILS_REPO}/archive/${API_TAXI_UTILS_COMMIT}.tar.gz
-ARG API_TAXI_MODELS=${API_TAXI_MODELS_REPO}/archive/${API_TAXI_MODELS_COMMIT}.tar.gz
+ARG API_TAXI_UTILS_URL=https://github.com/openmaraude/APITaxi_utils
+ARG API_TAXI_UTILS_COMMIT=master
 
-ADD ${API_TAXI_UTILS} /tmp/APITaxi_utils.tar.gz
-ADD ${API_TAXI_MODELS} /tmp/APITaxi_models.tar.gz
+RUN apt-get update && apt-get install -y \
+  libpq-dev \
+  python3-pip \
+  uwsgi \
+  uwsgi-plugin-python3
 
-RUN mkdir -p /code/APITaxi_utils && tar -xvf /tmp/APITaxi_utils.tar.gz -C /code/APITaxi_utils --strip 1
-RUN mkdir -p /code/APITaxi_models && tar -xvf /tmp/APITaxi_models.tar.gz -C /code/APITaxi_models --strip 1
+RUN useradd api
 
-RUN rm -f /tmp/APITaxi_utils.tar.gz
-RUN rm -f /tmp/APITaxi_models.tar.gz
+RUN mkdir -p /var/run/api-taxi
+RUN chown api:api /var/run/api-taxi
 
-# Install dependencies
-RUN pip3 install /code/APITaxi_utils
-RUN pip3 install /code/APITaxi_models
+# ADD detects if file has changed. If we instead ran pip3 install <url>, docker
+# would use the cache even if the file has changed.
+ADD ${API_TAXI_MODELS_URL}/archive/${API_TAXI_MODELS_COMMIT}.tar.gz /tmp/api_taxi_models.tar.gz
+RUN pip3 install /tmp/api_taxi_models.tar.gz
+RUN rm -rf /tmp/api_taxi_models.tar.gz
 
-ADD . /code/APITaxi
-RUN pip3 install /code/APITaxi
+ADD ${API_TAXI_UTILS_URL}/archive/${API_TAXI_UTILS_COMMIT}.tar.gz /tmp/api_taxi_utils.tar.gz
+RUN pip3 install /tmp/api_taxi_utils.tar.gz
+RUN rm -rf /tmp/api_taxi_utils.tar.gz
 
-WORKDIR /code/APITaxi
 
-CMD ["/usr/bin/uwsgi", "--ini", "/etc/uwsgi-emperor/emperor.ini"]
+COPY . /app
+WORKDIR /app
+
+RUN pip3 install .
+
+USER api
+
+CMD ["uwsgi", "/uwsgi.ini"]
