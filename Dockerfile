@@ -25,6 +25,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN useradd api
 
+# Install admin interface
+RUN pip3 install flower
+
 RUN mkdir -p /var/run/api-taxi
 RUN chown api:api /var/run/api-taxi
 
