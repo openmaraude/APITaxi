@@ -4,7 +4,7 @@ from flask_script import prompt_pass
 from . import manager
 from flask import current_app
 
-def create_user(email, commit=False):
+def create_user(email, commit=False, password=None):
     "Create a user"
 #    if not validate_email(email):
 #        print("email is not valid")
@@ -13,14 +13,14 @@ def create_user(email, commit=False):
     if user:
         print("User has already been created")
         return user
-    password = prompt_pass("Type a password")
+    password = password or prompt_pass("Type a password")
     user = user_datastore.create_user(email=email, password=password)
     if commit:
         current_app.extensions['sqlalchemy'].db.session.commit()
     return user
 
-def create_user_role(email, role_name):
-    user = create_user(email)
+def create_user_role(email, role_name, password=None):
+    user = create_user(email, password=password)
     role = user_datastore.find_or_create_role(role_name)
     user_datastore.add_role_to_user(user, role)
     current_app.extensions['sqlalchemy'].db.session.commit()
