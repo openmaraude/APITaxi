@@ -50,8 +50,7 @@ def download_zipfile(url, download_path):
 
     if os.path.exists(fullpath):
         ok = input("%s has already been downloaded, do you want to download it again ? [y/n]" % filename)
-        if ok.lower() not in ('y', 'yes'):
-            download = False
+        download = ok.lower() in TRUE_VARS
     else:
         os.makedirs(download_path)
 
@@ -78,7 +77,8 @@ def get_records_from_shapefile(shape_filename):
     """Yield records from `shape_filename`.
     """
     reader = shapefile.Reader(shape_filename)
-    for shape_record in reader.iterShapeRecords():
+
+    for shape_record in reader:
         feature = shape_record.__geo_interface__
         yield feature['geometry'], feature['properties']
 
@@ -119,7 +119,7 @@ def recreate_zupc_tmp_table():
         table.drop(db.engine)
     logger.info('Create temporary table %s' % table.name)
     table.create(db.engine)
-
+    db.session.flush()
 
 def fill_zupc_tmp_table_from_contours(shape_filename):
     """Build ZUPC temporary table. Rows only contain data from the contours database and need to be "completed" with
@@ -191,18 +191,22 @@ def fill_zupc_union(filename):
 
 
 def fill_zupc_special_name(filename, parent_zupc):
-    """File "special_name_insee" from the ZUPC repository can be used to override the name and INSEE code of a ZUPC.
+    """Fill "special_name_insee" from the ZUPC repository can be used to override the name and INSEE code of a ZUPC.
     """
     with open(filename) as handle:
         lines = list(csv.reader(handle))
 
     if len(lines) != 1:
         raise ValueError('CSV file %s should contain exactly one line' % filename)
-    insee, name = lines[0]
-
-    parent_zupc.nom = name
-    parent_zupc.insee = insee
-    db.session.add(parent_zupc)
+    insee, nom = lines[0]
+    zupc = ZUPC_tmp(
+        nom=nom,
+        insee=insee,
+        departement_id=parent_zupc.departement_id,
+        # 4326 is a reference to https://spatialreference.org/ref/epsg/wgs-84/
+        shape=parent_zupc.shape
+    )
+    db.session.add(zupc)
     db.session.flush()
 
 
