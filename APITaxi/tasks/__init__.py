@@ -6,3 +6,4 @@ def init_app(app):
 from .make_views import store_active_taxis
 from .clean_geoindex_timestamps import clean_geoindex_timestamps
 from .send_request_operator import send_request_operator
+from .healthchecks import task_healthchecks
