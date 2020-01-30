@@ -1,4 +1,6 @@
 from . import manager
+from redis import RedisError
+
 def warm_up_redis_func(app=None, db=None, user_model=None, redis_store=None):
     not_available = set()
     available = set()
@@ -17,7 +19,13 @@ def warm_up_redis_func(app=None, db=None, user_model=None, redis_store=None):
         else:
             not_available.add(taxi_id_operator)
     to_remove = list()
-    if redis_store.type(app.config['REDIS_NOT_AVAILABLE']) != 'zset':
+
+    try:
+        type_redis_not_available = redis_store.type(app.config['REDIS_NOT_AVAILABLE'])
+    except RedisError:
+        return
+
+    if  type_redis_not_available != 'zset':
         redis_store.delete(app.config['REDIS_NOT_AVAILABLE'])
     else:
         cursor, keys = redis_store.zscan(app.config['REDIS_NOT_AVAILABLE'], 0)
