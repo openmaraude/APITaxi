@@ -141,15 +141,16 @@ def fill_zupc_tmp_table_from_contours(shape_filename):
             logger.warning('Unable to find departement of INSEE code %s', properties['insee'])
             continue
 
-        obj = ZUPC_tmp(
+        multipolygon = shape(geom) if geom['type'] == 'MultiPolygon' \
+                       else MultiPolygon([shape(geom)])
+        zupc = ZUPC_tmp(
             nom=properties['nom'],
             insee=properties['insee'],
             departement_id=departement.id,
             # 4326 is a reference to https://spatialreference.org/ref/epsg/wgs-84/
-            shape=from_shape(MultiPolygon([shape(geom)]), srid=4326)
+            shape=from_shape(multipolygon, srid=4326)
         )
-
-        db.session.add(obj)
+        db.session.add(zupc)
 
     db.session.commit()
 
