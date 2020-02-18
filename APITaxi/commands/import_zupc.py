@@ -19,7 +19,7 @@ from sqlalchemy import Column, func
 from sqlalchemy.orm.exc import NoResultFound
 import shapefile
 
-from APITaxi_models import db, Departement, ADS, ZUPC
+from APITaxi_models import db, Departement, ADS, ZUPC, Taxi, Hail
 
 from . import manager
 
@@ -33,11 +33,15 @@ CONTOURS_DEFAULT_URL = "http://osm13.openstreetmap.fr/~cquest/openfla/export/com
 # Archive downloaded and extrated to ARRONDISSEMENTS_DIR
 ARRONDISSEMENTS_DEFAULT_URL = "http://osm13.openstreetmap.fr/~cquest/openfla/export/arrondissements_municipaux-20180711-shp.zip"
 
+# CSV of nouvelles communes
+COMMUNES_NOUVELLES_DEFAULT_URL = "https://www.data.gouv.fr/fr/datasets/r/78a9563a-11e4-4686-8b08-624d0741f66f"
+
 # Temporary path where CONTOURS_URL is downloaded
 CONTOURS_DEFAULT_TMPDIR = '/tmp/temp_contours'
 
 # Temporary path where ARRONDISSEMENTS_URL is downloaded
 ARRONDISSEMENTS_DEFAULT_TMPDIR = '/tmp/temp_arrondissements'
+
 # Directory where https://github.com/openmaraude/ZUPC has been cloned
 ZUPC_DEFAULT_DIRECTORY = '/tmp/ZUPC'
 
@@ -314,10 +318,37 @@ def fill_arrondissements(arrondissements_shape_filename):
         )
         db.session.add(obj)
     db.session.flush()
+
+def fill_communes_nouvelles():
+    r = requests.get(COMMUNES_NOUVELLES_DEFAULT_URL)
+    decoded = r.content.decode('utf8')
+    for line in csv.DictReader(decoded.split('\n')):
+        if line['DepComN'] != line['DepComA']:
+            parent_zupc = ZUPC_tmp.query.filter_by(insee=line['DepComN']).first()
+            if not parent_zupc:
+                continue
+            zupc = ZUPC_tmp(
+                nom=line['NomCA'],
+                insee=line['DepComA'],
+                departement_id=parent_zupc.departement_id,
+                # 4326 is a reference to https://spatialreference.org/ref/epsg/wgs-84/
+                shape=parent_zupc.shape,
+                parent_id=parent_zupc.id
+            )
+        else:
+            zupc = ZUPC_tmp.query.filter_by(insee=line['DepComN']).first()
+            if not zupc:
+                continue
+            zupc.nom = line['NomCN']
+        db.session.add(zupc)
+    db.session.flush()
+
+
 def load_zupc_tmp_table(contours_shape_filename, arrondissements_shape_filename, zupc_repo):
     recreate_zupc_tmp_table()
     fill_zupc_tmp_table_from_contours(contours_shape_filename)
     fill_arrondissements(arrondissements_shape_filename)
+    fill_communes_nouvelles()
     fill_zupc_tmp_table_from_arretes(zupc_repo)
 
 
@@ -333,7 +364,34 @@ def merge_zupc_tmp_table():
                  .outerjoin(ZUPC_tmp, ADS.insee == ZUPC_tmp.insee) \
                  .filter(ZUPC_tmp.id.is_(None)) \
                  .count() > 0:
-        raise ValueError('Some INSEE codes referenced in table ADS do not exist in table zupc_temp')
+        logger.info('These ZUPC could not be found in the newly generated ZUPCs: {}'.format(
+        set([a.insee for a in db.session.query(ADS) \
+                 .outerjoin(ZUPC_tmp, ADS.insee == ZUPC_tmp.insee) \
+                 .filter(ZUPC_tmp.id.is_(None)) \
+                 .all()])
+        ))
+        delete = input('If you continue import, taxis linked to these ZUPC will be deleted, are you ok with that? [y/n]')
+        if delete not in TRUE_VARS:
+            return
+        for ads in ADS.query \
+                 .outerjoin(ZUPC_tmp, ADS.insee == ZUPC_tmp.insee) \
+                 .filter(ZUPC_tmp.id.is_(None)) \
+                 .all():
+            for taxi in Taxi.query.filter(Taxi.ads_id == ads.id).all():
+                if Taxi.query.filter(Taxi.ads_id == taxi.ads_id).count() == 1:
+                    db.session.delete(taxi.ads)
+                if Taxi.query.filter(Taxi.driver_id == taxi.driver_id).count() == 1:
+                    db.session.delete(taxi.driver)
+                if Taxi.query.filter(Taxi.vehicle_id == taxi.vehicle_id).count() == 1:
+                    for vehicle_description in taxi.vehicle.descriptions:
+                        db.session.delete(vehicle_description)
+                    db.session.delete(taxi.vehicle)
+                taxi.current_hail = None
+                db.session.add(taxi)
+                for hail in Hail.query.filter(Hail.taxi_id == taxi.id):
+                    db.session.delete(hail)
+                db.session.delete(taxi)
+                logger.info('Removing taxi {}'.format(taxi.id))
 
     last_zupc_id = db.session.query(func.MAX(ZUPC.id)).one()[0]
 
@@ -397,6 +455,11 @@ def merge_zupc_tmp_table():
     '--contours-tmpdir',
     help='Where --contours-url is downloaded and extracted, default=%s' % CONTOURS_DEFAULT_TMPDIR,
     default=CONTOURS_DEFAULT_TMPDIR
+)
+@manager.option(
+    '--arrondissements-tmpdir',
+    help='Where --arrondissements-url is downloaded and extracted, default=%s' % ARRONDISSEMENTS_DEFAULT_TMPDIR,
+    default=ARRONDISSEMENTS_DEFAULT_TMPDIR
 )
 @manager.option(
     '--zupc-repo',
