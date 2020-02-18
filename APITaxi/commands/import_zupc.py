@@ -30,9 +30,14 @@ logger = logging.getLogger(__name__)
 # Archive downloaded and extracted to CONTOURS_DIR
 CONTOURS_DEFAULT_URL = "http://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20190101-shp.zip"
 
+# Archive downloaded and extrated to ARRONDISSEMENTS_DIR
+ARRONDISSEMENTS_DEFAULT_URL = "http://osm13.openstreetmap.fr/~cquest/openfla/export/arrondissements_municipaux-20180711-shp.zip"
+
 # Temporary path where CONTOURS_URL is downloaded
 CONTOURS_DEFAULT_TMPDIR = '/tmp/temp_contours'
 
+# Temporary path where ARRONDISSEMENTS_URL is downloaded
+ARRONDISSEMENTS_DEFAULT_TMPDIR = '/tmp/temp_arrondissements'
 # Directory where https://github.com/openmaraude/ZUPC has been cloned
 ZUPC_DEFAULT_DIRECTORY = '/tmp/ZUPC'
 
@@ -291,9 +296,27 @@ def fill_zupc_tmp_table_from_arretes(zupc_repo):
         fill_zupc(fullpath)
 
 
-def load_zupc_tmp_table(shape_filename, zupc_repo):
+def fill_arrondissements(arrondissements_shape_filename):
+    for geom, properties in get_records_from_shapefile(arrondissements_shape_filename):
+        arrondissement_shape = from_shape(MultiPolygon([shape(geom)]), srid=4326)
+        parent_zupc = db.session.query(ZUPC_tmp).filter(
+                ZUPC_tmp.shape.ST_Intersects(arrondissement_shape)
+            ).order_by(func.ST_Area(func.ST_Intersection(ZUPC_tmp.shape, arrondissement_shape)).desc()).first()
+        multipolygon = shape(geom) if geom['type'] == 'MultiPolygon' else MultiPolygon([shape(geom)])
+        obj = ZUPC_tmp(
+            nom=properties['nom'],
+            insee=properties['insee'],
+            departement_id=parent_zupc.departement_id,
+            # 4326 is a reference to https://spatialreference.org/ref/epsg/wgs-84/
+            shape=from_shape(multipolygon, srid=4326),
+            parent_id=parent_zupc.id
+        )
+        db.session.add(obj)
+    db.session.flush()
+def load_zupc_tmp_table(contours_shape_filename, arrondissements_shape_filename, zupc_repo):
     recreate_zupc_tmp_table()
-    fill_zupc_tmp_table_from_contours(shape_filename)
+    fill_zupc_tmp_table_from_contours(contours_shape_filename)
+    fill_arrondissements(arrondissements_shape_filename)
     fill_zupc_tmp_table_from_arretes(zupc_repo)
 
 
@@ -365,6 +388,11 @@ def merge_zupc_tmp_table():
     default=CONTOURS_DEFAULT_URL
 )
 @manager.option(
+    '--arrondissements-url',
+    help='Arrondissements URL to download, default=%s' % CONTOURS_DEFAULT_URL,
+    default=ARRONDISSEMENTS_DEFAULT_URL
+)
+@manager.option(
     '--contours-tmpdir',
     help='Where --contours-url is downloaded and extracted, default=%s' % CONTOURS_DEFAULT_TMPDIR,
     default=CONTOURS_DEFAULT_TMPDIR
@@ -388,5 +416,9 @@ def import_zupc(contours_url, contours_tmpdir, zupc_repo):
     if len(shape_filenames) != 1:
         raise RuntimeError('None or more than one shapefile .shp in %s' % contours_tmpdir)
 
-    load_zupc_tmp_table(shape_filenames[0], zupc_repo)
+    arrondissements_shape_filenames = list(find_files_by_extension(arrondissements_tmpdir, 'shp'))
+    if len(arrondissements_shape_filenames) != 1:
+        raise RuntimeError('None or more than one shapefile .shp in %s' % arrondissements_tmpdir)
+
+    load_zupc_tmp_table(contours_shape_filenames[0], arrondissements_shape_filenames[0], zupc_repo)
     merge_zupc_tmp_table()
