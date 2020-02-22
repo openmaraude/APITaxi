@@ -16,6 +16,7 @@ from shapely.geometry import Polygon, MultiPolygon
 from geoalchemy2.shape import from_shape
 from flask_login import current_user
 from flask import current_app
+from sqlalchemy import text
 
 class Skeleton(TestCase):
     TESTING = True
@@ -23,7 +24,15 @@ class Skeleton(TestCase):
     def create_app(self):
         return create_app()
 
+    def wait_for_db(self):
+        for attempt in range(4, 0, -1):
+            if db.engine.execute(text("SELECT 1")):
+                return
+            current_app.logger.info(f'Unable to connect to the database, {attempt} remaining')
+        raise RuntimeError('Unable to connect to the database')
+
     def setUp(self):
+        self.wait_for_db()
         db.drop_all()
         db.create_all()
         for role in ['admin', 'operateur', 'moteur']:
