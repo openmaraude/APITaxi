@@ -26,8 +26,6 @@ jobs:
             mkdir -p ./venv
             virtualenv ./venv
             . venv/bin/activate
-            pip install git+https://github.com/openmaraude/APITaxi_utils.git
-            pip install git+https://github.com/openmaraude/APITaxi_models.git
             pip install .
       - run:
           name: Fake positions
