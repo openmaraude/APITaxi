@@ -6,8 +6,8 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
-    'APITaxi_utils',
-    'APITaxi_models',
+    'APITaxi_utils@https://github.com/openmaraude/APITaxi_utils/tarball/use_flask-restx#egg=APITaxi_utils',
+    'APITaxi_models@https://github.com/openmaraude/APITaxi_models/tarball/use_flask-restx#egg=APITaxi_models',
     'Cython',
     'nose',
     'Flask-Testing',

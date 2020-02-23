@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import request, current_app, g
-from flask_restplus import Resource, reqparse, fields, abort, marshal
+from flask_restx import Resource, reqparse, fields, abort, marshal
 from flask_security import (login_required, roles_required,
         roles_accepted, current_user)
 from ..extensions import redis_store, redis_store_saved

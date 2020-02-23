@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from . import api
-from flask_restplus import Resource, fields, abort, marshal
+from flask_restx import Resource, fields, abort, marshal
 from flask_security import login_required, current_user, roles_accepted
 from APITaxi_models import db, Customer as CustomerModel
 from APITaxi_utils import reqparse

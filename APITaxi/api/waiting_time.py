@@ -2,7 +2,7 @@ from ..extensions import redis_store
 from . import api
 from ..descriptors.waiting_time import waiting_time_model, waiting_time_response
 from APITaxi_utils.reqparse import DataJSONParser
-from flask_restplus import Resource
+from flask_restx import Resource
 from flask_security import login_required, roles_accepted
 
 ns_waiting_time = api.namespace(

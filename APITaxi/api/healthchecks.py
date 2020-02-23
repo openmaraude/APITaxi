@@ -3,7 +3,7 @@ from APITaxi.tasks import task_healthchecks
 from APITaxi_utils.healthchecks import all_healthchecks, status
 
 from flask import current_app
-from flask_restplus import Resource
+from flask_restx import Resource
 
 ns_healthchecks = api.namespace(
     'healthchecks',

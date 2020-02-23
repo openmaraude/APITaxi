@@ -4,7 +4,7 @@ import APITaxi_models as models
 from flask_security import login_required, roles_accepted, current_user
 from . import api, ns_administrative, extensions
 from ..descriptors.ads import ads_expect, ads_post
-from flask_restplus import marshal
+from flask_restx import marshal
 
 @ns_administrative.route("/ads/", endpoint="ads")
 class ADS(resource_metadata.ResourceMetadata, resource_file_or_json.ResourceFileOrJSON):

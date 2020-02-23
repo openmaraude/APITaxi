@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import calendar, time, hashlib, math
-from flask_restplus import fields, abort, marshal, Resource, reqparse
+from flask_restx import fields, abort, marshal, Resource, reqparse
 from flask_security import login_required, current_user, roles_accepted
 from flask import request, current_app, g
 import APITaxi_models as models

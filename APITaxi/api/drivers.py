@@ -5,7 +5,7 @@ from APITaxi_utils import reqparse, resource_file_or_json, resource_metadata
 import APITaxi_models as models
 from . import api
 from ..descriptors.drivers import driver_fields, driver_details_expect
-from flask_restplus import marshal
+from flask_restx import marshal
 from .extensions import documents
 
 @ns_administrative.route('/drivers/')

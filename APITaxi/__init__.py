@@ -3,7 +3,7 @@
 import os
 
 from flask import Flask, g, request_started, request_finished
-from flask_restplus import abort
+from flask_restx import abort
 from flask_uploads import configure_uploads
 
 from APITaxi_models import db, security, HailLog

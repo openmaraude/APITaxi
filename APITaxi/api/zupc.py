@@ -4,7 +4,7 @@ from APITaxi_utils.resource_metadata import ResourceMetadata
 from APITaxi_utils.request_wants_json import request_wants_json
 from APITaxi_utils import influx_db
 from APITaxi_models import db
-from flask_restplus import reqparse, abort, marshal
+from flask_restx import reqparse, abort, marshal
 from flask import current_app
 from werkzeug.exceptions import BadRequest
 import json

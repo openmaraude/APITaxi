@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from ..api import api
-from flask_restplus import Resource
+from flask_restx import Resource
 from flask_security import login_required, roles_required
 from APITaxi_models.security import User
 

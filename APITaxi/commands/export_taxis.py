@@ -5,7 +5,7 @@ from ..descriptors import (ads as ads_descriptors,
         drivers as drivers_descriptors, vehicle as vehicle_descriptors)
 from . import manager
 from flask_login import login_user
-from flask_restplus import marshal
+from flask_restx import marshal
 from flask import url_for, current_app
 from tempfile import mkdtemp
 import json, tarfile, os, requests
