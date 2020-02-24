@@ -34,7 +34,6 @@ class HailMixin(Skeleton):
             u.hail_endpoint_testing = self.make_request_url(path)
         elif env == 'STAGING':
             u.hail_endpoint_staging = self.make_request_url(path)
-        print(u.hail_endpoint_testing)
         current_app.extensions['sqlalchemy'].db.session.add(u)
         current_app.extensions['sqlalchemy'].db.session.commit()
         return prev_env
@@ -431,19 +430,16 @@ class  TestHailGet(HailMixin):
         hail = Hail.query.get(hail_id)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_customer')
-        print("in test current hail id {}".format(Taxi.query.get(hail.taxi_id).current_hail_id))
         assert hail._status == 'accepted_by_customer'
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
         self.assert200(r)
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
-        print('set taxi status to occupied')
         r = self.put([{'status': 'occupied'}],
                      '/taxis/{}/'.format(dict_hail['taxi_id']),
                      version=2, role="operateur")
         self.assert200(r)
         hail = Hail.query.get(hail_id)
-        print(hail._status)
         assert hail._status == 'customer_on_board'
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
@@ -561,7 +557,6 @@ class  TestHailGet(HailMixin):
                 r = self.get('/hails/{}/'.format(hail_id),
                         version=2, role='operateur')
                 self.assert200(r)
-                print(r.json)
                 assert(r.json['data'][0]['status'] == hail_status)
                 r = self.put([{'status': taxi_status}],
                              '/taxis/{}/'.format(dict_hail['taxi_id']),
@@ -798,7 +793,6 @@ class TestHailPut(HailMixin):
         dict_hail = deepcopy(dict_)
         prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
-        print(r.json)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi')
