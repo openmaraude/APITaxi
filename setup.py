@@ -6,6 +6,7 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
+    'werkzeug<=0.16.1'
     'APITaxi_utils',
     'APITaxi_models',
     'Cython',
