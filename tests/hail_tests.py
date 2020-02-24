@@ -134,7 +134,8 @@ class TestHailPost(HailMixin):
         r = self.send_hail(d)
         self.assert201(r)
         assert 'session_id' in r.json['data'][0]
-        assert r.json['data'][0]['session_id'] is not None
+        session_id = r.json['data'][0]['session_id']
+        assert session_id
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
         self.assertEqual(r.json['data'][0]['status'], 'received')
@@ -156,6 +157,7 @@ class TestHailPost(HailMixin):
         self.app.config['ENV'] = prev_env
         hail = Hail.query.all()[0]
         assert hail.change_to_received_by_operator
+        assert hail.session_id == session_id
 
     def test_received_by_operator_prod(self):
         self.received_by_operator('PROD')
