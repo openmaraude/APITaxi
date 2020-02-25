@@ -34,6 +34,12 @@ class HailMixin(Skeleton):
             u.hail_endpoint_testing = self.make_request_url(path)
         elif env == 'STAGING':
             u.hail_endpoint_staging = self.make_request_url(path)
+        print(
+            "endpoints: {} \n {} \n {}".format(
+            u.hail_endpoint_production,
+            u.hail_endpoint_testing,
+            u.hail_endpoint_staging
+        ))
         current_app.extensions['sqlalchemy'].db.session.add(u)
         current_app.extensions['sqlalchemy'].db.session.commit()
         return prev_env

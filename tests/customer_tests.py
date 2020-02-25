@@ -17,9 +17,10 @@ class TestCustomerPut(HailMixin):
     role = 'moteur'
     url = '/customers/'
     def test_put_empty(self):
-        prev_env = self.set_env('PROD', 'http://127.0.0.1:5001/hail/')
+        prev_env = self.set_env('PROD', '/hail/')
         dict_ = deepcopy(dict_hail)
         r = self.send_hail(dict_hail)
+        print(r.json)
         self.set_hail_status(r, 'accepted_by_customer')
         dict_['reporting_customer'] = True
         dict_['reporting_customer_reason'] = 'payment'
@@ -48,4 +49,5 @@ class TestCustomerPut(HailMixin):
         assert customer.reprieve_end == None
         assert customer.ban_begin == None
         assert customer.ban_end == None
+        self.app.config['ENV'] = prev_env
 
