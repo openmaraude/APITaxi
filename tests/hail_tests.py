@@ -34,7 +34,12 @@ class HailMixin(Skeleton):
             u.hail_endpoint_testing = self.make_request_url(path)
         elif env == 'STAGING':
             u.hail_endpoint_staging = self.make_request_url(path)
-        print(u.hail_endpoint_testing)
+        print(
+            "endpoints: {} \n {} \n {}".format(
+            u.hail_endpoint_production,
+            u.hail_endpoint_testing,
+            u.hail_endpoint_staging
+        ))
         current_app.extensions['sqlalchemy'].db.session.add(u)
         current_app.extensions['sqlalchemy'].db.session.commit()
         return prev_env
@@ -133,6 +138,9 @@ class TestHailPost(HailMixin):
         d = deepcopy(dict_)
         r = self.send_hail(d)
         self.assert201(r)
+        assert 'session_id' in r.json['data'][0]
+        session_id = r.json['data'][0]['session_id']
+        assert session_id
         self.assertEqual(len(Customer.query.all()), 1)
         self.assertEqual(len(Hail.query.all()), 1)
         self.assertEqual(r.json['data'][0]['status'], 'received')
@@ -154,6 +162,7 @@ class TestHailPost(HailMixin):
         self.app.config['ENV'] = prev_env
         hail = Hail.query.all()[0]
         assert hail.change_to_received_by_operator
+        assert hail.session_id == session_id
 
     def test_received_by_operator_prod(self):
         self.received_by_operator('PROD')
@@ -412,12 +421,8 @@ class  TestHailGet(HailMixin):
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
         self.assert200(r)
-        print(r.json)
         assert(r.json['data'][0]['status'] == 'accepted_by_customer')
         hail = Hail.query.get(hail_id)
-        print(f"hail.__dict__ {hail.__dict__}")
-        assert hail._status == 'timeout_accepted_by_customer'
-        assert r.json['data'][0]['taxi']['position']['lon'] == 0
         assert r.json['data'][0]['taxi']['position']['lat'] == 0
         assert r.json['data'][0]['taxi']['last_update'] == 0
         self.app.config['ENV'] = prev_env
@@ -427,10 +432,10 @@ class  TestHailGet(HailMixin):
         prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
         self.assert201(r)
-        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
-        self.set_hail_status(r, 'accepted_by_customer')
         hail_id = r.json['data'][0]['id']
         hail = Hail.query.get(hail_id)
+        r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
+        self.set_hail_status(r, 'accepted_by_customer')
         assert hail._status == 'accepted_by_customer'
         r = self.get('/hails/{}/'.format(hail_id),
                 version=2, role='operateur')
@@ -439,6 +444,7 @@ class  TestHailGet(HailMixin):
         r = self.put([{'status': 'occupied'}],
                      '/taxis/{}/'.format(dict_hail['taxi_id']),
                      version=2, role="operateur")
+        self.assert200(r)
         hail = Hail.query.get(hail_id)
         assert hail._status == 'customer_on_board'
         r = self.get('/hails/{}/'.format(hail_id),
@@ -557,7 +563,6 @@ class  TestHailGet(HailMixin):
                 r = self.get('/hails/{}/'.format(hail_id),
                         version=2, role='operateur')
                 self.assert200(r)
-                print(r.json)
                 assert(r.json['data'][0]['status'] == hail_status)
                 r = self.put([{'status': taxi_status}],
                              '/taxis/{}/'.format(dict_hail['taxi_id']),
@@ -624,6 +629,15 @@ class  TestHailGet(HailMixin):
             taxi = Taxi.query.get(dict_hail['taxi_id'])
             assert taxi.current_hail == None
 
+    def test_hail_with_session_id(self):
+        d = deepcopy(dict_)
+        r = self.send_hail(d)
+        self.assert201(r)
+        d['session_id'] = r.json['data'][0]['session_id']
+        r = self.send_hail(d)
+        self.assert201(r)
+        assert d['session_id'] == r.json['data'][0]['session_id']
+
 
 class TestHailPut(HailMixin):
     role = 'operateur'
@@ -639,6 +653,18 @@ class TestHailPut(HailMixin):
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
         self.assert200(r)
+        self.app.config['ENV'] = prev_env
+
+    def test_update_session_id_impossible(self):
+        d = deepcopy(dict_)
+        d['session_id'] = 'session_id'
+        prev_env = self.set_env('PROD', '/hail/')
+        r = self.send_hail(d)
+        self.assert201(r)
+        d['session_id'] = 'other_session_id'
+        r = self.put([d], '/hails/{}/'.format(r.json['data'][0]['id']))
+        self.assert200(r)
+        assert r.json['data'][0]['session_id'] == 'session_id'
         self.app.config['ENV'] = prev_env
 
     def test_received_by_taxi_no_phone_number_version_1(self):
@@ -773,7 +799,6 @@ class TestHailPut(HailMixin):
         dict_hail = deepcopy(dict_)
         prev_env = self.set_env('PROD', '/hail/')
         r = self.send_hail(dict_hail)
-        print(r.json)
         self.assert201(r)
         r = self.wait_for_status('received_by_operator', r.json['data'][0]['id'])
         self.set_hail_status(r, 'accepted_by_taxi')

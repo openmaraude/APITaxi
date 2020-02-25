@@ -15,6 +15,7 @@ all_fields['taxi'] = fields.Nested(api.model('hail_taxi',
          'id': fields.String()}))
 all_fields['creation_datetime'] = fields.DateTime()
 all_fields['customer_id'] = fields.String(required=True)
+all_fields['session_id'] = fields.String(required=False)
 
 hail_model = api.model('hail_model_data',
     {'data':
@@ -30,9 +31,9 @@ puttable_arguments = ['status', 'incident_taxi_reason',
 
 dict_hail =  dict([f for f in list(all_fields.items()) if f[0] in puttable_arguments])
 
-postable_arguemnts = ['customer_id', 'customer_lon', 'customer_lat',
-    'customer_address', 'customer_phone_number', 'taxi_id', 'operateur']
-dict_hail =  dict([f for f in list(all_fields.items()) if f[0] in postable_arguemnts])
+postable_arguments = ['customer_id', 'customer_lon', 'customer_lat',
+    'customer_address', 'customer_phone_number', 'taxi_id', 'operateur', 'session_id']
+dict_hail =  dict([f for f in list(all_fields.items()) if f[0] in postable_arguments])
 dict_hail['operateur'] = fields.String(attribute='operateur', required=True)
 dict_hail['taxi_id'] = fields.String(required=True)
 hail_expect_post_details = api.model('hail_expect_post_details',
