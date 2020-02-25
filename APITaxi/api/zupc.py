@@ -7,7 +7,7 @@ from APITaxi_models import db
 from flask_restplus import reqparse, abort, marshal
 from flask import current_app
 from werkzeug.exceptions import BadRequest
-import json
+import json, requests
 from psycopg2.extras import RealDictCursor
 import APITaxi_models as models
 from influxdb.exceptions import InfluxDBClientError
@@ -47,6 +47,9 @@ class ZUPC(ResourceMetadata):
             try:
                 r = client.query(request)
             except InfluxDBClientError as e:
+                current_app.logger.error(e)
+                continue
+            except requests.ConnectionError as e:
                 current_app.logger.error(e)
                 continue
             points = list(r.get_points())

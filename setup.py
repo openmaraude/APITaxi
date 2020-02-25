@@ -25,6 +25,7 @@ DEPENDENCIES = [
     'bcrypt',
     'Geohash2',
     'redis',
+    'Flask-InfluxDB'
 ]
 
 

@@ -8,3 +8,6 @@ celery = Celery()
 
 from APITaxi_utils.custom_user_datastore import CustomUserDatastore
 user_datastore = CustomUserDatastore()
+
+from APITaxi.utils.influx_db import InfluxDB
+influx_db = InfluxDB()

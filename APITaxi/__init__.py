@@ -13,7 +13,7 @@ from APITaxi_utils.version import check_version, add_version_header
 from . import api, tasks
 from .api.extensions import documents
 from .commands.warm_up_redis import warm_up_redis_func
-from .extensions import redis_store, redis_store_saved, user_datastore
+from .extensions import redis_store, redis_store_saved, user_datastore, influx_db
 
 
 __author__ = 'Vincent Lara'
@@ -92,6 +92,8 @@ def create_app():
     tasks.init_app(app)
 
     user_datastore.init_app(db, security.User, security.Role)
+
+    influx_db.init_app(app=app)
 
     @app.before_first_request
     def warm_up_redis():
