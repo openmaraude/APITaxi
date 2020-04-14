@@ -19,7 +19,6 @@ jobs:
       - checkout
       - run: sudo apt-get install golang-go libgeos-dev
       - run: git clone https://github.com/openmaraude/faker && cd faker && go build && cd ..
-      - run: git clone https://github.com/openmaraude/minimal_operateur_server
       - run:
           name: install dependencies
           command: |
@@ -34,11 +33,10 @@ jobs:
           command: ./faker/faker
           background: true
       - run:
-          name: Launch minimal operateur server
+          name: Launch operateur server
           command: |
             . venv/bin/activate
-            pip install ./minimal_operateur_server
-            FLASK_APP=minimal_operateur_server.api flask run --port 5001
+            python tests/operateur_server.py
           background: true
       - run:
           name: Launch worker
