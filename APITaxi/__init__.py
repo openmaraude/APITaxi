@@ -77,9 +77,6 @@ def create_app():
     redis_store_saved.init_app(app)
     api.init_app(app)
 
-    # Only display url_map if debug and from the worker thread.
-    if app.debug and os.environ.get('WERKZEUG_RUN_MAIN'):
-        print_url_map(app.url_map)
 
     request_started.connect(check_version, app)
     request_finished.connect(add_version_header, app)
@@ -109,4 +106,9 @@ def create_app():
     app.after_request_funcs.setdefault(None, []).append(
         delete_redis_keys
     )
+
+    # Only display url_map if debug and from the worker thread.
+    if app.debug and os.environ.get('WERKZEUG_RUN_MAIN'):
+        print_url_map(app.url_map)
+
     return app
