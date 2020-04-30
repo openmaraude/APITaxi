@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 
 from flask import Flask, g, request_started, request_finished
 from flask_restplus import abort
@@ -14,6 +15,7 @@ from . import api, tasks
 from .api.extensions import documents
 from .commands.warm_up_redis import warm_up_redis_func
 from .extensions import redis_store, redis_store_saved, user_datastore
+from APITaxi2 import create_app as create_new_app
 
 
 __author__ = 'Vincent Lara'
@@ -67,7 +69,7 @@ def unauthorized():
     abort(401, error='You are not logged in. Please provide a valid X-Api-Key header.')
 
 
-def create_app():
+def create_legacy_app():
     app = Flask(__name__)
 
     load_configuration(app)
@@ -112,3 +114,34 @@ def create_app():
         print_url_map(app.url_map)
 
     return app
+
+
+class RegexpDispatcherMiddleware:
+    """ Forwards requests to applications depending on method and path.
+    """
+    def __init__(self, app, overrides=None):
+        self.app = app
+        self.overrides = overrides or {}
+
+    def __call__(self, environ, start_response):
+        for override in self.overrides.values():
+            if (
+                re.match(override['regexp'], environ['PATH_INFO'])
+                and (environ['REQUEST_METHOD'] in override['methods']
+                     or '*' in override['methods'])
+            ):
+                return override['app'](environ, start_response)
+        return self.app(environ, start_response)
+
+
+
+def create_app():
+    """Forward all requests to legacy application, except for routes that have
+    been updated on the new API."""
+    legacy_app = create_legacy_app()
+    new_app = create_new_app()
+
+    legacy_app.wsgi_app = RegexpDispatcherMiddleware(legacy_app.wsgi_app, {
+    })
+
+    return legacy_app
