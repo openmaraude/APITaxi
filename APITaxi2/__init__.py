@@ -31,30 +31,30 @@ def load_user_from_api_key_header(request):
     return None
 
 
-def unauthorized_handler():
+def handler_401():
     """Called when flask_security.login_required fails."""
     return jsonify({
         'error': 'This endpoint requires authentication. Did you provide a valid X-Api-Key HTTP header?'
     }), 401
 
 
-def permission_denied_handler():
+def handler_403(exc=None):
     """Called when flask_security.roles_accepted fails."""
     return jsonify({
         'error': 'You do not have enough permissions to access this ressource.'
     }), 403
 
 
-def handler_500(exc):
-    return jsonify({
-        'error': 'Internal server error. If the problem persists, please contact the technical team.'
-    }), 500
-
-
-def handler_404(exc):
+def handler_404(exc=None):
     return jsonify({
         'error': 'Ressource not found.'
     }), 404
+
+
+def handler_500(exc=None):
+    return jsonify({
+        'error': 'Internal server error. If the problem persists, please contact the technical team.'
+    }), 500
 
 
 def print_url_map(url_map):
@@ -84,13 +84,15 @@ def create_app():
     # register_blueprint is set to False because we do not register /login and
     # /logout views.
     security_state = security.init_app(app, user_datastore, register_blueprint=False)
-    security_state.unauthorized_handler(permission_denied_handler)
 
-    app.login_manager.unauthorized_handler(unauthorized_handler)
+    # Load flask_security.current_user from X-API-Key HTTP header
     app.login_manager.request_loader(load_user_from_api_key_header)
 
-    app.errorhandler(404)(handler_404)
-    app.errorhandler(500)(handler_500)
+    security_state.unauthorized_handler(handler_403)  # called if @roles_accepted fails
+    app.login_manager.unauthorized_handler(handler_401)  # called if @login_required fails
+    app.errorhandler(403)(handler_403)  # called by flask.abort(403)
+    app.errorhandler(404)(handler_404)  # page not found
+    app.errorhandler(500)(handler_500)  # internal error (uncaught exception...)
 
     # Register blueprints dynamically: list all modules in views/ and register
     # blueprint. Blueprint's name must be exactly "blueprint".
