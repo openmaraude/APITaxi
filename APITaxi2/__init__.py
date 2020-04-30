@@ -45,6 +45,18 @@ def permission_denied_handler():
     }), 403
 
 
+def handler_500(exc):
+    return jsonify({
+        'error': 'Internal server error. If the problem persists, please contact the technical team.'
+    }), 500
+
+
+def handler_404(exc):
+    return jsonify({
+        'error': 'Ressource not found.'
+    }), 404
+
+
 def print_url_map(url_map):
     for rule in sorted(url_map.iter_rules(), key=lambda r: r.rule):
         methods = [m for m in rule.methods if m not in('OPTIONS', 'HEAD')]
@@ -76,6 +88,9 @@ def create_app():
 
     app.login_manager.unauthorized_handler(unauthorized_handler)
     app.login_manager.request_loader(load_user_from_api_key_header)
+
+    app.errorhandler(404)(handler_404)
+    app.errorhandler(500)(handler_500)
 
     # Register blueprints dynamically: list all modules in views/ and register
     # blueprint. Blueprint's name must be exactly "blueprint".
