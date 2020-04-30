@@ -3,6 +3,7 @@ import os
 import pkgutil
 
 from flask import Flask, jsonify
+from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
 
 from APITaxi_models2 import db, Role, User
@@ -15,6 +16,9 @@ __contact__ = 'julien.castets@beta.gouv.fr'
 __homepage__ = 'https://github.com/openmaraude/APITaxi'
 __version__ = '0.1.0'
 __doc__ = 'REST API of le.taxi'
+
+
+redis_client = FlaskRedis()
 
 
 def load_user_from_api_key_header(request):
@@ -60,6 +64,7 @@ def create_app():
     app.config.from_envvar('APITAXI_CONFIG_FILE')
 
     db.init_app(app)
+    redis_client.init_app(app)
 
     # Setup flask-security
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
