@@ -73,7 +73,10 @@ def create_app():
     # Override default conf with environment variable APITAXI_CONFIG_FILE
     if 'APITAXI_CONFIG_FILE' not in os.environ:
         raise RuntimeError('APITAXI_CONFIG_FILE environment variable required')
-    app.config.from_envvar('APITAXI_CONFIG_FILE')
+    try:
+        app.config.from_envvar('APITAXI_CONFIG_FILE')
+    except FileNotFoundError:
+        app.logger.warning('File %s does not exist, skip loading' % os.getenv('APITAXI_CONFIG_FILE'))
 
     db.init_app(app)
     redis_client.init_app(app)
