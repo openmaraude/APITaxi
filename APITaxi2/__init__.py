@@ -2,7 +2,7 @@ import importlib
 import os
 import pkgutil
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
 
@@ -57,6 +57,18 @@ def handler_500(exc=None):
     }), 500
 
 
+def check_content_type():
+    if (request.method in ('POST', 'PUT', 'PATCH')
+        and request.headers['Content-Type'].lower() != 'application/json'
+    ):
+        return jsonify({
+            'error': '%s requests require to set the Content-Type header to '
+                     'application/json' % request.method
+        }), 400
+    # Continue processing
+    return None
+
+
 def print_url_map(url_map):
     for rule in sorted(url_map.iter_rules(), key=lambda r: r.rule):
         methods = [m for m in rule.methods if m not in('OPTIONS', 'HEAD')]
@@ -96,6 +108,8 @@ def create_app():
     app.errorhandler(403)(handler_403)  # called by flask.abort(403)
     app.errorhandler(404)(handler_404)  # page not found
     app.errorhandler(500)(handler_500)  # internal error (uncaught exception...)
+
+    app.before_request(check_content_type)
 
     # Register blueprints dynamically: list all modules in views/ and register
     # blueprint. Blueprint's name must be exactly "blueprint".
