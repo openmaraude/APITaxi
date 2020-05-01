@@ -64,7 +64,7 @@ def print_url_map(url_map):
 
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=None)
     app.url_map.strict_slashes = False
 
     # Load default configuration
