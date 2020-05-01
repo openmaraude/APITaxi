@@ -127,8 +127,8 @@ class RegexpDispatcherMiddleware:
         for override in self.overrides.values():
             if (
                 re.match(override['regexp'], environ['PATH_INFO'])
-                and (environ['REQUEST_METHOD'] in override['methods']
-                     or '*' in override['methods'])
+                and ('methods' not in override
+                     or environ['REQUEST_METHOD'] in override['methods'])
             ):
                 return override['app'](environ, start_response)
         return self.app(environ, start_response)
