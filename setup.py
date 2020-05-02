@@ -26,6 +26,7 @@ DEPENDENCIES = [
     'Geohash2',
     'redis',
     'email-validator',
+    'marshmallow',
 ]
 
 

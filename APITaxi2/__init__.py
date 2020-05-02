@@ -39,19 +39,22 @@ def handler_401():
 
 
 def handler_403(exc=None):
-    """Called when flask_security.roles_accepted fails."""
+    """Called when flask_security.roles_accepted fails.
+
+    exc is set if flask.abort(403) is called, and None if @roles_accepted fails.
+    """
     return jsonify({
         'error': 'You do not have enough permissions to access this ressource.'
     }), 403
 
 
-def handler_404(exc=None):
+def handler_404(exc):
     return jsonify({
         'error': 'Ressource not found.'
     }), 404
 
 
-def handler_500(exc=None):
+def handler_500(exc):
     return jsonify({
         'error': 'Internal server error. If the problem persists, please contact the technical team.'
     }), 500

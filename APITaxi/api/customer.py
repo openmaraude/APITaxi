@@ -25,7 +25,7 @@ class Customers(Resource):
             moteur_id = current_user.id
 
         customer = CustomerModel.query.filter_by(id=customer_id,
-                moteur_id=current_user.id).first()
+                moteur_id=moteur_id).first()
         if not customer:
             abort(404, message="Unable to find customer: {}".format(customer_id))
 

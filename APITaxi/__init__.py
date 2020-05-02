@@ -142,6 +142,10 @@ def create_app():
     new_app = create_new_app()
 
     legacy_app.wsgi_app = RegexpDispatcherMiddleware(legacy_app.wsgi_app, {
+        'Customers': {
+            'regexp': r'^/customers/.*$',
+            'app': new_app,
+        },
     })
 
     return legacy_app
