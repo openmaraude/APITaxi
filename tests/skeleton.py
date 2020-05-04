@@ -22,7 +22,7 @@ class Skeleton(TestCase):
     TESTING = True
 
     def create_app(self):
-        return create_app()
+        return create_app(proxy_v2=False)
 
     def wait_for_db(self):
         for attempt in range(4, 0, -1):

@@ -135,17 +135,18 @@ class RegexpDispatcherMiddleware:
 
 
 
-def create_app():
+def create_app(proxy_v2=True):
     """Forward all requests to legacy application, except for routes that have
     been updated on the new API."""
     legacy_app = create_legacy_app()
-    new_app = create_new_app()
 
-    legacy_app.wsgi_app = RegexpDispatcherMiddleware(legacy_app.wsgi_app, {
-        'Customers': {
-            'regexp': r'^/customers/.*$',
-            'app': new_app,
-        },
-    })
+    if proxy_v2:
+        new_app = create_new_app()
+        legacy_app.wsgi_app = RegexpDispatcherMiddleware(legacy_app.wsgi_app, {
+            'Customers': {
+                'regexp': r'^/customers/.*$',
+                'app': new_app,
+            },
+        })
 
     return legacy_app
