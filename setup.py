@@ -29,6 +29,13 @@ DEPENDENCIES = [
     'marshmallow',
 ]
 
+TEST_DEPENDENCIES = [
+    'pytest',
+    'pytest-factoryboy',
+    'fakeredis',
+    'testing.postgresql',
+]
+
 
 def get_pkgvar(name):
     """Get the value of :param name: from __init__.py.
@@ -65,6 +72,9 @@ setup(
         'Intended Audience :: Developpers',
         'Programming Language :: Python :: 3'
     ],
+    extras_require={
+        'tests': TEST_DEPENDENCIES,
+    },
     keywords='taxi transportation',
     packages=find_packages(),
     install_requires=DEPENDENCIES

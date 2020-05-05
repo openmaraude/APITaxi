@@ -78,7 +78,7 @@ def customers_put(customer_id):
     except NoResultFound:
         return make_error_json_response({
             'url': 'No customer found associated to moteur id %s' % moteur_id
-        })
+        }, status_code=404)
 
     for attr in ['reprieve_begin', 'reprieve_end', 'ban_begin', 'ban_end']:
         if attr not in args:

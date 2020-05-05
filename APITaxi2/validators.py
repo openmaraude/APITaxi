@@ -41,13 +41,12 @@ def data_schema_wrapper(WrappedSchema):
     It's probably not the best API design ever (...) but we need to keep this
     behavior for backward-compatibility.
     """
-
     class DataSchema(Schema):
-        data = fields.List(fields.Nested(WrappedSchema))
+        data = fields.List(fields.Nested(WrappedSchema), required=True)
 
         @validates('data')
         def validate_length(self, value):
             if len(value) != 1:
-                raise ValidationError('Key "data" is expected to be a list of one element.')
+                raise ValidationError('data should be a list of one element.')
 
     return DataSchema
