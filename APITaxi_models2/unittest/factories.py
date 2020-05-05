@@ -5,6 +5,7 @@ import factory
 from APITaxi_models2 import (
     db,
     ADS,
+    Customer,
     Departement,
     Driver,
     Hail,
@@ -46,13 +47,24 @@ class UserFactory(BaseFactory):
     password = 'super_password'
     active = True
     confirmed_at = datetime.datetime(2015, 12, 1, 13, 37)
-
     apikey = factory.Sequence(lambda n: 'API_KEY_%d' % n)
 
 
 class RolesUsersFactory(BaseFactory):
     class Meta:
         model = RolesUsers
+
+
+class CustomerFactory(BaseFactory):
+    class Meta:
+        model = Customer
+
+    id = factory.Sequence(lambda n: 'CUSTOMER_%d' % n)
+    moteur = factory.SubFactory(UserFactory)
+    added_by = factory.SubFactory(UserFactory)
+    added_via = 'api'
+    source = 'added_by'
+    phone_number = factory.Sequence(lambda n: '+336%09d' % n)
 
 
 class DepartementFactory(BaseFactory):
