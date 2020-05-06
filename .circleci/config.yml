@@ -50,6 +50,20 @@ jobs:
             . venv/bin/activate
             nosetests --stop
 
+  testv2:
+    docker:
+      - image: circleci/python:3-buster
+    steps:
+      - checkout
+      - run:
+          name: Install system dependencies
+          command: |
+            sudo apt-get install -y postgis
+      - run:
+          name: Run unittests
+          command: |
+            tox
+
   build:
     docker:
       - image: circleci/buildpack-deps:stretch
@@ -75,6 +89,7 @@ workflows:
   test:
     jobs:
       - test
+      - testv2
 
   # Build artifacts
   artifacts:
