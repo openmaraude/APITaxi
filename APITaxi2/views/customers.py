@@ -1,6 +1,6 @@
 from sqlalchemy.orm.exc import NoResultFound
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
 from marshmallow import fields, Schema, validates_schema, ValidationError
@@ -18,7 +18,7 @@ blueprint = Blueprint('customers', __name__)
 
 
 def customers_put_schema(current_user):
-    class PayloadSchema(Schema):
+    class CustomerSchema(Schema):
         moteur_id = fields.Int()
         reprieve_begin = fields.DateTime(allow_none=True)
         reprieve_end = fields.DateTime(allow_none=True)
@@ -57,7 +57,7 @@ def customers_put_schema(current_user):
                     'moteur_id'
                 )
 
-    return data_schema_wrapper(PayloadSchema)
+    return data_schema_wrapper(CustomerSchema)
 
 
 @blueprint.route('/customers/<string:customer_id>', methods=['PUT'])
@@ -73,9 +73,8 @@ def customers_put(customer_id):
     moteur_id = args.get('moteur_id', current_user.id)
 
     query = Customer.query.filter_by(id=customer_id, moteur_id=moteur_id)
-    try:
-        customer = query.one()
-    except NoResultFound:
+    customer = query.one_or_none()
+    if not customer:
         return make_error_json_response({
             'url': 'No customer found associated to moteur id %s' % moteur_id
         }, status_code=404)
