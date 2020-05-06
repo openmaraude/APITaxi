@@ -28,6 +28,7 @@ jobs:
             pip install git+https://github.com/openmaraude/APITaxi_utils.git
             pip install git+https://github.com/openmaraude/APITaxi_models.git
             pip install .
+            pip install .[tests]
       - run:
           name: Fake positions
           command: ./faker/faker
