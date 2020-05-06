@@ -49,7 +49,7 @@ jobs:
           name: Run tests
           command: |
             . venv/bin/activate
-            nosetests --stop
+            nosetests --stop --exclude APITaxi2
 
   testv2:
     docker:
@@ -60,6 +60,7 @@ jobs:
           name: Install system dependencies
           command: |
             sudo apt-get install -y postgis
+            pip install tox
       - run:
           name: Run unittests
           command: |
