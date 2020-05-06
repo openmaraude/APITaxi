@@ -1,0 +1,21 @@
+Migration from APITaxi to APITaxi2
+
+- customers.py: DONE
+- profile.py: DONE
+
+- documents.py: Not used, can be removed from the API
+
+- ADS.py: TODO
+- drivers.py: TODO
+- hails.py: TODO
+- taxi.py: TODO
+- users.py: TODO
+- vehicles.py:
+    * POST: TODO
+    * GET: returns useless metadata, only retrievable from a stats role that
+      doesn't exist in database. Can be removed from the API.
+- zupc.py: TODO
+- __init__.py: TODO (contains swagger documentation)
+
+- waiting_time.py: TODO? not sure it is used, or working.
+- healthchecks.py: TODO? not used today, but can definitely be useful.
