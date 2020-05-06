@@ -147,6 +147,10 @@ def create_app(proxy_v2=True):
                 'regexp': r'^/customers/.*$',
                 'app': new_app,
             },
+            'Users': {
+                'regexp': r'^/users/.*$',
+                'app': new_app,
+            },
         })
 
     return legacy_app
