@@ -2,6 +2,7 @@ Migration from APITaxi to APITaxi2
 
 - customers.py: DONE
 - profile.py: DONE
+- users.py: DONE
 
 - documents.py: Not used, can be removed from the API
 
@@ -9,7 +10,6 @@ Migration from APITaxi to APITaxi2
 - drivers.py: TODO
 - hails.py: TODO
 - taxi.py: TODO
-- users.py: TODO
 - vehicles.py:
     * POST: TODO
     * GET: returns useless metadata, only retrievable from a stats role that

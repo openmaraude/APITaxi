@@ -15,7 +15,7 @@ from ..validators import (
 blueprint = Blueprint('users', __name__)
 
 
-def users_get_schema():
+def users_details_schema():
     class UserSchema(Schema):
         commercial_name = fields.String(data_key='name')
 
@@ -25,7 +25,7 @@ def users_get_schema():
 @blueprint.route('/users/<int:user_id>', methods=['GET'])
 @login_required
 @roles_accepted('admin')
-def users_get(user_id):
+def users_details(user_id):
     query = User.query.filter_by(id=user_id)
     user = query.one_or_none()
 
@@ -34,5 +34,24 @@ def users_get(user_id):
             'url': 'User %s not found' % user_id
         }, status_code=404)
 
-    schema = users_get_schema()()
-    return schema.dump({'data': [user]})
+    schema = users_details_schema()
+    return schema().dump({'data': [user]})
+
+
+def users_list_schema():
+    class UserSchema(Schema):
+        email = fields.String()
+        apikey = fields.String()
+
+    return data_schema_wrapper(UserSchema)
+
+
+@blueprint.route('/users/', methods=['GET'])
+@login_required
+@roles_accepted('admin')
+def users_list():
+    # XXX: return value is not paginated for backward compatibility and I
+    # because don't know where this endpoint is called.
+    users = User.query.all()
+    schema = users_list_schema()
+    return schema().dump({'data': users})

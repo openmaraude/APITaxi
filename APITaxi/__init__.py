@@ -148,7 +148,7 @@ def create_app(proxy_v2=True):
                 'app': new_app,
             },
             'Users': {
-                'regexp': r'^/users/.*$',
+                'regexp': r'^/users(/.*)?$',
                 'app': new_app,
             },
         })
