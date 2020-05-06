@@ -17,7 +17,7 @@ from ..validators import (
 blueprint = Blueprint('customers', __name__)
 
 
-def customers_put_schema(current_user):
+def customers_edit_schema(current_user):
     class CustomerSchema(Schema):
         moteur_id = fields.Int()
         reprieve_begin = fields.DateTime(allow_none=True)
@@ -63,8 +63,8 @@ def customers_put_schema(current_user):
 @blueprint.route('/customers/<string:customer_id>', methods=['PUT'])
 @login_required
 @roles_accepted('admin', 'moteur')
-def customers_put(customer_id):
-    schema = customers_put_schema(current_user)()
+def customers_edit(customer_id):
+    schema = customers_edit_schema(current_user)()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)

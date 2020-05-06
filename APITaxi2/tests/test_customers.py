@@ -1,8 +1,8 @@
 from APITaxi_models2.unittest.factories import CustomerFactory
 
 
-class TestPutCustomers:
-    def test_put_invalid(self, anonymous, operateur, moteur):
+class TestEditCustomers:
+    def test_customers_edit_invalid(self, anonymous, operateur, moteur):
         # Login required
         resp = anonymous.client.put('/customers/xxx', json={})
         assert resp.status_code == 401
@@ -42,7 +42,7 @@ class TestPutCustomers:
         assert resp.status_code == 404
         assert 'url' in resp.json['errors']
 
-    def test_put_customers(self, moteur):
+    def test_customers_edit(self, moteur):
         customer = CustomerFactory(moteur=moteur.user)
 
         # Empty
