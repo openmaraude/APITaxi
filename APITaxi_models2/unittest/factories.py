@@ -80,8 +80,8 @@ class DepartementFactory(BaseFactory):
             obj = super(DepartementFactory, cls)._create(model_class, *args, **kwargs)
         return obj
 
-    nom = 'Paris'
-    numero = '75'
+    nom = factory.Sequence(lambda n: 'DEPARTEMENT_%d' % n)
+    numero = factory.Sequence(lambda n: '%d' % n)
 
 
 class ZUPCFactory(BaseFactory):
@@ -115,7 +115,9 @@ class DriverFactory(BaseFactory):
     first_name = 'Jean'
     birth_date = datetime.date(1978, 1, 11)
     professional_licence = factory.Sequence(lambda n: 'LICENCE_PRO_%d' % n)
-    _departement = factory.SubFactory(DepartementFactory)
+    departement = factory.SubFactory(DepartementFactory)
+    added_via = 'api'
+    source = 'added_by'
 
 
 class VehicleFactory(BaseFactory):
