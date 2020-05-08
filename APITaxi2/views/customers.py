@@ -74,7 +74,7 @@ def customers_edit(customer_id):
     customer = query.one_or_none()
     if not customer:
         return make_error_json_response({
-            'url': 'No customer found associated to moteur id %s' % moteur_id
+            'url': ['No customer found associated to moteur id %s' % moteur_id]
         }, status_code=404)
 
     for attr in ['reprieve_begin', 'reprieve_end', 'ban_begin', 'ban_end']:
