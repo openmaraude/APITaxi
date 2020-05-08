@@ -42,17 +42,21 @@ class TestEditCustomers:
         assert resp.status_code == 404
         assert 'url' in resp.json['errors']
 
-    def test_customers_edit(self, moteur):
+    def test_customers_edit(self, moteur, QueriesTracker):
         customer = CustomerFactory(moteur=moteur.user)
 
         # Empty
-        resp = moteur.client.put('/customers/%s' % customer.id, json={'data': [{
-                'reprieve_begin': '2001-01-01 01:01:01',
-                'reprieve_end': '2002-02-02 02:02:02',
-                'ban_begin': '2003-03-03 03:03:03',
-                'ban_end': '2004-04-04 04:04:04'
-            }]
-        })
+        with QueriesTracker() as qtrack:
+            resp = moteur.client.put('/customers/%s' % customer.id, json={'data': [{
+                    'reprieve_begin': '2001-01-01 01:01:01',
+                    'reprieve_end': '2002-02-02 02:02:02',
+                    'ban_begin': '2003-03-03 03:03:03',
+                    'ban_end': '2004-04-04 04:04:04'
+                }]
+            })
+            # SELECT permissions, SELECT customer, UPDATE customer
+            assert qtrack.count == 3
+
         assert resp.status_code == 200
         assert customer.reprieve_begin.year == 2001
         assert customer.reprieve_end.year == 2002

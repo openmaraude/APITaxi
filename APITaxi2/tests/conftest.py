@@ -15,7 +15,8 @@ from APITaxi_models2.unittest.factories import (
 )
 from APITaxi_models2.unittest.conftest import (
     postgresql,
-    postgresql_empty
+    postgresql_empty,
+    SQLAlchemyQueriesTracker,
 )
 
 import APITaxi2
@@ -97,3 +98,8 @@ def moteur(app):
 @pytest.fixture
 def operateur(app):
     yield from _create_client(app, ['operateur'])
+
+
+@pytest.fixture
+def QueriesTracker():
+    return lambda: SQLAlchemyQueriesTracker(APITaxi_models2.db.engine)
