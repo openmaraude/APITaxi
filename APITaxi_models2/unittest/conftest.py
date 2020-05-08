@@ -1,5 +1,6 @@
 import os
 import pkg_resources
+import sys
 
 import alembic, alembic.config
 from flask_security import  SQLAlchemyUserDatastore
@@ -95,6 +96,7 @@ class SQLAlchemyQueriesTracker:
     def __init__(self, conn):
         self.conn = conn
         self.count = 0
+        self.queries = []
         sqlalchemy.event.listen(self.conn, 'after_execute', self._add_query)
 
     def __enter__(self):
@@ -104,4 +106,28 @@ class SQLAlchemyQueriesTracker:
         sqlalchemy.event.remove(self.conn, 'after_execute', self._add_query)
 
     def _add_query(self, conn, clause_element, multiparams, params, result):
+        self.queries.append({
+            'clause': clause_element,
+            'params': params,
+            'result': result,
+        })
         self.count += 1
+
+    def debug(self, output=sys.stderr):
+        """Outputs queries on stderr. Useful for debugging when you don't know
+        where queries come from.
+        """
+        output.write('======== %s SQL Queries executed ========\n' % str(self.count))
+        for idx, query in enumerate(self.queries):
+
+            if idx:
+                output.write('\n')
+
+            output.write('--- query %s ---\n' % str(idx + 1))
+            output.write('%s\n' % query['clause'])
+            if query['params']:
+                output.write('\twith params:\n')
+                for param in query['params']:
+                    output.write('\t\t%s\n' % param)
+            output.write('\n')
+        output.write('======== end of queries ========\n')
