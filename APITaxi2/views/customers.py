@@ -1,5 +1,3 @@
-from sqlalchemy.orm.exc import NoResultFound
-
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
