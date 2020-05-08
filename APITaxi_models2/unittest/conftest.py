@@ -6,6 +6,7 @@ from flask_security import  SQLAlchemyUserDatastore
 import psycopg2
 import pytest
 from pytest_factoryboy import register
+import sqlalchemy
 import testing.postgresql
 
 import APITaxi_models2
@@ -83,3 +84,24 @@ def postgresql_empty():
             APITaxi_models2.db.session.execute(table.delete())
         APITaxi_models2.db.session.commit()
     return clean_db
+
+
+class SQLAlchemyQueriesTracker:
+    """Context manager to count the number of SQLAlchemy database hits.
+
+    SQLAlchemy events are global to the connection, so concurrent usages of
+    this context manager won't yield expected results.
+    """
+    def __init__(self, conn):
+        self.conn = conn
+        self.count = 0
+        sqlalchemy.event.listen(self.conn, 'after_execute', self._add_query)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        sqlalchemy.event.remove(self.conn, 'after_execute', self._add_query)
+
+    def _add_query(self, conn, clause_element, multiparams, params, result):
+        self.count += 1
