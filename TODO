@@ -3,11 +3,11 @@ Migration from APITaxi to APITaxi2
 - customers.py: DONE
 - profile.py: DONE
 - users.py: DONE
+- drivers.py: DONE
 
 - documents.py: Not used, can be removed from the API
 
 - ADS.py: TODO
-- drivers.py: TODO
 - hails.py: TODO
 - taxi.py: TODO
 - vehicles.py:
