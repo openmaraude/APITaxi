@@ -105,7 +105,7 @@ class ADSFactory(BaseFactory):
     owner_type = 'individual'
     owner_name = 'Owner ADS'
     category = ''
-    zupc_id = factory.SubFactory(ZUPCFactory)
+    zupc = factory.SubFactory(ZUPCFactory)
     added_via = 'api'
     source = 'added_by'
 
@@ -167,11 +167,11 @@ class HailFactory(BaseFactory):
     class Meta:
         model = Hail
 
-    operateur_id = factory.SubFactory(UserFactory)
+    operateur = factory.SubFactory(UserFactory)
     customer_lon = 2.308620
     customer_lat = 48.850690
     customer_address = '20 Avenue de Ségur, 75007 Paris'
     customer_phone_number = '0799100222'
-    taxi_id = factory.SubFactory(TaxiFactory)
+    taxi = factory.SubFactory(TaxiFactory)
     status = 'received'
 
