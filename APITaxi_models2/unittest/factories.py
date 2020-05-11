@@ -93,6 +93,7 @@ class ZUPCFactory(BaseFactory):
     insee = '75101'
     # Not really the shape of Paris
     shape = 'MULTIPOLYGON(((0 0,4 0,4 4,0 4,0 0),(1 1,2 1,2 2,1 2,1 1)), ((-1 -1,-1 -2,-2 -2,-2 -1,-1 -1)))'
+    active = True
 
 
 class ADSFactory(BaseFactory):
