@@ -106,6 +106,8 @@ class ADSFactory(BaseFactory):
     owner_name = 'Owner ADS'
     category = ''
     zupc_id = factory.SubFactory(ZUPCFactory)
+    added_via = 'api'
+    source = 'added_by'
 
 
 class DriverFactory(BaseFactory):
