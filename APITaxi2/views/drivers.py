@@ -95,9 +95,11 @@ def drivers_create():
     driver.last_name = args['last_name']
     driver.birth_date = args.get('birth_date')
 
+    db.session.add(driver)
+    db.session.flush()
+
     ret = schema.dump({'data': [driver]})
 
-    db.session.add(driver)
     db.session.commit()
 
     return ret

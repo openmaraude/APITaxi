@@ -82,6 +82,8 @@ def customers_edit(customer_id):
             continue
         setattr(customer, attr, args[attr])
 
+    db.session.flush()
+
     ret = schema.dump({'data': [customer]})
 
     db.session.commit()
