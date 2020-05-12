@@ -91,8 +91,19 @@ class ZUPCFactory(BaseFactory):
     departement = factory.SubFactory(DepartementFactory)
     nom = 'Paris'
     insee = '75101'
-    # Not really the shape of Paris
-    shape = 'MULTIPOLYGON(((0 0,4 0,4 4,0 4,0 0),(1 1,2 1,2 2,1 2,1 1)), ((-1 -1,-1 -2,-2 -2,-2 -1,-1 -1)))'
+
+    # The MUTLIPOLYGON below is a simple square containing Paris. It has been
+    # generated with a WKT editor such as:
+    #
+    # http://arthur-e.github.io/Wicket/sandbox-gmaps3.html
+    # https://clydedacruz.github.io/openstreetmap-wkt-playground/
+    #
+    # To convert a POLYGON (as returned by these editors) to a MULTIPOLYGON (as
+    # expected by ZUPC.shape), run the following query from a postgis database:
+    #
+    # SELECT ST_AsText(ST_Multi(ST_GeomFromText('POLYGON((2.24......))')));
+    shape = 'MULTIPOLYGON(((2.24332732355285 48.9066360266329,2.42460173761535 48.9066360266329,2.42460173761535 48.8122203058303,2.24332732355285 48.8122203058303,2.24332732355285 48.9066360266329)))'
+
     active = True
 
 
