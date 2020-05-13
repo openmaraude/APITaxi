@@ -1,4 +1,4 @@
-from APITaxi_models2 import ADS, db
+from APITaxi_models2 import ADS
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
     VehicleFactory,
@@ -53,7 +53,7 @@ class TestADSCreate:
 
     def test_ads_create_already_exists(self, operateur):
         """If ADS already exists, the existing item is updated and returned."""
-        assert db.session.query(ADS).count() == 0
+        assert ADS.query.count() == 0
         ads = ADSFactory()
 
         resp = operateur.client.post('/ads', json={'data': [{
@@ -67,7 +67,7 @@ class TestADSCreate:
             'category': 'NEW_CATEGORY',
         }]})
         assert resp.status_code == 200
-        assert db.session.query(ADS).count() == 1
+        assert ADS.query.count() == 1
 
     def test_ads_create_ok(self, operateur, QueriesTracker):
         vehicle = VehicleFactory()
@@ -96,4 +96,4 @@ class TestADSCreate:
         assert resp.json['data'][0]['category'] == 'category'
         assert resp.json['data'][0]['vehicle_id'] == vehicle.id
 
-        assert db.session.query(ADS).count() == 1
+        assert ADS.query.count() == 1

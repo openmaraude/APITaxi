@@ -1,4 +1,4 @@
-from APITaxi_models2 import db, Driver
+from APITaxi_models2 import Driver
 from APITaxi_models2.unittest.factories import DepartementFactory, DriverFactory
 
 
@@ -44,10 +44,10 @@ class TestDriversCreate:
 
     def test_drivers_create_already_exists(self, operateur):
         """POST to an existing driver doesn't create the driver."""
-        assert db.session.query(Driver).count() == 0
+        assert Driver.query.count() == 0
 
         driver = DriverFactory()
-        assert db.session.query(Driver).count() == 1
+        assert Driver.query.count() == 1
 
         # Driver already exists, Driver is updated but no new driver created
         resp = operateur.client.post('/drivers', json={'data': [{
@@ -60,14 +60,14 @@ class TestDriversCreate:
             }
         }]})
         assert resp.status_code == 200
-        assert db.session.query(Driver).count() == 1
+        assert Driver.query.count() == 1
 
     def test_drivers_create_already_exists_different_departement(self, operateur):
         """Two drivers with same professional_licence id but different
         departements are considered different."""
-        assert db.session.query(Driver).count() == 0
+        assert Driver.query.count() == 0
         driver = DriverFactory()
-        assert db.session.query(Driver).count() == 1
+        assert Driver.query.count() == 1
 
         other_departement = DepartementFactory()
 
@@ -81,7 +81,7 @@ class TestDriversCreate:
             }
         }]})
         assert resp.status_code == 200
-        assert db.session.query(Driver).count() == 2
+        assert Driver.query.count() == 2
 
     def test_drivers_create_ok(self, operateur, QueriesTracker):
         departement = DepartementFactory()
@@ -101,4 +101,4 @@ class TestDriversCreate:
             assert qtracker.count == 4
 
         assert resp.status_code == 200
-        assert db.session.query(Driver).count() == 1
+        assert Driver.query.count() == 1
