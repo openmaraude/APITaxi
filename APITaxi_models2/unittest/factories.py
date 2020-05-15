@@ -14,6 +14,9 @@ from APITaxi_models2 import (
     Role,
     RolesUsers,
     Vehicle,
+    VehicleConstructor,
+    VehicleDescription,
+    VehicleModel,
     ZUPC
 )
 
@@ -35,7 +38,7 @@ class RoleFactory(BaseFactory):
         session = cls._meta.sqlalchemy_session
         obj = session.query(Role).filter_by(name=kwargs['name']).one_or_none()
         if not obj:
-            obj = super(RoleFactory, cls)._create(model_class, *args, **kwargs)
+            obj = super()._create(model_class, *args, **kwargs)
         return obj
 
 
@@ -134,11 +137,62 @@ class DriverFactory(BaseFactory):
     source = 'added_by'
 
 
+class VehicleConstructorFactory(BaseFactory):
+    class Meta:
+        model = VehicleConstructor
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        """Get VehicleConstructor, or create it if it doesn't exist."""
+        session = cls._meta.sqlalchemy_session
+        obj = session.query(VehicleConstructor).filter_by(name=kwargs['name']).one_or_none()
+        if not obj:
+            obj = super()._create(model_class, *args, **kwargs)
+        return obj
+
+    name = 'Citroën'
+
+
+class VehicleModelFactory(BaseFactory):
+    class Meta:
+        model = VehicleModel
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        """Get VehicleModel, or create it if it doesn't exist."""
+        session = cls._meta.sqlalchemy_session
+        obj = session.query(VehicleModel).filter_by(name=kwargs['name']).one_or_none()
+        if not obj:
+            obj = super()._create(model_class, *args, **kwargs)
+        return obj
+
+    name = 'C4 PICASSO'
+
+
+class VehicleDescriptionFactory(BaseFactory):
+    class Meta:
+        model = VehicleDescription
+
+    vehicle = factory.SubFactory('APITaxi_models2.unittest.factories.VehicleFactory')
+    model = factory.SubFactory(VehicleModelFactory)
+    constructor = factory.SubFactory(VehicleConstructorFactory)
+    added_by = factory.SubFactory(UserFactory)
+    added_via = 'api'
+    source = 'added_by'
+
+
 class VehicleFactory(BaseFactory):
     class Meta:
         model = Vehicle
 
     licence_plate = factory.Sequence(lambda n: "Licence plate %d" % n)
+
+    @factory.post_generation
+    def descriptions(self, create, extracted, **kwargs):
+        """Create a VehicleDescription for this Vehicle."""
+        if not create:
+            return
+        return [VehicleDescriptionFactory(vehicle=self, **kwargs)]
 
 
 class TaxiFactory(BaseFactory):
@@ -146,7 +200,11 @@ class TaxiFactory(BaseFactory):
         model = Taxi
 
     id = factory.Sequence(lambda n: 'TAXI_%d' % n)
-    vehicle = factory.SubFactory(VehicleFactory)
+
+    @factory.lazy_attribute
+    def vehicle(self):
+        return VehicleFactory(descriptions__added_by=self.added_by)
+
     ads = factory.SubFactory(ADSFactory)
     added_by = factory.SubFactory(UserFactory)
     driver = factory.SubFactory(DriverFactory)
