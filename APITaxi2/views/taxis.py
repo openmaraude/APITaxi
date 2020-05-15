@@ -116,7 +116,7 @@ def taxis_details_schema(taxi):
     return data_schema_wrapper(TaxiSchema)
 
 
-@blueprint.route('/taxis2/<string:taxi_id>', methods=['GET'])
+@blueprint.route('/taxis/<string:taxi_id>', methods=['GET'])
 @login_required
 @roles_accepted('admin', 'operateur')
 def taxis_details(taxi_id):
