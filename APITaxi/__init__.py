@@ -159,6 +159,11 @@ def create_app(proxy_v2=True):
                 'regexp': r'^/ads(/.*)?$',
                 'app': new_app,
             },
+            'GET /taxis/:id': {
+                'regexp': r'^/taxis2/.+$',
+                'app': new_app,
+                'methods': ['GET']
+            },
         })
 
     return legacy_app

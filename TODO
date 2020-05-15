@@ -6,10 +6,15 @@ Migration from APITaxi to APITaxi2
 - drivers.py: DONE
 - ADS.py: DONE
 
+- taxi.py:
+    * GET /taxis/:taxi_id: TODO
+    * PUT /taxis/:taxi_id: TODO
+    * GET /taxis: TODO
+    * POST /taxis: TODO
+
 - documents.py: Not used, can be removed from the API
 
 - hails.py: TODO
-- taxi.py: TODO
 - vehicles.py:
     * POST: TODO
     * GET: returns useless metadata, only retrievable from a stats role that
