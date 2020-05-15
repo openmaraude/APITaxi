@@ -5,11 +5,12 @@ from .mixins import HistoryMixin
 class Taxi(HistoryMixin, db.Model):
 
     def __repr__(self):
-        return '<Taxi %s (vehicle %s, ADS %s, driver %s)>' % (
+        return '<Taxi %s (vehicle %s, ADS %s, driver %s, added_by %s)>' % (
             self.id,
             self.vehicle_id,
             self.ads_id,
-            self.driver_id
+            self.driver_id,
+            self.added_by_id
         )
 
     id = db.Column(db.String, primary_key=True)
