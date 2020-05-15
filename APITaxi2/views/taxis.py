@@ -39,7 +39,6 @@ def _get_vehicle_description(vehicle, fields):
 
 
 def taxis_details_schema(taxi):
-
     taxi_redis = redis_backend.get_taxi(taxi.id, taxi.added_by.email)
 
     class PowerSchema(Schema):
@@ -100,14 +99,14 @@ def taxis_details_schema(taxi):
         status = fields.String(
             attribute=lambda taxi: _get_vehicle_description(taxi.vehicle, 'status')
         )
-        last_update = fields.Constant(taxi_redis.timestamp)
+        last_update = fields.Constant(taxi_redis.timestamp if taxi_redis else None)
 
         position = fields.Method('_position')
 
         def _position(self, taxi):
-            if not taxi_redis:
-                return {}
-            return {'lon': taxi_redis.lon, 'lat': taxi_redis.lat}
+            lon = taxi_redis.lon if taxi_redis else None
+            lat = taxi_redis.lat if taxi_redis else None
+            return {'lon': lon, 'lat': lat}
 
         # It doesn't make sense to return crowfly_distance since we don't know
         # the location of the caller. This field is returned only for backward
