@@ -192,8 +192,8 @@ class VehicleFactory(BaseFactory):
     @factory.post_generation
     def descriptions(self, create, extracted, **kwargs):
         """Create a VehicleDescription for this Vehicle."""
-        if not create:
-            return
+        if not create or extracted is not None:
+            return extracted
         return [VehicleDescriptionFactory(vehicle=self, **kwargs)]
 
 
