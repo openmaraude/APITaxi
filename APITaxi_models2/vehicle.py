@@ -95,3 +95,27 @@ class VehicleDescription(HistoryMixin, db.Model):
     constructor = db.relationship(VehicleConstructor, lazy='raise')
     model = db.relationship(VehicleModel, lazy='raise')
     vehicle = db.relationship(Vehicle, lazy='raise')
+
+    @property
+    def characteristics(self):
+        return [
+            field for field in (
+                'special_need_vehicle',
+                'every_destination',
+                'gps',
+                'electronic_toll',
+                'air_con',
+                'pet_accepted',
+                'bike_accepted',
+                'baby_seat',
+                'wifi',
+                'tablet',
+                'dvd_player',
+                'fresh_drink',
+                'amex_accepted',
+                'bank_check_accepted',
+                'nfc_cc_accepted',
+                'credit_card_accepted',
+                'luxury'
+        ) if getattr(self, field)
+    ]
