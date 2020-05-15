@@ -19,7 +19,7 @@ def get_taxi(taxi_id, operator_name):
     """geotaxi-python receives taxi positions and store them into redis. This
     function executes the redis call `HGET taxi:user` which returns:
 
-    >>> b'<timestamp> <lat> <lon> <taxi_status> <device name> <status> <version>'
+    >>> b'<timestamp> <lat> <lon> <taxi_status> <device name> <version>'
     """
     res = current_app.redis.hget('taxi:%s' % taxi_id, operator_name)
     if not res:
@@ -28,8 +28,8 @@ def get_taxi(taxi_id, operator_name):
     timestamp, lat, lon, status, device, version = res.decode('utf8').split()
     return _Taxi(
         timestamp=int(timestamp),
-        lat=lat,
-        lon=lon,
+        lat=float(lat),
+        lon=float(lon),
         status=status,
         device=device,
         version=int(version)
