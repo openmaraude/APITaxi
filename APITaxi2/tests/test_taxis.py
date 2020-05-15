@@ -1,3 +1,5 @@
+import time
+
 from APITaxi_models2.unittest.factories import (
     HailFactory,
     TaxiFactory,
@@ -34,7 +36,6 @@ class TestTaxiGet:
         assert resp.status_code == 404
         assert 'url' in resp.json['errors']
 
-
     def test_get_taxis_no_entry_in_redis(self, operateur):
         """Taxi exists but there is no entry in redis with its position."""
         taxi = TaxiFactory(added_by=operateur.user)
@@ -66,3 +67,21 @@ class TestTaxiGet:
         resp = admin.client.get('/taxis/%s' % taxi.id)
         assert resp.status_code == 200
         assert resp.json['data'][0]['operator'] == admin.user.email
+
+    def test_get_taxis_ok(self, app, operateur, QueriesTracker):
+        taxi = TaxiFactory(added_by=operateur.user)
+
+        # Store taxi position
+        app.redis.hset('taxi:%s' % taxi.id, operateur.user.email,
+            '1589567716 48.84 2.35 free phone 2'
+        )
+
+        with QueriesTracker() as qtracker:
+            resp = operateur.client.get('/taxis/%s' % taxi.id)
+            # SELECT permissions, SELECT taxi (joinedload all other resources)
+            assert qtracker.count == 2
+
+        assert resp.status_code == 200
+        assert resp.json['data'][0]['last_update'] == 1589567716
+        assert resp.json['data'][0]['position']['lat'] == 48.84
+        assert resp.json['data'][0]['position']['lon'] == 2.35
