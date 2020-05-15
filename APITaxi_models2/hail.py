@@ -94,6 +94,6 @@ class Hail(HistoryMixin, db.Model):
 
     # Relationships
     added_by = db.relationship('User', foreign_keys=[added_by_id], lazy='raise')
-    customer = db.relationship('Customer', viewonly=True, lazy='raise')
+    customer = db.relationship('Customer', lazy='raise')
     operateur = db.relationship('User', foreign_keys=[operateur_id], lazy='raise')
     taxi = db.relationship('Taxi', foreign_keys=[taxi_id], lazy='raise')
