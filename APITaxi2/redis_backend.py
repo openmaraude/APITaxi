@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from . import redis_client
+from flask import current_app
 
 
 @dataclass
@@ -21,7 +21,7 @@ def get_taxi(taxi_id, operator_name):
 
     >>> b'<timestamp> <lat> <lon> <taxi_status> <device name> <status> <version>'
     """
-    res = redis_client.hget('taxi:%s' % taxi_id, operator_name)
+    res = current_app.redis.hget('taxi:%s' % taxi_id, operator_name)
     if not res:
         return None
 

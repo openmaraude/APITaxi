@@ -18,9 +18,6 @@ __version__ = '0.1.0'
 __doc__ = 'REST API of le.taxi'
 
 
-redis_client = FlaskRedis()
-
-
 def load_user_from_api_key_header(request):
     """Callback to extract X-Api-Key header from the request and get user."""
     value = request.headers.get('X-Api-Key')
@@ -94,7 +91,7 @@ def create_app():
         app.logger.warning('File %s does not exist, skip loading' % os.getenv('APITAXI_CONFIG_FILE'))
 
     db.init_app(app)
-    redis_client.init_app(app)
+    app.redis = FlaskRedis(app)
 
     # Setup flask-security
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)

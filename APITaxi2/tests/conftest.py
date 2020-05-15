@@ -23,12 +23,7 @@ import APITaxi2
 
 
 @pytest.fixture
-def app(tmp_path, monkeypatch, postgresql, postgresql_empty):
-    # Use fake redis as backend
-    fake_redis = fakeredis.FakeStrictRedis()
-    fake_flask_redis = FlaskRedis.from_custom_provider(fake_redis)
-    monkeypatch.setattr(APITaxi2, 'redis_client', fake_flask_redis)
-
+def app(tmp_path, postgresql, postgresql_empty):
     settings_file = tmp_path / 'settings.py'
     settings_file.write_text('''
 SQLALCHEMY_DATABASE_URI = '%(database)s'
@@ -38,6 +33,11 @@ SQLALCHEMY_DATABASE_URI = '%(database)s'
     os.environ['APITAXI_CONFIG_FILE'] = settings_file.as_posix()
 
     app = APITaxi2.create_app()
+
+    # Use fake redis as backend
+    app.redis = FlaskRedis.from_custom_provider(fakeredis.FakeStrictRedis)
+    app.redis.init_app(app)
+
     with app.app_context():
         yield app
 

@@ -18,19 +18,25 @@ from ..validators import (
 blueprint = Blueprint('taxis', __name__)
 
 
-def _get_vehicle_description(vehicle, fields):
-    """Helper to get an attribute of the taxi description. For example to
-    retrieve vehicle.descriptions[0].model.name:
+def _get_vehicle_desc(vehicle, operator, fields):
+    """A Vehicle can be registered by several operators. This function
+    retrieves the vehicle description for `operator`, and returns the attribute
+    as specified by `fields`.
 
-    >>> _get_vehicle_description(vehicle, 'model.name')
+    For example the call:
 
-    We assume vehicle.descriptions is a list of at most one element since there
-    is at most one description for each operator.
+    >>> _get_vehicle_desc(vehicle, operator, 'model.name')
+
+    retrieves the vehicle description registered by "operator", and returns the
+    `name` of the `model` attribute.
     """
-    if not vehicle or not vehicle.descriptions:
-        return None
+    for description in vehicle.descriptions:
+        if description.added_by == operator:
+            break
+    else:
+        raise AssertionError('No VehicleDescription of vehicle %s for operator %s' % (vehicle, operator))
 
-    ret = vehicle.descriptions[0]
+    ret = description
     for part in fields.split('.'):
         if not ret:
             return None
@@ -38,16 +44,14 @@ def _get_vehicle_description(vehicle, fields):
     return ret
 
 
-def taxis_details_schema(taxi):
+def taxis_details_schema(taxi, taxi_operator):
+    """A taxi can be registered with several operators. This function returns
+    the Schema to display `taxi` registered with `operator`."""
     taxi_redis = redis_backend.get_taxi(taxi.id, taxi.added_by.email)
 
     class PowerSchema(Schema):
         def get_attribute(self, obj, attr, default):
-            """Handle when fields.attribute is a lambda.
-
-            Taxi.vehicle.descriptions is a list and we only want to expose data
-            stored in the first element of this list. There is no easy way to
-            do it with marshmallow so we use _get_vehicle_description().
+            """Extend Schema to accept when fields.attribute is a lambda.
 
             See https://github.com/marshmallow-code/marshmallow/issues/1591
             """
@@ -57,18 +61,18 @@ def taxis_details_schema(taxi):
 
     class VehicleSchema(PowerSchema):
         model = fields.String(
-            attribute=lambda vehicle: _get_vehicle_description(vehicle, 'model.name')
+            attribute=lambda vehicle: _get_vehicle_desc(vehicle, taxi_operator, 'model.name')
         )
         constructor = fields.String(
-            attribute=lambda vehicle: _get_vehicle_description(vehicle, 'constructor.name')
+            attribute=lambda vehicle: _get_vehicle_desc(vehicle, taxi_operator, 'constructor.name')
         )
         color = fields.String(
-            attribute=lambda vehicle: _get_vehicle_description(vehicle, 'color')
+            attribute=lambda vehicle: _get_vehicle_desc(vehicle, taxi_operator, 'color')
         )
         licence_plate = fields.String()
 
         nb_seats = fields.String(
-            attribute=lambda vehicle: _get_vehicle_description(vehicle, 'nb_seats')
+            attribute=lambda vehicle: _get_vehicle_desc(vehicle, taxi_operator, 'nb_seats')
         )
 
     class ADSSchema(Schema):
@@ -82,22 +86,20 @@ def taxis_details_schema(taxi):
     class TaxiSchema(PowerSchema):
         id = fields.String()
         internal_id = fields.String(
-            attribute=lambda taxi: _get_vehicle_description(taxi.vehicle, 'internal_id')
+            attribute=lambda taxi: _get_vehicle_desc(taxi.vehicle, taxi_operator, 'internal_id')
         )
-        operator = fields.String(
-            attribute=lambda taxi: taxi.added_by.email
-        )
+        operator = fields.Constant(taxi_operator.email)
         vehicle = fields.Nested(VehicleSchema)
         ads = fields.Nested(ADSSchema)
         driver = fields.Nested(DriverSchema)
         characteristics = fields.List(
             fields.String,
-            attribute=lambda taxi: _get_vehicle_description(taxi.vehicle, 'characteristics')
+            attribute=lambda taxi: _get_vehicle_desc(taxi.vehicle, taxi_operator, 'characteristics')
         )
         rating = fields.Float()
 
         status = fields.String(
-            attribute=lambda taxi: _get_vehicle_description(taxi.vehicle, 'status')
+            attribute=lambda taxi: _get_vehicle_desc(taxi.vehicle, taxi_operator, 'status')
         )
         last_update = fields.Constant(taxi_redis.timestamp if taxi_redis else None)
 
@@ -134,16 +136,19 @@ def taxis_details(taxi_id):
         .joinedload(Vehicle.descriptions)
         .joinedload(VehicleDescription.model)
     ).options(
+        joinedload(Taxi.vehicle)
+        .joinedload(Vehicle.descriptions)
+        .joinedload(VehicleDescription.added_by)
+    ).options(
         joinedload(Taxi.added_by)
     ).filter(
         Taxi.id == taxi_id,
+        # Make sure a VehicleDescription exists for the vehicle.
+        # taxi.vehicle.descriptions will contain the vehicle descriptions of
+        # all operators, not only the one added by the current user.
         VehicleDescription.added_by == current_user
     )
 
-    # In database a Vehicle can have at most one VehicleDescription for each
-    # operator so this request can't return more than 1 result.
-    # We should probably make it possible for administrators to select the
-    # taxi's operator.
     taxi = query.one_or_none()
 
     if not taxi:
@@ -151,6 +156,6 @@ def taxis_details(taxi_id):
             'url': 'Unknown taxi %s, or taxi exists but you are not the owner.' % taxi_id
         }, status_code=404)
 
-    schema = taxis_details_schema(taxi)()
+    schema = taxis_details_schema(taxi, current_user)()
 
     return schema.dump({'data': [taxi]})
