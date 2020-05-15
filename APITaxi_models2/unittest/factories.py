@@ -173,7 +173,9 @@ class VehicleDescriptionFactory(BaseFactory):
     class Meta:
         model = VehicleDescription
 
-    vehicle = factory.SubFactory('APITaxi_models2.unittest.factories.VehicleFactory')
+    # Circular dependencies require to provide the full import path of the
+    # target.
+    vehicle = factory.SubFactory(__name__ + '.VehicleFactory')
     model = factory.SubFactory(VehicleModelFactory)
     constructor = factory.SubFactory(VehicleConstructorFactory)
     added_by = factory.SubFactory(UserFactory)
