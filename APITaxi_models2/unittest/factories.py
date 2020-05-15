@@ -145,33 +145,13 @@ class TaxiFactory(BaseFactory):
     class Meta:
         model = Taxi
 
-    @factory.lazy_attribute
-    def vehicle(self):
-        vehicle = VehicleFactory()
-        db.session.flush()
-        return {
-            'licence_plate': vehicle.licence_plate
-        }
-
-    @factory.lazy_attribute
-    def ads(self):
-        ads = ADSFactory()
-        db.session.flush()
-        return {
-            'numero': ads.numero,
-            'insee': ads.insee
-        }
-
-    @factory.lazy_attribute
-    def driver(self):
-        departement = DepartementFactory()
-        driver = DriverFactory()
-        db.session.flush()
-        return {
-            'departement': departement.numero,
-            'professional_licence': driver.professional_licence
-
-        }
+    id = factory.Sequence(lambda n: 'TAXI_%d' % n)
+    vehicle = factory.SubFactory(VehicleFactory)
+    ads = factory.SubFactory(ADSFactory)
+    added_by = factory.SubFactory(UserFactory)
+    driver = factory.SubFactory(DriverFactory)
+    added_via = 'api'
+    source = 'added_by'
 
 
 class HailFactory(BaseFactory):
