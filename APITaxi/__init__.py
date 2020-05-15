@@ -160,7 +160,7 @@ def create_app(proxy_v2=True):
                 'app': new_app,
             },
             'GET /taxis/:id': {
-                'regexp': r'^/taxis2/.+$',
+                'regexp': r'^/taxis/.+$',
                 'app': new_app,
                 'methods': ['GET']
             },
