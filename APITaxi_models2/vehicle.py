@@ -51,7 +51,9 @@ class VehicleDescription(HistoryMixin, db.Model):
     )
 
     def __repr__(self):
-        return '<VehicleDescription %s (of Vehicle %s)>' % (self.id, self.vehicle_id)
+        return '<VehicleDescription %s (of Vehicle %s added by %s)>' % (
+            self.id, self.vehicle_id, self.added_by_id
+        )
 
     id = db.Column(db.Integer, primary_key=True)
     model_id = db.Column(db.Integer, db.ForeignKey(VehicleModel.id))
