@@ -6,6 +6,8 @@ from flask import Flask, jsonify, request
 from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
 
+from werkzeug.exceptions import BadRequest
+
 from APITaxi_models2 import db, Role, User
 
 from . import views
@@ -31,7 +33,9 @@ def load_user_from_api_key_header(request):
 def handler_401():
     """Called when flask_security.login_required fails."""
     return jsonify({
-        'error': 'This endpoint requires authentication. Did you provide a valid X-Api-Key HTTP header?'
+        'errors': {
+            '': ['This endpoint requires authentication. Did you provide a valid X-Api-Key HTTP header?']
+        }
     }), 401
 
 
@@ -41,30 +45,46 @@ def handler_403(exc=None):
     exc is set if flask.abort(403) is called, and None if @roles_accepted fails.
     """
     return jsonify({
-        'error': 'You do not have enough permissions to access this ressource.'
+        'errors': {
+            '': ['You do not have enough permissions to access this ressource.']
+        }
     }), 403
 
 
 def handler_404(exc):
     return jsonify({
-        'error': 'Ressource not found.'
+        'errors': {
+            '': ['Ressource not found.']
+        }
     }), 404
 
 
 def handler_500(exc):
     return jsonify({
-        'error': 'Internal server error. If the problem persists, please contact the technical team.'
+        'errors': {
+            '': ['Internal server error. If the problem persists, please contact the technical team.']
+        }
     }), 500
 
 
 def check_content_type():
-    if (request.method in ('POST', 'PUT', 'PATCH')
-        and request.headers.get('Content-Type', '').lower() != 'application/json'
-    ):
-        return jsonify({
-            'error': '%s requests require to set the Content-Type header to '
-                     'application/json' % request.method
-        }), 400
+    if request.method in ('POST', 'PUT', 'PATCH'):
+        if request.headers.get('Content-Type', '').lower() != 'application/json':
+            return jsonify({
+                'errors': {
+                    '': ['%s requests require to set the Content-Type header to application/json' % request.method]
+                }
+            }), 400
+
+        try:
+            data = request.get_json()
+        except BadRequest:
+            return jsonify({
+                'errors': {
+                    '': ['No data provided, or data is not valid JSON.']
+                }
+            }), 400
+
     # Continue processing
     return None
 
