@@ -7,7 +7,7 @@ Migration from APITaxi to APITaxi2
 - ADS.py: DONE
 
 - taxi.py:
-    * GET /taxis/:taxi_id: TODO
+    * GET /taxis/:taxi_id: DONE
     * PUT /taxis/:taxi_id: TODO
     * GET /taxis: TODO
     * POST /taxis: TODO
