@@ -21,7 +21,7 @@ blueprint = Blueprint('ads', __name__)
 def ads_create_schema():
     class ADSSchema(Schema):
         category = fields.String(required=True)
-        vehicle_id = fields.Int()
+        vehicle_id = fields.Int(allow_none=True)
         insee = fields.String(required=True)
         numero = fields.String(required=True)
         owner_name = fields.String(required=True)
