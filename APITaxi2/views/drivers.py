@@ -33,7 +33,7 @@ def drivers_create_schema():
     class DriverSchema(Schema):
         first_name = fields.String(required=True)
         last_name = fields.String(required=True)
-        birth_date = fields.Date()
+        birth_date = fields.Date(allow_none=True)
         professional_licence = fields.String(required=True)
         departement = fields.Nested(DepartementSchema, required=True)
 
