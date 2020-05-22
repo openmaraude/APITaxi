@@ -2,12 +2,17 @@ from . import db
 from .mixins import HistoryMixin
 
 
-VEHICLE_STATUS = [
+UPDATABLE_VEHICLE_STATUS = [
     'free',
-    'answering',
     'occupied',
-    'oncoming',
     'off'
+]
+
+# VEHICLE_STATUS = statuses operator can update + statuses workers
+# automatically update.
+VEHICLE_STATUS = UPDATABLE_VEHICLE_STATUS + [
+    'answering',
+    'oncoming',
 ]
 
 
