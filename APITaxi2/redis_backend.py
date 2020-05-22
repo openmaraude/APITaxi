@@ -1,6 +1,7 @@
 """This module gathers functions to access data stored in redis."""
 
 from dataclasses import dataclass
+import time
 
 from flask import current_app
 
@@ -34,3 +35,27 @@ def get_taxi(taxi_id, operator_name):
         device=device,
         version=int(version)
     )
+
+
+def set_taxi_availability(taxi_id, taxi_operator, available):
+    """Add or remove the entry "<taxi_id>:<operator>" from the ZSET
+    "not_available"."""
+    redis_key = 'not_available'
+    key = '%s:%s' % (taxi_id, taxi_operator.email)
+    if available:
+        current_app.redis.zrem(redis_key, key)
+    else:
+        current_app.redis.zadd('not_available', {key: 0})
+
+
+def log_taxi_status(taxi_id, status):
+    """Log `status` into the ZSET "taxi_status:<taxi_id>".
+
+    XXX: this is probably useless. We keep this logging feature for
+    compatibility purpose with APITaxi v1 but logs are not easy to process
+    as-is, and I am not sure we need or even use these logs anyway."""
+    now = time.time()
+    key = '%s_%s' % (status, now)
+    value = now
+
+    current_app.redis.zadd('taxi_status:%s' % taxi_id, {key: value})
