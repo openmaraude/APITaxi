@@ -94,16 +94,6 @@ class Hail(HistoryMixin, db.Model):
 
     # Relationships
     added_by = db.relationship('User', foreign_keys=[added_by_id], lazy='raise')
-
-    # viewonly=True is set to remove the warning display by SQLAlchemy:
-    #
-    # SAWarning: relationship 'Hail.customer' will copy column
-    # customer.moteur_id to column hail.added_by, which conflicts with
-    # relationship(s): 'Hail.added_by' (copies user.id to hail.added_by).
-    # Consider applying viewonly=True to read-only relationships, or provide a
-    # primaryjoin condition marking writable columns with the foreign()
-    # annotation.
-    customer = db.relationship('Customer', viewonly=True, lazy='raise')
-
+    customer = db.relationship('Customer', foreign_keys=[customer_id], lazy='raise')
     operateur = db.relationship('User', foreign_keys=[operateur_id], lazy='raise')
     taxi = db.relationship('Taxi', foreign_keys=[taxi_id], lazy='raise')
