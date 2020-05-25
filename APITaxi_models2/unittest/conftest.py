@@ -81,6 +81,7 @@ def postgresql_empty():
     """Returns a function to remove all data from database. Useful to get a
     clean state after running a unittest."""
     def clean_db():
+        APITaxi_models2.db.session.execute('SET CONSTRAINTS ALL DEFERRED')
         for table in reversed(APITaxi_models2.db.metadata.sorted_tables):
             APITaxi_models2.db.session.execute(table.delete())
         APITaxi_models2.db.session.commit()

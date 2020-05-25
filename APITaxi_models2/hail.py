@@ -54,7 +54,7 @@ class Hail(HistoryMixin, db.Model):
     id = db.Column(db.String, primary_key=True)
 
     creation_datetime = db.Column(db.DateTime, nullable=False)
-    taxi_id = db.Column(db.String, db.ForeignKey('taxi.id', name='hail_taxi_relation'), nullable=False)
+    taxi_id = db.Column(db.String, db.ForeignKey('taxi.id', name='hail_taxi_relation', deferrable=True), nullable=False)
     status = db.Column(db.Enum(*HAIL_STATUS, name='hail_status'), nullable=False)
     last_status_change = db.Column(db.DateTime)
     customer_id = db.Column(db.String, nullable=False)

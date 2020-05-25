@@ -42,7 +42,7 @@ class Taxi(HistoryMixin, db.Model):
     # error is raised when tables are emptied after a test.
     current_hail_id = db.Column(
         db.String,
-        db.ForeignKey('hail.id', name='taxi_hail_id', use_alter=True)
+        db.ForeignKey('hail.id', name='taxi_hail_id', use_alter=True, deferrable=True)
     )
 
     vehicle = db.relationship('Vehicle', lazy='raise')
