@@ -152,18 +152,8 @@ class TestTaxiPut:
         assert resp.status_code == 200
         assert hail.status == 'finished'
 
-        # Taxi and Hail have cyclic dependencies. Break the dependency to allow
-        # tables deletion after test.
-        taxi.current_hail_id = None
-        db.session.flush()
-
         # Taxi is changing the status to "occupied" after driving to a customer
         hail = HailFactory(status='accepted_by_customer')
         taxi, resp = _set_taxi_status('occupied', hail)
         assert resp.status_code == 200
         assert hail.status == 'customer_on_board'
-
-        # Taxi and Hail have cyclic dependencies. Break the dependency to allow
-        # tables deletion after test.
-        taxi.current_hail_id = None
-        db.session.flush()
