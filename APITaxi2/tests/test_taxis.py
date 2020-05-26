@@ -98,19 +98,8 @@ class TestTaxiPut:
     def test_put_taxis_ok(self, app, operateur):
         def _set_taxi_status(status, hail=None):
             taxi = TaxiFactory(added_by=operateur.user, current_hail=hail)
-
             resp = operateur.client.put('/taxis/%s' % taxi.id, json={
                 'data': [{
-                    'ads': {
-                        'insee': taxi.ads.insee,
-                        'numero': taxi.ads.numero
-                    },
-                    'driver': {
-                        'professional_licence': taxi.driver.professional_licence,
-                    },
-                    'vehicle': {
-                        'licence_plate': taxi.vehicle.licence_plate
-                    },
                     'status': status
                 }]
             })
