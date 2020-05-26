@@ -6,10 +6,19 @@ from marshmallow import decorators, fields, Schema, validate
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import db, Driver, Taxi, Vehicle, VehicleDescription
+from APITaxi_models2 import (
+    ADS,
+    db,
+    Departement,
+    Driver,
+    Taxi,
+    Vehicle,
+    VehicleDescription,
+)
 from APITaxi_models2.vehicle import UPDATABLE_VEHICLE_STATUS
 
 from .. import redis_backend
+from ..utils import get_short_uuid
 from ..validators import (
     data_schema_wrapper,
     make_error_json_response,
@@ -20,7 +29,23 @@ from ..validators import (
 blueprint = Blueprint('taxis', __name__)
 
 
-def taxis_details_schema(vehicle_description, taxi_redis):
+def _find_operator_vehicle_description(vehicle, operator):
+    """For a given Vehicle can exist several VehicleDescription objects, one
+    for each operator.
+
+    This function returns the VehicleDescription of `vehicle` for `operator`.
+    """
+    for vehicle_description in vehicle.descriptions:
+        if vehicle_description.added_by == operator:
+            return vehicle_description
+    return None
+
+
+def taxis_details_schema(taxi_operator, taxi_redis=None):
+    class ADSSchema(Schema):
+        numero = fields.String(required=True, allow_none=False)
+        insee = fields.String(required=True, allow_none=False)
+
     class ADSSchema(Schema):
         numero = fields.String(required=True, allow_none=False)
         insee = fields.String(required=True, allow_none=False)
@@ -43,10 +68,7 @@ def taxis_details_schema(vehicle_description, taxi_redis):
     class TaxiSchema(Schema):
         id = fields.String()
         internal_id = fields.String(allow_none=True)
-        operator = fields.Constant(
-            vehicle_description.added_by.email,
-            required=False, allow_none=False
-        )
+        operator = fields.String(required=False, allow_none=False)
         vehicle = fields.Nested(VehicleSchema, required=True)
         ads = fields.Nested(ADSSchema, required=True)
         driver = fields.Nested(DriverSchema, required=True)
@@ -75,10 +97,17 @@ def taxis_details_schema(vehicle_description, taxi_redis):
 
         @decorators.post_dump(pass_original=True)
         def _add_fields(self, data, taxi, many=False):
-            """Add vehicle_description details and position from redis to
-            output.
+            """Extend output with vehicle_description details, and position
+            from redis.
             """
+            vehicle_description = _find_operator_vehicle_description(taxi.vehicle, taxi_operator)
+            # Should never happen. We should make sure the VehicleDescription exists
+            # before attempting to dump the object.
+            if not vehicle_description:
+                raise RuntimeError('Taxi %s does not have a vehicle.description object for user %s' % (taxi, taxi_operator))
+
             data.update({
+                'operator': vehicle_description.added_by.email,
                 'internal_id': vehicle_description.internal_id,
                 'characteristics': vehicle_description.characteristics,
                 'status': vehicle_description.status,
@@ -98,6 +127,100 @@ def taxis_details_schema(vehicle_description, taxi_redis):
             return data
 
     return data_schema_wrapper(TaxiSchema)
+
+
+@blueprint.route('/taxis', methods=['POST'])
+@login_required
+@roles_accepted('admin', 'operateur')
+def taxis_create():
+    """Endpoint POST /taxis to create Taxi object. If the taxi already exists, which is
+    defined as the combination of an ads, a vehicle and a driver, it is
+    returned instead of being created.
+    """
+    schema = taxis_details_schema(
+        current_user
+    )()
+
+    params, errors = validate_schema(schema, request.json)
+    if errors:
+        return make_error_json_response(errors)
+
+    args = params['data'][0]
+
+    errors = {}
+    ads = ADS.query.filter_by(insee=args['ads']['insee'],
+                              numero=args['ads']['numero']).one_or_none()
+    if not ads:
+        errors['ads'] = {
+            'insee': ['ADS not found with this INSEE/numero'],
+            'numero': ['ADS not found with this INSEE/numero']
+        }
+
+    vehicle = Vehicle.query.options(joinedload('*')).filter_by(
+        licence_plate=args['vehicle']['licence_plate']
+    ).one_or_none()
+    if not vehicle:
+        errors['vehicle'] = {
+            'licence_plate': ['Invalid licence plate']
+        }
+    elif not _find_operator_vehicle_description(vehicle, current_user):
+        errors['vehicle'] = {
+            'licence_plate': ['Vehicle exists but has not been created by the user making the request']
+        }
+
+    departement = Departement.query.filter_by(
+        numero=args['driver']['departement']['numero']
+    ).one_or_none()
+    if not departement:
+        errors['driver'] = {
+            'departement': ['Departement not found']
+        }
+
+    driver = Driver.query.options(joinedload('*')).filter_by(
+        professional_licence=args['driver']['professional_licence'],
+        departement=departement
+    ).one_or_none()
+    if not driver:
+        if 'driver' not in errors:
+            errors['driver'] = {}
+        errors['driver'].update({
+            'professional_licence': ['Driver not found with this professional_licence. Is it the correct departement?'],
+        })
+
+    if errors:
+        return make_error_json_response({
+            'data': {'0': errors}
+        }, status_code=404)
+
+    # Try to get existing Taxi, or create it.
+    taxi = Taxi.query.options(joinedload('*')).filter_by(
+        ads=ads,
+        driver=driver,
+        vehicle=vehicle,
+    ).one_or_none()
+
+    status_code = 200
+
+    if not taxi:
+        status_code = 201
+        taxi = Taxi(
+            id=get_short_uuid(),
+            vehicle=vehicle,
+            ads=ads,
+            added_by=current_user,
+            driver=driver,
+            added_via='api',
+            added_at=func.NOW(),
+            source='added_by',
+        )
+        db.session.add(taxi)
+        db.session.flush()
+
+    ret = schema.dump({'data': [taxi]})
+
+    db.session.commit()
+
+    return ret, status_code
 
 
 @blueprint.route('/taxis/<string:taxi_id>', methods=['GET', 'PUT'])
@@ -143,16 +266,15 @@ def taxis_details(taxi_id):
 
     # Build Schema
     schema = taxis_details_schema(
-        vehicle_description,
-        redis_backend.get_taxi(taxi.id, taxi.added_by.email)
+        current_user,
+        redis_backend.get_taxi(taxi.id, taxi.added_by.email),
     )()
 
     # Dump data for GET requests
     if request.method != 'PUT':
         return schema.dump({'data': [taxi]})
 
-    # Make sure request.json is valid
-    params, errors = validate_schema(schema, request.json)
+    params, errors = validate_schema(schema, request.json, partial=True)
     if errors:
         return make_error_json_response(errors)
 

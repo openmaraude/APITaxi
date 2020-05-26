@@ -164,6 +164,11 @@ def create_app(proxy_v2=True):
                 'app': new_app,
                 'methods': ['GET', 'PUT']
             },
+            'POST /taxis': {
+                'regexp': r'^/taxis/?$',
+                'app': new_app,
+                'methods': ['POST']
+            },
         })
 
     return legacy_app

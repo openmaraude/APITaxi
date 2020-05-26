@@ -95,16 +95,6 @@ class TestTaxiGet:
 
 
 class TestTaxiPut:
-    def test_put_taxis_invalid(self, operateur):
-        taxi = TaxiFactory(added_by=operateur.user)
-
-        resp = operateur.client.put('/taxis/%s' % taxi.id, json={
-            'data': [{}]
-        })
-        assert resp.status_code == 400
-        # The only required keys to PUT a taxi are ads, driver and vehicle.
-        assert sorted(resp.json['errors']['data']['0'].keys()) == ['ads', 'driver', 'vehicle']
-
     def test_put_taxis_ok(self, app, operateur):
         def _set_taxi_status(status, hail=None):
             taxi = TaxiFactory(added_by=operateur.user, current_hail=hail)
