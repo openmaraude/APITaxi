@@ -5,9 +5,9 @@ from flask import jsonify
 from marshmallow import fields, Schema, validates, ValidationError
 
 
-def validate_schema(schema, data):
+def validate_schema(schema, data, **kwargs):
     try:
-        sanitized = schema.load(data)
+        sanitized = schema.load(data, **kwargs)
     except ValidationError as exc:
         # Return None as sanitized data, and the error fields.
         return (None, exc.messages)
