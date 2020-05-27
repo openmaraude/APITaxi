@@ -7,7 +7,7 @@ from APITaxi_models2.unittest.factories import (
 
 
 class TestADSCreate:
-    def test_ads_create_invalid(self, anonymous, moteur, operateur):
+    def test_invalid(self, anonymous, moteur, operateur):
         # Login required
         resp = anonymous.client.post('/ads', json={})
         assert resp.status_code == 401
@@ -51,7 +51,7 @@ class TestADSCreate:
         assert resp.status_code == 404
         assert len(resp.json['errors']['data']['0']['insee']) > 0
 
-    def test_ads_create_already_exists(self, operateur):
+    def test_already_exists(self, operateur):
         """If ADS already exists, the existing item is updated and returned."""
         assert ADS.query.count() == 0
         ads = ADSFactory()
@@ -69,7 +69,7 @@ class TestADSCreate:
         assert resp.status_code == 200
         assert ADS.query.count() == 1
 
-    def test_ads_create_ok(self, operateur, QueriesTracker):
+    def test_ok(self, operateur, QueriesTracker):
         vehicle = VehicleFactory()
         zupc = ZUPCFactory()
 

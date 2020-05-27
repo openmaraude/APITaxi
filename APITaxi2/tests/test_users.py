@@ -2,7 +2,7 @@ from APITaxi_models2.unittest.factories import UserFactory
 
 
 class TestUsersDetails:
-    def test_users__details_invalid(self, anonymous, admin, operateur, moteur):
+    def test_invalid(self, anonymous, admin, operateur, moteur):
         # user id is not an integer, route is not found
         resp = anonymous.client.get('/users/xxx')
         assert resp.status_code == 404
@@ -21,7 +21,7 @@ class TestUsersDetails:
         assert resp.status_code == 404
 
 
-    def test_users_details(self, admin, QueriesTracker):
+    def test_ok(self, admin, QueriesTracker):
         user = UserFactory(commercial_name='Bob Dylan')
 
         with QueriesTracker() as qtrack:
@@ -34,7 +34,7 @@ class TestUsersDetails:
 
 
 class TestUsersList:
-    def test_users_list_invalid(self, anonymous, operateur, moteur):
+    def test_invalid(self, anonymous, operateur, moteur):
         # Authentication required
         resp = anonymous.client.get('/users')
         assert resp.status_code == 401
@@ -44,7 +44,7 @@ class TestUsersList:
             resp = role.client.get('/users')
             assert resp.status_code == 403
 
-    def test_users_list(self, admin, QueriesTracker):
+    def test_ok(self, admin, QueriesTracker):
         user2 = UserFactory()
         user3 = UserFactory()
 

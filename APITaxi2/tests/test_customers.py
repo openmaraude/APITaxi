@@ -2,7 +2,7 @@ from APITaxi_models2.unittest.factories import CustomerFactory
 
 
 class TestEditCustomers:
-    def test_customers_edit_invalid(self, anonymous, operateur, moteur):
+    def test_invalid(self, anonymous, operateur, moteur):
         # Login required
         resp = anonymous.client.put('/customers/xxx', json={})
         assert resp.status_code == 401
@@ -42,7 +42,7 @@ class TestEditCustomers:
         assert resp.status_code == 404
         assert 'url' in resp.json['errors']
 
-    def test_customers_edit(self, moteur, QueriesTracker):
+    def test_edit(self, moteur, QueriesTracker):
         customer = CustomerFactory(moteur=moteur.user)
 
         # Empty

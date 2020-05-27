@@ -14,7 +14,7 @@ from APITaxi_models2.unittest.factories import (
 
 
 class TestTaxiDetails:
-    def test_details_invalid(self, anonymous, moteur, operateur):
+    def test_invalid(self, anonymous, moteur, operateur):
         """Tests shared for PUT /taxis/:id and GET /taxis/:id."""
         # Login required
         resp = anonymous.client.get('/taxis/xxx')
@@ -44,7 +44,7 @@ class TestTaxiDetails:
 
 
 class TestTaxiGet:
-    def test_get_taxis_no_entry_in_redis(self, operateur):
+    def test_no_entry_in_redis(self, operateur):
         """Taxi exists but there is no entry in redis with its position."""
         taxi = TaxiFactory(added_by=operateur.user)
 
@@ -61,7 +61,7 @@ class TestTaxiGet:
         assert data['position']['lat'] is None
         assert data['vehicle']['licence_plate'] == taxi.vehicle.licence_plate
 
-    def test_get_taxis_multiple_operators(self, admin, operateur):
+    def test_multiple_operators(self, admin, operateur):
         """Taxi has several operators. Make sure the infor returned are the
         correct ones."""
         taxi = TaxiFactory(added_by=operateur.user)
@@ -76,7 +76,7 @@ class TestTaxiGet:
         assert resp.status_code == 200
         assert resp.json['data'][0]['operator'] == admin.user.email
 
-    def test_get_taxis_ok(self, app, operateur, QueriesTracker):
+    def test_ok(self, app, operateur, QueriesTracker):
         taxi = TaxiFactory(added_by=operateur.user)
 
         # Store taxi position
@@ -96,7 +96,7 @@ class TestTaxiGet:
 
 
 class TestTaxiPut:
-    def test_put_taxis_ok(self, app, operateur):
+    def test_ok(self, app, operateur):
         def _set_taxi_status(status, hail=None):
             taxi = TaxiFactory(added_by=operateur.user, current_hail=hail)
             resp = operateur.client.put('/taxis/%s' % taxi.id, json={

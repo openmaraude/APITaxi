@@ -3,7 +3,7 @@ from APITaxi_models2.unittest.factories import DepartementFactory, DriverFactory
 
 
 class TestDriversCreate:
-    def test_drivers_create_invalid(self, anonymous, moteur, operateur):
+    def test_invalid(self, anonymous, moteur, operateur):
         # Login required
         resp = anonymous.client.post('/drivers', json={})
         assert resp.status_code == 401
@@ -42,7 +42,7 @@ class TestDriversCreate:
         assert len(resp.json['errors']['data']['0']['departement']['nom']) > 0
         assert len(resp.json['errors']['data']['0']['departement']['numero']) > 0
 
-    def test_drivers_create_already_exists(self, operateur):
+    def test_already_exists(self, operateur):
         """POST to an existing driver doesn't create the driver."""
         assert Driver.query.count() == 0
 
@@ -62,7 +62,7 @@ class TestDriversCreate:
         assert resp.status_code == 200
         assert Driver.query.count() == 1
 
-    def test_drivers_create_already_exists_different_departement(self, operateur):
+    def test_already_exists_different_departement(self, operateur):
         """Two drivers with same professional_licence id but different
         departements are considered different."""
         assert Driver.query.count() == 0
@@ -83,7 +83,7 @@ class TestDriversCreate:
         assert resp.status_code == 200
         assert Driver.query.count() == 2
 
-    def test_drivers_create_ok(self, operateur, QueriesTracker):
+    def test_ok(self, operateur, QueriesTracker):
         departement = DepartementFactory()
 
         with QueriesTracker() as qtracker:
