@@ -225,6 +225,11 @@ def taxis_create():
 @login_required
 @roles_accepted('admin', 'operateur')
 def taxis_details(taxi_id):
+    """Get or update a taxi.
+
+    Taxi update is possible with PUT /taxis/:id. To keep backward
+    compatibility, PUT only reads "status" and do not read other fields.
+    """
     # Get Taxi object with the VehicleDescription entry related to current
     # user.
     query = db.session.query(Taxi, VehicleDescription).options(
