@@ -2,8 +2,10 @@ import time
 
 from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import db, VehicleDescription
+from APITaxi_models2 import db, Taxi, VehicleDescription
 from APITaxi_models2.unittest.factories import (
+    ADSFactory,
+    DriverFactory,
     HailFactory,
     TaxiFactory,
     VehicleFactory,
@@ -39,7 +41,6 @@ class TestTaxiDetails:
         resp = operateur.client.get('/taxis/%s' % taxi.id)
         assert resp.status_code == 404
         assert 'url' in resp.json['errors']
-
 
 
 class TestTaxiGet:
@@ -136,3 +137,152 @@ class TestTaxiPut:
         taxi, resp = _set_taxi_status('occupied', hail)
         assert resp.status_code == 200
         assert hail.status == 'customer_on_board'
+
+
+class TestTaxiPost:
+    def test_invalid(self, operateur):
+        resp = operateur.client.post('/taxis', json={
+            'data': [{}]
+        })
+        assert resp.status_code == 400
+        # Required fields
+        assert 'ads' in resp.json['errors']['data']['0']
+        assert 'vehicle' in resp.json['errors']['data']['0']
+        assert 'driver' in resp.json['errors']['data']['0']
+
+        # Valid request, but non-existing items
+        resp = operateur.client.post('/taxis', json={
+            'data': [{
+                'ads': {
+                    'insee': 'aaa',
+                    'numero': 'bbb'
+                },
+                'vehicle': {
+                    'licence_plate': 'cccc'
+                },
+                'driver': {
+                    'professional_licence': 'ddd',
+                    'departement': 'eee'
+                }
+            }]
+        })
+        assert resp.status_code == 404
+        assert 'insee' in resp.json['errors']['data']['0']['ads']
+        assert 'numero' in resp.json['errors']['data']['0']['ads']
+        assert 'licence_plate' in resp.json['errors']['data']['0']['vehicle']
+        assert 'departement' in resp.json['errors']['data']['0']['driver']
+        assert 'professional_licence' in resp.json['errors']['data']['0']['driver']
+
+    def test_vehicle_description_other_user(self, operateur):
+        """Vehicle exists, but there is no VehicleDescription entry for the user making request."""
+        ads = ADSFactory()
+        driver = DriverFactory()
+        # VehicleFactory creates a VehicleDescription linked to a new user.
+        vehicle_from_other_user = VehicleFactory()
+        resp = operateur.client.post('/taxis', json={
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero
+                },
+                'vehicle': {
+                    'licence_plate': vehicle_from_other_user.licence_plate
+                },
+                'driver': {
+                    'professional_licence': driver.professional_licence,
+                    'departement': driver.departement.numero
+                }
+            }]
+        })
+        assert resp.status_code == 404
+        assert (resp.json['errors']['data']['0']['vehicle']['licence_plate']
+            == ['Vehicle exists but has not been created by the user making the request'])
+
+    def test_departement_not_found(self, operateur):
+        ads = ADSFactory()
+        driver = DriverFactory()
+        vehicle_description = VehicleDescriptionFactory(added_by=operateur.user)
+
+        resp = operateur.client.post('/taxis', json={
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero
+                },
+                'vehicle': {
+                    'licence_plate': vehicle_description.vehicle.licence_plate
+                },
+                'driver': {
+                    'professional_licence': driver.professional_licence,
+                    'departement': 'xxxx'
+                }
+            }]
+        })
+        assert resp.status_code == 404
+        assert resp.json['errors']['data']['0']['driver']['departement'] == ['Departement not found']
+
+    def test_departement_ok_driver_invalid(self, operateur):
+        ads = ADSFactory()
+        driver = DriverFactory()
+        vehicle_description = VehicleDescriptionFactory(added_by=operateur.user)
+
+        resp = operateur.client.post('/taxis', json={
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero
+                },
+                'vehicle': {
+                    'licence_plate': vehicle_description.vehicle.licence_plate
+                },
+                'driver': {
+                    'professional_licence': 'invalid',
+                    'departement': driver.departement.numero
+                }
+            }]
+        })
+        assert resp.status_code == 404
+        assert list(resp.json['errors']['data']['0']['driver'].keys()) == ['professional_licence']
+
+    def test_ok(self, operateur, QueriesTracker):
+        ads = ADSFactory()
+        driver = DriverFactory()
+        vehicle_description = VehicleDescriptionFactory(added_by=operateur.user)
+
+        payload = {
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero
+                },
+                'vehicle': {
+                    'licence_plate': vehicle_description.vehicle.licence_plate
+                },
+                'driver': {
+                    'professional_licence': driver.professional_licence,
+                    'departement': driver.departement.numero
+                }
+            }]
+        }
+
+        assert Taxi.query.count() == 0
+
+        with QueriesTracker() as qtracker:
+            resp = operateur.client.post('/taxis', json=payload)
+            # Queries:
+            # - permissions
+            # - SELECT ADS
+            # - SELECT vehicle
+            # - SELECT departement
+            # - SELECT driver
+            # - SELECT taxi to check if it exists
+            # - INSERT taxi
+            assert qtracker.count == 7
+
+        assert resp.status_code == 201
+        assert Taxi.query.count() == 1
+
+        # Same request, no taxi created
+        resp = operateur.client.post('/taxis', json=payload)
+        assert resp.status_code == 200
+        assert Taxi.query.count() == 1

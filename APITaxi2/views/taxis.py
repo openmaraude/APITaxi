@@ -137,9 +137,7 @@ def taxis_create():
     defined as the combination of an ads, a vehicle and a driver, it is
     returned instead of being created.
     """
-    schema = taxis_details_schema(
-        current_user
-    )()
+    schema = taxis_details_schema(current_user)()
 
     params, errors = validate_schema(schema, request.json)
     if errors:
