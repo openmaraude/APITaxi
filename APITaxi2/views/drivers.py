@@ -81,7 +81,9 @@ def drivers_create():
         professional_licence=args['professional_licence']
     ).one_or_none()
 
+    status_code = 200
     if not driver:
+        status_code = 201
         driver = Driver(
             departement=departement,
             professional_licence=args['professional_licence'],
@@ -102,4 +104,4 @@ def drivers_create():
 
     db.session.commit()
 
-    return ret
+    return ret, status_code

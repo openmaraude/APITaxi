@@ -80,7 +80,7 @@ class TestDriversCreate:
                 'nom': other_departement.nom
             }
         }]})
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         assert Driver.query.count() == 2
 
     def test_ok(self, operateur, QueriesTracker):
@@ -100,5 +100,5 @@ class TestDriversCreate:
             # if exists), INSERT driver
             assert qtracker.count == 4
 
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         assert Driver.query.count() == 1

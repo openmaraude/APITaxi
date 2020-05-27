@@ -75,7 +75,9 @@ def ads_create():
         insee=args['insee']
     ).one_or_none()
 
+    status_code = 200
     if not ads:
+        status_code = 201
         ads = ADS(
             numero=args['numero'],
             insee=args['insee'],
@@ -103,4 +105,4 @@ def ads_create():
 
     db.session.commit()
 
-    return ret
+    return ret, status_code

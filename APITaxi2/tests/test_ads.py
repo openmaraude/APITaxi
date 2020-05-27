@@ -87,7 +87,7 @@ class TestADSCreate:
             # insee, SELECT existing ADS, INSERT ADS
             assert qtracker.count == 5
 
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         assert resp.json['data'][0]['numero'] == '1337'
         assert resp.json['data'][0]['insee'] == zupc.insee
         assert resp.json['data'][0]['doublage'] == True

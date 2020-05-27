@@ -24,6 +24,3 @@ Migration from APITaxi to APITaxi2
 
 - waiting_time.py: TODO? not sure it is used, or working.
 - healthchecks.py: TODO? not used today, but can definitely be useful.
-
-
-- return HTTP/201 for new objects (POST /ads, POST /taxis, ...)
