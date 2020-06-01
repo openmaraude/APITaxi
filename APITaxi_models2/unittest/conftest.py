@@ -3,7 +3,7 @@ import pkg_resources
 import sys
 
 import alembic, alembic.config
-from flask_security import  SQLAlchemyUserDatastore
+from flask_security import SQLAlchemyUserDatastore
 import psycopg2
 import pytest
 from pytest_factoryboy import register
