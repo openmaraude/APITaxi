@@ -676,7 +676,7 @@ class TestHailPut(HailMixin):
         self.set_hail_status(r, 'received_by_taxi')
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']))
-        self.assert400(r)
+        self.assert200(r)
         self.app.config['ENV'] = prev_env
 
     def test_received_by_taxi_ok_version_2(self):
@@ -704,7 +704,7 @@ class TestHailPut(HailMixin):
         dict_hail['status'] = 'accepted_by_taxi'
         r = self.put([dict_hail], '/hails/{}/'.format(r.json['data'][0]['id']),
                 version=2)
-        self.assert400(r)
+        self.assert200(r)
         self.app.config['ENV'] = prev_env
 
     def received_by_taxi_from_received(self):

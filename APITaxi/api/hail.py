@@ -73,11 +73,16 @@ class HailId(Resource):
 
         #We change the status
         if 'status' in hj and  hj['status'] == 'accepted_by_taxi':
-            if g.version >= 2:
-                if not 'taxi_phone_number' in hj or hj['taxi_phone_number'] == '':
-                    abort(400, message='Taxi phone number is needed')
-                else:
-                    hail.taxi_phone_number = hj['taxi_phone_number']
+            # If taxi_phone_number is provided, save it. Our documentation
+            # states it is mandatory, but some clients provide it with the
+            # return value when we call their API on trip dispatch in
+            # send_request_operator.
+            # Make the parameter mandatory only if the taxi phone number is not
+            # already set.
+            if hj.get('taxi_phone_number'):
+                hail.taxi_phone_number = hj['taxi_phone_number']
+            elif not hail.taxi_phone_number:
+                abort(400, message='Taxi phone number is needed')
         initial_rating = hail.rating_ride
         for ev in puttable_arguments:
             if current_user.id != hail.added_by and ev.startswith('customer'):
