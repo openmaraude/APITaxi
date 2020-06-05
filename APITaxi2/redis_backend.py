@@ -1,6 +1,7 @@
 """This module gathers functions to access data stored in redis."""
 
 from dataclasses import dataclass
+from datetime import datetime
 import time
 
 from flask import current_app
@@ -59,3 +60,46 @@ def log_taxi_status(taxi_id, status):
     value = now
 
     current_app.redis.zadd('taxi_status:%s' % taxi_id, {key: value})
+
+
+@dataclass
+class _Location:
+    lon : float
+    lat : float
+    distance : float
+    update_date : datetime
+
+
+def taxis_locations_by_operator(lon, lat, distance):
+    """Get the list of taxis positions from the redis geoindex "geoindex_2",
+    which is populated by geotaxi.
+    """
+    locations = {}
+    data = current_app.redis.georadius(
+        'geoindex_2',
+        lon,
+        lat,
+        distance,
+        unit='m',
+        withdist=True,
+        withcoord=True,
+        sort='ASC'
+    )
+    for row in data:
+        taxi_operator, distance, location = row
+        taxi_id, operator = taxi_operator.decode('utf8').split(':')
+
+        if taxi_id not in locations:
+            locations[taxi_id] = {}
+
+        update_date = current_app.redis.zscore('timestamps', '%s:%s' % (taxi_id, operator))
+        if update_date:
+            update_date = datetime.fromtimestamp(update_date)
+
+        locations[taxi_id][operator] = _Location(
+            lon=location[0],
+            lat=location[1],
+            distance=distance,
+            update_date=update_date
+        )
+    return locations

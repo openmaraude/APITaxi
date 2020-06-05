@@ -159,15 +159,15 @@ def create_app(proxy_v2=True):
                 'regexp': r'^/ads(/.*)?$',
                 'app': new_app,
             },
-            'GET /taxis/:id': {
+            'GET and PUT /taxis/:id': {
                 'regexp': r'^/taxis/.+$',
                 'app': new_app,
                 'methods': ['GET', 'PUT']
             },
-            'POST /taxis': {
+            'GET and POST /taxis': {
                 'regexp': r'^/taxis/?$',
                 'app': new_app,
-                'methods': ['POST']
+                'methods': ['GET', 'POST']
             },
         })
 
