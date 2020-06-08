@@ -397,7 +397,7 @@ def taxis_list():
     default_max_distance = 3000
 
     max_distance = min(
-        [zupc.max_distance for zupc in zupcs if zupc.max_distance > 0]
+        [zupc.max_distance for zupc in zupcs if zupc.max_distance and zupc.max_distance > 0]
         + [default_max_distance]
     )
 
@@ -503,7 +503,10 @@ def taxis_list():
     data = {
         taxi: reduce(
             lambda a, b:
-                a if a[0].last_update_at >= b[0].last_update_at else b,
+                a if a[0].last_update_at
+                    and b[0].last_update_at
+                    and a[0].last_update_at >= b[0].last_update_at
+                else b,
                 data[taxi].items()
         )
         for taxi in data

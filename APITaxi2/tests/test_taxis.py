@@ -1,6 +1,7 @@
+from datetime import datetime, timedelta
 import time
 
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import lazyload
 
 from APITaxi_models2 import db, Taxi, VehicleDescription
 from APITaxi_models2.unittest.factories import (
@@ -10,6 +11,7 @@ from APITaxi_models2.unittest.factories import (
     TaxiFactory,
     VehicleFactory,
     VehicleDescriptionFactory,
+    ZUPCFactory,
 )
 
 
@@ -286,3 +288,118 @@ class TestTaxiPost:
         resp = operateur.client.post('/taxis', json=payload)
         assert resp.status_code == 200
         assert Taxi.query.count() == 1
+
+
+class TestTaxiList:
+
+    #def test_invalid(self, anonymous, operateur):
+    #    # Login required
+    #    resp = anonymous.client.get('/taxis')
+    #    assert resp.status_code == 401
+
+    #    # Permission denied
+    #    resp = operateur.client.get('/taxis')
+    #    assert resp.status_code == 403
+
+    def test_ok(self, app, moteur):
+        zupc = ZUPCFactory()
+        now = datetime.now()
+
+        taxi_1 = TaxiFactory(ads__zupc=zupc)
+
+        taxi_2_vehicle = VehicleFactory(descriptions=[])
+
+        # When a taxi has several descriptions, the default is the one that has
+        # been updated for the last time.
+        taxi_2_vehicle_descriptions_1 = VehicleDescriptionFactory(
+            vehicle=taxi_2_vehicle,
+            last_update_at=now
+        )
+        taxi_2_vehicle_descriptions_2 = VehicleDescriptionFactory(
+            vehicle=taxi_2_vehicle,
+            last_update_at=now - timedelta(days=15)
+        )
+
+        taxi_2 = TaxiFactory(ads__zupc=zupc, vehicle=taxi_2_vehicle)
+
+        lon = tmp_lon = 2.35
+        lat = tmp_lat = 48.86
+
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert resp.json['data'] == []
+
+        # Insert locations for each operator.
+        for taxi in Taxi.query.options(lazyload('*')):
+            for description in VehicleDescription.query.options(
+                lazyload('*')
+            ).filter_by(
+                vehicle=taxi.vehicle
+            ).order_by(
+                VehicleDescription.id
+            ):
+                app.redis.geoadd(
+                    'geoindex_2',
+                    tmp_lon,
+                    tmp_lat,
+                    '%s:%s' % (taxi.id, description.added_by.email)
+                )
+                app.redis.zadd(
+                    'timestamps', {
+                        '%s:%s' % (taxi.id, description.added_by.email): int(time.time())
+                    }
+                )
+
+                # Move taxi a little bit further
+                tmp_lon += 0.0001
+                tmp_lat += 0.0001
+
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+        # First is closer
+        assert resp.json['data'][0]['crowfly_distance'] < resp.json['data'][1]['crowfly_distance']
+        assert resp.json['data'][1]['operator'] == taxi_2_vehicle_descriptions_1.added_by.email
+
+        # If favorite_operator is set, do not return the default.
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s&favorite_operator=%s' % (
+            lon, lat, taxi_2_vehicle_descriptions_2.added_by.email
+        ))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+        assert resp.json['data'][1]['operator'] == taxi_2_vehicle_descriptions_2.added_by.email
+
+        # Search for a location still in the ZUPC, but too far to reach taxis.
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.02 , lat + 0.01))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
+
+        # Test ?count
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s&count=1' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+        # taxi_2 reports location with two operators. The default is "off", but
+        # the non-default one returns a valid location.
+        taxi_2_vehicle_descriptions_1.status = 'off'
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+
+        # Both operators are not free.
+        taxi_2_vehicle_descriptions_2.status = 'occupied'
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+        # First taxi's location is too old.
+        app.redis.zadd(
+            'timestamps', {
+                '%s:%s' % (taxi_1.id, taxi_1.vehicle.descriptions[0].added_by.email):
+                    # 5 minutes old
+                    int(time.time()) - 60 * 5
+            }
+        )
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
