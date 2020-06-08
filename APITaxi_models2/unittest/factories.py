@@ -118,6 +118,17 @@ class ZUPCFactory(BaseFactory):
 
     active = True
 
+    @factory.post_generation
+    def parent_id(obj, create, extracted, **kwargs):
+        """Set parent_id equal to parent to represent a "root" ZUPC.
+        """
+        if not create or extracted is not None:
+            return extracted
+
+        obj.parent_id = obj.id
+        db.session.flush()
+        return obj.parent_id
+
 
 class ADSFactory(BaseFactory):
     class Meta:
