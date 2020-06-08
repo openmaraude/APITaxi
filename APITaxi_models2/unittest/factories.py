@@ -91,6 +91,15 @@ class ZUPCFactory(BaseFactory):
     class Meta:
         model = ZUPC
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        """Get ZUPC, or create it if it doesn't exist."""
+        session = cls._meta.sqlalchemy_session
+        obj = session.query(ZUPC).filter_by(nom=kwargs['nom']).one_or_none()
+        if not obj:
+            obj = super(ZUPCFactory, cls)._create(model_class, *args, **kwargs)
+        return obj
+
     departement = factory.SubFactory(DepartementFactory)
     nom = 'Paris'
     insee = '75101'
