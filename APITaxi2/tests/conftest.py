@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 import os
 
-import fakeredis
 import flask
-from flask_redis import FlaskRedis
 import pytest
 
 import APITaxi_models2
@@ -16,6 +14,7 @@ from APITaxi_models2.unittest.factories import (
 from APITaxi_models2.unittest.conftest import (
     postgresql,
     postgresql_empty,
+    redis_server,
     SQLAlchemyQueriesTracker,
 )
 
@@ -23,26 +22,25 @@ import APITaxi2
 
 
 @pytest.fixture
-def app(tmp_path, postgresql, postgresql_empty):
+def app(tmp_path, postgresql, postgresql_empty, redis_server):
     settings_file = tmp_path / 'settings.py'
     settings_file.write_text('''
 SQLALCHEMY_DATABASE_URI = '%(database)s'
+REDIS_URL = '%(redis)s'
 ''' % {
-        'database': postgresql.url()
+        'database': postgresql.url(),
+        'redis': 'unix://%s' % redis_server
     })
     os.environ['APITAXI_CONFIG_FILE'] = settings_file.as_posix()
 
     app = APITaxi2.create_app()
-
-    # Use fake redis as backend
-    app.redis = FlaskRedis.from_custom_provider(fakeredis.FakeStrictRedis)
-    app.redis.init_app(app)
 
     with app.app_context():
         yield app
 
         # Remove all data from database for next test.
         postgresql_empty()
+        app.redis.flushall()
 
 
 @dataclass

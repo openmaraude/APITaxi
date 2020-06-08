@@ -59,7 +59,7 @@ jobs:
       - run:
           name: Install system dependencies
           command: |
-            sudo apt-get install -y postgis
+            sudo apt-get install -y postgis redis-server
             pip install tox
       - run:
           name: Run unittests
