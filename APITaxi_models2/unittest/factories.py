@@ -203,6 +203,7 @@ class VehicleDescriptionFactory(BaseFactory):
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
+    status = 'free'
 
 
 class VehicleFactory(BaseFactory):
