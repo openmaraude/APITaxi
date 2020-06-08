@@ -1,6 +1,9 @@
 import os
 import pkg_resources
+import signal
 import sys
+import tempfile
+import time
 
 import alembic, alembic.config
 from flask_security import SQLAlchemyUserDatastore
@@ -8,6 +11,7 @@ import psycopg2
 import pytest
 from pytest_factoryboy import register
 import sqlalchemy
+import subprocess
 import testing.postgresql
 
 import APITaxi_models2
@@ -132,3 +136,39 @@ class SQLAlchemyQueriesTracker:
                     output.write('\t\t%s\n' % param)
             output.write('\n')
         output.write('======== end of queries ========\n')
+
+
+@pytest.fixture(scope='session')
+def redis_server():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        redis_config_name = os.path.join(tmpdir, 'redis.conf')
+        socket_file = os.path.join(tmpdir, 'redis.sock')
+        pid_file = os.path.join(tmpdir, 'redis.pid')
+
+        with open(redis_config_name, 'w+') as handle:
+            handle.write('''
+# Don't listen on TCP
+port 0
+unixsocket %(socket_file)s
+unixsocketperm 700
+daemonize yes
+pidfile %(pid_file)s
+loglevel notice
+''' % {'socket_file': socket_file, 'pid_file': pid_file})
+
+        subprocess.check_call(
+            ['redis-server', redis_config_name]
+        )
+
+        yield socket_file
+
+        # Wait for pid file to exist
+        while True:
+            try:
+                with open(pid_file) as handle:
+                    pid = int(handle.read().strip())
+                    break
+            except FileNotFoundError:
+                time.sleep(.1)
+
+        os.kill(pid, signal.SIGKILL)
