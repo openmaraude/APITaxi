@@ -129,6 +129,8 @@ class ZUPCFactory(BaseFactory):
         db.session.flush()
         return obj.parent_id
 
+    max_distance = 1500
+
 
 class ADSFactory(BaseFactory):
     class Meta:
