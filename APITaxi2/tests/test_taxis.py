@@ -292,14 +292,14 @@ class TestTaxiPost:
 
 class TestTaxiList:
 
-    #def test_invalid(self, anonymous, operateur):
-    #    # Login required
-    #    resp = anonymous.client.get('/taxis')
-    #    assert resp.status_code == 401
+    def test_invalid(self, anonymous, operateur):
+        # Login required
+        resp = anonymous.client.get('/taxis')
+        assert resp.status_code == 401
 
-    #    # Permission denied
-    #    resp = operateur.client.get('/taxis')
-    #    assert resp.status_code == 403
+        # Permission denied
+        resp = operateur.client.get('/taxis')
+        assert resp.status_code == 403
 
     def test_ok(self, app, moteur):
         zupc = ZUPCFactory()
