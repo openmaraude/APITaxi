@@ -3,7 +3,7 @@ import time
 
 from sqlalchemy.orm import lazyload
 
-from APITaxi_models2 import db, Taxi, VehicleDescription
+from APITaxi_models2 import db, Taxi, Vehicle, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
     DriverFactory,
@@ -99,8 +99,25 @@ class TestTaxiGet:
 
 class TestTaxiPut:
     def test_ok(self, app, operateur):
-        def _set_taxi_status(status, hail=None):
+        def _set_taxi_status(status, hail=None, initial_status=None):
             taxi = TaxiFactory(added_by=operateur.user, current_hail=hail)
+
+            # If initial_status is set, fetch the VehicleDescription linked to
+            # taxi and set its status to the value. By default,
+            # VehicleDescriptionFactory initializes the status to "free".
+            if initial_status:
+                query = VehicleDescription.query.options(lazyload('*')).join(
+                    Vehicle
+                ).join(
+                    Taxi
+                ).filter(Taxi.id == taxi.id)
+
+                vehicle_description = query.one()
+                vehicle_description.status = initial_status
+                db.session.commit()
+
+            #if initial_status:
+            #    taxi.vehicle.descriptions[0].status = initial_status
             resp = operateur.client.put('/taxis/%s' % taxi.id, json={
                 'data': [{
                     'status': status
@@ -118,7 +135,7 @@ class TestTaxiPut:
         # Check log entry
         assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 1
 
-        taxi, resp = _set_taxi_status('free')
+        taxi, resp = _set_taxi_status('free', initial_status='off')
         assert resp.status_code == 200
         # Taxi is in not not_available list
         assert app.redis.zscore(
@@ -128,15 +145,19 @@ class TestTaxiPut:
         # Check log entry
         assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 1
 
+        # If the status is the same, nothing is logged.
+        taxi, resp = _set_taxi_status('free', initial_status='free')
+        assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 0
+
         # Taxi is changing the status to "off" with a customer on board
         hail = HailFactory(status='customer_on_board')
-        taxi, resp = _set_taxi_status('off', hail)
+        taxi, resp = _set_taxi_status('off', hail=hail)
         assert resp.status_code == 200
         assert hail.status == 'finished'
 
         # Taxi is changing the status to "occupied" after driving to a customer
         hail = HailFactory(status='accepted_by_customer')
-        taxi, resp = _set_taxi_status('occupied', hail)
+        taxi, resp = _set_taxi_status('occupied', hail=hail)
         assert resp.status_code == 200
         assert hail.status == 'customer_on_board'
 
