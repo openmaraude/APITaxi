@@ -100,21 +100,13 @@ class TestTaxiGet:
 class TestTaxiPut:
     def test_ok(self, app, operateur):
         def _set_taxi_status(status, hail=None, initial_status=None):
-            taxi = TaxiFactory(added_by=operateur.user, current_hail=hail)
-
-            # If initial_status is set, fetch the VehicleDescription linked to
-            # taxi and set its status to the value. By default,
-            # VehicleDescriptionFactory initializes the status to "free".
-            if initial_status:
-                query = VehicleDescription.query.options(lazyload('*')).join(
-                    Vehicle
-                ).join(
-                    Taxi
-                ).filter(Taxi.id == taxi.id)
-
-                vehicle_description = query.one()
-                vehicle_description.status = initial_status
-                db.session.flush()
+            vehicle = VehicleFactory(descriptions=[])
+            vehicle_description = VehicleDescriptionFactory(
+                vehicle=vehicle,
+                added_by=operateur.user,
+                status=initial_status
+            )
+            taxi = TaxiFactory(vehicle=vehicle, current_hail=hail)
 
             resp = operateur.client.put('/taxis/%s' % taxi.id, json={
                 'data': [{
