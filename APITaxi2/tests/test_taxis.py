@@ -114,10 +114,8 @@ class TestTaxiPut:
 
                 vehicle_description = query.one()
                 vehicle_description.status = initial_status
-                db.session.commit()
+                db.session.flush()
 
-            #if initial_status:
-            #    taxi.vehicle.descriptions[0].status = initial_status
             resp = operateur.client.put('/taxis/%s' % taxi.id, json={
                 'data': [{
                     'status': status
