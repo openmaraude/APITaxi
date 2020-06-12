@@ -4,9 +4,6 @@ from functools import reduce
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
-from marshmallow import decorators, EXCLUDE, fields, Schema, validate
-from marshmallow.validate import Range
-
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
@@ -21,125 +18,16 @@ from APITaxi_models2 import (
     VehicleDescription,
     ZUPC,
 )
-from APITaxi_models2.vehicle import UPDATABLE_VEHICLE_STATUS
 
-from .. import redis_backend
+from .. import redis_backend, schemas
 from ..utils import get_short_uuid
 from ..validators import (
-    data_schema_wrapper,
     make_error_json_response,
     validate_schema
 )
 
 
 blueprint = Blueprint('taxis', __name__)
-
-
-class ADSSchema(Schema):
-    numero = fields.String(required=True, allow_none=False)
-    insee = fields.String(required=True, allow_none=False)
-
-
-class DriverSchema(Schema):
-    professional_licence = fields.String(required=True, allow_none=False)
-    departement = fields.String(attribute='departement.numero')
-
-
-class VehicleSchema(Schema):
-    model = fields.String(required=False, allow_none=True)
-    constructor = fields.String(required=False, allow_none=True)
-    color = fields.String(required=False, allow_none=True)
-    licence_plate = fields.String(required=True, allow_none=False)
-    nb_seats = fields.Int(required=False, allow_none=True)
-    characteristics = fields.List(fields.String, required=False, allow_none=False)
-    type = fields.String(required=False, allow_none=True)
-    cpam_conventionne = fields.Bool(required=False, allow_none=True)
-    engine = fields.String(required=False, allow_none=True)
-
-
-class PositionSchema(Schema):
-    lon = fields.Float(required=True, allow_none=True)
-    lat = fields.Float(required=True, allow_none=True)
-
-
-class _TaxiSchema(Schema):
-    id = fields.String()
-    internal_id = fields.String(allow_none=True)
-    operator = fields.String(required=False, allow_none=False)
-    vehicle = fields.Nested(VehicleSchema, required=True)
-    ads = fields.Nested(ADSSchema, required=True)
-    driver = fields.Nested(DriverSchema, required=True)
-    rating = fields.Float(required=False, allow_none=False)
-
-    status = fields.String(
-        required=False, allow_none=False,
-        validate=validate.OneOf(UPDATABLE_VEHICLE_STATUS)
-    )
-
-    last_update = fields.Constant(None, required=False, allow_none=False)
-
-    position = fields.Nested(PositionSchema, required=False, allow_none=False)
-
-    crowfly_distance = fields.Constant(None, required=False, allow_none=True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.vehicle_description = None
-        self.redis_location = None
-
-    def dump(self, obj, *args, **kwargs):
-        """This function should be called with a list of tuples of two or three
-        elements. The first element is the taxi object to dump. Since a taxi
-        can have several VehicleDescription (one for each operator), the second
-        element should be the description to dump. The third optional element
-        is the location used to display the crowlfy distance between the API
-        caller and the taxi.
-        """
-        try:
-            taxi, self.vehicle_description, self.redis_location = obj
-        except ValueError:
-            taxi, self.vehicle_description = obj
-
-        return super().dump(taxi, *args, **kwargs)
-
-    @decorators.post_dump(pass_original=True)
-    def _add_fields(self, data, taxi, many=False):
-        """Extend output with vehicle_description details, and position
-        from redis.
-        """
-        assert self.vehicle_description
-
-        taxi_redis = redis_backend.get_taxi(taxi.id, taxi.added_by.email)
-
-        data.update({
-            'operator': self.vehicle_description.added_by.email,
-            'internal_id': self.vehicle_description.internal_id,
-            'status': self.vehicle_description.status,
-            # last_update is the last time location has been updated by
-            # geotaxi.
-            'last_update': taxi_redis.timestamp if taxi_redis else None,
-            'position': {
-                'lon': taxi_redis.lon if taxi_redis else None,
-                'lat': taxi_redis.lat if taxi_redis else None,
-            },
-            'crowfly_distance': self.redis_location.distance if self.redis_location else None
-        })
-        data['vehicle'].update({
-            'model': self.vehicle_description.model.name
-                if self.vehicle_description.model else None,
-            'constructor': self.vehicle_description.constructor.name
-                if self.vehicle_description.constructor else None,
-            'color': self.vehicle_description.color,
-            'nb_seats': self.vehicle_description.nb_seats,
-            'characteristics': self.vehicle_description.characteristics,
-            'type': self.vehicle_description.type,
-            'cpam_conventionne': self.vehicle_description.cpam_conventionne,
-            'engine': self.vehicle_description.engine,
-        })
-        return data
-
-
-TaxiSchema = data_schema_wrapper(_TaxiSchema)
 
 
 @blueprint.route('/taxis', methods=['POST'])
@@ -150,7 +38,7 @@ def taxis_create():
     defined as the combination of an ads, a vehicle and a driver, it is
     returned instead of being created.
     """
-    schema = TaxiSchema()
+    schema = schemas.data_schema_wrapper(schemas.TaxiSchema)()
 
     params, errors = validate_schema(schema, request.json)
     if errors:
@@ -284,7 +172,7 @@ def taxis_details(taxi_id):
     taxi, vehicle_description = (res.Taxi, res.VehicleDescription)
 
     # Build Schema
-    schema = TaxiSchema()
+    schema = schemas.data_schema_wrapper(schemas.TaxiSchema)()
 
     # Dump data for GET requests
     if request.method != 'PUT':
@@ -341,18 +229,6 @@ def taxis_details(taxi_id):
     return output
 
 
-class ListTaxisQueryStringSchema(Schema):
-    """Schema for querystring arguments of GET /taxis."""
-    class Meta:
-        """Allow and discard unknown fields."""
-        unknown = EXCLUDE
-
-    lon = fields.Float(required=True)
-    lat = fields.Float(required=True)
-    favorite_operator = fields.String()
-    count = fields.Int(validate=Range(min=1, max=50))
-
-
 @blueprint.route('/taxis', methods=['GET'])
 @login_required
 @roles_accepted('admin', 'moteur')
@@ -374,7 +250,7 @@ def taxis_list():
     * when a taxi turns off with PUT /taxis { status: off }, the entry
     "<taxi_id:operator_id>" is appended to the set not_available.
     """
-    schema = ListTaxisQueryStringSchema()
+    schema = schemas.ListTaxisQueryStringSchema()
     params, errors = validate_schema(schema, request.args)
     if errors:
         return make_error_json_response(errors)
@@ -385,7 +261,7 @@ def taxis_list():
         ZUPC.parent_id == ZUPC.id
     ).all()
 
-    schema = TaxiSchema()
+    schema = schemas.data_schema_wrapper(schemas.TaxiSchema)()
 
     if not zupcs:
         return schema.dump({'data': []})

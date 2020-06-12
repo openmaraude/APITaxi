@@ -4,12 +4,10 @@ from sqlalchemy.orm import joinedload
 from flask import abort, Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
-from marshmallow import fields, Schema, validates_schema, ValidationError
-
 from APITaxi_models2 import Departement, Driver, db
 
+from .. import schemas
 from ..validators import (
-    data_schema_wrapper,
     make_error_json_response,
     validate_schema
 )
@@ -18,33 +16,11 @@ from ..validators import (
 blueprint = Blueprint('drivers', __name__)
 
 
-def drivers_create_schema():
-    class DepartementSchema(Schema):
-        nom = fields.String()
-        numero = fields.String()
-
-        @validates_schema
-        def check_required(self, data, **kwargs):
-            if 'nom' not in data and 'numero' not in data:
-                raise ValidationError(
-                    'You need to specify at least "nom" or "numero"', 'nom'
-                )
-
-    class DriverSchema(Schema):
-        first_name = fields.String(required=True)
-        last_name = fields.String(required=True)
-        birth_date = fields.Date(allow_none=True)
-        professional_licence = fields.String(required=True)
-        departement = fields.Nested(DepartementSchema, required=True)
-
-    return data_schema_wrapper(DriverSchema)
-
-
 @blueprint.route('/drivers', methods=['POST'])
 @login_required
 @roles_accepted('admin', 'operateur', 'preferecture')
 def drivers_create():
-    schema = drivers_create_schema()()
+    schema = schemas.data_schema_wrapper(schemas.DriverSchema)()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)

@@ -1,8 +1,6 @@
-import dateutil
-
 from flask import jsonify
 
-from marshmallow import fields, Schema, validates, ValidationError
+from marshmallow import ValidationError
 
 
 def validate_schema(schema, data, **kwargs):
@@ -32,21 +30,3 @@ def make_error_json_response(errors, status_code=400):
     ... }
     """
     return jsonify({'errors': errors}), status_code
-
-
-def data_schema_wrapper(WrappedSchema):
-    """All API endpoints expect input parameters to be under the key "data"
-    which is a list of one and only one element: the payload.
-
-    It's probably not the best API design ever (...) but we need to keep this
-    behavior for backward-compatibility.
-    """
-    class DataSchema(Schema):
-        data = fields.List(fields.Nested(WrappedSchema), required=True)
-
-        @validates('data')
-        def validate_length(self, value):
-            if len(value) != 1:
-                raise ValidationError('data should be a list of one element.')
-
-    return DataSchema

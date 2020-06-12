@@ -4,12 +4,10 @@ from flask import Blueprint, request
 
 from flask_security import current_user, login_required, roles_accepted
 
-from marshmallow import fields, validate, Schema
-
 from APITaxi_models2 import ADS, db, Vehicle, ZUPC
 
+from .. import schemas
 from ..validators import (
-    data_schema_wrapper,
     make_error_json_response,
     validate_schema
 )
@@ -18,27 +16,11 @@ from ..validators import (
 blueprint = Blueprint('ads', __name__)
 
 
-def ads_create_schema():
-    class ADSSchema(Schema):
-        category = fields.String(required=True)
-        vehicle_id = fields.Int(allow_none=True)
-        insee = fields.String(required=True)
-        numero = fields.String(required=True)
-        owner_name = fields.String(required=True)
-        owner_type = fields.String(
-            required=True,
-            validate=validate.OneOf(['individual', 'company'])
-        )
-        doublage = fields.Bool()
-
-    return data_schema_wrapper(ADSSchema)
-
-
 @blueprint.route('/ads', methods=['POST'])
 @login_required
 @roles_accepted('admin', 'operateur')
 def ads_create():
-    schema = ads_create_schema()()
+    schema = schemas.data_schema_wrapper(schemas.ADSSchema)()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)
