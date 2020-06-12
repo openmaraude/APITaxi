@@ -1,3 +1,4 @@
+# flake8: noqa
 from dataclasses import dataclass
 import os
 
@@ -11,6 +12,10 @@ from APITaxi_models2.unittest.factories import (
     RolesUsersFactory,
     UserFactory
 )
+
+# We have to import postgresql, postgresql_empty and redis_server even if they
+# are unused because otherwise they cannot be used as dependencies by fixtures
+# below.
 from APITaxi_models2.unittest.conftest import (
     postgresql,
     postgresql_empty,

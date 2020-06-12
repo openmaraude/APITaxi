@@ -9,12 +9,12 @@ from flask import current_app
 
 @dataclass
 class _Taxi:
-    timestamp : int
-    lat : float
-    lon : float
-    status : str
-    device : str
-    version : int
+    timestamp: int
+    lat: float
+    lon: float
+    status: str
+    device: str
+    version: int
 
 
 def get_taxi(taxi_id, operator_name):
@@ -64,10 +64,10 @@ def log_taxi_status(taxi_id, status):
 
 @dataclass
 class _Location:
-    lon : float
-    lat : float
-    distance : float
-    update_date : datetime
+    lon: float
+    lat: float
+    distance: float
+    update_date: datetime
 
 
 def taxis_locations_by_operator(lon, lat, distance):

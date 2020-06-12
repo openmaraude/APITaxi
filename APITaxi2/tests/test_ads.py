@@ -90,7 +90,7 @@ class TestADSCreate:
         assert resp.status_code == 201
         assert resp.json['data'][0]['numero'] == '1337'
         assert resp.json['data'][0]['insee'] == zupc.insee
-        assert resp.json['data'][0]['doublage'] == True
+        assert resp.json['data'][0]['doublage'] is True
         assert resp.json['data'][0]['owner_type'] == 'individual'
         assert resp.json['data'][0]['owner_name'] == 'Roger Federer'
         assert resp.json['data'][0]['category'] == 'category'

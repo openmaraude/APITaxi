@@ -1,7 +1,7 @@
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
-from flask import abort, Blueprint, request
+from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
 from APITaxi_models2 import Departement, Driver, db

@@ -195,7 +195,8 @@ class CustomerSchema(Schema):
            user's id
         """
         # Case 1:
-        if (self.current_user.has_role('admin')
+        if (
+            self.current_user.has_role('admin')
             and not self.current_user.has_role('moteur')
             and 'moteur_id' not in data
         ):
@@ -207,7 +208,8 @@ class CustomerSchema(Schema):
         # Case 2: nothing to do
 
         # Case 3:
-        if (not self.current_user.has_role('admin')
+        if (
+            not self.current_user.has_role('admin')
             and 'moteur_id' in data
             and data['moteur_id'] != self.current_user.id
         ):

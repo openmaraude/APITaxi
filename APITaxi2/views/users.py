@@ -1,9 +1,7 @@
 from flask import Blueprint
 from flask_security import login_required, roles_accepted
 
-from marshmallow import fields, Schema
-
-from APITaxi_models2 import User, db
+from APITaxi_models2 import User
 
 from .. import schemas
 from ..validators import (

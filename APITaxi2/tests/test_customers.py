@@ -47,7 +47,8 @@ class TestEditCustomers:
 
         # Empty
         with QueriesTracker() as qtrack:
-            resp = moteur.client.put('/customers/%s' % customer.id, json={'data': [{
+            resp = moteur.client.put('/customers/%s' % customer.id, json={
+                'data': [{
                     'reprieve_begin': '2001-01-01 01:01:01',
                     'reprieve_end': '2002-02-02 02:02:02',
                     'ban_begin': '2003-03-03 03:03:03',

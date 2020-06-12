@@ -77,7 +77,7 @@ def check_content_type():
             }), 400
 
         try:
-            data = request.get_json()
+            _ = request.get_json()
         except BadRequest:
             return jsonify({
                 'errors': {
@@ -91,7 +91,7 @@ def check_content_type():
 
 def print_url_map(url_map):
     for rule in sorted(url_map.iter_rules(), key=lambda r: r.rule):
-        methods = [m for m in rule.methods if m not in('OPTIONS', 'HEAD')]
+        methods = [m for m in rule.methods if m not in ('OPTIONS', 'HEAD')]
         print(('\t%-45s -> %s' % (rule.rule, ', '.join(methods))))
 
 

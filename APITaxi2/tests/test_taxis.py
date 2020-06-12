@@ -3,7 +3,7 @@ import time
 
 from sqlalchemy.orm import lazyload
 
-from APITaxi_models2 import db, Taxi, Vehicle, VehicleDescription
+from APITaxi_models2 import Taxi, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
     DriverFactory,
@@ -82,7 +82,9 @@ class TestTaxiGet:
         taxi = TaxiFactory(added_by=operateur.user)
 
         # Store taxi position
-        app.redis.hset('taxi:%s' % taxi.id, operateur.user.email,
+        app.redis.hset(
+            'taxi:%s' % taxi.id,
+            operateur.user.email,
             '1589567716 48.84 2.35 free phone 2'
         )
 
@@ -101,7 +103,7 @@ class TestTaxiPut:
     def test_ok(self, app, operateur):
         def _set_taxi_status(status, hail=None, initial_status=None):
             vehicle = VehicleFactory(descriptions=[])
-            vehicle_description = VehicleDescriptionFactory(
+            VehicleDescriptionFactory(
                 vehicle=vehicle,
                 added_by=operateur.user,
                 status=initial_status
@@ -209,7 +211,7 @@ class TestTaxiPost:
         })
         assert resp.status_code == 404
         assert (resp.json['errors']['data']['0']['vehicle']['licence_plate']
-            == ['Vehicle exists but has not been created by the user making the request'])
+                == ['Vehicle exists but has not been created by the user making the request'])
 
     def test_departement_not_found(self, operateur):
         ads = ADSFactory()
@@ -331,7 +333,7 @@ class TestTaxiList:
             last_update_at=now - timedelta(days=15)
         )
 
-        taxi_2 = TaxiFactory(ads__zupc=zupc, vehicle=taxi_2_vehicle)
+        TaxiFactory(ads__zupc=zupc, vehicle=taxi_2_vehicle)
 
         lon = tmp_lon = 2.35
         lat = tmp_lat = 48.86
@@ -381,7 +383,7 @@ class TestTaxiList:
         assert resp.json['data'][1]['operator'] == taxi_2_vehicle_descriptions_2.added_by.email
 
         # Search for a location still in the ZUPC, but too far to reach taxis.
-        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.02 , lat + 0.01))
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.02, lat + 0.01))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 

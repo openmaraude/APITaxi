@@ -20,7 +20,6 @@ class TestUsersDetails:
         resp = admin.client.get('/users/999')
         assert resp.status_code == 404
 
-
     def test_ok(self, admin, QueriesTracker):
         user = UserFactory(commercial_name='Bob Dylan')
 
