@@ -169,6 +169,11 @@ def create_app(proxy_v2=True):
                 'app': new_app,
                 'methods': ['GET', 'POST']
             },
+            'POST /vehicles': {
+                'regexp': r'^/vehicles/?$',
+                'app': new_app,
+                'methods': ['POST']
+            },
         })
 
     return legacy_app

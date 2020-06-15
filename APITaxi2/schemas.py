@@ -9,7 +9,10 @@ from marshmallow import (
     ValidationError,
 )
 
-from APITaxi_models2.vehicle import UPDATABLE_VEHICLE_STATUS
+from APITaxi_models2.vehicle import (
+    UPDATABLE_VEHICLE_STATUS,
+    VehicleDescription,
+)
 
 from . import redis_backend
 
@@ -56,10 +59,104 @@ class RefDriverSchema(Schema):
 
 
 class VehicleSchema(Schema):
+    id = fields.Integer(dump_only=True, required=False, allow_none=False)
+
+    licence_plate = fields.String(required=True, allow_none=False)
+
+    internal_id = fields.String(allow_none=True)
+    model_year = fields.Integer(required=False, allow_none=True)
+    engine = fields.String(required=False, allow_none=True)
+    horse_power = fields.Float(required=False, allow_none=True)
+    relais = fields.Bool(required=False, allow_none=True)
+    horodateur = fields.String(required=False, allow_none=True)
+    taximetre = fields.String(requried=False, allow_none=True)
+    date_dernier_ct = fields.Date(required=False, allow_none=True)
+    date_validite_ct = fields.Date(required=False, allow_none=True)
+    special_need_vehicle = fields.Bool(required=False, allow_none=True)
+    type_ = fields.String(
+        required=False, allow_none=True,
+        validate=validate.OneOf(
+            VehicleDescription.type.property.columns[0].type.enums
+        )
+    )
+    luxury = fields.Bool(required=False, allow_none=True)
+    credit_card_accepted = fields.Bool(required=False, allow_none=True)
+    nfc_cc_accepted = fields.Bool(required=False, allow_none=True)
+    amex_accepted = fields.Bool(required=False, allow_none=True)
+    bank_check_accepted = fields.Bool(required=False, allow_none=True)
+    fresh_drink = fields.Bool(required=False, allow_none=True)
+    dvd_player = fields.Bool(required=False, allow_none=True)
+    tablet = fields.Bool(required=False, allow_none=True)
+    wifi = fields.Bool(required=False, allow_none=True)
+    baby_seat = fields.Bool(required=False, allow_none=True)
+    bike_accepted = fields.Bool(required=False, allow_none=True)
+    pet_accepted = fields.Bool(required=False, allow_none=True)
+    air_con = fields.Bool(required=False, allow_none=True)
+    electronic_toll = fields.Bool(required=False, allow_none=True)
+    gps = fields.Bool(required=False, allow_none=True)
+    cpam_conventionne = fields.Bool(required=False, allow_none=True)
+    every_destination = fields.Bool(required=False, allow_none=True)
+
+    color = fields.String(required=False, allow_none=True)
+    nb_seats = fields.Int(required=False, allow_none=True)
     model = fields.String(required=False, allow_none=True)
     constructor = fields.String(required=False, allow_none=True)
+
+    def __init__(self, *args, **kwargs):
+        self.vehicle_description = None
+        return super().__init__(*args, **kwargs)
+
+    def dump(self, obj, *args, **kwargs):
+        vehicle, self.vehicle_description = obj
+        return super().dump(vehicle, *args, **kwargs)
+
+    @decorators.post_dump(pass_original=True)
+    def _add_fields(self, data, vehicle, many=False):
+        assert self.vehicle_description
+
+        data.update({
+            'internal_id': self.vehicle_description.internal_id,
+            'model_year': self.vehicle_description.model_year,
+            'engine': self.vehicle_description.engine,
+            'horse_power': self.vehicle_description.horse_power,
+            'relais': self.vehicle_description.relais,
+            'horodateur': self.vehicle_description.horodateur,
+            'taximetre': self.vehicle_description.taximetre,
+            'date_dernier_ct': self.vehicle_description.date_dernier_ct,
+            'date_validite_ct': self.vehicle_description.date_validite_ct,
+            'special_need_vehicle': self.vehicle_description.special_need_vehicle,
+            'type_': self.vehicle_description.type,
+            'luxury': self.vehicle_description.luxury,
+            'credit_card_accepted': self.vehicle_description.credit_card_accepted,
+            'nfc_cc_accepted': self.vehicle_description.nfc_cc_accepted,
+            'amex_accepted': self.vehicle_description.amex_accepted,
+            'bank_check_accepted': self.vehicle_description.bank_check_accepted,
+            'fresh_drink': self.vehicle_description.fresh_drink,
+            'dvd_player': self.vehicle_description.dvd_player,
+            'tablet': self.vehicle_description.tablet,
+            'wifi': self.vehicle_description.wifi,
+            'baby_seat': self.vehicle_description.baby_seat,
+            'bike_accepted': self.vehicle_description.bike_accepted,
+            'pet_accepted': self.vehicle_description.pet_accepted,
+            'air_con': self.vehicle_description.air_con,
+            'electronic_toll': self.vehicle_description.electronic_toll,
+            'gps': self.vehicle_description.gps,
+            'cpam_conventionne': self.vehicle_description.cpam_conventionne,
+            'every_destination': self.vehicle_description.every_destination,
+            'color': self.vehicle_description.color,
+            'nb_seats': self.vehicle_description.nb_seats,
+            'model': self.vehicle_description.model.name
+                if self.vehicle_description.model else None,
+            'constructor': self.vehicle_description.constructor.name
+                if self.vehicle_description.constructor else None,
+        })
+
+        return data
+
+
+class RefVehicleSchema(VehicleSchema):
+    constructor = fields.String(required=False, allow_none=True)
     color = fields.String(required=False, allow_none=True)
-    licence_plate = fields.String(required=True, allow_none=False)
     nb_seats = fields.Int(required=False, allow_none=True)
     characteristics = fields.List(fields.String, required=False, allow_none=False)
     type = fields.String(required=False, allow_none=True)
@@ -88,7 +185,7 @@ class TaxiSchema(Schema):
     id = fields.String()
     internal_id = fields.String(allow_none=True)
     operator = fields.String(required=False, allow_none=False)
-    vehicle = fields.Nested(VehicleSchema, required=True)
+    vehicle = fields.Nested(RefVehicleSchema, required=True)
     ads = fields.Nested(RefADSSchema, required=True)
     driver = fields.Nested(RefDriverSchema, required=True)
     rating = fields.Float(required=False, allow_none=False)
