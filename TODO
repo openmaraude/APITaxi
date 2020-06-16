@@ -6,16 +6,14 @@ Migration from APITaxi to APITaxi2
 - drivers.py: DONE
 - ADS.py: DONE
 - taxi.py: DONE
+- vehicles.py: DONE
 
 - documents.py: Not used, can be removed from the API
 
 - hails.py: TODO
-- vehicles.py:
-    * POST: TODO
-    * GET: returns useless metadata, only retrievable from a stats role that
-      doesn't exist in database. Can be removed from the API.
 - zupc.py: TODO
 - __init__.py: TODO (contains swagger documentation)
 
-- waiting_time.py: TODO? not sure it is used, or working.
-- healthchecks.py: TODO? not used today, but can definitely be useful.
+
+- tasks
+- make sure we still have metrics in influxdb
