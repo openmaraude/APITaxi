@@ -154,7 +154,12 @@ class VehicleSchema(Schema):
         return data
 
 
-class RefVehicleSchema(VehicleSchema):
+class RefVehicleSchema(Schema):
+    class Meta:
+        """Allow and discard unknown fields."""
+        unknown = EXCLUDE
+
+    licence_plate = fields.String(required=True, allow_none=False)
     constructor = fields.String(required=False, allow_none=True)
     color = fields.String(required=False, allow_none=True)
     nb_seats = fields.Int(required=False, allow_none=True)

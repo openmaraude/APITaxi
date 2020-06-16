@@ -173,7 +173,8 @@ class TestTaxiPost:
                     'numero': 'bbb'
                 },
                 'vehicle': {
-                    'licence_plate': 'cccc'
+                    'licence_plate': 'cccc',
+                    'nb_seats': 4
                 },
                 'driver': {
                     'professional_licence': 'ddd',
