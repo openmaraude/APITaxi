@@ -7,13 +7,11 @@ Migration from APITaxi to APITaxi2
 - ADS.py: DONE
 - taxi.py: DONE
 - vehicles.py: DONE
-
-- documents.py: Not used, can be removed from the API
+- zupc.py: DONE
+- documents.py: DONE
 
 - hails.py: TODO
-- zupc.py: TODO
 - __init__.py: TODO (contains swagger documentation)
-
 
 - tasks
 - make sure we still have metrics in influxdb
