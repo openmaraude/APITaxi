@@ -9,6 +9,14 @@ from marshmallow import (
     ValidationError,
 )
 
+from geopy.distance import vincenty
+
+from APITaxi_models2.hail import (
+    INCIDENT_CUSTOMER_REASONS,
+    INCIDENT_TAXI_REASONS,
+    RATING_RIDE_REASONS,
+    REPORTING_CUSTOMER_REASONS,
+)
 from APITaxi_models2.vehicle import (
     UPDATABLE_VEHICLE_STATUS,
     VehicleDescription,
@@ -319,6 +327,84 @@ class CustomerSchema(Schema):
                 'Invalid moteur_id. Should match your user id.',
                 'moteur_id'
             )
+
+
+class HailTaxiRelationSchema(Schema):
+    rating = fields.Float()
+
+
+class HailTaxiSchema(Schema):
+    last_update = fields.Int()
+    id = fields.String()
+    position = fields.Nested(PositionSchema)
+    crowfly_distance = fields.Float()
+
+
+class HailSchema(Schema):
+    id = fields.String()
+    status = fields.String()
+    customer_lon = fields.Float()
+    customer_lat = fields.Float()
+    customer_address = fields.String()
+    customer_phone_number = fields.String()
+    last_status_change = fields.DateTime()
+    rating_ride = fields.Int()
+    rating_ride_reason = fields.String(
+        validate=validate.OneOf(RATING_RIDE_REASONS)
+    )
+    incident_customer_reason = fields.String(
+        validate=validate.OneOf(INCIDENT_CUSTOMER_REASONS)
+    )
+    incident_taxi_reason = fields.String(
+        validate=validate.OneOf(INCIDENT_TAXI_REASONS)
+    )
+    reporting_customer = fields.Bool()
+    reporting_customer_reason = fields.String(
+        validate=validate.OneOf(REPORTING_CUSTOMER_REASONS)
+    )
+    session_id = fields.String()
+    operateur = fields.String(attribute='operateur.email')
+
+    taxi_relation = fields.Nested(HailTaxiRelationSchema)
+    taxi = fields.Nested(HailTaxiSchema)
+
+    creation_datetime = fields.DateTime()
+    customer_id = fields.String()
+
+    def __init__(self, *args, **kwargs):
+        self.taxi_position = None
+        return super().__init__(*args, **kwargs)
+
+    def dump(self, obj, *args, **kwargs):
+        hail, self.taxi_position = obj
+        return super().dump(hail, *args, **kwargs)
+
+    @decorators.post_dump(pass_original=True)
+    def _add_fields(self, data, hail, many=False):
+        # Taxi location should only be returned if the hail is in progress.
+        if self.taxi_position and hail.status in (
+            'accepted_by_taxi',
+            'accepted_by_customer',
+            'customer_on_board',
+        ) or True:
+            data['taxi']['position'] = {
+                'lon': self.taxi_position.lon,
+                'lat': self.taxi_position.lat
+            }
+            data['taxi']['crowfly_distance'] = vincenty(
+                (self.taxi_position.lat, self.taxi_position.lon),
+                (hail.customer_lat, hail.customer_lon)
+            ).kilometers
+            data['taxi']['last_update'] = self.taxi_position.timestamp
+        # Don't display location for hails not in progress.
+        else:
+            data['taxi']['position'] = {
+                'lon': None,
+                'lat': None
+            }
+            data['taxi']['crowfly_distance'] = None
+            data['taxi']['last_update'] = None
+        return data
 
 
 def data_schema_wrapper(WrappedSchema):

@@ -10,7 +10,13 @@ Migration from APITaxi to APITaxi2
 - zupc.py: DONE
 - documents.py: DONE
 
-- hails.py: TODO
+- hails.py:
+   [GET /hails/:id]      TODO
+   [PUT /hails/:id]      TODO
+   [POST /hails]         TODO
+   [GET /hails]          TODO
+   [GET /hails/:id/_log] TODO? not sure it is used
+
 - __init__.py: TODO (contains swagger documentation)
 
 - tasks
