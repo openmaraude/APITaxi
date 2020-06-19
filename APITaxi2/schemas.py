@@ -386,7 +386,7 @@ class HailSchema(Schema):
             'accepted_by_taxi',
             'accepted_by_customer',
             'customer_on_board',
-        ) or True:
+        ):
             data['taxi']['position'] = {
                 'lon': self.taxi_position.lon,
                 'lat': self.taxi_position.lat
