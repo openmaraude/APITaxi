@@ -100,7 +100,7 @@ class TestTaxiGet:
 
 
 class TestTaxiPut:
-    def test_ok(self, app, operateur):
+    def test_ok(self, app, operateur, QueriesTracker):
         def _set_taxi_status(status, hail=None, initial_status=None):
             vehicle = VehicleFactory(descriptions=[])
             VehicleDescriptionFactory(
@@ -110,11 +110,14 @@ class TestTaxiPut:
             )
             taxi = TaxiFactory(vehicle=vehicle, current_hail=hail)
 
-            resp = operateur.client.put('/taxis/%s' % taxi.id, json={
-                'data': [{
-                    'status': status
-                }]
-            })
+            with QueriesTracker() as qtracker:
+                resp = operateur.client.put('/taxis/%s' % taxi.id, json={
+                    'data': [{
+                        'status': status
+                    }]
+                })
+                # SELECT permissions, SELECT taxi, UPDATE hail, UPDATE vehicle_description, UPDATE taxi
+                assert qtracker.count <= 5
             return taxi, resp
 
         taxi, resp = _set_taxi_status('off')
@@ -315,7 +318,7 @@ class TestTaxiList:
         resp = operateur.client.get('/taxis')
         assert resp.status_code == 403
 
-    def test_ok(self, app, moteur):
+    def test_ok(self, app, moteur, QueriesTracker):
         zupc = ZUPCFactory()
         now = datetime.now()
 
@@ -368,7 +371,11 @@ class TestTaxiList:
                 tmp_lon += 0.0001
                 tmp_lat += 0.0001
 
-        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        with QueriesTracker() as qtracker:
+            resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+            # SELECT permissions, SELECT ZUPC, SELECT taxi
+            assert qtracker.count == 3
+
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2
         # First is closer

@@ -16,7 +16,7 @@ class TestGetHailDetails:
         resp = operateur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 403
 
-    def test_ok(self, app, operateur, moteur):
+    def test_ok(self, app, operateur, moteur, QueriesTracker):
         # Hail exists and user is the moteur
         hail = HailFactory(added_by=moteur.user)
         resp = moteur.client.get('/hails/%s' % hail.id)
@@ -34,7 +34,10 @@ class TestGetHailDetails:
             hail.added_by.email,
             '1589567716 48.84 2.35 free phone 2'
         )
-        resp = moteur.client.get('/hails/%s' % hail.id)
+        with QueriesTracker() as qtracker:
+            resp = moteur.client.get('/hails/%s' % hail.id)
+            # SELECT permissions, SELECT hail
+            assert qtracker.count == 2
         assert resp.status_code == 200
         assert resp.json['data'][0]['taxi']['crowfly_distance']
         assert resp.json['data'][0]['taxi']['last_update']

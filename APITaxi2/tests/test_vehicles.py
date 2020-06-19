@@ -22,44 +22,54 @@ class TestVehiclePost:
         # The only required key is "licence_plate"
         assert list(resp.json['errors']['data']['0'].keys()) == ['licence_plate']
 
-    def test_ok(self, operateur, admin):
-        resp = operateur.client.post('/vehicles', json={
-            'data': [{
-                'licence_plate': 'licence1',
-                'internal_id': 'internal_id',
-                'model_year': 1938,
-                'engine': 'v12',
-                'horse_power': 42.2,
-                'relais': False,
-                'horodateur': 'horodateur',
-                'taximetre': 'taximetre',
-                'date_dernier_ct': '2012-12-21',
-                'date_validite_ct': '2013-12-21',
-                'special_need_vehicle': True,
-                'type_': 'normal',
-                'luxury': True,
-                'credit_card_accepted': True,
-                'nfc_cc_accepted': True,
-                'amex_accepted': True,
-                'bank_check_accepted': True,
-                'fresh_drink': True,
-                'dvd_player': True,
-                'tablet': True,
-                'wifi': True,
-                'baby_seat': True,
-                'bike_accepted': True,
-                'pet_accepted': True,
-                'air_con': True,
-                'electronic_toll': True,
-                'gps': True,
-                'cpam_conventionne': True,
-                'every_destination': True,
-                'color': 'blue',
-                'nb_seats': 18,
-                'model': 'mymodel',
-                'constructor': 'myconstructor',
-            }]
-        })
+    def test_ok(self, operateur, admin, QueriesTracker):
+        with QueriesTracker() as qtracker:
+            resp = operateur.client.post('/vehicles', json={
+                'data': [{
+                    'licence_plate': 'licence1',
+                    'internal_id': 'internal_id',
+                    'model_year': 1938,
+                    'engine': 'v12',
+                    'horse_power': 42.2,
+                    'relais': False,
+                    'horodateur': 'horodateur',
+                    'taximetre': 'taximetre',
+                    'date_dernier_ct': '2012-12-21',
+                    'date_validite_ct': '2013-12-21',
+                    'special_need_vehicle': True,
+                    'type_': 'normal',
+                    'luxury': True,
+                    'credit_card_accepted': True,
+                    'nfc_cc_accepted': True,
+                    'amex_accepted': True,
+                    'bank_check_accepted': True,
+                    'fresh_drink': True,
+                    'dvd_player': True,
+                    'tablet': True,
+                    'wifi': True,
+                    'baby_seat': True,
+                    'bike_accepted': True,
+                    'pet_accepted': True,
+                    'air_con': True,
+                    'electronic_toll': True,
+                    'gps': True,
+                    'cpam_conventionne': True,
+                    'every_destination': True,
+                    'color': 'blue',
+                    'nb_seats': 18,
+                    'model': 'mymodel',
+                    'constructor': 'myconstructor',
+                }]
+            })
+            # SELECT permissions
+            # SELECT vehicle, INSERT vehicle
+            # SELECT vehicle_description
+            # SELECT model, INSERT model
+            # SELECT constructor, INSERT constructor
+            # INSERT vehicle_description
+            assert qtracker.count == 9
+
+
         assert resp.status_code == 200
         assert Vehicle.query.count() == 1
         assert VehicleConstructor.query.count() == 1
