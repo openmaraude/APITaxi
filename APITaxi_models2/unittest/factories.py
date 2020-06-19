@@ -245,11 +245,16 @@ class HailFactory(BaseFactory):
     creation_datetime = datetime.datetime(2012, 12, 21, 13, 37, 13)
     taxi = factory.SubFactory(TaxiFactory)
     status = 'received'
-    customer = factory.SubFactory(CustomerFactory)
+
+    @factory.lazy_attribute
+    def customer(self):
+        return CustomerFactory(moteur=self.added_by)
+
     customer_lat = 48.850690
     customer_lon = 2.308620
     operateur = factory.SubFactory(UserFactory)
     customer_address = '20 Avenue de Ségur, 75007 Paris'
     customer_phone_number = '0799100222'
+    added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
