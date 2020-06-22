@@ -16,7 +16,13 @@ class TestGetHailDetails:
         resp = operateur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 403
 
-    def test_ok(self, app, operateur, moteur, QueriesTracker):
+    def test_ok(self, app, admin, operateur, moteur, QueriesTracker):
+        # Hail exists, user is not the moteur nor the operateur but he has the
+        # admin role.
+        hail = HailFactory()
+        resp = admin.client.get('/hails/%s' % hail.id)
+        assert resp.status_code == 200
+
         # Hail exists and user is the moteur
         hail = HailFactory(added_by=moteur.user)
         resp = moteur.client.get('/hails/%s' % hail.id)

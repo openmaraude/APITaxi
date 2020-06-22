@@ -27,7 +27,7 @@ def hails_details(hail_id):
         return make_error_json_response({
             'url': 'Hail not found'
         }, status_code=404)
-    if current_user not in (hail.operateur, hail.added_by):
+    if current_user not in (hail.operateur, hail.added_by) and not current_user.has_role('admin'):
         return make_error_json_response({
             'url': 'You do not have the permissions to view this hail'
         }, status_code=403)
@@ -35,3 +35,5 @@ def hails_details(hail_id):
     schema = schemas.data_schema_wrapper(schemas.HailSchema)()
     taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.added_by.email)
     return schema.dump({'data': [(hail, taxi_position)]})
+
+
