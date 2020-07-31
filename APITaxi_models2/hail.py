@@ -2,28 +2,34 @@ from . import db
 from .mixins import HistoryMixin
 
 
-# Status added in a more recent version of the API.
-HAIL_NEW_STATUS = ('customer_on_board', 'finished', 'timeout_accepted_by_customer')
+# These status are "terminal": the hail is considered over, and you cannot
+# change the status to another one.
+HAIL_TERMINAL_STATUS = (
+    'failure',
+    'declined_by_taxi',
+    'incident_taxi',
+    'timeout_taxi',
+    'declined_by_customer',
+    'timeout_customer',
+    'timeout_accepted_by_customer',
+    'outdated_customer',
+    'outdated_taxi',
+    'customer_banned',
+    'finished',
+)
 
+# All possible hail status
 HAIL_STATUS = (
     'emitted',
     'received',
     'sent_to_operator',
     'received_by_operator',
     'received_by_taxi',
-    'timeout_taxi',
     'accepted_by_taxi',
-    'timeout_customer',
-    'declined_by_taxi',
     'accepted_by_customer',
+    'customer_on_board'
     'incident_customer',
-    'incident_taxi',
-    'declined_by_customer',
-    'outdated_customer',
-    'outdated_taxi',
-    'failure',
-    'customer_banned',
-) + HAIL_NEW_STATUS
+) + HAIL_TERMINAL_STATUS
 
 REPORTING_CUSTOMER_REASONS = (
     'ko', 'payment', 'courtesy', 'route', 'cleanliness', 'late', 'aggressive', 'no_show'
