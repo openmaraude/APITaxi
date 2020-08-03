@@ -27,7 +27,7 @@ HAIL_STATUS = (
     'received_by_taxi',
     'accepted_by_taxi',
     'accepted_by_customer',
-    'customer_on_board'
+    'customer_on_board',
     'incident_customer',
 ) + HAIL_TERMINAL_STATUS
 
