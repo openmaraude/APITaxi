@@ -46,8 +46,11 @@ def taxis_create():
     args = params['data'][0]
 
     errors = {}
-    ads = ADS.query.filter_by(insee=args['ads']['insee'],
-                              numero=args['ads']['numero']).one_or_none()
+
+    ads = ADS.query.filter_by(
+        insee=args['ads']['insee'],
+        numero=args['ads']['numero']
+    ).order_by(ADS.id.desc()).first()
     if not ads:
         errors['ads'] = {
             'insee': ['ADS not found with this INSEE/numero'],
@@ -80,7 +83,7 @@ def taxis_create():
     driver = Driver.query.options(joinedload('*')).filter_by(
         professional_licence=args['driver']['professional_licence'],
         departement=departement
-    ).one_or_none()
+    ).order_by(Driver.id.desc()).first()
     if not driver:
         if 'driver' not in errors:
             errors['driver'] = {}
@@ -98,7 +101,7 @@ def taxis_create():
         ads=ads,
         driver=driver,
         vehicle=vehicle,
-    ).one_or_none()
+    ).order_by(Taxi.id.desc()).first()
 
     status_code = 200
 

@@ -55,7 +55,7 @@ def drivers_create():
     driver = Driver.query.options(joinedload(Driver.departement)).filter_by(
         departement=departement,
         professional_licence=args['professional_licence']
-    ).one_or_none()
+    ).order_by(Driver.id.desc()).first()
 
     status_code = 200
     if not driver:

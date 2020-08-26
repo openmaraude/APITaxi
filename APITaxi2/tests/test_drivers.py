@@ -102,3 +102,21 @@ class TestDriversCreate:
 
         assert resp.status_code == 201
         assert Driver.query.count() == 1
+
+    def test_duplicates_driver(self, operateur):
+        """Driver is identified by `departement_id` and `professional_licence`.
+        There is no unique key for these fields in database, and duplicates
+        exist. In case of duplicate, we should return the last one."""
+        departement = DepartementFactory()
+
+        driver1 = DriverFactory(departement=departement, professional_licence='abc')
+        driver2 = DriverFactory(departement=departement, professional_licence='abc')
+
+        resp = operateur.client.post('/drivers', json={'data': [{
+            'first_name': 'Vasyl',
+            'last_name': 'Lomachenko',
+            'professional_licence': 'abc',
+            'departement': {
+                'nom': departement.nom
+            }
+        }]})

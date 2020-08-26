@@ -97,3 +97,24 @@ class TestADSCreate:
         assert resp.json['data'][0]['vehicle_id'] == vehicle.id
 
         assert ADS.query.count() == 1
+
+    def test_duplicates_ads(self, operateur):
+        """ADS is identified by `numero` and `insee_code`. There is no unique
+        key for these fields in database, and duplicates exist. In case of
+        duplicate, we should return the last one.
+        """
+        vehicle = VehicleFactory()
+        ads = ADSFactory(vehicle=vehicle)
+        copy = ADSFactory(numero=ads.numero, insee=ads.insee)
+
+        resp = operateur.client.post('/ads', json={'data': [{
+            'numero': ads.numero,
+            'insee': ads.insee,
+            'doublage': True,
+            'owner_type': 'individual',
+            'owner_name': 'Fabrice Santoro',
+            'category': 'category',
+            'vehicle_id': vehicle.id
+        }]})
+
+        assert resp.status_code == 200

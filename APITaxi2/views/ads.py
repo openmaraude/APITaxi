@@ -55,7 +55,7 @@ def ads_create():
     ads = ADS.query.filter_by(
         numero=args['numero'],
         insee=args['insee']
-    ).one_or_none()
+    ).order_by(ADS.id.desc()).first()
 
     status_code = 200
     if not ads:

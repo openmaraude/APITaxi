@@ -424,3 +424,66 @@ class TestTaxiList:
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
+
+    def test_duplicates_ads_or_driver(self, operateur):
+        """If ADS or Driver have duplicates, take the last versions.
+        See test_duplicates_xxx in test_ads.py and test_driver.py."""
+        ads = ADSFactory()
+        ads2 = ADSFactory(insee=ads.insee, numero=ads.numero)
+
+        driver = DriverFactory()
+        driver2 = DriverFactory(
+            professional_licence=driver.professional_licence,
+            departement=driver.departement
+        )
+
+        vehicle_description = VehicleDescriptionFactory(added_by=operateur.user)
+
+        payload = {
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero
+                },
+                'vehicle': {
+                    'licence_plate': vehicle_description.vehicle.licence_plate
+                },
+                'driver': {
+                    'professional_licence': driver.professional_licence,
+                    'departement': driver.departement.numero
+                }
+            }]
+        }
+        resp = operateur.client.post('/taxis', json=payload)
+        assert resp.status_code == 201
+
+    def test_duplicates_taxi(self, operateur):
+        """Taxi is identified by `ads_id`, `driver_id` and `vehicle_id`. There
+        is no unique key for these fields in database, and duplicates exist. In
+        case of duplicate, we should return the last one.
+        """
+        ads = ADSFactory()
+        driver = DriverFactory()
+        vehicle = VehicleFactory()
+        VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
+
+        taxi = TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
+        taxi2 = TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
+
+        payload = {
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero
+                },
+                'vehicle': {
+                    'licence_plate': vehicle.licence_plate
+                },
+                'driver': {
+                    'professional_licence': driver.professional_licence,
+                    'departement': driver.departement.numero
+                }
+            }]
+        }
+        resp = operateur.client.post('/taxis', json=payload)
+        assert resp.status_code == 200
