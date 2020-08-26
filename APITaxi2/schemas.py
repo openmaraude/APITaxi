@@ -9,7 +9,7 @@ from marshmallow import (
     ValidationError,
 )
 
-from geopy.distance import vincenty
+from geopy.distance import geodesic
 
 from APITaxi_models2.hail import (
     INCIDENT_CUSTOMER_REASONS,
@@ -391,7 +391,7 @@ class HailSchema(Schema):
                 'lon': self.taxi_position.lon,
                 'lat': self.taxi_position.lat
             }
-            data['taxi']['crowfly_distance'] = vincenty(
+            data['taxi']['crowfly_distance'] = geodesic(
                 (self.taxi_position.lat, self.taxi_position.lon),
                 (hail.customer_lat, hail.customer_lon)
             ).kilometers
