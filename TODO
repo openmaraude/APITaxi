@@ -11,8 +11,8 @@ Migration from APITaxi to APITaxi2
 - documents.py: DONE
 
 - hails.py:
-   [GET /hails/:id]      TODO
-   [PUT /hails/:id]      TODO
+   [GET /hails/:id]      DONE
+   [PUT /hails/:id]      DONE
    [POST /hails]         TODO
    [GET /hails]          TODO
    [GET /hails/:id/_log] TODO? not sure it is used

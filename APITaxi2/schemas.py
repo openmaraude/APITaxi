@@ -12,6 +12,7 @@ from marshmallow import (
 from geopy.distance import geodesic
 
 from APITaxi_models2.hail import (
+    HAIL_STATUS,
     INCIDENT_CUSTOMER_REASONS,
     INCIDENT_TAXI_REASONS,
     RATING_RIDE_REASONS,
@@ -342,25 +343,33 @@ class HailTaxiSchema(Schema):
 
 class HailSchema(Schema):
     id = fields.String()
-    status = fields.String()
+    status = fields.String(
+        validate=validate.OneOf(HAIL_STATUS)
+    )
+    taxi_phone_number = fields.String()
+
     customer_lon = fields.Float()
     customer_lat = fields.Float()
     customer_address = fields.String()
     customer_phone_number = fields.String()
     last_status_change = fields.DateTime()
-    rating_ride = fields.Int()
+    rating_ride = fields.Int(allow_none=True)
     rating_ride_reason = fields.String(
-        validate=validate.OneOf(RATING_RIDE_REASONS)
+        validate=validate.OneOf(RATING_RIDE_REASONS),
+        allow_none=True
     )
     incident_customer_reason = fields.String(
-        validate=validate.OneOf(INCIDENT_CUSTOMER_REASONS)
+        validate=validate.OneOf(INCIDENT_CUSTOMER_REASONS),
+        allow_none=True
     )
     incident_taxi_reason = fields.String(
-        validate=validate.OneOf(INCIDENT_TAXI_REASONS)
+        validate=validate.OneOf(INCIDENT_TAXI_REASONS),
+        allow_none=True
     )
-    reporting_customer = fields.Bool()
+    reporting_customer = fields.Bool(allow_none=True)
     reporting_customer_reason = fields.String(
-        validate=validate.OneOf(REPORTING_CUSTOMER_REASONS)
+        validate=validate.OneOf(REPORTING_CUSTOMER_REASONS),
+        allow_none=True
     )
     session_id = fields.String()
     operateur = fields.String(attribute='operateur.email')

@@ -1,7 +1,8 @@
 """This module gathers functions to access data stored in redis."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
+import json
 import time
 
 from flask import current_app
@@ -103,3 +104,22 @@ def taxis_locations_by_operator(lon, lat, distance):
             update_date=update_date
         )
     return locations
+
+
+def log_hail(hail_id, http_method, request_payload, hail_initial_status,
+             request_user, response_payload, response_status_code):
+    """When a request creates or changes a hail, we log it into redis. This is
+    for backward compatibility purpose. It would probably be better to have a
+    generic logging module and log all modifications.
+    """
+    key = 'hail:%s' % hail_id
+    data = {
+        'method': http_method,
+        'payload': json.dumps(request_payload, indent=2),
+        'initial_status': hail_initial_status,
+        'user': request_user.email,
+        'code': response_status_code,
+        'return': json.dumps(response_payload, indent=2)
+    }
+    current_app.redis.zadd(key, {json.dumps(data): time.time()})
+    current_app.redis.expire(key, timedelta(weeks=+6))
