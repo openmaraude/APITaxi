@@ -21,7 +21,7 @@ def users_details(user_id):
 
     if not user:
         return make_error_json_response({
-            'url': 'User %s not found' % user_id
+            'url': ['User %s not found' % user_id]
         }, status_code=404)
 
     schema = schemas.data_schema_wrapper(schemas.UserPublicSchema)()

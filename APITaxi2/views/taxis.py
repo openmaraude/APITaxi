@@ -169,7 +169,7 @@ def taxis_details(taxi_id):
     res = query.one_or_none()
     if not res:
         return make_error_json_response({
-            'url': 'Unknown taxi %s, or taxi exists but you are not the owner.' % taxi_id
+            'url': ['Unknown taxi %s, or taxi exists but you are not the owner.' % taxi_id]
         }, status_code=404)
     taxi, vehicle_description = (res.Taxi, res.VehicleDescription)
 
