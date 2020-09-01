@@ -175,3 +175,79 @@ class TestEditHail:
         assert resp.status_code == 200
         assert resp.json['data'][0]['customer_lon'] == 3.23
         assert hail.customer_lon == 3.23
+
+
+class TestGetHailList:
+    def test_invalid(self, anonymous, moteur):
+        # Login required
+        resp = anonymous.client.get('/hails/')
+        assert resp.status_code == 401
+
+        # Non existing parameter
+        resp = moteur.client.get('/hails/?invalid_field=xxx')
+        assert resp.status_code == 400
+        assert 'invalid_field' in resp.json['errors']
+
+        # Invalid status
+        resp = moteur.client.get('/hails/?status=xxx')
+        assert resp.status_code == 400
+        assert 'status' in resp.json['errors']
+
+    def test_ok(self, admin, moteur, operateur, QueriesTracker):
+        hail_operateur_1 = HailFactory(operateur=operateur.user, status='received')
+        hail_operateur_2 = HailFactory(operateur=operateur.user, status='finished')
+        hail_moteur_1 = HailFactory(added_by=moteur.user, status='finished')
+
+        # Admin get all hails
+        with QueriesTracker() as qtracker:
+            resp = admin.client.get('/hails/')
+            # Get permissions, list hails
+            assert qtracker.count == 2
+
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 3
+
+        # Operateur gets only its hails
+        resp = operateur.client.get('/hails/')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+
+        # Moteur gets only its hails
+        resp = moteur.client.get('/hails/')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+        # Pagination information is returned
+        resp = admin.client.get('/hails/')
+        assert resp.status_code == 200
+        assert resp.json['meta'] == {
+            'next_page': None,
+            'prev_page': None,
+            'pages': 1,
+            'total': 3
+        }
+
+        # Filter on status
+        resp = admin.client.get('/hails/?status=finished')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+
+        # Filter on date
+        resp = admin.client.get('/hails/?date=1988/12/03')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
+
+        # Admin user, with filter on operateur
+        resp = admin.client.get('/hails/?operateur=%s' % operateur.user.email)
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+
+        # Admin user, with filter on moteur
+        resp = admin.client.get('/hails/?moteur=%s' % moteur.user.email)
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+        # Filter on taxi id
+        resp = admin.client.get('/hails/?taxi_id=no')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0

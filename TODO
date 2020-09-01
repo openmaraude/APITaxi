@@ -14,7 +14,7 @@ Migration from APITaxi to APITaxi2
    [GET /hails/:id]      DONE
    [PUT /hails/:id]      DONE
    [POST /hails]         TODO
-   [GET /hails]          TODO
+   [GET /hails]          DONE
    [GET /hails/:id/_log] UNUSED
 
 - __init__.py: TODO (contains swagger documentation)

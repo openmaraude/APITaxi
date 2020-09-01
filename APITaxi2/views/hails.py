@@ -290,6 +290,13 @@ def hails_details(hail_id):
 @login_required
 @roles_accepted('admin', 'moteur', 'operateur')
 def hails_list():
+    """Returns the list of hails paginated.
+
+    Accept querystring arguments ?p, ?status, ?date, ?operateur, ?operateur and
+    ?taxi_id.
+
+    Pagination is returned in the "meta" field.
+    """
     querystring_schema = schemas.ListHailQuerystringSchema()
     querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
     if errors:
@@ -318,17 +325,17 @@ def hails_list():
         query = query.filter(or_(*filters))
 
     # Filter on querystring arguments
-    for qnames, field in (
+    for qname, field in (
         ('status', Hail.status),
         ('date', func.date(Hail.creation_datetime)),
         ('operateur', operateur_table.email),
         ('moteur', moteur_table.email),
         ('taxi_id', Hail.taxi_id),
     ):
-        if qnames not in querystring:
+        if qname not in querystring:
             continue
         query = query.filter(or_(*[
-            field == value for value in querystring[qnames]
+            field == value for value in querystring[qname]
         ]))
 
     # Order by date
