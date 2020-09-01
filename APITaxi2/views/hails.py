@@ -5,9 +5,10 @@ from flask_principal import RoleNeed, Permission
 from flask_security import current_user, login_required, roles_accepted
 
 import sqlalchemy
-from sqlalchemy.orm import joinedload
+from sqlalchemy import func, or_
+from sqlalchemy.orm import aliased, joinedload
 
-from APITaxi_models2 import db, Hail
+from APITaxi_models2 import db, Hail, User
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
 from .. import redis_backend, schemas
@@ -281,5 +282,69 @@ def hails_details(hail_id):
             response_payload=ret,
             response_status_code=200
         )
+
+    return ret
+
+
+@blueprint.route('/hails/', methods=['GET'])
+@login_required
+@roles_accepted('admin', 'moteur', 'operateur')
+def hails_list():
+    querystring_schema = schemas.ListHailQuerystringSchema()
+    querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
+    if errors:
+        return make_error_json_response(errors)
+
+    moteur_table = aliased(User)
+    operateur_table = aliased(User)
+    query = Hail.query.options(
+        joinedload(Hail.added_by)
+    ).options(
+        joinedload(Hail.operateur)
+    ).join(
+        moteur_table, moteur_table.id == Hail.added_by_id
+    ).join(
+        operateur_table, operateur_table.id == Hail.operateur_id
+    )
+
+    # If current user is not administrator, only allow user to get hails he is
+    # the operator or the moteur of.
+    if not current_user.has_role('admin'):
+        filters = []
+        if current_user.has_role('moteur'):
+            filters.append(Hail.added_by == current_user)
+        if current_user.has_role('operateur'):
+            filters.append(Hail.operateur == current_user)
+        query = query.filter(or_(*filters))
+
+    # Filter on querystring arguments
+    for qnames, field in (
+        ('status', Hail.status),
+        ('date', func.date(Hail.creation_datetime)),
+        ('operateur', operateur_table.email),
+        ('moteur', moteur_table.email),
+        ('taxi_id', Hail.taxi_id),
+    ):
+        if qnames not in querystring:
+            continue
+        query = query.filter(or_(*[
+            field == value for value in querystring[qnames]
+        ]))
+
+    # Order by date
+    query = query.order_by(Hail.creation_datetime.desc())
+
+    # Paginate
+    hails = query.paginate(
+        page=querystring.get('p', [1])[0],
+        per_page=30,
+        error_out=False  # if True, invalid page or pages without results raise 404
+    )
+
+    schema = schemas.data_schema_wrapper(schemas.HailListSchema, with_pagination=True)()
+    ret = schema.dump({
+        'data': hails.items,
+        'meta': hails
+    })
 
     return ret

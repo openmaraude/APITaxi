@@ -11,8 +11,8 @@ from marshmallow import (
 
 from geopy.distance import geodesic
 
+from APITaxi_models2 import Hail
 from APITaxi_models2.hail import (
-    HAIL_STATUS,
     INCIDENT_CUSTOMER_REASONS,
     INCIDENT_TAXI_REASONS,
     RATING_RIDE_REASONS,
@@ -344,7 +344,7 @@ class HailTaxiSchema(Schema):
 class HailSchema(Schema):
     id = fields.String()
     status = fields.String(
-        validate=validate.OneOf(HAIL_STATUS)
+        validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
     )
     taxi_phone_number = fields.String()
 
@@ -416,7 +416,38 @@ class HailSchema(Schema):
         return data
 
 
-def data_schema_wrapper(WrappedSchema):
+class ListHailQuerystringSchema(Schema):
+    """Querystring arguments for GET /hails/."""
+    status = fields.List(fields.String(
+        validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
+    ))
+    operateur = fields.List(fields.String)
+    moteur = fields.List(fields.String)
+    taxi_id = fields.List(fields.String)
+    date = fields.List(fields.Date('%Y/%m/%d'))
+    p = fields.List(fields.Int())
+
+    @validates('p')
+    def check_length(self, pages):
+        """Querystring ?p can be only specified zero or one time, not more.
+
+        Valid:   xxx?
+        Valid:   xxx?p=1
+        Invalid: xxx?p=1&p=2
+        """
+        if len(pages) != 1:
+            raise ValidationError('Argument `p` is specified more than once')
+
+class HailListSchema(Schema):
+    id = fields.String()
+    added_by = fields.String(attribute='added_by.email')
+    operateur = fields.String(attribute='operateur.email')
+    status = fields.String()
+    creation_datetime = fields.DateTime()
+    taxi_id = fields.String()
+
+
+def data_schema_wrapper(WrappedSchema, with_pagination=False):
     """All API endpoints expect requests and responses to be formed as:
 
     >>> {
@@ -430,10 +461,30 @@ def data_schema_wrapper(WrappedSchema):
     behavior for backward-compatibility.
 
     This function takes a marshmallow Schema as argument, and returns a wrapper
-    that ensures data is definedm and is a list of exactly one element.
+    that ensures data is defined and is a list of exactly one element.
+
+    If with_pagination is True, a "meta" argument is added with pagination
+    metadata. To use it, given a flask-sqlalchemy query:
+
+    >>> query = query.paginate(page=1, per_page=20)
+    >>> schema = data_schema_wrapper(MySchema, with_pagination=True)()
+    >>> schema.dump({
+    ...   'data': query.items,  # query.items is the list of objects paginated
+    ...   'meta': query         # query is a Flask-SQLAlchemy Pagination object, with the fields
+    ...                         # "next_num", "prev_num", "pages" and "total"
+    ... })
     """
+    class Pagination(Schema):
+        next_page = fields.Int(attribute='next_num')
+        prev_page = fields.Int(attribute='prev_num')
+        pages = fields.Int()
+        total = fields.Int()
+
     class DataSchema(Schema):
         data = fields.List(fields.Nested(WrappedSchema), required=True)
+
+        if with_pagination:
+            meta = fields.Nested(Pagination)
 
         @validates('data')
         def validate_length(self, value):
