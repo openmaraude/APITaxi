@@ -438,6 +438,7 @@ class ListHailQuerystringSchema(Schema):
         if len(pages) != 1:
             raise ValidationError('Argument `p` is specified more than once')
 
+
 class HailListSchema(Schema):
     id = fields.String()
     added_by = fields.String(attribute='added_by.email')

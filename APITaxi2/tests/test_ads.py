@@ -105,7 +105,7 @@ class TestADSCreate:
         """
         vehicle = VehicleFactory()
         ads = ADSFactory(vehicle=vehicle)
-        copy = ADSFactory(numero=ads.numero, insee=ads.insee)
+        ADSFactory(numero=ads.numero, insee=ads.insee)
 
         resp = operateur.client.post('/ads', json={'data': [{
             'numero': ads.numero,

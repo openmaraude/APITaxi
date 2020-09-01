@@ -429,10 +429,10 @@ class TestTaxiList:
         """If ADS or Driver have duplicates, take the last versions.
         See test_duplicates_xxx in test_ads.py and test_driver.py."""
         ads = ADSFactory()
-        ads2 = ADSFactory(insee=ads.insee, numero=ads.numero)
+        ADSFactory(insee=ads.insee, numero=ads.numero)
 
         driver = DriverFactory()
-        driver2 = DriverFactory(
+        DriverFactory(
             professional_licence=driver.professional_licence,
             departement=driver.departement
         )
@@ -467,8 +467,8 @@ class TestTaxiList:
         vehicle = VehicleFactory()
         VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
 
-        taxi = TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
-        taxi2 = TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
+        TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
+        TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
 
         payload = {
             'data': [{

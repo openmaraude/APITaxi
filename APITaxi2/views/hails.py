@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 from flask import Blueprint, request
-from flask_principal import RoleNeed, Permission
 from flask_security import current_user, login_required, roles_accepted
 
 import sqlalchemy
@@ -98,8 +97,8 @@ def _set_hail_status(hail, new_status, new_taxi_phone_number):
         if new_status not in TRANSITIONS[hail.status]:
             raise ValueError(f'Impossible to set status from {hail.status} to {new_status}')
         if (
-            not current_user.has_role(TRANSITIONS[hail.status][new_status]) and
-            not current_user.has_role('admin')
+            not current_user.has_role(TRANSITIONS[hail.status][new_status])
+            and not current_user.has_role('admin')
         ):
             raise ValueError(
                 f'Permission {TRANSITIONS[hail.status][new_status]} is required to change status '

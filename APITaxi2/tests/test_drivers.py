@@ -109,10 +109,10 @@ class TestDriversCreate:
         exist. In case of duplicate, we should return the last one."""
         departement = DepartementFactory()
 
-        driver1 = DriverFactory(departement=departement, professional_licence='abc')
-        driver2 = DriverFactory(departement=departement, professional_licence='abc')
+        DriverFactory(departement=departement, professional_licence='abc')
+        DriverFactory(departement=departement, professional_licence='abc')
 
-        resp = operateur.client.post('/drivers', json={'data': [{
+        operateur.client.post('/drivers', json={'data': [{
             'first_name': 'Vasyl',
             'last_name': 'Lomachenko',
             'professional_licence': 'abc',

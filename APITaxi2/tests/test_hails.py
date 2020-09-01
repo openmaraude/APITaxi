@@ -108,7 +108,6 @@ class TestEditHail:
         # Make sure request is logged
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
 
-
     def test_change_operateur_param_by_moteur(self, moteur, operateur):
         """Moteur attempts to change a field that can only be updated by an
         operateur."""
@@ -194,9 +193,9 @@ class TestGetHailList:
         assert 'status' in resp.json['errors']
 
     def test_ok(self, admin, moteur, operateur, QueriesTracker):
-        hail_operateur_1 = HailFactory(operateur=operateur.user, status='received')
-        hail_operateur_2 = HailFactory(operateur=operateur.user, status='finished')
-        hail_moteur_1 = HailFactory(added_by=moteur.user, status='finished')
+        HailFactory(operateur=operateur.user, status='received')
+        HailFactory(operateur=operateur.user, status='finished')
+        HailFactory(added_by=moteur.user, status='finished')
 
         # Admin get all hails
         with QueriesTracker() as qtracker:

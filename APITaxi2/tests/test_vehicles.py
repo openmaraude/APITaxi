@@ -69,7 +69,6 @@ class TestVehiclePost:
             # INSERT vehicle_description
             assert qtracker.count == 9
 
-
         assert resp.status_code == 200
         assert Vehicle.query.count() == 1
         assert VehicleConstructor.query.count() == 1
