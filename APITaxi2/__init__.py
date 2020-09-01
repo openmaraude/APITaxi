@@ -54,7 +54,7 @@ def handler_403(exc=None):
 def handler_404(exc):
     return jsonify({
         'errors': {
-            '': ['Ressource not found.']
+            'url': ['API endpoint not found.']
         }
     }), 404
 

@@ -63,8 +63,8 @@ def test_errors_handlers(app, anonymous):
     # Request for non-existing view
     resp = anonymous.client.get('/doesnotexist')
     assert resp.status_code == 404
-    assert len(resp.json['errors'].get('', [])) == 1
-    assert 'not found' in resp.json['errors'][''][0]
+    assert len(resp.json['errors'].get('url', [])) == 1
+    assert 'not found' in resp.json['errors']['url'][0]
 
     # Login required
     resp = anonymous.client.get('/login_401')
