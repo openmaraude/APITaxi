@@ -200,8 +200,9 @@ class TestGetHailList:
         # Admin get all hails
         with QueriesTracker() as qtracker:
             resp = admin.client.get('/hails/')
-            # Get permissions, list hails
-            assert qtracker.count == 2
+            # Get permissions, list hails. Depending on version, COUNT(*) for
+            # pagination.
+            assert qtracker.count <= 3
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 3
