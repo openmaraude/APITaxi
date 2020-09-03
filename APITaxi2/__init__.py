@@ -3,6 +3,7 @@ import os
 import pkgutil
 
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
 
@@ -97,6 +98,9 @@ def print_url_map(url_map):
 
 def create_app():
     app = Flask(__name__, static_folder=None)
+    # Disable CORS
+    cors = CORS(app, resources={r'*': {"origins": "*"}})
+    # Make /route similar to /route/
     app.url_map.strict_slashes = False
 
     # Load default configuration
