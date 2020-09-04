@@ -144,7 +144,7 @@ def create_app(proxy_v2=True):
         new_app = create_new_app()
         legacy_app.wsgi_app = RegexpDispatcherMiddleware(legacy_app.wsgi_app, {
             'Customers': {
-                'regexp': r'^/customers/.*$',
+                'regexp': r'^/customers(/.*)?$',
                 'app': new_app,
             },
             'Users': {
@@ -159,25 +159,18 @@ def create_app(proxy_v2=True):
                 'regexp': r'^/ads(/.*)?$',
                 'app': new_app,
             },
-            'GET and PUT /taxis/:id': {
-                'regexp': r'^/taxis/.+$',
+            'Taxis': {
+                'regexp': r'^/taxis(/.*)?$',
                 'app': new_app,
-                'methods': ['GET', 'PUT']
             },
-            'GET and POST /taxis': {
-                'regexp': r'^/taxis/?$',
+            'Vehicles': {
+                'regexp': r'^/vehicles(/.*)?$',
                 'app': new_app,
-                'methods': ['GET', 'POST']
             },
-            'POST /vehicles': {
-                'regexp': r'^/vehicles/?$',
-                'app': new_app,
-                'methods': ['POST']
-            },
-            'GET /hails(/:id)?': {
+            'GET and PUT /hails(/:id)?': {
                 'regexp': r'^/hails(/.*)?$',
                 'app': new_app,
-                'methods': ['GET', 'PUT']
+                'methods': ['OPTIONS', 'GET', 'PUT']
             },
         })
 
