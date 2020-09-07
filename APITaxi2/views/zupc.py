@@ -31,13 +31,11 @@ def zupc_list():
         ZUPC.max_distance.desc()
     ).all()
 
-    active_taxis = {
-        zupc: influx_backend.get_active_taxis(zupc.insee)
-        for zupc in zupcs
-    }
-
     schema = schemas.data_schema_wrapper(schemas.ZUPCSchema)()
     ret = schema.dump({
-        'data': [(zupc, active_taxis.get(zupc)) for zupc in zupcs]
+        'data': [
+            (zupc, influx_backend.get_nb_active_taxis(zupc.insee))
+            for zupc in zupcs
+        ]
     })
     return ret

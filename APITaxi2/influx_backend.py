@@ -6,8 +6,7 @@ from influxdb.exceptions import InfluxDBClientError
 
 
 def _get_client():
-    """Build InfluxDBClient with parameters from configuration.
-    """
+    """Build InfluxDBClient with parameters from configuration."""
     sentinel = object()
     params = {}
     for arg in (
@@ -27,7 +26,10 @@ def _get_client():
     return InfluxDBClient(**params)
 
 
-def get_active_taxis(insee_code):
+def get_nb_active_taxis(insee_code):
+    """Number of active taxis are stored by a celery cron. This function
+    returns the number of taxis stored. If influxdb is unavailable, None is
+    returned."""
     client = _get_client()
     query = '''
         SELECT "value"
