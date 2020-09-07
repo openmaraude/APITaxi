@@ -45,8 +45,9 @@ def get_nb_active_taxis(insee_code):
         return None
 
     points = list(resp.get_points())
+    # InfluxDB is available, but there is no active taxi reported.
     if not points:
-        return None
+        return 0
 
     ret = points[0].get('value')
     return ret
