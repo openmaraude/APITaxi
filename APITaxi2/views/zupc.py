@@ -14,9 +14,8 @@ from ..validators import (
 blueprint = Blueprint('zupc', __name__)
 
 
+# For backward compatibility, this endpoint accepts anonymous requests.
 @blueprint.route('/zupc', methods=['GET'])
-@login_required
-@roles_accepted('admin', 'moteur', 'operateur')
 def zupc_list():
     querystring_schema = schemas.ListZUPCQueryStringSchema()
     args, errors = validate_schema(querystring_schema, request.args)

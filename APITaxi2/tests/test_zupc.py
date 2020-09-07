@@ -6,16 +6,16 @@ from APITaxi_models2.unittest.factories import (
 
 class TestZUPCList:
     def test_invalid(self, anonymous, moteur, operateur):
-        # Login required
-        resp = anonymous.client.get('/zupc')
-        assert resp.status_code == 401
-
-        # Permissions OK, but the required querystring arguments ?lon and ?lat
-        # are not provided
+        # Required querystring arguments ?lon and ?lat are not provided
         resp = operateur.client.get('/zupc')
         assert resp.status_code == 400
         assert 'lon' in resp.json['errors']
         assert 'lat' in resp.json['errors']
+
+        # For backward compatibility, authentication is not required for this
+        # endpoint.
+        resp = anonymous.client.get('/zupc?lon=2.35&lat=48.86')
+        assert resp.status_code == 200
 
     def test_ok(self, moteur):
         # lon=2.35&lat=48.86 = location in middle of Paris. No ZUPC is created
