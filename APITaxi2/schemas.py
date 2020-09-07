@@ -111,56 +111,46 @@ class VehicleSchema(Schema):
     model = fields.String(required=False, allow_none=True)
     constructor = fields.String(required=False, allow_none=True)
 
-    def __init__(self, *args, **kwargs):
-        self.vehicle_description = None
-        return super().__init__(*args, **kwargs)
-
     def dump(self, obj, *args, **kwargs):
-        vehicle, self.vehicle_description = obj
-        return super().dump(vehicle, *args, **kwargs)
-
-    @decorators.post_dump(pass_original=True)
-    def _add_fields(self, data, vehicle, many=False):
-        assert self.vehicle_description
-
-        data.update({
-            'internal_id': self.vehicle_description.internal_id,
-            'model_year': self.vehicle_description.model_year,
-            'engine': self.vehicle_description.engine,
-            'horse_power': self.vehicle_description.horse_power,
-            'relais': self.vehicle_description.relais,
-            'horodateur': self.vehicle_description.horodateur,
-            'taximetre': self.vehicle_description.taximetre,
-            'date_dernier_ct': self.vehicle_description.date_dernier_ct,
-            'date_validite_ct': self.vehicle_description.date_validite_ct,
-            'special_need_vehicle': self.vehicle_description.special_need_vehicle,
-            'type_': self.vehicle_description.type,
-            'luxury': self.vehicle_description.luxury,
-            'credit_card_accepted': self.vehicle_description.credit_card_accepted,
-            'nfc_cc_accepted': self.vehicle_description.nfc_cc_accepted,
-            'amex_accepted': self.vehicle_description.amex_accepted,
-            'bank_check_accepted': self.vehicle_description.bank_check_accepted,
-            'fresh_drink': self.vehicle_description.fresh_drink,
-            'dvd_player': self.vehicle_description.dvd_player,
-            'tablet': self.vehicle_description.tablet,
-            'wifi': self.vehicle_description.wifi,
-            'baby_seat': self.vehicle_description.baby_seat,
-            'bike_accepted': self.vehicle_description.bike_accepted,
-            'pet_accepted': self.vehicle_description.pet_accepted,
-            'air_con': self.vehicle_description.air_con,
-            'electronic_toll': self.vehicle_description.electronic_toll,
-            'gps': self.vehicle_description.gps,
-            'cpam_conventionne': self.vehicle_description.cpam_conventionne,
-            'every_destination': self.vehicle_description.every_destination,
-            'color': self.vehicle_description.color,
-            'nb_seats': self.vehicle_description.nb_seats,
-            'model': self.vehicle_description.model.name
-                if self.vehicle_description.model else None,
-            'constructor': self.vehicle_description.constructor.name
-                if self.vehicle_description.constructor else None,
+        vehicle, vehicle_description = obj
+        ret = super().dump(vehicle, *args, **kwargs)
+        ret.update({
+            'internal_id': vehicle_description.internal_id,
+            'model_year': vehicle_description.model_year,
+            'engine': vehicle_description.engine,
+            'horse_power': vehicle_description.horse_power,
+            'relais': vehicle_description.relais,
+            'horodateur': vehicle_description.horodateur,
+            'taximetre': vehicle_description.taximetre,
+            'date_dernier_ct': vehicle_description.date_dernier_ct,
+            'date_validite_ct': vehicle_description.date_validite_ct,
+            'special_need_vehicle': vehicle_description.special_need_vehicle,
+            'type_': vehicle_description.type,
+            'luxury': vehicle_description.luxury,
+            'credit_card_accepted': vehicle_description.credit_card_accepted,
+            'nfc_cc_accepted': vehicle_description.nfc_cc_accepted,
+            'amex_accepted': vehicle_description.amex_accepted,
+            'bank_check_accepted': vehicle_description.bank_check_accepted,
+            'fresh_drink': vehicle_description.fresh_drink,
+            'dvd_player': vehicle_description.dvd_player,
+            'tablet': vehicle_description.tablet,
+            'wifi': vehicle_description.wifi,
+            'baby_seat': vehicle_description.baby_seat,
+            'bike_accepted': vehicle_description.bike_accepted,
+            'pet_accepted': vehicle_description.pet_accepted,
+            'air_con': vehicle_description.air_con,
+            'electronic_toll': vehicle_description.electronic_toll,
+            'gps': vehicle_description.gps,
+            'cpam_conventionne': vehicle_description.cpam_conventionne,
+            'every_destination': vehicle_description.every_destination,
+            'color': vehicle_description.color,
+            'nb_seats': vehicle_description.nb_seats,
+            'model': vehicle_description.model.name
+                if vehicle_description.model else None,
+            'constructor': vehicle_description.constructor.name
+                if vehicle_description.constructor else None,
         })
-
-        return data
+        return ret
 
 
 class RefVehicleSchema(Schema):
@@ -200,19 +190,12 @@ class ZUPCSchema(Schema):
     active = fields.Bool()
     nom = fields.String()
 
-    def __init__(self, *args, **kwargs):
-        self.active_taxis = None
-        return super().__init__(*args, **kwargs)
-
     def dump(self, obj, *args, **kwargs):
-        zupc, self.active_taxis = obj
-        return super().dump(zupc, *args, **kwargs)
-
-    @decorators.post_dump(pass_original=True)
-    def _add_nb_active(self, data, zupc, many=False):
-        if self.active_taxis:
-            data['nb_active'] = self.active_taxis
-        return data
+        zupc, nb_active_taxis = obj
+        ret = super().dump(zupc, *args, **kwargs)
+        if nb_active_taxis is not None:
+            ret['nb_active'] = nb_active_taxis
+        return ret
 
 
 class TaxiSchema(Schema):
@@ -235,11 +218,6 @@ class TaxiSchema(Schema):
 
     crowfly_distance = fields.Constant(None, required=False, allow_none=True)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.vehicle_description = None
-        self.redis_location = None
-
     def dump(self, obj, *args, **kwargs):
         """This function should be called with a list of tuples of two or three
         elements. The first element is the taxi object to dump. Since a taxi
@@ -249,25 +227,20 @@ class TaxiSchema(Schema):
         caller and the taxi.
         """
         try:
-            taxi, self.vehicle_description, self.redis_location = obj
+            taxi, vehicle_description, redis_location = obj
         except ValueError:
-            taxi, self.vehicle_description = obj
+            taxi, vehicle_description = obj
+            redis_location = None
 
-        return super().dump(taxi, *args, **kwargs)
-
-    @decorators.post_dump(pass_original=True)
-    def _add_fields(self, data, taxi, many=False):
-        """Extend output with vehicle_description details, and position
-        from redis.
-        """
-        assert self.vehicle_description
+        ret = super().dump(taxi, *args, **kwargs)
 
         taxi_redis = redis_backend.get_taxi(taxi.id, taxi.added_by.email)
 
-        data.update({
-            'operator': self.vehicle_description.added_by.email,
-            'internal_id': self.vehicle_description.internal_id,
-            'status': self.vehicle_description.status,
+        # Add fields from vehicle_description and redis_location
+        ret.update({
+            'operator': vehicle_description.added_by.email,
+            'internal_id': vehicle_description.internal_id,
+            'status': vehicle_description.status,
             # last_update is the last time location has been updated by
             # geotaxi.
             'last_update': taxi_redis.timestamp if taxi_redis else None,
@@ -275,21 +248,21 @@ class TaxiSchema(Schema):
                 'lon': taxi_redis.lon if taxi_redis else None,
                 'lat': taxi_redis.lat if taxi_redis else None,
             },
-            'crowfly_distance': self.redis_location.distance if self.redis_location else None
+            'crowfly_distance': redis_location.distance if redis_location else None
         })
-        data['vehicle'].update({
-            'model': self.vehicle_description.model.name
-                if self.vehicle_description.model else None,
-            'constructor': self.vehicle_description.constructor.name
-                if self.vehicle_description.constructor else None,
-            'color': self.vehicle_description.color,
-            'nb_seats': self.vehicle_description.nb_seats,
-            'characteristics': self.vehicle_description.characteristics,
-            'type': self.vehicle_description.type,
-            'cpam_conventionne': self.vehicle_description.cpam_conventionne,
-            'engine': self.vehicle_description.engine,
+        ret['vehicle'].update({
+            'model': vehicle_description.model.name
+                if vehicle_description.model else None,
+            'constructor': vehicle_description.constructor.name
+                if vehicle_description.constructor else None,
+            'color': vehicle_description.color,
+            'nb_seats': vehicle_description.nb_seats,
+            'characteristics': vehicle_description.characteristics,
+            'type': vehicle_description.type,
+            'cpam_conventionne': vehicle_description.cpam_conventionne,
+            'engine': vehicle_description.engine,
         })
-        return data
+        return ret
 
 
 class UserPublicSchema(Schema):
@@ -400,40 +373,34 @@ class HailSchema(Schema):
     creation_datetime = fields.DateTime()
     customer_id = fields.String()
 
-    def __init__(self, *args, **kwargs):
-        self.taxi_position = None
-        return super().__init__(*args, **kwargs)
-
     def dump(self, obj, *args, **kwargs):
-        hail, self.taxi_position = obj
-        return super().dump(hail, *args, **kwargs)
+        hail, taxi_position = obj
+        ret = super().dump(hail, *args, **kwargs)
 
-    @decorators.post_dump(pass_original=True)
-    def _add_fields(self, data, hail, many=False):
         # Taxi location should only be returned if the hail is in progress.
-        if self.taxi_position and hail.status in (
+        if taxi_position and hail.status in (
             'accepted_by_taxi',
             'accepted_by_customer',
             'customer_on_board',
         ):
-            data['taxi']['position'] = {
-                'lon': self.taxi_position.lon,
-                'lat': self.taxi_position.lat
+            ret['taxi']['position'] = {
+                'lon': taxi_position.lon,
+                'lat': taxi_position.lat
             }
-            data['taxi']['crowfly_distance'] = geodesic(
-                (self.taxi_position.lat, self.taxi_position.lon),
+            ret['taxi']['crowfly_distance'] = geodesic(
+                (taxi_position.lat, taxi_position.lon),
                 (hail.customer_lat, hail.customer_lon)
             ).kilometers
-            data['taxi']['last_update'] = self.taxi_position.timestamp
+            ret['taxi']['last_update'] = taxi_position.timestamp
         # Don't display location for hails not in progress.
         else:
-            data['taxi']['position'] = {
+            ret['taxi']['position'] = {
                 'lon': None,
                 'lat': None
             }
-            data['taxi']['crowfly_distance'] = None
-            data['taxi']['last_update'] = None
-        return data
+            ret['taxi']['crowfly_distance'] = None
+            ret['taxi']['last_update'] = None
+        return ret
 
 
 class ListHailQuerystringSchema(Schema):
