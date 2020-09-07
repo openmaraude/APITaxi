@@ -363,8 +363,8 @@ def taxis_list():
             description: location
             for description, location in data[taxi].items()
             if description.status == 'free'
-                and location.update_date
-                and location.update_date + timedelta(seconds=120) >= now
+            and location.update_date
+            and location.update_date + timedelta(seconds=120) >= now
         }
         for taxi in data
     }
@@ -384,8 +384,8 @@ def taxis_list():
         taxi: reduce(
             lambda a, b:
                 a if a[0].last_update_at
-                    and b[0].last_update_at
-                    and a[0].last_update_at >= b[0].last_update_at
+                and b[0].last_update_at
+                and a[0].last_update_at >= b[0].last_update_at
                 else b,
                 data[taxi].items()
         )
