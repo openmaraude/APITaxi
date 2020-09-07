@@ -145,10 +145,8 @@ class VehicleSchema(Schema):
             'every_destination': vehicle_description.every_destination,
             'color': vehicle_description.color,
             'nb_seats': vehicle_description.nb_seats,
-            'model': vehicle_description.model.name
-                if vehicle_description.model else None,
-            'constructor': vehicle_description.constructor.name
-                if vehicle_description.constructor else None,
+            'model': vehicle_description.model.name if vehicle_description.model else None,
+            'constructor': vehicle_description.constructor.name if vehicle_description.constructor else None,
         })
         return ret
 
@@ -251,10 +249,8 @@ class TaxiSchema(Schema):
             'crowfly_distance': redis_location.distance if redis_location else None
         })
         ret['vehicle'].update({
-            'model': vehicle_description.model.name
-                if vehicle_description.model else None,
-            'constructor': vehicle_description.constructor.name
-                if vehicle_description.constructor else None,
+            'model': vehicle_description.model.name if vehicle_description.model else None,
+            'constructor': vehicle_description.constructor.name if vehicle_description.constructor else None,
             'color': vehicle_description.color,
             'nb_seats': vehicle_description.nb_seats,
             'characteristics': vehicle_description.characteristics,
