@@ -41,7 +41,7 @@ def get_nb_active_taxis(insee_code):
     try:
         resp = client.query(query)
     except Exception as exc:
-        current_app.logger.error('Unable to query influxdb: %s', exc)
+        current_app.logger.warning('Unable to query influxdb: %s', exc)
         return None
 
     points = list(resp.get_points())
