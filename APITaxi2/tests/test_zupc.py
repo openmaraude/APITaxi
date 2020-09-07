@@ -17,7 +17,7 @@ class TestZUPCList:
         resp = anonymous.client.get('/zupc?lon=2.35&lat=48.86')
         assert resp.status_code == 200
 
-    def test_ok(self, moteur):
+    def test_ok(self, moteur, QueriesTracker):
         # lon=2.35&lat=48.86 = location in middle of Paris. No ZUPC is created
         # yet, so the result is empty.
         resp = moteur.client.get('zupc?lon=2.35&lat=48.86')
@@ -27,7 +27,11 @@ class TestZUPCList:
         # ZUPCFactory creates the Paris ZUPC.
         zupc = ZUPCFactory()
 
-        resp = moteur.client.get('zupc?lon=2.35&lat=48.86')
+        with QueriesTracker() as qtracker:
+            resp = moteur.client.get('zupc?lon=2.35&lat=48.86')
+            # List permissions, List ZUPC
+            assert qtracker.count == 2
+
         assert resp.status_code == 200
         assert resp.json['data'][0] == {
             'active': zupc.active,
