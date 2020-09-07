@@ -167,6 +167,10 @@ def create_app(proxy_v2=True):
                 'regexp': r'^/vehicles(/.*)?$',
                 'app': new_app,
             },
+            'ZUPC': {
+                'regexp': r'^/zupc(/.*)?$',
+                'app': new_app,
+            },
             'GET and PUT /hails(/:id)?': {
                 'regexp': r'^/hails(/.*)?$',
                 'app': new_app,

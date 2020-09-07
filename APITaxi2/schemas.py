@@ -195,6 +195,26 @@ class ListTaxisQueryStringSchema(Schema):
     count = fields.Int(validate=validate.Range(min=1, max=50))
 
 
+class ZUPCSchema(Schema):
+    insee = fields.String()
+    active = fields.Bool()
+    nom = fields.String()
+
+    def __init__(self, *args, **kwargs):
+        self.active_taxis = None
+        return super().__init__(*args, **kwargs)
+
+    def dump(self, obj, *args, **kwargs):
+        zupc, self.active_taxis = obj
+        return super().dump(zupc, *args, **kwargs)
+
+    @decorators.post_dump(pass_original=True)
+    def _add_nb_active(self, data, zupc, many=False):
+        if self.active_taxis:
+            data['nb_active'] = self.active_taxis
+        return data
+
+
 class TaxiSchema(Schema):
     id = fields.String()
     internal_id = fields.String(allow_none=True)
@@ -446,6 +466,12 @@ class HailListSchema(Schema):
     status = fields.String()
     creation_datetime = fields.DateTime()
     taxi_id = fields.String()
+
+
+class ListZUPCQueryStringSchema(Schema):
+    """Querystring arguments for GET /zupc."""
+    lon = fields.Float(required=True)
+    lat = fields.Float(required=True)
 
 
 def data_schema_wrapper(WrappedSchema, with_pagination=False):
