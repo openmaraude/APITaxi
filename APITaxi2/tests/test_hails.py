@@ -1,9 +1,16 @@
 from datetime import timedelta
+import time
 
 import sqlalchemy
 
 from APITaxi_models2 import Taxi, Vehicle, VehicleDescription
-from APITaxi_models2.unittest.factories import CustomerFactory, HailFactory
+from APITaxi_models2.unittest.factories import (
+    CustomerFactory,
+    HailFactory,
+    TaxiFactory,
+    VehicleFactory,
+    VehicleDescriptionFactory,
+)
 
 
 class TestGetHailDetails:
@@ -123,7 +130,6 @@ class TestEditHail:
 
         # Make sure request is logged
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
-
 
     def test_change_operateur_param_by_moteur(self, moteur, operateur):
         """Moteur attempts to change a field that can only be updated by an
@@ -268,3 +274,78 @@ class TestGetHailList:
         resp = admin.client.get('/hails/?taxi_id=no')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
+
+
+class TestCreateHail:
+    def test_invalid(self, anonymous, operateur):
+        # Login required
+        resp = anonymous.client.post('/hails', json={})
+        assert resp.status_code == 401
+
+        # Must be moteur to create hail request
+        resp = operateur.client.post('/hails', json={})
+        assert resp.status_code == 403
+
+    def test_ko(self, app, moteur, operateur):
+        """Test various non-working cases:
+
+        - when customer is banned
+        - when taxi's location is not in redis
+        - when location is too old
+        - when taxi is off
+        """
+        banned_customer = CustomerFactory(
+            moteur=moteur.user,
+            ban_begin=sqlalchemy.func.NOW(),
+            ban_end=sqlalchemy.func.NOW() + timedelta(hours=+24),
+        )
+        vehicle = VehicleFactory()
+        VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user, status='off')
+        taxi = TaxiFactory(added_by=operateur.user, vehicle=vehicle)
+
+        def _create_hail(customer_id='customer_ok'):
+            resp = moteur.client.post('/hails', json={
+                'data': [{
+                    'customer_address': '23 avenue de Ségur, 75007 Paris',
+                    'customer_id': customer_id,
+                    'customer_lon': 2.3098,
+                    'customer_lat': 48.851,
+                    'customer_phone_number': '+336868686',
+                    'taxi_id': taxi.id,
+                    'operateur': operateur.user.email
+                }]
+            })
+            return resp
+
+        # Error: taxi location is not reported in redis
+        resp = _create_hail(customer_id=banned_customer.id)
+        assert resp.status_code == 403
+        assert 'customer_id' in resp.json['errors']['data']['0']
+
+        # Error: taxi location is not reported in redis
+        resp = _create_hail()
+        assert resp.status_code == 400
+        assert resp.json['errors']['data']['0']['taxi_id'] == ['Taxi is not online.']
+
+        # Report outdated location in redis in the past
+        app.redis.hset(
+            'taxi:%s' % taxi.id,
+            operateur.user.email,
+            '%s 48.84 2.35 free phone 2' % int(time.time() - 86400)
+        )
+
+        # Error: taxi location is not recent
+        resp = _create_hail()
+        assert resp.status_code == 400
+        assert resp.json['errors']['data']['0']['taxi_id'] == ['Taxi is no longer online.']
+
+        # Report recent location in redis (but taxi's vehicle description has
+        # been created with status='off')
+        app.redis.hset(
+            'taxi:%s' % taxi.id,
+            operateur.user.email,
+            '%s 48.84 2.35 free phone 2' % int(time.time())
+        )
+        resp = _create_hail()
+        assert resp.status_code == 400
+        assert resp.json['errors']['data']['0']['taxi_id'] == ['Taxi is not free.']
