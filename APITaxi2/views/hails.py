@@ -1,4 +1,8 @@
 from datetime import timedelta
+import time
+import uuid
+
+import geohash2
 
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
@@ -7,10 +11,11 @@ import sqlalchemy
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased, joinedload
 
-from APITaxi_models2 import db, Hail, User
+from APITaxi import tasks
+from APITaxi_models2 import Customer, db, Hail, Taxi, User, Vehicle, VehicleDescription
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
-from .. import redis_backend, schemas
+from .. import influx_backend, redis_backend, schemas
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -32,6 +37,10 @@ NOT_PROVIDED = object()
 
 
 blueprint = Blueprint('hails', __name__)
+
+
+def _get_short_uuid():
+    return str(uuid.uuid4())[0:7]
 
 
 def _set_hail_status(hail, new_status, new_taxi_phone_number):
@@ -152,6 +161,15 @@ def _unban_customer(customer):
     customer.ban_end = None
 
 
+def _ban_is_ongoing(customer):
+    """Returns True if customer has an ongoing ban."""
+    if not customer.ban_end:
+        return False
+
+    res = db.session.query(customer.ban_end >= sqlalchemy.func.NOW()).scalar()
+    return res
+
+
 def _ban_customer(customer):
     """Ban customer. Several cases:
 
@@ -163,9 +181,8 @@ def _ban_customer(customer):
     """
     # Case 1.
     if customer.ban_begin and customer.ban_end:
-        ban_ongoing = db.session.query(customer.ban_end >= sqlalchemy.func.NOW()).scalar()
         # 1. a)
-        if not ban_ongoing:
+        if not _ban_is_ongoing(customer):
             customer.ban_begin = sqlalchemy.func.NOW()
             customer.ban_end = sqlalchemy.func.NOW() + timedelta(hours=+24)
         # 1. b)
@@ -206,7 +223,7 @@ def hails_details(hail_id):
     if request.method == 'GET':
         return schema.dump({'data': [(hail, taxi_position)]})
 
-    params, errors = validate_schema(schema, request.json)
+    params, errors = validate_schema(schema, request.json, partial=True)
     if errors:
         return make_error_json_response(errors)
 
@@ -354,3 +371,160 @@ def hails_list():
     })
 
     return ret
+
+
+@blueprint.route('/hails/', methods=['POST'])
+@login_required
+@roles_accepted('admin', 'moteur')
+def hails_create():
+    schema = schemas.data_schema_wrapper(schemas.HailSchema())()
+    params, errors = validate_schema(schema, request.json)
+    if errors:
+        return make_error_json_response(errors)
+
+    args = params['data'][0]
+
+    # Get taxi registered with the operateur, or return HTTP/404
+    res = db.session.query(
+        Taxi,
+        VehicleDescription
+    ).options(
+        joinedload(Taxi.ads)
+    ).options(
+        joinedload(VehicleDescription.added_by)
+    ).join(
+        User,
+        VehicleDescription.added_by_id == User.id
+    ).filter(
+        VehicleDescription.vehicle_id == Taxi.vehicle_id,
+        Taxi.id == args['taxi_id'],
+        User.email == args['operateur']['email']
+    ).one_or_none()
+    if not res:
+        return make_error_json_response({
+            'data': {
+                '0': {
+                    'operateur': ['Unable to find taxi for this operateur.']
+                }
+            }
+        }, status_code=404)
+
+    taxi, vehicle_description = res
+
+    # Get or create Customer object
+    customer = Customer.query.filter_by(moteur=current_user, id=args['customer_id']).one_or_none()
+    if not customer:
+        customer = Customer(
+            id=args['customer_id'],
+            phone_number=args['customer_phone_number'],
+            moteur=current_user,
+
+            added_by=current_user,
+            added_via='api',
+            added_at=func.NOW(),
+            source='added_by'
+        )
+        db.session.add(customer)
+        db.session.flush()
+    elif _ban_is_ongoing(customer):
+        return make_error_json_response({
+            'data': {
+                '0': {
+                    'customer_id': ['This customer is banned.']
+                }
+            }
+        }, status_code=403)
+
+    # Return error if we don't have location data for the taxi.
+    taxi_position = redis_backend.get_taxi(taxi.id, vehicle_description.added_by.email)
+    if not taxi_position:
+        return make_error_json_response({
+            'data': {
+                '0': {
+                    'taxi_id': ['Taxi is not online.']
+                }
+            }
+        }, status_code=400)
+
+    # Return error if location data is too old, more than 120 seconds.
+    if time.time() - taxi_position.timestamp > 120:
+        return make_error_json_response({
+            'data': {
+                '0': {
+                    'taxi_id': ['Taxi is no longer online.']
+                }
+            }
+        }, status_code=400)
+
+    # VehicleDescription.status must be set to free.
+    if vehicle_description.status != 'free':
+        return make_error_json_response({
+            'data': {
+                '0': {
+                    'taxi_id': ['Taxi is not free.']
+                }
+            }
+        }, status_code=400)
+
+    hail = Hail(
+        id=_get_short_uuid(),
+        creation_datetime=func.NOW(),
+        taxi=taxi,
+        status='received',
+        last_status_change=func.NOW(),
+        customer=customer,
+        customer_lat=args['customer_lat'],
+        customer_lon=args['customer_lon'],
+        operateur=vehicle_description.added_by,
+        customer_address=args['customer_address'],
+        customer_phone_number=args['customer_phone_number'],
+        initial_taxi_lon=taxi_position.lon,
+        initial_taxi_lat=taxi_position.lat,
+        session_id=args.get('session_id', ''),
+
+        added_by=current_user,
+        added_via='api',
+        added_at=func.NOW(),
+        source='added_by'
+    )
+    db.session.add(hail)
+    db.session.flush()
+
+    taxi.current_hail = hail
+    vehicle_description.status = 'answering'
+
+    ret = schema.dump({'data': [(hail, taxi_position)]})
+
+    tasks.send_request_operator.apply_async(args=[
+        hail.id,
+        hail.operateur.hail_endpoint_production,
+        hail.operateur.operator_header_name,
+        hail.operateur.operator_api_key,
+        hail.operateur.email
+    ], queue='send_hail_now')
+
+    # Since models' relationships have lazy='raise', they cannot be accessed
+    # after session.commit(). Save values for later use.
+    hail_operateur_email = hail.operateur.email
+    taxi_ads_insee = taxi.ads.insee
+
+    db.session.commit()
+
+    redis_backend.log_hail(
+        hail_id=hail.id,
+        http_method='POST',
+        request_payload=request.json,
+        hail_initial_status=None,
+        request_user=current_user,
+        response_payload=ret,
+        response_status_code=201
+    )
+
+    influx_backend.log_value('hails_created', {
+        'added_by': current_user.email,
+        'operator': hail_operateur_email,
+        'zupc': taxi_ads_insee,
+        'geohash': geohash2.encode(args['customer_lat'], args['customer_lon'])
+    })
+
+    return ret, 201

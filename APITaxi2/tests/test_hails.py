@@ -53,6 +53,10 @@ class TestGetHailDetails:
         assert resp.json['data'][0]['taxi']['last_update']
         assert resp.json['data'][0]['taxi']['position']['lon']
         assert resp.json['data'][0]['taxi']['position']['lat']
+        # For backward compatibility, taxi_id is not returned from GET
+        # /hails/:id, but the field is required to create a taxi with POST
+        # /hails/:id
+        assert 'taxi_id' not in resp.json['data'][0]
 
         # Position exists in redis and hail is finished: location is not returned
         hail = HailFactory(status='finished', added_by=moteur.user, operateur=operateur.user)

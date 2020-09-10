@@ -171,10 +171,9 @@ def create_app(proxy_v2=True):
                 'regexp': r'^/zupc(/.*)?$',
                 'app': new_app,
             },
-            'GET and PUT /hails(/:id)?': {
+            'Hails': {
                 'regexp': r'^/hails(/.*)?$',
                 'app': new_app,
-                'methods': ['OPTIONS', 'GET', 'PUT']
             },
         })
 

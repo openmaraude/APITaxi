@@ -1,5 +1,7 @@
 """This module gathers functions to access data stored in influxdb."""
 
+import datetime
+
 from flask import current_app
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
@@ -51,3 +53,20 @@ def get_nb_active_taxis(insee_code):
 
     ret = points[0].get('value')
     return ret
+
+
+def log_value(measurement, tags, value=1):
+    client = _get_client()
+    try:
+        client.write_points([{
+            'measurement': measurement,
+            'tags': tags,
+            'time': datetime.datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
+            'fields': {
+                'value': value
+            }
+        }])
+        return True
+    except Exception as exc:
+        current_app.logger.warning('Unable to query influxdb: %s', exc)
+        return False

@@ -337,10 +337,10 @@ class HailSchema(Schema):
     )
     taxi_phone_number = fields.String()
 
-    customer_lon = fields.Float()
-    customer_lat = fields.Float()
-    customer_address = fields.String()
-    customer_phone_number = fields.String()
+    customer_lon = fields.Float(required=True)
+    customer_lat = fields.Float(required=True)
+    customer_address = fields.String(required=True)
+    customer_phone_number = fields.String(required=True)
     last_status_change = fields.DateTime()
     rating_ride = fields.Int(allow_none=True)
     rating_ride_reason = fields.String(
@@ -360,14 +360,19 @@ class HailSchema(Schema):
         validate=validate.OneOf(REPORTING_CUSTOMER_REASONS),
         allow_none=True
     )
-    session_id = fields.String()
-    operateur = fields.String(attribute='operateur.email')
+    session_id = fields.String(required=False)
+    operateur = fields.String(required=True, attribute='operateur.email')
 
     taxi_relation = fields.Nested(HailTaxiRelationSchema)
     taxi = fields.Nested(HailTaxiSchema)
 
+    # For backward compatibility, taxi_id is not returned from GET
+    # /hails/:id, but the field is required to create a taxi with POST
+    # /hails/:id
+    taxi_id = fields.String(required=True, load_only=True)
+
     creation_datetime = fields.DateTime()
-    customer_id = fields.String()
+    customer_id = fields.String(required=True)
 
     def dump(self, obj, *args, **kwargs):
         hail, taxi_position = obj
