@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import sqlalchemy
 
+from APITaxi_models2 import Taxi, Vehicle, VehicleDescription
 from APITaxi_models2.unittest.factories import CustomerFactory, HailFactory
 
 
@@ -99,6 +100,11 @@ class TestEditHail:
     def test_ok(self, app, operateur):
         hail = HailFactory(operateur=operateur.user, status='received_by_taxi')
 
+        # On creation, VehicleDescription linked to hail.taxi is free
+        assert VehicleDescription.query.join(Vehicle).join(Taxi).filter(
+            Taxi.id == hail.taxi_id
+        ).one().status == 'free'
+
         resp = operateur.client.put('/hails/%s' % hail.id, json={'data': [{
             'status': 'accepted_by_taxi',
             'taxi_phone_number': '+33600000000'
@@ -109,8 +115,15 @@ class TestEditHail:
         assert resp.json['data'][0]['status'] == 'accepted_by_taxi'
         assert resp.json['data'][0]['taxi_phone_number'] == '+33600000000'
 
+        # When the hail's status changes to "accepted_by_taxi", taxi's status
+        # becomes "incoming".
+        assert VehicleDescription.query.join(Vehicle).join(Taxi).filter(
+            Taxi.id == hail.taxi_id
+        ).one().status == 'oncoming'
+
         # Make sure request is logged
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
+
 
     def test_change_operateur_param_by_moteur(self, moteur, operateur):
         """Moteur attempts to change a field that can only be updated by an

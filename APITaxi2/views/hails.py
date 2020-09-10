@@ -43,9 +43,13 @@ def _get_short_uuid():
     return str(uuid.uuid4())[0:7]
 
 
-def _set_hail_status(hail, new_status, new_taxi_phone_number):
+def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_number):
     """Change `hail`'s status to `new_status`. Raises ValueError if the change
     is impossible.
+
+    Some status also change `vehicle_description`.status. For example, if the
+    new hail status is "accepted_by_taxi", vehicle_description.status becomes
+    "oncoming".
 
     `new_status` is expected to be a valid value.
 
@@ -115,6 +119,18 @@ def _set_hail_status(hail, new_status, new_taxi_phone_number):
             )
 
     hail.status = new_status
+
+    # Keys are the new hail's status, values the new taxi's status.
+    new_taxi_status = {
+        'accepted_by_taxi': 'oncoming',
+        'declined_by_taxi': 'off',
+        'customer_on_board': 'occupied',
+        'finished': 'free',
+    }
+
+    if new_status in new_taxi_status:
+        vehicle_description.status = new_taxi_status[new_status]
+
     return True
 
 
@@ -199,7 +215,9 @@ def _ban_customer(customer):
 @login_required
 @roles_accepted('admin', 'moteur', 'operateur')
 def hails_details(hail_id):
-    hail = Hail.query.options(
+    query = db.session.query(
+        Hail, VehicleDescription
+    ).options(
         joinedload(Hail.taxi)
     ).options(
         joinedload(Hail.added_by)
@@ -207,11 +225,23 @@ def hails_details(hail_id):
         joinedload(Hail.operateur)
     ).options(
         joinedload(Hail.customer)
-    ).get(hail_id)
-    if not hail:
+    ).join(
+        Taxi, Taxi.id == Hail.taxi_id
+    ).join(
+        Vehicle
+    ).filter(
+        Hail.taxi_id == Taxi.id,
+        Taxi.vehicle_id == Vehicle.id,
+        VehicleDescription.vehicle_id == Vehicle.id,
+        Hail.id == hail_id
+    ).one_or_none()
+    if not query:
         return make_error_json_response({
             'url': ['Hail not found']
         }, status_code=404)
+
+    hail, vehicle_description = query
+
     if current_user not in (hail.operateur, hail.added_by) and not current_user.has_role('admin'):
         return make_error_json_response({
             'url': ['You do not have the permissions to view this hail']
@@ -232,7 +262,12 @@ def hails_details(hail_id):
     hail_initial_status = hail.status
 
     try:
-        status_changed = _set_hail_status(hail, args.get('status', NOT_PROVIDED), args.get('taxi_phone_number'))
+        status_changed = _set_hail_status(
+            hail,
+            vehicle_description,
+            args.get('status', NOT_PROVIDED),
+            args.get('taxi_phone_number')
+        )
     except ValueError as exc:
         return make_error_json_response({
             'data': {
