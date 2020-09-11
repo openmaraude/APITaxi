@@ -1,6 +1,7 @@
 import hashlib
 import os
 import pkg_resources
+import random
 import signal
 import sys
 import tempfile
@@ -9,6 +10,7 @@ import time
 import alembic
 import alembic.config
 from flask_security import SQLAlchemyUserDatastore
+from influxdb import InfluxDBClient
 import psycopg2
 import pytest
 from pytest_factoryboy import register
@@ -227,5 +229,49 @@ loglevel notice
                     break
             except FileNotFoundError:
                 time.sleep(.1)
+
+        os.kill(pid, signal.SIGKILL)
+
+
+@pytest.fixture(scope='session')
+def influx_server():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        influx_config_name = os.path.join(tmpdir, 'influxdb.conf')
+        listen_port = random.randint(1025, 65535)
+
+        with open(influx_config_name, 'w+') as handle:
+            handle.write('''
+reporting-enabled = false
+
+# Bind address to use for the RPC service for backup and restore.
+# It is mandatory but we don't use it. Use :0 for a random port.
+bind-address = "127.0.0.1:0"
+
+[meta]
+  dir = "%(tmpdir)s/meta"
+
+[http]
+  bind-address = "127.0.0.1:%(listen_port)s"
+
+[data]
+  dir = "%(tmpdir)s/data"
+  wal-dir = "%(tmpdir)s/wal"
+''' % {'tmpdir': tmpdir, 'listen_port': listen_port})
+
+        pid = os.spawnlp(os.P_NOWAITO, 'influxd', 'influxd', '-config', influx_config_name)
+
+        client = InfluxDBClient(host='127.0.0.1', port=listen_port)
+
+        while True:
+            try:
+                client.query('CREATE DATABASE unittests')
+                break
+            except:
+                time.sleep(.1)
+
+        yield {
+            'port': listen_port,
+            'database': 'unittests',
+        }
 
         os.kill(pid, signal.SIGKILL)
