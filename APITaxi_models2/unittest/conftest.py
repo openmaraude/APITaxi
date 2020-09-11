@@ -1,3 +1,4 @@
+import hashlib
 import os
 import pkg_resources
 import signal
@@ -38,7 +39,7 @@ def _run_postgresql_migrations(psql):
     # Create required extension on database.
     with psycopg2.connect(**psql.dsn()) as conn:
         with conn.cursor() as cursor:
-            cursor.execute('CREATE EXTENSION postgis')
+            cursor.execute('CREATE EXTENSION IF NOT EXISTS postgis')
         conn.commit()
 
     migrations_dir = pkg_resources.resource_filename(
@@ -64,6 +65,53 @@ def _run_postgresql_migrations(psql):
     alembic.command.upgrade(alembic_cfg, 'head')
 
 
+class Postgresql(testing.postgresql.Postgresql):
+    def setup(self):
+        """Because set set base_dir to fasten unittests, we need to override
+        setup() to check if the source and destination given to shutil.copytree
+        are not the same.
+
+        This is a workaround for https://github.com/tk0miya/testing.common.database/issues/24
+        """
+        data_dir = self.get_data_directory()
+        if self.settings['copy_data_from'] == data_dir:
+            return
+        return super().setup()
+
+
+class PostgresqlFactory(testing.postgresql.PostgresqlFactory):
+    target_class = Postgresql
+
+
+def get_hash_from_migrations_content():
+    """Generate a stable hash from the content of all migration files in
+    APITaxi_models2/migrations/versions.
+
+    If any migration content changes, or if migrations are added or removed,
+    the hash will be different.
+    """
+    migrations_dir = pkg_resources.resource_filename(
+        APITaxi_models2.__name__,
+        'migrations/'
+    )
+    versions_dir = os.path.join(migrations_dir, 'versions')
+    h = hashlib.md5()
+
+    for filename in os.listdir(versions_dir):
+        path = os.path.join(versions_dir, filename)
+        # Ignore if file is not migration file
+        if not path.endswith('.py'):
+            continue
+        # Read file content to update hash
+        with open(path, 'rb') as handle:
+            while True:
+                data = handle.read(4096)
+                if not data:
+                    break
+                h.update(data)
+    return h.hexdigest()
+
+
 @pytest.fixture(scope='session')
 def postgresql():
     """Load PostgreSQL. Requires to have postgis install on the system to run
@@ -71,9 +119,17 @@ def postgresql():
 
     The "session" scope means the database is only started once for all tests.
     """
-    factory = testing.postgresql.PostgresqlFactory(
+    # Save database in base_dir, so next invokations of unittests will be
+    # faster. If migrations change, base_dir will be different.
+    base_dir = '/tmp/tests_%s' % get_hash_from_migrations_content()
+
+    if os.path.exists(base_dir):
+        sys.stderr.write('\n!!! Reuse test database %s from previous run !!!\n' % base_dir)
+
+    factory = PostgresqlFactory(
         cache_initialized_db=True,
-        on_initialized=_run_postgresql_migrations
+        on_initialized=_run_postgresql_migrations,
+        base_dir=base_dir
     )
 
     psql = factory()
