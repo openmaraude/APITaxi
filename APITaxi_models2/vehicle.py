@@ -124,5 +124,5 @@ class VehicleDescription(HistoryMixin, db.Model):
                 'nfc_cc_accepted',
                 'credit_card_accepted',
                 'luxury'
-        ) if getattr(self, field)
-    ]
+            ) if getattr(self, field)
+        ]

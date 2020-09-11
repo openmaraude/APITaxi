@@ -5,7 +5,8 @@ import sys
 import tempfile
 import time
 
-import alembic, alembic.config
+import alembic
+import alembic.config
 from flask_security import SQLAlchemyUserDatastore
 import psycopg2
 import pytest
