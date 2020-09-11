@@ -5,6 +5,7 @@ REDIS_URL = "redis://:@localhost:6379/0"
 SQLALCHEMY_POOL_SIZE = 2
 
 INFLUXDB_HOST = None
+INFLUXDB_DATABASE = None
 
 SECURITY_PASSWORD_HASH = 'plaintext'
 NOW = 'time_test'
