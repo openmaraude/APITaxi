@@ -247,15 +247,23 @@ reporting-enabled = false
 # It is mandatory but we don't use it. Use :0 for a random port.
 bind-address = "127.0.0.1:0"
 
+[logging]
+  level = "error"
+  suppress-logo = true
+
 [meta]
   dir = "%(tmpdir)s/meta"
 
 [http]
   bind-address = "127.0.0.1:%(listen_port)s"
+  log-enabled = false
 
 [data]
   dir = "%(tmpdir)s/data"
   wal-dir = "%(tmpdir)s/wal"
+
+[continuous_queries]
+  log-enabled = false
 ''' % {'tmpdir': tmpdir, 'listen_port': listen_port})
 
         pid = os.spawnlp(os.P_NOWAITO, 'influxd', 'influxd', '-config', influx_config_name)
