@@ -27,6 +27,7 @@ DEPENDENCIES = [
     'redis',
     'email-validator',
     'marshmallow',
+    'flask-influxdb',
 ]
 
 TEST_DEPENDENCIES = [

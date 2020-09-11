@@ -5,6 +5,7 @@ from unittest import mock
 import sqlalchemy
 
 from APITaxi import tasks
+from APITaxi2 import influx_backend
 from APITaxi_models2 import Taxi, Vehicle, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     CustomerFactory,
@@ -379,6 +380,9 @@ class TestCreateHail:
         assert resp.status_code == 201
         assert 'id' in resp.json['data'][0]
 
-        # Verify hail is logged to redis
+        # Hail is logged to redis
         hail_id = resp.json['data'][0]['id']
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
+
+        # Hail is logged to influxdb
+        assert len(list(app.influx.measurement.tag_values(measurement='hails_created', key='operator'))) == 1

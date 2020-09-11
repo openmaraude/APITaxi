@@ -5,6 +5,8 @@ import os
 import flask
 import pytest
 
+from influxdb import InfluxDBClient
+
 import APITaxi_models2
 
 from APITaxi_models2.unittest.factories import (
@@ -19,6 +21,7 @@ from APITaxi_models2.unittest.factories import (
 from APITaxi_models2.unittest.conftest import (
     postgresql,
     postgresql_empty,
+    influx_server,
     redis_server,
     SQLAlchemyQueriesTracker,
 )
@@ -27,14 +30,18 @@ import APITaxi2
 
 
 @pytest.fixture
-def app(tmp_path, postgresql, postgresql_empty, redis_server):
+def app(tmp_path, postgresql, postgresql_empty, redis_server, influx_server):
     settings_file = tmp_path / 'settings.py'
     settings_file.write_text('''
 SQLALCHEMY_DATABASE_URI = '%(database)s'
 REDIS_URL = '%(redis)s'
+INFLUXDB_DATABASE = '%(influx_database)s'
+INFLUXDB_PORT = %(influx_port)s
 ''' % {
         'database': postgresql.url(),
-        'redis': 'unix://%s' % redis_server
+        'redis': 'unix://%s' % redis_server,
+        'influx_database': influx_server['database'],
+        'influx_port': influx_server['port']
     })
     os.environ['APITAXI_CONFIG_FILE'] = settings_file.as_posix()
 
@@ -45,7 +52,13 @@ REDIS_URL = '%(redis)s'
 
         # Remove all data from database for next test.
         postgresql_empty()
+        # Remove all from redis.
         app.redis.flushall()
+        # Remove all from influx.
+        InfluxDBClient(
+            port=influx_server['port'],
+            database=influx_server['database']
+        ).query('DROP SERIES FROM /.*/')
 
 
 @dataclass

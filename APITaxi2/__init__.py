@@ -4,6 +4,7 @@ import pkgutil
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_influxdb import InfluxDB
 from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
 
@@ -115,6 +116,7 @@ def create_app():
         app.logger.warning('File %s does not exist, skip loading' % os.getenv('APITAXI_CONFIG_FILE'))
 
     db.init_app(app)
+    app.influx = InfluxDB(app)
     app.redis = FlaskRedis(app)
 
     # Setup flask-security

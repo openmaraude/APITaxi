@@ -7,32 +7,10 @@ from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 
 
-def _get_client():
-    """Build InfluxDBClient with parameters from configuration."""
-    sentinel = object()
-    params = {}
-    for arg in (
-        'host', 'port',
-        'username', 'password',
-        'ssl', 'verify_ssl',
-        'timeout',
-        'use_udp', 'udp_port',
-        'database'
-
-    ):
-        value = current_app.config.get('INFLUXDB_%s' % arg.upper(), sentinel)
-        if value is sentinel:
-            continue
-        params[arg] = value
-
-    return InfluxDBClient(**params)
-
-
 def get_nb_active_taxis(insee_code):
     """Number of active taxis are stored by a celery cron. This function
     returns the number of taxis stored. If influxdb is unavailable, None is
     returned."""
-    client = _get_client()
     query = '''
         SELECT "value"
         FROM "nb_taxis_every_1"
@@ -41,7 +19,7 @@ def get_nb_active_taxis(insee_code):
         AND time > NOW() - 1m FILL(null) LIMIT 1;
     ''' % insee_code
     try:
-        resp = client.query(query)
+        resp = current_app.influx.query(query)
     except Exception as exc:
         current_app.logger.warning('Unable to query influxdb: %s', exc)
         return None
@@ -56,9 +34,8 @@ def get_nb_active_taxis(insee_code):
 
 
 def log_value(measurement, tags, value=1):
-    client = _get_client()
     try:
-        client.write_points([{
+        current_app.influx.write_points([{
             'measurement': measurement,
             'tags': tags,
             'time': datetime.datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),

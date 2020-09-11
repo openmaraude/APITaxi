@@ -36,10 +36,6 @@ class TestZUPCList:
         assert resp.json['data'][0] == {
             'active': zupc.active,
             'insee': zupc.insee,
-            'nom': zupc.nom
+            'nom': zupc.nom,
+            'nb_active': 0
         }
-
-        # XXX: when InfluxDB is available and the number of active taxis in the
-        # INSEE code (filled by a cron job) is present, the response of GET
-        # /zupc contains a field "nb_active".
-        # For now, unittests do not run InfluxDB so this field is absent.

@@ -60,7 +60,7 @@ jobs:
       - run:
           name: Install system dependencies
           command: |
-            sudo apt-get install -y postgis redis-server
+            sudo apt-get install -y postgis redis-server influxdb
             pip install tox
       - run:
           name: Run unittests
