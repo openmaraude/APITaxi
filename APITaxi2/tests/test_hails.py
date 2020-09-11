@@ -1,8 +1,10 @@
 from datetime import timedelta
 import time
+from unittest import mock
 
 import sqlalchemy
 
+from APITaxi import tasks
 from APITaxi_models2 import Taxi, Vehicle, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     CustomerFactory,
@@ -349,3 +351,34 @@ class TestCreateHail:
         resp = _create_hail()
         assert resp.status_code == 400
         assert resp.json['errors']['data']['0']['taxi_id'] == ['Taxi is not free.']
+
+    def test_ok(self, app, moteur, operateur):
+        taxi = TaxiFactory(added_by=operateur.user)
+
+        # Report recent location in redis
+        app.redis.hset(
+            'taxi:%s' % taxi.id,
+            operateur.user.email,
+            '%s 48.84 2.35 free phone 2' % int(time.time())
+        )
+
+        with mock.patch.object(tasks.send_request_operator, 'apply_async') as mocked:
+            resp = moteur.client.post('/hails', json={
+                'data': [{
+                    'customer_address': '23 avenue de Ségur, 75007 Paris',
+                    'customer_id': 'Lucky Luke',
+                    'customer_lon': 2.3098,
+                    'customer_lat': 48.851,
+                    'customer_phone_number': '+336868686',
+                    'taxi_id': taxi.id,
+                    'operateur': operateur.user.email
+                }]
+            })
+            assert mocked.call_count == 1
+
+        assert resp.status_code == 201
+        assert 'id' in resp.json['data'][0]
+
+        # Verify hail is logged to redis
+        hail_id = resp.json['data'][0]['id']
+        assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
