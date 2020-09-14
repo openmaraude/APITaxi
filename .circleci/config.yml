@@ -14,7 +14,7 @@ jobs:
       SQLALCHEMY_DATABASE_URI: 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
       REDIS_URL: "redis://:@localhost:6379/0"
       SECURITY_PASSWORD_HASH: 'plaintext'
-      APITAXI_CONFIG_FILE: 'test_settings.py'
+      APITAXI_CONFIG_FILE: '/home/circleci/project/APITaxi/test_settings.py'
     steps:
       - checkout
       - run: sudo apt-get install golang-go libgeos-dev
