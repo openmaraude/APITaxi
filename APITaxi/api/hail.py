@@ -9,7 +9,7 @@ import APITaxi_models as models
 from ..descriptors.hail import (hail_model, hail_expect_post, hail_expect_put,
         puttable_arguments)
 from APITaxi_utils.request_wants_json import json_mimetype_required
-from geopy.distance import vincenty
+from geopy.distance import geodesic
 from ..tasks import send_request_operator
 from APITaxi_utils import influx_db, reqparse
 from datetime import datetime, timedelta
@@ -49,7 +49,7 @@ class HailId(Resource):
             return_['data'][0]['taxi']['position']['lat'] = 0.0
             return_['data'][0]['taxi']['last_update'] = 0
         else:
-            return_['data'][0]['taxi']['crowfly_distance'] = vincenty(
+            return_['data'][0]['taxi']['crowfly_distance'] = geodesic(
                 (return_['data'][0]['taxi']['position']['lat'],
                 return_['data'][0]['taxi']['position']['lon']),
                 (return_['data'][0]['customer_lat'],
