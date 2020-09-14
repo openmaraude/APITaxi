@@ -21,3 +21,14 @@ Migration from APITaxi to APITaxi2
 
 - tasks
 - make sure we still have metrics in influxdb
+
+
+Checks before release:
+
+- ADS is identified by a numero and an insee code. The same ADS can be
+  registered with several operators.
+
+  We have duplicates: same insee_code/numero for different operators.
+
+  When we retrieve an ADS (in POST /taxis, maybe also somewhere else), we
+  should maybe also filter on ADS.added_by.
