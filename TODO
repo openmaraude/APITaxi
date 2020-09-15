@@ -9,13 +9,7 @@ Migration from APITaxi to APITaxi2
 - vehicles.py: DONE
 - zupc.py: DONE
 - documents.py: DONE
-
-- hails.py:
-   [GET /hails/:id]      DONE
-   [PUT /hails/:id]      DONE
-   [POST /hails]         TODO
-   [GET /hails]          DONE
-   [GET /hails/:id/_log] UNUSED
+- hails.py: DONE
 
 - __init__.py: TODO (contains swagger documentation)
 
@@ -32,3 +26,12 @@ Checks before release:
 
   When we retrieve an ADS (in POST /taxis, maybe also somewhere else), we
   should maybe also filter on ADS.added_by.
+
+  Plan:
+
+    - Get all hails where operateur_id != taxi.ADS.added_by:
+        SELECT hail.operateur_id, hail.taxi_id, "ADS".added_by FROM hail JOIN taxi ON taxi.id = hail.taxi_id JOIN "ADS" ON "ADS".id = taxi.ads_id WHERE hail.operateur_id != "ADS".added_by
+
+    - For each hail, duplicate the ADS with the correct operateur id
+    - Fix POST /ads and create an unique key on (numero, insee, added_by)
+    - Fix POST /taxis to use the correct ADS
