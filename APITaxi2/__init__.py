@@ -13,6 +13,7 @@ from werkzeug.exceptions import BadRequest
 from APITaxi_models2 import db, Role, User
 
 from . import views
+from .tasks import celery
 
 
 __author__ = 'Julien Castets'
@@ -97,6 +98,32 @@ def print_url_map(url_map):
         print(('\t%-45s -> %s' % (rule.rule, ', '.join(methods))))
 
 
+def configure_celery(flask_app):
+    """Configure tasks.celery:
+
+    * read configuration from flask_app.config and update celery config
+    * create a task context so tasks can access flask.current_app
+
+    Doing so is recommended by flask documentation:
+    https://flask.palletsprojects.com/en/1.1.x/patterns/celery/
+    """
+    # Settings list:
+    # https://docs.celeryproject.org/en/stable/userguide/configuration.html
+    celery_conf = {
+        key[len('CELERY_'):].lower(): value
+        for key, value in flask_app.config.items()
+        if key.startswith('CELERY_')
+    }
+    celery.conf.update(celery_conf)
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with flask_app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
+
+
 def create_app():
     app = Flask(__name__, static_folder=None)
     # Disable CORS
@@ -118,6 +145,7 @@ def create_app():
     db.init_app(app)
     app.influx = InfluxDB(app)
     app.redis = FlaskRedis(app)
+    configure_celery(app)
 
     # Setup flask-security
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)

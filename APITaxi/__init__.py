@@ -134,7 +134,6 @@ class RegexpDispatcherMiddleware:
         return self.app(environ, start_response)
 
 
-
 def create_app(proxy_v2=True):
     """Forward all requests to legacy application, except for routes that have
     been updated on the new API."""

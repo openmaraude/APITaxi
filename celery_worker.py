@@ -1,8 +1,17 @@
-#!/usr/bin/env python
-#coding: utf-8
-import os
-from APITaxi import create_app
-from APITaxi.extensions import celery
+"""Celery entrypoint.
 
+To run the worker, call:
+
+    (shell)> celery worker --app celery_worker.celery -E
+
+To call a task manually:
+
+    (shell)> celery call --app celery_worker.celery <task_name>
+"""
+
+from APITaxi2 import create_app
+
+# Create flask application and configure Celery
 app = create_app()
-app.app_context().push()
+
+from APITaxi2.tasks import celery
