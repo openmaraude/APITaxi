@@ -2,11 +2,11 @@
 
 To run the worker, call:
 
-    (shell)> celery worker --app celery_worker.celery -E
+    (shell)> celery worker --app APITaxi2.celery_worker.celery -E
 
 To call a task manually:
 
-    (shell)> celery call --app celery_worker.celery <task_name>
+    (shell)> celery call --app APITaxi2.celery_worker.celery <task_name>
 """
 
 from APITaxi2 import create_app
