@@ -35,9 +35,15 @@ def load_user_from_api_key_header(request):
 
 def handler_401():
     """Called when flask_security.login_required fails."""
+    if 'X-Api-Key' not in request.headers:
+        return jsonify({
+            'errors': {
+                '': ['The header X-Api-Key is required.']
+            }
+        }), 401
     return jsonify({
         'errors': {
-            '': ['This endpoint requires authentication. Did you provide a valid X-Api-Key HTTP header?']
+            '': ['The X-Api-Key provided is not valid.']
         }
     }), 401
 

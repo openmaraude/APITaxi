@@ -66,11 +66,17 @@ def test_errors_handlers(app, anonymous):
     assert len(resp.json['errors'].get('url', [])) == 1
     assert 'not found' in resp.json['errors']['url'][0]
 
-    # Login required
+    # Login required, X-Api-Key not provided
     resp = anonymous.client.get('/login_401')
     assert resp.status_code == 401
     assert len(resp.json['errors'].get('', [])) == 1
-    assert 'authentication' in resp.json['errors'][''][0]
+    assert resp.json['errors'][''][0] == 'The header X-Api-Key is required.'
+
+    # Login required, invalid X-Api-Key
+    resp = anonymous.client.get('/login_401', headers={'X-Api-Key': 'xxx'})
+    assert resp.status_code == 401
+    assert len(resp.json['errors'].get('', [])) == 1
+    assert resp.json['errors'][''][0] == 'The X-Api-Key provided is not valid.'
 
     # HTTP/500 for uncaught exception
     resp = anonymous.client.get('/error_500')
