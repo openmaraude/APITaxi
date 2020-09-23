@@ -6,9 +6,8 @@ from flask import current_app
 
 
 def get_nb_active_taxis(insee_code):
-    """Number of active taxis are stored by a celery cron. This function
-    returns the number of taxis stored. If influxdb is unavailable, None is
-    returned."""
+    """Returns the number of active taxis stored by the celery cron
+    `store_active_taxis`."""
     query = '''
         SELECT "value"
         FROM "nb_taxis_every_1"

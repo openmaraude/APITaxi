@@ -48,11 +48,11 @@ class _TaxiLocationUpdate:
 
 def get_timestamps_entries_between(start_timestamp, end_timestamp):
     """Geotaxi stores taxis updates in the zset "timestamps". This function
-    returns all updates between two times.
+    returns all updates between two timestamps.
 
     The asynchronous task clean_geotaxi_timestamps removes taxis with a
-    location older than 2 minutes. If the task runs correctly, no results older
-    than 2 minutes will be returned."""
+    location older than 2 minutes, so any older entry is not guaranteed to be
+    returned."""
     ret = []
     rows = current_app.redis.zrangebyscore('timestamps', start_timestamp, end_timestamp, withscores=True)
     for row in rows:
@@ -63,20 +63,21 @@ def get_timestamps_entries_between(start_timestamp, end_timestamp):
 
 
 def list_taxis(start_timestamp, end_timestamp):
-    """When a location is received by geotaxi, the hash key "taxi:<taxi_id>" is
-    created.
+    """Geotaxi creates the hash key "taxi:<taxi_id>" when it receives a
+    location.
 
     This function:
 
     - calls KEYS taxi:* to list all taxis
     - for each entry, calls HGETALL taxi:*
-    - if the update date is between start_timestamp and end_timestamp, return the result.
+    - if the update date is between start_timestamp and end_timestamp, return
+      the result.
 
     This is to keep backward compatibility, but statistics need to be
     reworked completely. There are several problems here:
 
-    - executing KEYS taxi:* then HGETALL on each entry takes too much time, and
-      will not scale.
+    - executing KEYS taxi:* then HGETALL on each entry takes a lot of time, and
+      will not scale with thousands of entries.
     - if we receive a location update for a non-existing taxi, geotaxi creates
       an entry in redis.
     - in the case a taxi is connected with several applications, we return
@@ -85,7 +86,7 @@ def list_taxis(start_timestamp, end_timestamp):
     pipeline = current_app.redis.pipeline()
     taxi_ids = []
 
-    # Call KEYS taxi:*. For each entry, call HGETALL taxi:<id> from the pipeline.
+    # Call KEYS taxi:*. For each entry, call HGETALL taxi:<id> in the pipeline.
     # We use a pipeline to improve speed because listing all taxis may return many results.
     for row in current_app.redis.keys('taxi:*'):
         taxi_id = row.decode('utf8')[len('taxi:'):]
@@ -94,8 +95,8 @@ def list_taxis(start_timestamp, end_timestamp):
 
     ret = []
 
-    # updates is a dict, where keys are operators names and values a string
-    # containing the timestamp, lat, lon, status, device and version.
+    # `updates` is a dict where the key is the operator name, and value a
+    # string containing the timestamp, lat, lon, status, device and version.
     for taxi_id, updates in zip(taxi_ids, pipeline.execute()):
         for operator, update in updates.items():
             operator = operator.decode('utf8')
