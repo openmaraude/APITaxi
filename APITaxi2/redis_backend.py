@@ -39,6 +39,75 @@ def get_taxi(taxi_id, operator_name):
     )
 
 
+@dataclass
+class _TaxiLocationUpdate:
+    taxi_id: str
+    operator: str
+    timestamp: int
+
+
+def get_timestamps_entries_between(start_timestamp, end_timestamp):
+    """Geotaxi stores taxis updates in the zset "timestamps". This function
+    returns all updates between two times.
+
+    The asynchronous task clean_geotaxi_timestamps removes taxis with a
+    location older than 2 minutes. If the task runs correctly, no results older
+    than 2 minutes will be returned."""
+    ret = []
+    rows = current_app.redis.zrangebyscore('timestamps', start_timestamp, end_timestamp, withscores=True)
+    for row in rows:
+        taxi_operator, timestamp = row
+        taxi_id, operator = taxi_operator.decode('utf8').split(':')
+        ret.append(_TaxiLocationUpdate(taxi_id=taxi_id, operator=operator, timestamp=int(timestamp)))
+    return ret
+
+
+def list_taxis(start_timestamp, end_timestamp):
+    """When a location is received by geotaxi, the hash key "taxi:<taxi_id>" is
+    created.
+
+    This function:
+
+    - calls KEYS taxi:* to list all taxis
+    - for each entry, calls HGETALL taxi:*
+    - if the update date is between start_timestamp and end_timestamp, return the result.
+
+    This is to keep backward compatibility, but statistics need to be
+    reworked completely. There are several problems here:
+
+    - executing KEYS taxi:* then HGETALL on each entry takes too much time, and
+      will not scale.
+    - if we receive a location update for a non-existing taxi, geotaxi creates
+      an entry in redis.
+    - in the case a taxi is connected with several applications, we return
+      several entries for this taxi
+    """
+    pipeline = current_app.redis.pipeline()
+    rows = current_app.redis.keys('taxi:*')
+    taxi_ids = []
+
+    # Call KEYS taxi:*. For each entry, call HGETALL taxi:<id> from the pipeline.
+    # We use a pipeline to improve speed because listing all taxis may return many results.
+    for row in current_app.redis.keys('taxi:*'):
+        taxi_id = row.decode('utf8')[len('taxi:'):]
+        pipeline.hgetall('taxi:%s' % taxi_id)
+        taxi_ids.append(taxi_id)
+
+    ret = []
+
+    # updates is a dict, where keys are operators names and values a string
+    # containing the timestamp, lat, lon, status, device and version.
+    for taxi_id, updates in zip(taxi_ids, pipeline.execute()):
+        for operator, update in updates.items():
+            operator = operator.decode('utf8')
+            timestamp, lat, lon, status, device, version = update.decode('utf8').split()
+            timestamp = int(float(timestamp))
+
+            if timestamp >= start_timestamp and timestamp <= end_timestamp:
+                ret.append(_TaxiLocationUpdate(taxi_id=taxi_id, operator=operator, timestamp=timestamp))
+    return ret
+
+
 def set_taxi_availability(taxi_id, taxi_operator, available):
     """Add or remove the entry "<taxi_id>:<operator>" from the ZSET
     "not_available"."""
