@@ -1,7 +1,9 @@
+from datetime import timedelta
 import json
 
 from flask import current_app
 import requests
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import db, Hail, Taxi, Vehicle, VehicleDescription
@@ -10,8 +12,39 @@ from .. import redis_backend, schemas
 from . import celery
 
 
+# Number of seconds before the operator has to change the hail's status to
+# "received_by_taxi".
+RECEIVED_BY_OPERATOR_TIMEOUT = 10
+
+
+@celery.task(name='sent_to_operator_timeout')
+def sent_to_operator_timeout(hail_id):
+    """When a hail is sent to operator, operator has
+    RECEIVED_BY_OPERATOR_TIMEOUT seconds to call PUT /hails/:id and set the
+    hail status to "received_by_taxi", otherwise it is considered a failure.
+    """
+    hail = db.session.query(Hail).get(hail_id)
+
+    # The hail has been processed before this task has been called. Do nothing.
+    if hail.status != 'received_by_operator':
+        return
+
+    hail.status = 'failure'
+    current_app.logger.error(
+        'Hail %s has still the status "received_by_operator" after %s seconds. Set status to failure.',
+        hail.id, RECEIVED_BY_OPERATOR_TIMEOUT
+    )
+    hail.status = 'failure'
+    db.session.commit()
+
+
 @celery.task(name='send_request_operator')
 def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_key, operator_email):
+    """Send the hail request to the operator's API.
+
+    If this task is called with too much delay because of production issues,
+    mark the hail as failed.
+    """
     res = db.session.query(
         Hail, VehicleDescription
     ).options(
@@ -36,16 +69,31 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         current_app.logger.error('Unable to find hail %s' % hail_id)
         return False
 
-    # Custom headers to send to operator's API.
-    headers = {}
-    if operator_header_name:
-        headers[operator_header_name] = operator_api_key
-
     hail, vehicle_description = res
+
+    if hail.status != 'received':
+        current_app.logger.error('Task send_request_operator called for hail %s, but status is %s. Ignore.',
+                                 hail.id, hail.status)
+        return False
+
+    if db.session.query(func.NOW() - hail.added_at).scalar() > timedelta(seconds=+10):
+        current_app.logger.error(
+            'Task send_request_operator called for hail %s after more than 10 seconds. Set as failure.',
+            hail.id
+        )
+        hail.status = 'failure'
+        db.session.commit()
+        return False
+
     taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.added_by.email)
 
     schema = schemas.data_schema_wrapper(schemas.HailSchema())()
     payload = schema.dump({'data': [(hail, taxi_position)]})
+
+    # Custom headers to send to operator's API.
+    headers = {}
+    if operator_header_name:
+        headers[operator_header_name] = operator_api_key
 
     # Send request.
     try:
@@ -134,5 +182,8 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
 
     hail.status = 'received_by_operator'
     db.session.commit()
+
+    # Call timeout task after RECEIVED_BY_OPERATOR_TIMEOUT seconds.
+    sent_to_operator_timeout.apply_async((hail_id,), countdown=RECEIVED_BY_OPERATOR_TIMEOUT)
 
     return True
