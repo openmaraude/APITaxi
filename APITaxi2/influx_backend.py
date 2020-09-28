@@ -3,8 +3,6 @@
 import datetime
 
 from flask import current_app
-from influxdb import InfluxDBClient
-from influxdb.exceptions import InfluxDBClientError
 
 
 def get_nb_active_taxis(insee_code):

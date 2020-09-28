@@ -1,4 +1,3 @@
-from APITaxi_models2 import ZUPC
 from APITaxi_models2.unittest.factories import (
     ZUPCFactory,
 )

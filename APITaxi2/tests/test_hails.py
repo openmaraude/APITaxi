@@ -5,7 +5,6 @@ from unittest import mock
 import sqlalchemy
 
 from APITaxi import tasks
-from APITaxi2 import influx_backend
 from APITaxi_models2 import Taxi, Vehicle, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     CustomerFactory,

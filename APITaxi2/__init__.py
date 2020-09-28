@@ -133,7 +133,7 @@ def configure_celery(flask_app):
 def create_app():
     app = Flask(__name__, static_folder=None)
     # Disable CORS
-    cors = CORS(app, resources={r'*': {"origins": "*"}})
+    CORS(app, resources={r'*': {"origins": "*"}})
     # Make /route similar to /route/
     app.url_map.strict_slashes = False
 

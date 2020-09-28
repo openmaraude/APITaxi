@@ -83,7 +83,6 @@ def list_taxis(start_timestamp, end_timestamp):
       several entries for this taxi
     """
     pipeline = current_app.redis.pipeline()
-    rows = current_app.redis.keys('taxi:*')
     taxi_ids = []
 
     # Call KEYS taxi:*. For each entry, call HGETALL taxi:<id> from the pipeline.

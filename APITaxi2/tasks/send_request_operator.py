@@ -132,7 +132,6 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     if isinstance(data, dict) and len(data.get('data', [])) >= 1 and 'taxi_phone_number' in data['data'][0]:
         hail.taxi_phone_number = data['data'][0]['taxi_phone_number']
 
-
     hail.status = 'received_by_operator'
     db.session.commit()
 

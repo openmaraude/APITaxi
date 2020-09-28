@@ -1,5 +1,4 @@
 from marshmallow import (
-    decorators,
     EXCLUDE,
     fields,
     Schema,

@@ -17,4 +17,4 @@ from . import create_app
 # Create flask application and configure Celery
 app = create_app()
 
-from .tasks import celery
+from .tasks import celery  # noqa

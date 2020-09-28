@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from flask_security import login_required, roles_accepted
 
 from APITaxi_models2 import ZUPC
 
