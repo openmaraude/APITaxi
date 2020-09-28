@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 import time
 import uuid
 
@@ -11,11 +12,10 @@ import sqlalchemy
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased, joinedload
 
-from APITaxi import tasks
 from APITaxi_models2 import Customer, db, Hail, Taxi, User, Vehicle, VehicleDescription
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
-from .. import influx_backend, redis_backend, schemas
+from .. import influx_backend, redis_backend, schemas, tasks
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -327,10 +327,10 @@ def hails_details(hail_id):
         redis_backend.log_hail(
             hail_id=hail.id,
             http_method='PUT',
-            request_payload=request.json,
+            request_payload=json.dumps(request.json, indent=2),
             hail_initial_status=hail_initial_status,
             request_user=current_user,
-            response_payload=ret,
+            response_payload=json.dumps(ret, indent=2),
             response_status_code=200
         )
 
@@ -536,7 +536,7 @@ def hails_create():
         hail.operateur.operator_header_name,
         hail.operateur.operator_api_key,
         hail.operateur.email
-    ], queue='send_hail_now')
+    ])
 
     # Since models' relationships have lazy='raise', they cannot be accessed
     # after session.commit(). Save values for later use.

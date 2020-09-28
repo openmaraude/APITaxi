@@ -176,7 +176,8 @@ def taxis_locations_by_operator(lon, lat, distance):
 
 
 def log_hail(hail_id, http_method, request_payload, hail_initial_status,
-             request_user, response_payload, response_status_code):
+             request_user=None, response_payload=None,
+             response_status_code=None):
     """When a request creates or changes a hail, we log it into redis. This is
     for backward compatibility purpose. It would probably be better to have a
     generic logging module and log all modifications.
@@ -184,11 +185,16 @@ def log_hail(hail_id, http_method, request_payload, hail_initial_status,
     key = 'hail:%s' % hail_id
     data = {
         'method': http_method,
-        'payload': json.dumps(request_payload, indent=2),
-        'initial_status': hail_initial_status,
-        'user': request_user.email,
-        'code': response_status_code,
-        'return': json.dumps(response_payload, indent=2)
+        'payload': request_payload,
+        'initial_status': hail_initial_status
     }
+
+    if request_user:
+        data['user'] = request_user.email
+    if response_status_code:
+        data['code'] = response_status_code
+    if response_payload:
+        data['return'] = response_payload
+
     current_app.redis.zadd(key, {json.dumps(data): time.time()})
     current_app.redis.expire(key, timedelta(weeks=+6))
