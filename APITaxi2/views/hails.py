@@ -48,7 +48,7 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
     is impossible.
 
     Some status also change `vehicle_description`.status. For example, if the
-    new hail status is "accepted_by_taxi", vehicle_description.status becomes
+    new hail status is "accepted_by_customer", vehicle_description.status becomes
     "oncoming".
 
     `new_status` is expected to be a valid value.
@@ -122,7 +122,7 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
 
     # Keys are the new hail's status, values the new taxi's status.
     new_taxi_status = {
-        'accepted_by_taxi': 'oncoming',
+        'accepted_by_customer': 'oncoming',
         'declined_by_taxi': 'off',
         'customer_on_board': 'occupied',
         'finished': 'free',
