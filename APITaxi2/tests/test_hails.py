@@ -114,15 +114,40 @@ class TestEditHail:
             Taxi.id == hail.taxi_id
         ).one().status == 'free'
 
-        resp = operateur.client.put('/hails/%s' % hail.id, json={'data': [{
-            'status': 'accepted_by_taxi',
-            'taxi_phone_number': '+33600000000'
-        }]})
+        with mock.patch.object(tasks.handle_hail_timeout, 'apply_async') as mocked_handle_hail_timeout:
+            resp = operateur.client.put('/hails/%s' % hail.id, json={'data': [{
+                'status': 'accepted_by_taxi',
+                'taxi_phone_number': '+33600000000'
+            }]})
+            assert mocked_handle_hail_timeout.call_count == 1
 
         assert resp.status_code == 200
         assert resp.json['data'][0]['id'] == hail.id
         assert resp.json['data'][0]['status'] == 'accepted_by_taxi'
         assert resp.json['data'][0]['taxi_phone_number'] == '+33600000000'
+
+        # Make sure request is logged
+        assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
+
+    def test_ok_taxi_status_changes(self, app, operateur, moteur):
+        """Same than test_ok, but when status changes to accepted_by_customer, taxi's status changes to "oncoming".
+        """
+        hail = HailFactory(added_by=moteur.user, operateur=operateur.user, status='accepted_by_taxi')
+
+        # On creation, VehicleDescription linked to hail.taxi is free
+        assert VehicleDescription.query.join(Vehicle).join(Taxi).filter(
+            Taxi.id == hail.taxi_id
+        ).one().status == 'free'
+
+        with mock.patch.object(tasks.handle_hail_timeout, 'apply_async') as mocked_handle_hail_timeout:
+            resp = moteur.client.put('/hails/%s' % hail.id, json={'data': [{
+                'status': 'accepted_by_customer',
+            }]})
+            assert mocked_handle_hail_timeout.call_count == 1
+
+        assert resp.status_code == 200
+        assert resp.json['data'][0]['id'] == hail.id
+        assert resp.json['data'][0]['status'] == 'accepted_by_customer'
 
         # When the hail's status changes to "accepted_by_taxi", taxi's status
         # becomes "incoming".
