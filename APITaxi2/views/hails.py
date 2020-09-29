@@ -334,6 +334,26 @@ def hails_details(hail_id):
             response_status_code=200
         )
 
+    if status_changed:
+        # Hail has been received by the taxi. Run the timeout task: taxi has 30
+        # seconds to accept or refuse the hail until timeout is reached.
+        if hail.status == 'received_by_taxi':
+            tasks.operators.received_by_taxi_timeout.apply_async((hail.id,), countdown=30)
+        # Hail has been accepted by the taxi. Customer has 1 minute to accept
+        # or refuse the hail.
+        elif hail.status == 'accepted_by_taxi':
+            tasks.operators.accepted_by_taxi_timeout.apply_async((hail.id,), countdown=60)
+        # When customer accepts the request, taxi has 30 minutes to pick the
+        # customer and change the status.
+        elif hail.status == 'accepted_by_customer':
+            tasks.operators.accepted_by_customer_timeout.apply_async((hail.id,), countdown=60 * 30)
+        # If the hail is still ongoing after 2 hours, we assume the taxi forgot
+        # to change the status.
+        elif hail.status == 'customer_on_board':
+            tasks.operators.customer_on_board_timeout.apply_async(
+                    (hail.id, vehicle_description.added_by_id),
+                    countdown=60 * 60 * 2
+            )
     return ret
 
 
