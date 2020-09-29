@@ -12,18 +12,18 @@ from .. import redis_backend, schemas
 from . import celery
 
 
-# Number of seconds before the operator has to change the hail's status to
-# "received_by_taxi".
-_RECEIVED_BY_OPERATOR_TIMEOUT = 10
-
-
-@celery.task(name='customer_on_board_timeout')
-def customer_on_board_timeout(hail_id, operateur_id):
-    """When customer is on board for more than 2 hours, we assume the taxi forgot to change the hail's status. In this
-    case, we set the hail's status to 'finished' and the taxi status to 'off'.
-
-    This task is called by the view PUT /hails/:id when status changes to "customer_on_board".
+@celery.task(name='handle_hail_timeout')
+def handle_hail_timeout(hail_id, operateur_id,
+                        initial_hail_status=None, new_hail_status=None,
+                        new_taxi_status=None):
+    """This task is called asynchronously. If hail status is still
+    `initial_hail_status`, then we log a warning message and set the hail
+    status to `new_hail_status` (required) and the taxi status to
+    `new_taxi_status` (optional).
     """
+    assert initial_hail_status
+    assert new_hail_status
+
     res = db.session.query(
         Hail, VehicleDescription
     ).options(
@@ -35,10 +35,9 @@ def customer_on_board_timeout(hail_id, operateur_id):
         Hail.id == hail_id,
         VehicleDescription.added_by_id == operateur_id
     ).one_or_none()
-
     if not res:
         current_app.logger.error(
-            'Task customer_on_board called with hail_id=%s and operateur_id=%s, but no hail found',
+            'handle_hail_timeout: hail_id=%s operateur_id=%s not found',
             hail_id,
             operateur_id
         )
@@ -46,125 +45,24 @@ def customer_on_board_timeout(hail_id, operateur_id):
 
     hail, vehicle_description = res
 
-    # The hail has been processed before this task has been called. Do nothing.
-    if hail.status != 'customer_on_board':
+    # Hail status is different from the status which triggers the timeout.
+    if hail.status != initial_hail_status:
         return
 
-    current_app.logger.warning(
-        'Hail %s still ongoing after a longtime. Set status to finished and taxi %s status to off.',
-        hail.id, hail.taxi_id
-    )
-    hail.status = 'finished'
-    vehicle_description.status = 'off'
+    error_msg = \
+        f'Timeout occured: hail {hail_id} of taxi {hail.taxi_id} with operator' \
+        f' {hail.added_by_id} still has status {initial_hail_status}. Set new hail' \
+        f' status to {new_hail_status}'
+    if new_taxi_status:
+        error_msg += f' and taxi status to {new_taxi_status}'
 
-    db.session.commit()
+    current_app.logger.warning(error_msg)
 
+    hail.status = new_hail_status
 
-@celery.task(name='accepted_by_customer_timeout')
-def accepted_by_customer_timeout(hail_id):
-    """When the client accepts the hail, taxi has 30 minutes to change the status to "customer_on_board" (or any other
-    valid status), or the status is set to "timeout_accepted_by_customer".
+    if new_taxi_status:
+        vehicle_description.status = new_taxi_status
 
-    This task is called by the view PUT /hails/:id when status changes to "accepted_by_customer".
-    """
-    hail = db.session.query(Hail).get(hail_id)
-    if not hail:
-        current_app.logger.error(
-            'Task accepted_by_customer_timeout called with hail_id=%s, but no hail found',
-            hail_id
-        )
-        return
-
-    # The hail has been processed before this task has been called. Do nothing.
-    if hail.status != 'accepted_by_customer':
-        return
-
-    current_app.logger.warning(
-        'Hail request %s has been accepted by customer, but taxi %s did not change the status to "customer_on_board"'
-        ' before 30 minutes. Set hail status to timeout_accepted_by_customer.',
-        hail.id, hail.taxi_id
-    )
-    hail.status = 'timeout_accepted_by_customer'
-    db.session.commit()
-
-
-@celery.task(name='accepted_by_taxi_timeout')
-def accepted_by_taxi_timeout(hail_id):
-    """Customers have a few seconds to accept or refuse the hail after taxis accepted the request.
-
-    This task is called by the view PUT /hails/:id when status changes to "accepted_by_taxi".
-    """
-    hail = db.session.query(Hail).get(hail_id)
-    if not hail:
-        current_app.logger.error(
-            'Task accepted_by_taxi_timeout called with hail_id=%s, but no hail found',
-            hail_id
-        )
-        return
-
-    # The hail has been processed before this task has been called. Do nothing.
-    if hail.status != 'accepted_by_taxi':
-        return
-
-    current_app.logger.warning(
-        'Taxi %s accepted hail request %s, but customer did not reply. Set hail status to timeout_customer.',
-        hail.taxi_id, hail.id
-    )
-    hail.status = 'timeout_customer'
-    db.session.commit()
-
-
-@celery.task(name='received_by_taxi_timeout')
-def received_by_taxi_timeout(hail_id):
-    """Taxis have a few seconds to accept or refuse hail requests upon receival.
-
-    This task is called by the view PUT /hails/:id when status changes to "received_by_taxi".
-    """
-    hail = db.session.query(Hail).get(hail_id)
-    if not hail:
-        current_app.logger.error(
-            'Task received_by_taxi_timeout called with hail_id=%s, but no hail found',
-            hail_id
-        )
-        return
-
-    # The hail has been processed before this task has been called. Do nothing.
-    if hail.status != 'received_by_taxi':
-        return
-
-    current_app.logger.warning(
-        'Taxi %s received hail request %s but did not accept or refused it. Set status to timeout_taxi.',
-        hail.taxi_id, hail.id
-    )
-    hail.status = 'timeout_taxi'
-    db.session.commit()
-
-
-@celery.task(name='sent_to_operator_timeout')
-def sent_to_operator_timeout(hail_id):
-    """When a hail is sent to operator, operator has
-    _RECEIVED_BY_OPERATOR_TIMEOUT seconds to call PUT /hails/:id and set the
-    hail status to "received_by_taxi", otherwise it is considered a failure.
-
-    This task is called by the asynchronous task send_request_operator.
-    """
-    hail = db.session.query(Hail).get(hail_id)
-    if not hail:
-        current_app.logger.error(
-            'Task sent_to_operator_timeout called with hail_id=%s, but no hail found',
-            hail_id
-        )
-        return
-
-    # The hail has been processed before this task has been called. Do nothing.
-    if hail.status != 'received_by_operator':
-        return
-
-    current_app.logger.error(
-        'Hail %s has still the status "received_by_operator" after %s seconds. Set status to failure.',
-        hail.id, _RECEIVED_BY_OPERATOR_TIMEOUT
-    )
-    hail.status = 'failure'
     db.session.commit()
 
 
@@ -313,7 +211,14 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     hail.status = 'received_by_operator'
     db.session.commit()
 
-    # Call timeout task after _RECEIVED_BY_OPERATOR_TIMEOUT seconds.
-    sent_to_operator_timeout.apply_async((hail_id,), countdown=_RECEIVED_BY_OPERATOR_TIMEOUT)
+    # If hail is still "received_by_operator" and not "accepted_by_taxi" after 10 seconds, timeout.
+    handle_hail_timeout.apply_async(
+        args=(hail.id, vehicle_description.added_by_id),
+        kwargs={
+            'initial_hail_status': 'received_by_operator',
+            'new_hail_status': 'failure',
+        },
+        countdown=10
+    )
 
     return True

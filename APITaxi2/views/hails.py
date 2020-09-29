@@ -335,24 +335,51 @@ def hails_details(hail_id):
         )
 
     if status_changed:
-        # Hail has been received by the taxi. Run the timeout task: taxi has 30
-        # seconds to accept or refuse the hail until timeout is reached.
+        # Hail has been received by taxi. Taxi has 30 seconds to accept or
+        # refuse the hail until timeout.
         if hail.status == 'received_by_taxi':
-            tasks.operators.received_by_taxi_timeout.apply_async((hail.id,), countdown=30)
+            tasks.operators.handle_hail_timeout.apply_async(
+                args=(hail.id, vehicle_description.added_by_id),
+                kwargs={
+                    'initial_hail_status': 'received_by_taxi',
+                    'new_hail_status': 'timeout_taxi',
+                    'new_taxi_status': 'off'
+                },
+                countdown=30
+            )
         # Hail has been accepted by the taxi. Customer has 1 minute to accept
         # or refuse the hail.
         elif hail.status == 'accepted_by_taxi':
-            tasks.operators.accepted_by_taxi_timeout.apply_async((hail.id,), countdown=60)
-        # When customer accepts the request, taxi has 30 minutes to pick the
-        # customer and change the status.
+            tasks.operators.handle_hail_timeout.apply_async(
+                args=(hail.id, vehicle_description.added_by_id),
+                kwargs={
+                    'initial_hail_status': 'accepted_by_taxi',
+                    'new_hail_status': 'timeout_customer'
+                },
+                countdown=60
+            )
+        # Hail is accepted by customer. Taxi has 30 minutes to pickup the
+        # customer and change status to customer_on_board.
         elif hail.status == 'accepted_by_customer':
-            tasks.operators.accepted_by_customer_timeout.apply_async((hail.id,), countdown=60 * 30)
-        # If the hail is still ongoing after 2 hours, we assume the taxi forgot
-        # to change the status.
+            tasks.operators.handle_hail_timeout.apply_async(
+                args=(hail.id, vehicle_description.added_by_id),
+                kwargs={
+                    'initial_hail_status': 'accepted_by_customer',
+                    'new_hail_status': 'timeout_accepted_by_customer',
+                    'new_taxi_status': 'off'
+                },
+                countdown=60 * 30
+            )
+        # Call timeout if customer is still on board after 2 hours.
         elif hail.status == 'customer_on_board':
-            tasks.operators.customer_on_board_timeout.apply_async(
-                    (hail.id, vehicle_description.added_by_id),
-                    countdown=60 * 60 * 2
+            tasks.operators.handle_hail_timeout.apply_async(
+                args=(hail.id, vehicle_description.added_by_id),
+                kwargs={
+                    'initial_hail_status': 'customer_on_board',
+                    'new_hail_status': 'finished',
+                    'new_taxi_status': 'off'
+                },
+                countdown=60 * 60 * 2
             )
     return ret
 
