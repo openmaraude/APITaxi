@@ -243,7 +243,11 @@ class HailFactory(BaseFactory):
 
     id = factory.Sequence(lambda n: 'HAIL_%d' % n)
     creation_datetime = datetime.datetime(2012, 12, 21, 13, 37, 13)
-    taxi = factory.SubFactory(TaxiFactory)
+
+    @factory.lazy_attribute
+    def taxi(self):
+        return TaxiFactory(added_by=self.operateur)
+
     status = 'received'
 
     @factory.lazy_attribute
