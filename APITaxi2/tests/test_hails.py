@@ -129,7 +129,7 @@ class TestEditHail:
         # Make sure request is logged
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
 
-    def test_ok_taxi_status_changes(self, app, operateur, moteur):
+    def test_ok_change_taxi_status(self, app, operateur, moteur):
         """Same than test_ok, but when status changes to accepted_by_customer, taxi's status changes to "oncoming".
         """
         hail = HailFactory(added_by=moteur.user, operateur=operateur.user, status='accepted_by_taxi')
@@ -158,7 +158,7 @@ class TestEditHail:
         # Make sure request is logged
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
 
-    def test_change_operateur_param_by_moteur(self, moteur, operateur):
+    def test_ko_change_operateur_param_by_moteur(self, moteur, operateur):
         """Moteur attempts to change a field that can only be updated by an
         operateur."""
         hail = HailFactory(operateur=operateur.user, added_by=moteur.user, status='accepted_by_taxi')
@@ -169,7 +169,7 @@ class TestEditHail:
         assert resp.status_code == 400
         assert len(resp.json['errors']['data']['0']['incident_taxi_reason']) == 1
 
-    def test_ok_change_operateur_ban_customer(self, moteur, operateur):
+    def test_ok_ban_customer(self, moteur, operateur):
         # Create unbanned customer
         customer = CustomerFactory(moteur=moteur.user, ban_begin=None, ban_end=None,)
         hail = HailFactory(customer=customer, added_by=moteur.user,
@@ -184,7 +184,7 @@ class TestEditHail:
         assert customer.ban_begin
         assert customer.ban_end
 
-    def test_ok_change_operateur_unban_customer(self, moteur, operateur):
+    def test_ok_unban_customer(self, moteur, operateur):
         # Create banned customer
         customer = CustomerFactory(
             moteur=moteur.user,
@@ -204,7 +204,7 @@ class TestEditHail:
         assert not customer.ban_begin
         assert not customer.ban_end
 
-    def test_change_moteur_param_by_operateur(self, moteur, operateur):
+    def test_ko_change_moteur_param_by_operateur(self, moteur, operateur):
         """Operateur attempts to change a field that can only be updated by an
         moteur."""
         hail = HailFactory(operateur=operateur.user, added_by=moteur.user, status='accepted_by_taxi')
@@ -224,6 +224,83 @@ class TestEditHail:
         assert resp.status_code == 200
         assert resp.json['data'][0]['customer_lon'] == 3.23
         assert hail.customer_lon == 3.23
+
+    def test_async_timeouts(self, app, operateur, moteur):
+        """Check hail status changes which generate an asynchronous call to the
+        task handle_hail_timeout.
+
+        For example, when the hail status is "received_by_taxi", taxi has 30
+        seconds to accept or refuse the hail, otherwise the status
+        automatically becomes "timeout_taxi".
+        """
+        hail = HailFactory(added_by=moteur.user, operateur=operateur.user)
+
+        # When hail is received by operator, taxi has 30 seconds to accept or
+        # refuse the request.
+        hail.status = 'received_by_operator'
+        with mock.patch.object(tasks.handle_hail_timeout, 'apply_async') as mocked_handle_hail_timeout:
+            operateur.client.put('/hails/%s' % hail.id, json={'data': [{
+                'status': 'received_by_taxi'
+            }]})
+            mocked_handle_hail_timeout.assert_called_with(
+                args=(hail.id, operateur.user.id),
+                kwargs={
+                    'initial_hail_status': 'received_by_taxi',
+                    'new_hail_status': 'timeout_taxi',
+                    'new_taxi_status': 'off'
+                },
+                countdown=30
+            )
+
+        # When taxi accepts the request, customer has 60 seconds to accept or
+        # refuse the request.
+        hail.status = 'received_by_taxi'
+        with mock.patch.object(tasks.handle_hail_timeout, 'apply_async') as mocked_handle_hail_timeout:
+            operateur.client.put('/hails/%s' % hail.id, json={'data': [{
+                'status': 'accepted_by_taxi',
+                'taxi_phone_number': '+3362342'
+            }]})
+            mocked_handle_hail_timeout.assert_called_with(
+                args=(hail.id, operateur.user.id),
+                kwargs={
+                    'initial_hail_status': 'accepted_by_taxi',
+                    'new_hail_status': 'timeout_customer',
+                },
+                countdown=60
+            )
+
+        # When customer accepts the request, taxi has 30 minutes to pickup the
+        # client.
+        hail.status = 'accepted_by_taxi'
+        with mock.patch.object(tasks.handle_hail_timeout, 'apply_async') as mocked_handle_hail_timeout:
+            moteur.client.put('/hails/%s' % hail.id, json={'data': [{
+                'status': 'accepted_by_customer'
+            }]})
+            mocked_handle_hail_timeout.assert_called_with(
+                args=(hail.id, operateur.user.id),
+                kwargs={
+                    'initial_hail_status': 'accepted_by_customer',
+                    'new_hail_status': 'timeout_accepted_by_customer',
+                    'new_taxi_status': 'off'
+                },
+                countdown=60 * 30
+            )
+
+        # When customer is on board for more than 2 hours, timeout is raised.
+        hail.status = 'accepted_by_customer'
+        with mock.patch.object(tasks.handle_hail_timeout, 'apply_async') as mocked_handle_hail_timeout:
+            operateur.client.put('/hails/%s' % hail.id, json={'data': [{
+                'status': 'customer_on_board'
+            }]})
+            mocked_handle_hail_timeout.assert_called_with(
+                args=(hail.id, operateur.user.id),
+                kwargs={
+                    'initial_hail_status': 'customer_on_board',
+                    'new_hail_status': 'finished',
+                    'new_taxi_status': 'off'
+                },
+                countdown=60 * 60 * 2
+            )
 
 
 class TestGetHailList:
