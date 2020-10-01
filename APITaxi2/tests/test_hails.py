@@ -281,7 +281,7 @@ class TestEditHail:
                 kwargs={
                     'initial_hail_status': 'accepted_by_customer',
                     'new_hail_status': 'timeout_accepted_by_customer',
-                    'new_taxi_status': 'off'
+                    'new_taxi_status': 'occupied'
                 },
                 countdown=60 * 30
             )
@@ -297,7 +297,7 @@ class TestEditHail:
                 kwargs={
                     'initial_hail_status': 'customer_on_board',
                     'new_hail_status': 'finished',
-                    'new_taxi_status': 'off'
+                    'new_taxi_status': 'free'
                 },
                 countdown=60 * 60 * 2
             )
