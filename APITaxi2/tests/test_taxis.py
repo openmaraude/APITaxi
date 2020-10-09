@@ -425,6 +425,47 @@ class TestTaxiList:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 
+    def test_ok_taxi_two_operators(self, app, moteur):
+        """Taxi is registered with two operators, but reports its location with
+        only one.
+        """
+        now = datetime.now()
+        vehicle = VehicleFactory(descriptions=[])
+
+        # VehicleDescription related to an operator for which there is no
+        # location update.
+        VehicleDescriptionFactory(
+            vehicle=vehicle,
+            last_update_at=now - timedelta(days=15),
+        )
+        # VehicleDescription related to an operator with location update.
+        vehicle_description = VehicleDescriptionFactory(
+            vehicle=vehicle,
+            last_update_at=now
+        )
+
+        taxi = TaxiFactory(vehicle=vehicle)
+
+        lon = 2.367895
+        lat = 48.86789
+
+        app.redis.geoadd(
+            'geoindex_2',
+            lon,
+            lat,
+            '%s:%s' % (taxi.id, vehicle_description.added_by.email)
+        )
+        app.redis.zadd(
+            'timestamps', {
+                '%s:%s' % (taxi.id, vehicle_description.added_by.email): int(time.time())
+            }
+        )
+
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
+
     def test_duplicates_ads_or_driver(self, operateur):
         """If ADS or Driver have duplicates, take the last versions.
         See test_duplicates_xxx in test_ads.py and test_driver.py."""

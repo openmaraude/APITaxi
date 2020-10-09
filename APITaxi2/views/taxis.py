@@ -413,6 +413,13 @@ def taxis_list():
     for taxi, vehicle_description in query.all():
         if taxi not in data:
             data[taxi] = {}
+
+        # If a taxi has two VehicleDescription but only reports it's location
+        # with one operator, the query above will return 2 rows.
+        # Skip the VehicleDescription if we don't have location for it.
+        if vehicle_description.added_by.email not in locations[taxi.id]:
+            continue
+
         data[taxi][vehicle_description] = locations[taxi.id][vehicle_description.added_by.email]
 
     # Taxis can report their locations with several operators. If
