@@ -20,7 +20,7 @@ blueprint = Blueprint('ads', __name__)
 @login_required
 @roles_accepted('admin', 'operateur')
 def ads_create():
-    schema = schemas.data_schema_wrapper(schemas.ADSSchema)()
+    schema = schemas.WrappedADSSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)

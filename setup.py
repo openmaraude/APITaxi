@@ -28,6 +28,7 @@ DEPENDENCIES = [
     'email-validator',
     'marshmallow',
     'flask-influxdb',
+    'apispec-webframeworks',
 ]
 
 TEST_DEPENDENCIES = [

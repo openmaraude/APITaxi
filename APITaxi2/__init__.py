@@ -1,7 +1,11 @@
 import importlib
+import json
 import os
 import pkgutil
 
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
+from apispec_webframeworks.flask import FlaskPlugin
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_influxdb import InfluxDB
@@ -192,5 +196,39 @@ def create_app():
     if app.debug and os.environ.get('WERKZEUG_RUN_MAIN'):
         print('[APITaxi2 routes]')
         print_url_map(app.url_map)
+
+    # Configuration for apispec to generate swagger documentation.
+    spec = APISpec(
+        title='Le.taxi reference documentation',
+        version='1.0.0',
+        openapi_version='3.0.2',
+        plugins=[FlaskPlugin(), MarshmallowPlugin()],
+    )
+    # Specify how to authenticate.
+    api_key_scheme = {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'X-API-Key'
+    }
+    spec.components.security_scheme('ApiKeyAuth', api_key_scheme)
+
+    # Register paths for public documentation.
+    with app.test_request_context():
+        # GET /taxis
+        spec.path(view=views.taxis.taxis_list)
+        # POST /taxis
+        spec.path(view=views.taxis.taxis_create)
+        # GET and PUT /taxis/:id
+        spec.path(view=views.taxis.taxis_details)
+        # GET /hails
+        spec.path(view=views.hails.hails_list)
+        # GET and PUT /hails/:id
+        spec.path(view=views.hails.hails_details)
+        # POST /hails
+        spec.path(view=views.hails.hails_create)
+
+    @app.route('/swagger.json')
+    def swagger():
+        return json.dumps(spec.to_dict(), indent=2)
 
     return app

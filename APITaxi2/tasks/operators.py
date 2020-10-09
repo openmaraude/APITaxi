@@ -115,7 +115,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
 
     taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.added_by.email)
 
-    schema = schemas.data_schema_wrapper(schemas.HailSchema())()
+    schema = schemas.WrappedHailSchema()
     payload = schema.dump({'data': [(hail, taxi_position)]})
 
     # Custom headers to send to operator's API.

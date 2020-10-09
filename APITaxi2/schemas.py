@@ -1,4 +1,5 @@
 from marshmallow import (
+    class_registry,
     EXCLUDE,
     fields,
     Schema,
@@ -260,6 +261,18 @@ class TaxiSchema(Schema):
         return ret
 
 
+class TaxiPUTSchema(Schema):
+    """PUT /taxis/:id accepts any field from TaxiSchema, but only the status is
+    updated.
+
+    This class is only used by apispec to render swagger documentation.
+    """
+    status = fields.String(
+        required=False, allow_none=False,
+        validate=validate.OneOf(UPDATABLE_VEHICLE_STATUS)
+    )
+
+
 class UserPublicSchema(Schema):
     """Display public informations about users."""
     commercial_name = fields.String(data_key='name')
@@ -486,3 +499,43 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
                 raise ValidationError('data should be a list of one element.')
 
     return DataSchema
+
+
+# API request payloads and API responses are wrapped in an object with one key,
+# "data", which is a list of exactly one element.
+#
+# In other words, for example:
+#
+# DriverSchema = {'first_name': xx, 'last_name': yyy, ...}
+#
+# WrappedWriverSchema = {'data': [{'first_name': xx, 'last_name': yyy, ...}]}
+#
+# We also register these wrapped models in Marshmallow registry so they can be
+# introspected by apispec to generate documentation.
+
+WrappedADSSchema = data_schema_wrapper(ADSSchema)
+class_registry.register('WrappedADSSchema', WrappedADSSchema)
+
+WrappedDriverSchema = data_schema_wrapper(DriverSchema)
+class_registry.register('WrappedDriverSchema', WrappedDriverSchema)
+
+WrappedTaxiSchema = data_schema_wrapper(TaxiSchema)
+class_registry.register('WrappedTaxiSchema', WrappedTaxiSchema)
+
+WrappedHailSchema = data_schema_wrapper(HailSchema)
+class_registry.register('WrappedHailSchema', WrappedHailSchema)
+
+WrappedHailListSchema = data_schema_wrapper(HailListSchema, with_pagination=True)
+class_registry.register('WrappedHailListSchema', WrappedHailListSchema)
+
+WrappedUserPublicSchema = data_schema_wrapper(UserPublicSchema)
+class_registry.register('WrappedUserPublicSchema', WrappedUserPublicSchema)
+
+WrappedUserPrivateSchema = data_schema_wrapper(UserPrivateSchema)
+class_registry.register('WrappedUserPrivateSchema', WrappedUserPrivateSchema)
+
+WrappedVehicleSchema = data_schema_wrapper(VehicleSchema)
+class_registry.register('WrappedVehicleSchema', WrappedVehicleSchema)
+
+WrappedZUPCSchema = data_schema_wrapper(ZUPCSchema)
+class_registry.register('WrappedZUPCSchema', WrappedZUPCSchema)

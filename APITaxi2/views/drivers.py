@@ -20,7 +20,7 @@ blueprint = Blueprint('drivers', __name__)
 @login_required
 @roles_accepted('admin', 'operateur', 'preferecture')
 def drivers_create():
-    schema = schemas.data_schema_wrapper(schemas.DriverSchema)()
+    schema = schemas.WrappedDriverSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)

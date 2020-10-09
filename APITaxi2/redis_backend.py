@@ -142,6 +142,16 @@ class _Location:
 def taxis_locations_by_operator(lon, lat, distance):
     """Get the list of taxis positions from the redis geoindex "geoindex_2",
     which is populated by geotaxi.
+
+    Returns a dictionary such as:
+
+    >>> {
+    ...    <taxi_id>: {
+    ...       <operator_email>: _Location object,
+    ...       <operator_email>: _Location object,
+    ...       ...
+    ...    }
+    ... }
     """
     locations = {}
     data = current_app.redis.georadius(

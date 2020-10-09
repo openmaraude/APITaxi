@@ -36,8 +36,30 @@ def taxis_create():
     """Endpoint POST /taxis to create Taxi object. If the taxi already exists, which is
     defined as the combination of an ads, a vehicle and a driver, it is
     returned instead of being created.
+
+    ---
+    post:
+      description: |
+        Create a new taxi. Taxi is the combination of an ADS, a Vehicle and a
+        Driver. If the resource already exists, the existing resource is
+        returned.
+      parameters:
+        - name: payload
+          required: true
+          in: body
+          schema: WrappedTaxiSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          description: Return the existing ressource.
+          content:
+            application/json:
+              schema: WrappedTaxiSchema
+        201:
+          description: Return a new ressource.
     """
-    schema = schemas.data_schema_wrapper(schemas.TaxiSchema)()
+    schema = schemas.WrappedTaxiSchema()
 
     params, errors = validate_schema(schema, request.json)
     if errors:
@@ -134,7 +156,42 @@ def taxis_details(taxi_id):
     """Get or update a taxi.
 
     Taxi update is possible with PUT /taxis/:id. To keep backward
-    compatibility, PUT only reads "status" and do not read other fields.
+    compatibility, it is only possible to change the field `status`.
+    ---
+    get:
+      description: Get taxi details.
+      parameters:
+        - required: true
+          type: string
+          name: taxi_id
+          in: path
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: WrappedTaxiSchema
+
+    put:
+      description: Edit taxi status. Only the field `status` can be changed.
+      parameters:
+        - required: true
+          type: string
+          name: taxi_id
+          in: path
+          parameters:
+        - name: payload
+          required: true
+          in: body
+          schema: TaxiPUTSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: WrappedTaxiSchema
     """
     # Get Taxi object with the VehicleDescription entry related to current
     # user.
@@ -174,7 +231,7 @@ def taxis_details(taxi_id):
     taxi, vehicle_description = (res.Taxi, res.VehicleDescription)
 
     # Build Schema
-    schema = schemas.data_schema_wrapper(schemas.TaxiSchema)()
+    schema = schemas.WrappedTaxiSchema()
 
     # Dump data for GET requests
     if request.method != 'PUT':
@@ -253,6 +310,25 @@ def taxis_list():
 
     * when a taxi turns off with PUT /taxis { status: off }, the entry
     "<taxi_id:operator_id>" is appended to the set not_available.
+    ---
+    get:
+      description: List available taxis around a location.
+      parameters:
+        - name: lon
+          type: string
+          required: true
+          in: query
+        - name: lat
+          required: true
+          type: string
+          in: query
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: WrappedTaxiSchema
     """
     schema = schemas.ListTaxisQueryStringSchema()
     params, errors = validate_schema(schema, request.args)
@@ -265,7 +341,7 @@ def taxis_list():
         ZUPC.parent_id == ZUPC.id
     ).all()
 
-    schema = schemas.data_schema_wrapper(schemas.TaxiSchema)()
+    schema = schemas.WrappedTaxiSchema()
 
     if not zupcs:
         return schema.dump({'data': []})

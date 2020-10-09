@@ -142,6 +142,10 @@ def create_app(proxy_v2=True):
     if proxy_v2:
         new_app = create_new_app()
         legacy_app.wsgi_app = RegexpDispatcherMiddleware(legacy_app.wsgi_app, {
+            'swagger': {
+                'regexp': r'.*swagger.json',
+                'app': new_app,
+            },
             'Customers': {
                 'regexp': r'^/customers(/.*)?$',
                 'app': new_app,

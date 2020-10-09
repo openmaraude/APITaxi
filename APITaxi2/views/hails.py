@@ -215,6 +215,43 @@ def _ban_customer(customer):
 @login_required
 @roles_accepted('admin', 'moteur', 'operateur')
 def hails_details(hail_id):
+    """
+    ---
+    get:
+      description: Get hail details.
+      parameters:
+        - required: true
+          type: string
+          name: hail_id
+          in: path
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: WrappedHailSchema
+
+    put:
+      description: Edit hail details.
+      parameters:
+        - required: true
+          type: string
+          name: hail_id
+          in: path
+          parameters:
+        - name: payload
+          required: true
+          in: body
+          schema: WrappedHailSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: WrappedHailSchema
+    """
     query = db.session.query(
         Hail, VehicleDescription
     ).options(
@@ -247,7 +284,7 @@ def hails_details(hail_id):
             'url': ['You do not have the permissions to view this hail']
         }, status_code=403)
 
-    schema = schemas.data_schema_wrapper(schemas.HailSchema)()
+    schema = schemas.WrappedHailSchema()
     taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.added_by.email)
 
     if request.method == 'GET':
@@ -394,6 +431,19 @@ def hails_list():
     ?taxi_id.
 
     Pagination is returned in the "meta" field.
+    ---
+    get:
+      description: List hails.
+      parameters:
+        - in: query
+          schema: ListHailQuerystringSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: WrappedHailListSchema
     """
     querystring_schema = schemas.ListHailQuerystringSchema()
     querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
@@ -446,7 +496,7 @@ def hails_list():
         error_out=False  # if True, invalid page or pages without results raise 404
     )
 
-    schema = schemas.data_schema_wrapper(schemas.HailListSchema, with_pagination=True)()
+    schema = schemas.WrappedHailListSchema()
     ret = schema.dump({
         'data': hails.items,
         'meta': hails
@@ -459,7 +509,27 @@ def hails_list():
 @login_required
 @roles_accepted('admin', 'moteur')
 def hails_create():
-    schema = schemas.data_schema_wrapper(schemas.HailSchema())()
+    """
+    ---
+    post:
+      description: |
+        Create a hail request.
+      parameters:
+        - name: payload
+          required: true
+          in: body
+          schema: WrappedHailSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: WrappedHailSchema
+        201:
+          description: Return a new ressource.
+    """
+    schema = schemas.WrappedHailSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)

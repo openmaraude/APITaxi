@@ -24,7 +24,7 @@ def users_details(user_id):
             'url': ['User %s not found' % user_id]
         }, status_code=404)
 
-    schema = schemas.data_schema_wrapper(schemas.UserPublicSchema)()
+    schema = schemas.WrappedUserPublicSchema()
     return schema.dump({'data': [user]})
 
 
@@ -35,5 +35,5 @@ def users_list():
     # XXX: return value is not paginated for backward compatibility and I
     # because don't know where this endpoint is called.
     users = User.query.all()
-    schema = schemas.data_schema_wrapper(schemas.UserPrivateSchema)()
+    schema = schemas.WrappedUserPrivateSchema()
     return schema.dump({'data': users})
