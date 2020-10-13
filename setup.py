@@ -6,22 +6,12 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
-    'werkzeug<=0.16.1'
-    'APITaxi_utils',
     'APITaxi_models',
-    'Cython',
-    'nose',
-    'Flask-Testing',
     'Flask-Redis',
-    'Flask-Celery-Helper',
     'Flask-Cors',
     'psycopg2',
     'geopy',
-    'Flask-Uploads',
-    'Flask-Script',
     'Flask-Migrate',
-    'Shapely',
-    'pyshp',
     'bcrypt',
     'Geohash2',
     'redis',
