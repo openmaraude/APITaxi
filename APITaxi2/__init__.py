@@ -16,6 +16,7 @@ from werkzeug.exceptions import BadRequest
 
 from APITaxi_models2 import db, Role, User
 
+from . import commands
 from . import views
 from .tasks import celery
 
@@ -175,22 +176,24 @@ def create_app():
 
     app.before_request(check_content_type)
 
-    # Register blueprints dynamically: list all modules in views/ and register
-    # blueprint. Blueprint's name must be exactly "blueprint".
-    for _imp, modname, _pkg in pkgutil.walk_packages(
-        views.__path__, views.__name__ + '.'
-    ):
-        module = importlib.import_module(modname)
-        blueprint = getattr(module, 'blueprint', None)
+    # Register views and commands blueprints dynamically: list all modules in
+    # commands/ and views/, then register blueprint. Blueprint name must be
+    # exactly "blueprint".
+    for mod in (commands, views):
+        for _imp, modname, _pkg in pkgutil.walk_packages(
+            mod.__path__, mod.__name__ + '.'
+        ):
+            module = importlib.import_module(modname)
+            blueprint = getattr(module, 'blueprint', None)
 
-        # blueprint_enabled is a function which can be set by the view to tell
-        # whether the blueprint should be active or not. By default, blueprint
-        # is active.
-        blueprint_enabled = getattr(module, 'blueprint_enabled', None)
+            # blueprint_enabled is a function which can be set by the view to tell
+            # whether the blueprint should be active or not. By default, blueprint
+            # is active.
+            blueprint_enabled = getattr(module, 'blueprint_enabled', None)
 
-        if blueprint:
-            if not blueprint_enabled or blueprint_enabled(app):
-                app.register_blueprint(blueprint)
+            if blueprint:
+                if not blueprint_enabled or blueprint_enabled(app):
+                    app.register_blueprint(blueprint)
 
     # Only display url_map if debug and from the worker thread.
     if app.debug and os.environ.get('WERKZEUG_RUN_MAIN'):
