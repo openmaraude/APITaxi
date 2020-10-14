@@ -152,6 +152,7 @@ def postgresql_empty():
                 continue
             APITaxi_models2.db.session.execute(table.delete())
         APITaxi_models2.db.session.commit()
+        APITaxi_models2.db.engine.dispose()
     return clean_db
 
 
