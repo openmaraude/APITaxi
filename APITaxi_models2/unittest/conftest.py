@@ -146,6 +146,10 @@ def postgresql_empty():
     def clean_db():
         APITaxi_models2.db.session.execute('SET CONSTRAINTS ALL DEFERRED')
         for table in reversed(APITaxi_models2.db.metadata.sorted_tables):
+            # Ignore tables declared as SQLALchemy models but not present in
+            # alembic migrations.
+            if not table.exists(bind=APITaxi_models2.db.engine):
+                continue
             APITaxi_models2.db.session.execute(table.delete())
         APITaxi_models2.db.session.commit()
     return clean_db
