@@ -13,22 +13,17 @@ down_revision = 'd26b4a2cc2ef'
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from APITaxi_models.hail import Customer, Hail
-from APITaxi_models.taxis import ADS, Driver, Taxi
-from APITaxi_models.security import Role, User
-from APITaxi_models.vehicle import Vehicle, VehicleDescription
-import APITaxi_models as models
 from datetime import datetime
 
-def upgrade():
-    for m in [models.Departement, models.ZUPC, Customer, Hail, ADS, Driver, Taxi, Role, User,
-            Vehicle, VehicleDescription]:
-        if not hasattr(m, 'added_at'):
-            continue
-        table = m.__table__
-        op.execute(table.update().where(table.c.added_at == None)\
-                .values({'added_at': datetime(2015,1,1)}))
 
+def upgrade():
+    when = datetime(2015, 1, 1)
+    op.execute('UPDATE customer SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
+    op.execute('UPDATE hail SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
+    op.execute('UPDATE "ADS" SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
+    op.execute('UPDATE driver SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
+    op.execute('UPDATE taxi SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
+    op.execute('UPDATE vehicle_description SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
 
 
 def downgrade():
