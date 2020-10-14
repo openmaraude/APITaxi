@@ -20,6 +20,9 @@ DEPENDENCIES = [
     'flask-influxdb',
     'apispec-webframeworks',
     'celery',
+    'apispec[validation]',
+    'pyshp',
+    'shortuuid',
 ]
 
 TEST_DEPENDENCIES = [
