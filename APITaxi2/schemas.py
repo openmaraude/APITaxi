@@ -491,7 +491,7 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
     class MCS(SchemaMeta):
         """DataSchema should have a different name for each contained type,
         otherwise apispec displays a warning."""
-        __name__ = WrappedSchema.__name__ + 'Data'
+        __name__ = 'Data' + WrappedSchema.__name__
 
     class DataSchema(Schema, metaclass=MCS):
         data = fields.List(fields.Nested(WrappedSchema), required=True)
