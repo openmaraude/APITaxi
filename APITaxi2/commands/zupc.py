@@ -348,7 +348,7 @@ def merge_zupc_tmp_table():
     current_app.logger.info('Remove %s outdated ZUPC', query.count())
     query.delete()
 
-    #db.session.commit()
+    db.session.commit()
 
 
 @blueprint.cli.command('import_zupc')
