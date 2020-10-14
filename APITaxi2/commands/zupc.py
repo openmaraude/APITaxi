@@ -1,10 +1,8 @@
 import csv
 import glob
 import json
-import logging
 import os
 import requests
-import sys
 from urllib.parse import urlparse
 import zipfile
 
