@@ -8,6 +8,7 @@ from marshmallow import (
     validates_schema,
     ValidationError,
 )
+from marshmallow.schema import SchemaMeta
 
 from geopy.distance import geodesic
 
@@ -487,7 +488,12 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
         pages = fields.Int()
         total = fields.Int()
 
-    class DataSchema(Schema):
+    class MCS(SchemaMeta):
+        """DataSchema should have a different name for each contained type,
+        otherwise apispec displays a warning."""
+        __name__ = WrappedSchema.__name__ + 'Data'
+
+    class DataSchema(Schema, metaclass=MCS):
         data = fields.List(fields.Nested(WrappedSchema), required=True)
 
         if with_pagination:
