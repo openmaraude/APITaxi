@@ -491,7 +491,7 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
     class MCS(SchemaMeta):
         """DataSchema should have a different name for each contained type,
         otherwise apispec displays a warning."""
-        __name__ = 'Data' + WrappedSchema.__name__
+        __name__ = 'Data' + WrappedSchema.__class__.__name__
 
     class DataSchema(Schema, metaclass=MCS):
         data = fields.List(fields.Nested(WrappedSchema), required=True)
@@ -519,29 +519,29 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
 # We also register these wrapped models in Marshmallow registry so they can be
 # introspected by apispec to generate documentation.
 
-WrappedADSSchema = data_schema_wrapper(ADSSchema)
+WrappedADSSchema = data_schema_wrapper(ADSSchema())
 class_registry.register('WrappedADSSchema', WrappedADSSchema)
 
-WrappedDriverSchema = data_schema_wrapper(DriverSchema)
+WrappedDriverSchema = data_schema_wrapper(DriverSchema())
 class_registry.register('WrappedDriverSchema', WrappedDriverSchema)
 
-WrappedTaxiSchema = data_schema_wrapper(TaxiSchema)
+WrappedTaxiSchema = data_schema_wrapper(TaxiSchema())
 class_registry.register('WrappedTaxiSchema', WrappedTaxiSchema)
 
-WrappedHailSchema = data_schema_wrapper(HailSchema)
+WrappedHailSchema = data_schema_wrapper(HailSchema())
 class_registry.register('WrappedHailSchema', WrappedHailSchema)
 
-WrappedHailListSchema = data_schema_wrapper(HailListSchema, with_pagination=True)
+WrappedHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
 class_registry.register('WrappedHailListSchema', WrappedHailListSchema)
 
-WrappedUserPublicSchema = data_schema_wrapper(UserPublicSchema)
+WrappedUserPublicSchema = data_schema_wrapper(UserPublicSchema())
 class_registry.register('WrappedUserPublicSchema', WrappedUserPublicSchema)
 
-WrappedUserPrivateSchema = data_schema_wrapper(UserPrivateSchema)
+WrappedUserPrivateSchema = data_schema_wrapper(UserPrivateSchema())
 class_registry.register('WrappedUserPrivateSchema', WrappedUserPrivateSchema)
 
-WrappedVehicleSchema = data_schema_wrapper(VehicleSchema)
+WrappedVehicleSchema = data_schema_wrapper(VehicleSchema())
 class_registry.register('WrappedVehicleSchema', WrappedVehicleSchema)
 
-WrappedZUPCSchema = data_schema_wrapper(ZUPCSchema)
+WrappedZUPCSchema = data_schema_wrapper(ZUPCSchema())
 class_registry.register('WrappedZUPCSchema', WrappedZUPCSchema)
