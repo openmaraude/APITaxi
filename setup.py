@@ -19,6 +19,7 @@ DEPENDENCIES = [
     'marshmallow',
     'flask-influxdb',
     'apispec-webframeworks',
+    'celery',
 ]
 
 TEST_DEPENDENCIES = [
