@@ -5,8 +5,22 @@ from flask_security import login_required, roles_accepted
 
 def test_content_type(anonymous):
     for req in ('post', 'put', 'patch'):
-        # Edition request, but content-type not set
+        # Edition request, but content-type not set. It is set by middleware.
         resp = getattr(anonymous.client, req)('/whatever')
+        assert resp.status_code == 400
+        assert 'content-type' not in resp.json['errors'][''][0].lower()
+
+        # Edition request, content-type contains a charset.
+        resp = getattr(anonymous.client, req)('/whatever', headers={
+            'Content-Type': 'application/json; charset=utf-8'
+        })
+        assert resp.status_code == 400
+        assert 'content-type' not in resp.json['errors'][''][0].lower()
+
+        # Edition request, invalid content-type.
+        resp = getattr(anonymous.client, req)('/whatever', headers={
+            'Content-Type': 'text/html'
+        })
         assert resp.status_code == 400
         assert 'content-type' in resp.json['errors'][''][0].lower()
 
@@ -15,6 +29,7 @@ def test_content_type(anonymous):
             'Content-Type': 'application/json'
         })
         assert resp.status_code == 400
+        assert 'content-type' not in resp.json['errors'][''][0].lower()
         assert 'valid json' in resp.json['errors'][''][0].lower()
 
         # Edition request, content-type OK but data not valid JSON
@@ -22,6 +37,7 @@ def test_content_type(anonymous):
             'Content-Type': 'application/json'
         })
         assert resp.status_code == 400
+        assert 'content-type' not in resp.json['errors'][''][0].lower()
         assert 'valid json' in resp.json['errors'][''][0].lower()
 
 
