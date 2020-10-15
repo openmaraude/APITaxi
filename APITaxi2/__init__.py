@@ -77,7 +77,7 @@ def handler_500(exc):
 
 def check_content_type():
     if request.method in ('POST', 'PUT', 'PATCH'):
-        if request.headers.get('Content-Type', '').lower() != 'application/json':
+        if 'application/json' not in request.headers.get('Content-Type', ''):
             return jsonify({
                 'errors': {
                     '': ['%s requests require to set the Content-Type header to application/json' % request.method]
