@@ -19,7 +19,12 @@ DEPENDENCIES = [
     'marshmallow',
     'flask-influxdb',
     'apispec-webframeworks',
-    'celery',
+    # Celery 5 has been recently released, but celery-flower is not yet
+    # compatible with the latest version.
+    # We should upgrade to 5 when flower is ok.
+    # To check if flower is compatible with celery 5, simply start it. Now
+    # (2020/10/15) an error as startup from starting.
+    'celery==4.4.7',
     'apispec[validation]',
     'pyshp',
     'shortuuid',
