@@ -22,6 +22,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN useradd api
 
+# Required by click with Python3, cf https://click.palletsprojects.com/python3/
+ENV LC_ALL=C.UTF-8
+
 # Install admin interface
 RUN pip3 install flower
 
