@@ -2,3 +2,5 @@
 dev_settings.py
 .idea/
 *.egg-info
+.tox
+build

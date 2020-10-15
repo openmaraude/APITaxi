@@ -6,26 +6,30 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
-    'werkzeug<=0.16.1'
-    'APITaxi_utils',
     'APITaxi_models',
-    'Cython',
-    'nose',
-    'Flask-Testing',
     'Flask-Redis',
-    'Flask-Celery-Helper',
     'Flask-Cors',
     'psycopg2',
     'geopy',
-    'Flask-Uploads',
-    'Flask-Script',
     'Flask-Migrate',
-    'Shapely',
-    'pyshp',
     'bcrypt',
     'Geohash2',
     'redis',
     'email-validator',
+    'marshmallow',
+    'flask-influxdb',
+    'apispec-webframeworks',
+    'celery',
+    'apispec[validation]',
+    'pyshp',
+    'shortuuid',
+]
+
+TEST_DEPENDENCIES = [
+    'pytest',
+    'pytest-factoryboy',
+    'fakeredis',
+    'testing.postgresql',
 ]
 
 
@@ -64,6 +68,9 @@ setup(
         'Intended Audience :: Developpers',
         'Programming Language :: Python :: 3'
     ],
+    extras_require={
+        'tests': TEST_DEPENDENCIES,
+    },
     keywords='taxi transportation',
     packages=find_packages(),
     install_requires=DEPENDENCIES

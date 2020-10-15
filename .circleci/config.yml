@@ -1,54 +1,20 @@
 version: 2
 
 jobs:
-  test:
+  testv2:
     docker:
-      - image: circleci/python:3.6.6-stretch
-      - image: circleci/postgres:10.5-postgis-ram
-        environment:
-          POSTGRES_USER: ubuntu
-          POSTGRES_DB: circle_test
-      - image: redis:4.0.1
-      - image: openmaraude/geotaxi:latest
-    environment:
-      SQLALCHEMY_DATABASE_URI: 'postgresql://ubuntu:@127.0.0.1:5432/circle_test'
-      REDIS_URL: "redis://:@localhost:6379/0"
-      SECURITY_PASSWORD_HASH: 'plaintext'
-      APITAXI_CONFIG_FILE: 'test_settings.py'
+      - image: circleci/python:3-buster
     steps:
       - checkout
-      - run: sudo apt-get install golang-go libgeos-dev
-      - run: git clone https://github.com/openmaraude/faker && cd faker && go build && cd ..
       - run:
-          name: install dependencies
+          name: Install system dependencies
           command: |
-            mkdir -p ./venv
-            virtualenv ./venv
-            . venv/bin/activate
-            pip install git+https://github.com/openmaraude/APITaxi_utils.git
-            pip install git+https://github.com/openmaraude/APITaxi_models.git
-            pip install .
+            sudo apt-get install -y postgis redis-server influxdb
+            pip install tox
       - run:
-          name: Fake positions
-          command: ./faker/faker
-          background: true
-      - run:
-          name: Launch operateur server
+          name: Run unittests
           command: |
-            . venv/bin/activate
-            python tests/operateur_server.py
-          background: true
-      - run:
-          name: Launch worker
-          command: |
-            . venv/bin/activate
-            celery worker --app=celery_worker.celery -Q send_hail_time_test
-          background: true
-      - run:
-          name: Run tests
-          command: |
-            . venv/bin/activate
-            nosetests --stop
+            tox
 
   build:
     docker:
@@ -74,12 +40,12 @@ workflows:
   # Run unittest
   test:
     jobs:
-      - test
+      - testv2
 
   # Build artifacts
   artifacts:
     jobs:
-      - test:
+      - testv2:
           filters:
             branches:
               ignore: /.*/
@@ -88,7 +54,7 @@ workflows:
 
       - build:
           requires:
-            - test
+            - testv2
           filters:
             tags:
               only: /.*/
