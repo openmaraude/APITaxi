@@ -48,11 +48,26 @@ class DriverSchema(Schema):
 
 
 class RefADSSchema(Schema):
+    """When we make a reference to an existing ADS, only the fields numero and
+    insee are required.
+
+    Other fields can be provided, but they are ignored.
+    """
     numero = fields.String(required=True, allow_none=False)
     insee = fields.String(required=True, allow_none=False)
 
+    category = fields.String(required=False)
+    vehicle_id = fields.Int(required=False)
+    owner_name = fields.String(required=False)
+    owner_type = fields.String(
+        required=False,
+        validate=validate.OneOf(['individual', 'company'])
+    )
+    doublage = fields.Bool(required=False)
+
 
 class ADSSchema(RefADSSchema):
+    """ADS creation require to provide all these fields."""
     category = fields.String(required=True)
     vehicle_id = fields.Int(allow_none=True)
     owner_name = fields.String(required=True)
