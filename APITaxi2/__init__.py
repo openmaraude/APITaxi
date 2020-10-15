@@ -234,7 +234,7 @@ def create_app():
     if os.environ.get('DEBUG_REQUESTS') in ('t', 'y', 'yes', 'true', '1') or app.config.get('DEBUG_REQUESTS'):
         @app.after_request
         def after_request_func(response):
-            sys.stderr.write('============ Request ============\n')
+            sys.stderr.write('============ %s %s ============\n' % (request.method, request.path))
             sys.stderr.write(str(request.headers) + '\n')
             sys.stderr.buffer.write(request.data)
             sys.stderr.write('\n')
