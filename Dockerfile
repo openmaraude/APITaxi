@@ -28,6 +28,9 @@ ENV LC_ALL=C.UTF-8
 # Install admin interface
 RUN pip3 install flower
 
+# `flask shell` and flask commands like `flask create_user` need FLASK_APP to be set.
+ENV FLASK_APP=APITaxi
+
 RUN mkdir -p /var/run/api-taxi
 RUN chown api:api /var/run/api-taxi
 
