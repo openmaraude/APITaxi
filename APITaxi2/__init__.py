@@ -18,6 +18,7 @@ from APITaxi_models2 import db, Role, User
 
 from . import commands
 from . import views
+from .middlewares import ForceJSONContentTypeMiddleware
 from .tasks import celery
 
 
@@ -130,6 +131,8 @@ def configure_celery(flask_app):
 
 def create_app():
     app = Flask(__name__, static_folder=None)
+    app.wsgi_app = ForceJSONContentTypeMiddleware(app.wsgi_app)
+
     # Disable CORS
     CORS(app, resources={r'*': {"origins": "*"}})
     # Make /route similar to /route/
