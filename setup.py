@@ -23,6 +23,7 @@ DEPENDENCIES = [
     'apispec[validation]',
     'pyshp',
     'shortuuid',
+    'dataclasses',  # for Python3.6
 ]
 
 TEST_DEPENDENCIES = [
