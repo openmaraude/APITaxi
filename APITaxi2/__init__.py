@@ -2,6 +2,7 @@ import importlib
 import json
 import os
 import pkgutil
+import sys
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
@@ -229,5 +230,20 @@ def create_app():
     @app.route('/swagger.json')
     def swagger():
         return json.dumps(spec.to_dict(), indent=2)
+
+    if os.environ.get('DEBUG_REQUESTS') in ('t', 'y', 'yes', 'true', '1') or app.config.get('DEBUG_REQUESTS'):
+        @app.after_request
+        def after_request_func(response):
+            sys.stderr.write('============ Request ============\n')
+            sys.stderr.write(str(request.headers) + '\n')
+            sys.stderr.buffer.write(request.data)
+            sys.stderr.write('\n')
+
+            sys.stderr.write('............ Reponse ............\n')
+            sys.stderr.write(response.status + '\n')
+            sys.stderr.write(str(response.headers) + '\n')
+            sys.stderr.buffer.write(response.data)
+            sys.stderr.write('\n')
+            return response
 
     return app
