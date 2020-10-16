@@ -78,3 +78,8 @@ class TestHandleHailTimeout:
         with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
             tasks.handle_hail_timeout(hail.id, hail.operateur.id, 'sent_to_operator', 'failure')
             assert mocked_logger.call_count == 0
+
+    def test_hail_not_found(self, app):
+        with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
+            tasks.handle_hail_timeout('1234', '5678', 'received', 'failure')
+            assert mocked_logger.call_count == 1
