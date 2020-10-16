@@ -652,8 +652,7 @@ def hails_create():
         hail.id,
         hail.operateur.hail_endpoint_production,
         hail.operateur.operator_header_name,
-        hail.operateur.operator_api_key,
-        hail.operateur.email
+        hail.operateur.operator_api_key
     ])
 
     # Since models' relationships have lazy='raise', they cannot be accessed

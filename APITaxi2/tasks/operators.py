@@ -67,7 +67,7 @@ def handle_hail_timeout(hail_id, operateur_id,
 
 
 @celery.task(name='send_request_operator')
-def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_key, operator_email):
+def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_key):
     """Send the hail request to the operator's API.
 
     If this task is called with too much delay because of production issues,
