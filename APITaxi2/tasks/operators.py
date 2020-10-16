@@ -126,7 +126,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
 
     # Send request.
     try:
-        resp = requests.post(endpoint, json=payload)
+        resp = requests.post(endpoint, json=payload, headers=headers)
     # If operator's API is unavailable, log the error, set hail as failure and
     # abort.
     except requests.exceptions.RequestException as exc:
