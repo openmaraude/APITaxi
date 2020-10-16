@@ -68,3 +68,13 @@ class TestHandleHailTimeout:
 
         # No need to fetch back hail since session has not been committed.
         assert hail.status == 'received_by_operator'
+
+    def test_two_operators(self, app):
+        """Make sure it is possible to fetch Hail related to a Taxi with two
+        VehicleDescription."""
+        hail = HailFactory(status='received_by_operator')
+        VehicleDescriptionFactory(vehicle=hail.taxi.vehicle)
+
+        with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
+            tasks.handle_hail_timeout(hail.id, hail.operateur.id, 'sent_to_operator', 'failure')
+            assert mocked_logger.call_count == 0
