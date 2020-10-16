@@ -82,6 +82,14 @@ class TestGetHailDetails:
         assert not resp.json['data'][0]['taxi']['position']['lon']
         assert not resp.json['data'][0]['taxi']['position']['lat']
 
+    def test_ok_two_operators(self, app, operateur):
+        """Get hail details of a taxi with two VehicleDescription entries."""
+        hail = HailFactory(operateur=operateur.user)
+        VehicleDescriptionFactory(vehicle=hail.taxi.vehicle)
+
+        resp = operateur.client.get('/hails/%s' % hail.id)
+        assert resp.status_code == 200
+
 
 class TestEditHail:
     def test_invalid(self, anonymous, operateur, moteur):

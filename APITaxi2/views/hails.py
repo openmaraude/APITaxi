@@ -270,6 +270,7 @@ def hails_details(hail_id):
         Hail.taxi_id == Taxi.id,
         Taxi.vehicle_id == Vehicle.id,
         VehicleDescription.vehicle_id == Vehicle.id,
+        VehicleDescription.added_by_id == Hail.operateur_id,
         Hail.id == hail_id
     ).one_or_none()
     if not query:

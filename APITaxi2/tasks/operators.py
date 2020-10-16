@@ -91,6 +91,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         Hail.taxi_id == Taxi.id,
         Taxi.vehicle_id == Vehicle.id,
         VehicleDescription.vehicle_id == Vehicle.id,
+        VehicleDescription.added_by_id == Hail.operateur_id,
         Hail.id == hail_id
     ).one_or_none()
     if not res:
