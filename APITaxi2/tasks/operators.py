@@ -114,10 +114,11 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         db.session.commit()
         return False
 
-    taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.added_by.email)
-
     schema = schemas.WrappedHailSchema()
-    payload = schema.dump({'data': [(hail, taxi_position)]})
+    # The second parameter of dump is None because we do not want to provide
+    # the taxi's location to user now. Location can be retrieved later with GET
+    # /hails/:id after taxi accepts the request.
+    payload = schema.dump({'data': [(hail, None)]})
 
     # Custom headers to send to operator's API.
     headers = {}
