@@ -64,6 +64,7 @@ class CustomerFactory(BaseFactory):
 
     id = factory.Sequence(lambda n: 'CUSTOMER_%d' % n)
     moteur = factory.SubFactory(UserFactory)
+    added_at = datetime.datetime.now()
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
@@ -200,6 +201,7 @@ class VehicleDescriptionFactory(BaseFactory):
     vehicle = factory.SubFactory(__name__ + '.VehicleFactory')
     model = factory.SubFactory(VehicleModelFactory)
     constructor = factory.SubFactory(VehicleConstructorFactory)
+    added_at = datetime.datetime.now()
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
@@ -231,6 +233,7 @@ class TaxiFactory(BaseFactory):
         return VehicleFactory(descriptions__added_by=self.added_by)
 
     ads = factory.SubFactory(ADSFactory)
+    added_at = datetime.datetime.now()
     added_by = factory.SubFactory(UserFactory)
     driver = factory.SubFactory(DriverFactory)
     added_via = 'api'
@@ -259,6 +262,7 @@ class HailFactory(BaseFactory):
     operateur = factory.SubFactory(UserFactory)
     customer_address = '20 Avenue de Ségur, 75007 Paris'
     customer_phone_number = '0799100222'
+    added_at = datetime.datetime.now()
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
