@@ -32,8 +32,8 @@ def users_details(user_id):
 @login_required
 @roles_accepted('admin')
 def users_list():
-    # XXX: return value is not paginated for backward compatibility and I
-    # because don't know where this endpoint is called.
+    # XXX: return value is not paginated for backward compatibility. I don't
+    # know what is using this endpoint, so I prefer to let it as-is for now.
     users = User.query.all()
     schema = schemas.WrappedUserPrivateSchema()
     return schema.dump({'data': users})
