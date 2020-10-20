@@ -34,7 +34,6 @@ DEPENDENCIES = [
 TEST_DEPENDENCIES = [
     'pytest',
     'pytest-factoryboy',
-    'fakeredis',
     'testing.postgresql',
 ]
 
