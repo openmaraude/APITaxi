@@ -122,3 +122,42 @@ class TestDriversCreate:
             }
         }]})
         assert resp.status_code == 200
+
+    def test_mispelled_departement(self, operateur):
+        """If departement numero is correct but not the name, request should
+        still succeed."""
+        departement = DepartementFactory()
+
+        resp = operateur.client.post('/drivers', json={'data': [{
+            'first_name': 'Evander',
+            'last_name': 'Holyfield',
+            'professional_licence': 'xxx',
+            'departement': {
+                'nom': 'xxxxxxxxxxx',
+                'numero': departement.numero
+            }
+        }]})
+
+        assert resp.status_code == 201
+        assert Driver.query.count() == 1
+
+    def test_duplicates_departement(self, operateur):
+        """We specify a valid departement numero and nom, but they refer to two
+        different departements.
+        """
+        departement = DepartementFactory()
+        departement2 = DepartementFactory()
+
+        resp = operateur.client.post('/drivers', json={'data': [{
+            'first_name': 'Manny',
+            'last_name': 'Pacquiao',
+            'professional_licence': 'xxx',
+            'departement': {
+                'nom': departement.nom,
+                'numero': departement2.numero
+            }
+        }]})
+
+        assert resp.status_code == 409  # HTTP/409 Conflict
+        assert 'nom' in resp.json['errors']['data']['0']['departement']
+        assert 'numero' in resp.json['errors']['data']['0']['departement']

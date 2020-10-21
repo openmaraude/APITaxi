@@ -1,4 +1,4 @@
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
 
 from flask import Blueprint, request
@@ -27,19 +27,22 @@ def drivers_create():
 
     args = params['data'][0]
 
-    # Query departement
-    departement_query = Departement.query
+    # Query departement. We allow to specify both "nom" and "numero", but some
+    # clients make requests with spelling mistakes so we accept even if only
+    # one of the two is valid.
+    departement_filters = []
     if args['departement'].get('nom'):
-        departement_query = departement_query.filter(
+        departement_filters.append(
             func.lower(Departement.nom) == args['departement'].get('nom').lower()
         )
     if args['departement'].get('numero'):
-        departement_query = departement_query.filter(
+        departement_filters.append(
             Departement.numero == args['departement'].get('numero')
         )
 
-    departement = departement_query.one_or_none()
-    if not departement:
+    departements = Departement.query.filter(or_(*departement_filters)).all()
+
+    if not departements:
         return make_error_json_response({
             'data': {
                 '0': {
@@ -50,6 +53,19 @@ def drivers_create():
                 }
             }
         }, status_code=404)
+    elif len(departements) > 1:
+        return make_error_json_response({
+            'data': {
+                '0': {
+                    'departement': {
+                        'nom': ['There is more than one match for this nom/numero'],
+                        'numero': ['There is more than one match for this nom/numero']
+                    }
+                }
+            }
+        }, status_code=409)  # 409 Conflict
+
+    departement = departements[0]
 
     # Try to get an existing object
     driver = Driver.query.options(joinedload(Driver.departement)).filter_by(
