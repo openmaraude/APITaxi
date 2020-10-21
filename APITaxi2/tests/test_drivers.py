@@ -106,13 +106,14 @@ class TestDriversCreate:
     def test_duplicates_driver(self, operateur):
         """Driver is identified by `departement_id` and `professional_licence`.
         There is no unique key for these fields in database, and duplicates
-        exist. In case of duplicate, we should return the last one."""
+        exist. In case of duplicate, we should return the last one created and
+        no exception should be raised."""
         departement = DepartementFactory()
 
         DriverFactory(departement=departement, professional_licence='abc')
         DriverFactory(departement=departement, professional_licence='abc')
 
-        operateur.client.post('/drivers', json={'data': [{
+        resp = operateur.client.post('/drivers', json={'data': [{
             'first_name': 'Vasyl',
             'last_name': 'Lomachenko',
             'professional_licence': 'abc',
@@ -120,3 +121,4 @@ class TestDriversCreate:
                 'nom': departement.nom
             }
         }]})
+        assert resp.status_code == 200
