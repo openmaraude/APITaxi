@@ -128,7 +128,6 @@ class TestSendRequestOperator:
         # Create extra VehicleDescription for the vehicle to make sure the view
         # can handle this case.
         VehicleDescriptionFactory(vehicle=hail.taxi.vehicle)
-        now = int(time.time())
 
         operator_endpoint = 'http://127.0.0.1:9876'
         operator_header_name = 'My-Header'
