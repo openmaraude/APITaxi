@@ -80,7 +80,7 @@ class ADSSchema(RefADSSchema):
 
 class RefDriverSchema(Schema):
     professional_licence = fields.String(required=True, allow_none=False)
-    departement = fields.String(attribute='departement.numero')
+    departement = fields.String(attribute='departement.numero', required=True)
 
 
 class VehicleSchema(Schema):
