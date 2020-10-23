@@ -528,3 +528,45 @@ class TestTaxiList:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
+
+    def test_different_zupc(self, app, moteur, operateur):
+        """Request is made from Paris, and taxi reports it's location in Paris
+        but it's ZUPC is in Bordeaux.
+        """
+        # Create Paris ZUPC.
+        ZUPCFactory()
+
+        # Hardcode Bordeaux ZUPC. See comment in
+        # APITaxi_models2.unittest.factories to see how to build this.
+        BORDEAUX_SHAPE = \
+            'MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,' \
+            '-0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,' \
+            '-0.686737474226045 44.9009485734125)))'
+        zupc = ZUPCFactory(nom='Bordeaux', shape=BORDEAUX_SHAPE, insee='33063')
+        ads = ADSFactory(zupc=zupc)
+
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle)
+        # Taxi ADS is in Bordeaux.
+        taxi = TaxiFactory(ads=ads, vehicle=vehicle)
+
+        # Report location in Paris.
+        lon = 2.367895
+        lat = 48.86789
+
+        app.redis.geoadd(
+            'geoindex_2',
+            lon,
+            lat,
+            '%s:%s' % (taxi.id, vehicle_description.added_by.email)
+        )
+        app.redis.zadd(
+            'timestamps', {
+                '%s:%s' % (taxi.id, vehicle_description.added_by.email): int(time.time())
+            }
+        )
+
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        # No taxi should be returned.
+        assert len(resp.json['data']) == 0

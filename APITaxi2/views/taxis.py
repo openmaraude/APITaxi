@@ -372,7 +372,9 @@ def taxis_list():
     )
 
     # Fetch all Taxi and VehicleDescriptions objects related to "locations".
-    query = db.session.query(Taxi, VehicleDescription).options(
+    query = db.session.query(Taxi, VehicleDescription).join(
+        ADS
+    ).options(
         joinedload(Taxi.ads)
     ).options(
         joinedload(Taxi.driver)
@@ -396,7 +398,12 @@ def taxis_list():
     ).filter(
         VehicleDescription.vehicle_id == Taxi.vehicle_id
     ).filter(
-        Taxi.id.in_(locations.keys())
+        Taxi.id.in_(locations.keys()),
+        # Removes taxis with an ADS located in another ZUPC than the one where
+        # the request is made. For example, if a taxi from Bordeaux reports
+        # it's location in Paris, we don't want it returned for a request in
+        # Paris.
+        ADS.zupc_id.in_([zupc.id for zupc in zupcs])
     )
 
     # Create data as a dictionary such as:
