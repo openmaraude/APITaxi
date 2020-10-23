@@ -100,7 +100,7 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
         'accepted_by_customer': {
             'customer_on_board': 'operateur',
             'incident_customer': 'moteur',
-            'incident_taxi': 'taxi',
+            'incident_taxi': 'operateur',
         },
         'customer_on_board': {
             'finished': 'operateur',
