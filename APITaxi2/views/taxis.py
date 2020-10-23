@@ -337,8 +337,6 @@ def taxis_list():
 
     zupcs = ZUPC.query.filter(
         func.ST_Intersects(ZUPC.shape, 'Point({} {})'.format(params['lon'], params['lat'])),
-    ).filter(
-        ZUPC.parent_id == ZUPC.id
     ).all()
 
     schema = schemas.WrappedTaxiSchema()
