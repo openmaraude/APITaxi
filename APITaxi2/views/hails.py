@@ -386,13 +386,15 @@ def hails_details(hail_id):
                 countdown=30
             )
         # Hail has been accepted by the taxi. Customer has 1 minute to accept
-        # or refuse the hail.
+        # or refuse the hail. If not, hail becomes "timeout_customer" and taxi
+        # is free again.
         elif hail.status == 'accepted_by_taxi':
             tasks.operators.handle_hail_timeout.apply_async(
                 args=(hail.id, vehicle_description.added_by_id),
                 kwargs={
                     'initial_hail_status': 'accepted_by_taxi',
-                    'new_hail_status': 'timeout_customer'
+                    'new_hail_status': 'timeout_customer',
+                    'new_taxi_status': 'free'
                 },
                 countdown=60
             )

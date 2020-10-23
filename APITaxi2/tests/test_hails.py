@@ -273,6 +273,7 @@ class TestEditHail:
                 kwargs={
                     'initial_hail_status': 'accepted_by_taxi',
                     'new_hail_status': 'timeout_customer',
+                    'new_taxi_status': 'free'
                 },
                 countdown=60
             )
