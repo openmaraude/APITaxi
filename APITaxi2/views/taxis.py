@@ -348,9 +348,9 @@ def taxis_list():
     # makes much sense to have it configurable globally. Configuration should
     # ideally be fine grained, depending on day, time, location, and be even
     # configurable by the taxi.
-    default_max_distance = 3000
+    default_max_distance = 500
 
-    max_distance = min(
+    max_distance = max(
         [zupc.max_distance for zupc in zupcs if zupc.max_distance and zupc.max_distance > 0]
         + [default_max_distance]
     )
