@@ -51,7 +51,7 @@ class TestGetHailDetails:
         hail = HailFactory(status='customer_on_board', added_by=moteur.user, operateur=operateur.user)
         app.redis.hset(
             'taxi:%s' % hail.taxi.id,
-            hail.added_by.email,
+            hail.operateur.email,
             '1589567716 48.84 2.35 free phone 2'
         )
         with QueriesTracker() as qtracker:

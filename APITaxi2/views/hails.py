@@ -286,7 +286,7 @@ def hails_details(hail_id):
         }, status_code=403)
 
     schema = schemas.WrappedHailSchema()
-    taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.added_by.email)
+    taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.operateur.email)
 
     if request.method == 'GET':
         return schema.dump({'data': [(hail, taxi_position)]})
