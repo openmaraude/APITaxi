@@ -239,7 +239,7 @@ def create_app():
             sys.stderr.buffer.write(request.data)
             sys.stderr.write('\n')
 
-            sys.stderr.write('............ Reponse ............\n')
+            sys.stderr.write('............ Response ............\n')
             sys.stderr.write(response.status + '\n')
             sys.stderr.write(str(response.headers) + '\n')
             sys.stderr.buffer.write(response.data)
