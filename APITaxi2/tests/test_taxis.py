@@ -7,7 +7,6 @@ from APITaxi_models2 import Taxi, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
     DriverFactory,
-    HailFactory,
     TaxiFactory,
     VehicleFactory,
     VehicleDescriptionFactory,
@@ -143,18 +142,6 @@ class TestTaxiPut:
         # If the status is the same, nothing is logged.
         taxi, resp = _set_taxi_status('free', initial_status='free')
         assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 0
-
-        # Taxi is changing the status to "off" with a customer on board
-        hail = HailFactory(status='customer_on_board')
-        taxi, resp = _set_taxi_status('off', hail=hail)
-        assert resp.status_code == 200
-        assert hail.status == 'finished'
-
-        # Taxi is changing the status to "occupied" after driving to a customer
-        hail = HailFactory(status='accepted_by_customer')
-        taxi, resp = _set_taxi_status('occupied', hail=hail)
-        assert resp.status_code == 200
-        assert hail.status == 'customer_on_board'
 
 
 class TestTaxiPost:
