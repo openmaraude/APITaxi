@@ -103,6 +103,8 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
             'incident_taxi': 'operateur',
         },
         'customer_on_board': {
+            'incident_customer': 'moteur',
+            'incident_taxi': 'operateur',
             'finished': 'operateur',
         }
     }
