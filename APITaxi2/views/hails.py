@@ -369,6 +369,7 @@ def hails_details(hail_id):
             http_method='PUT',
             request_payload=json.dumps(request.json, indent=2),
             hail_initial_status=hail_initial_status,
+            hail_final_status=hail.status,
             request_user=current_user,
             response_payload=json.dumps(ret, indent=2),
             response_status_code=200
@@ -671,6 +672,7 @@ def hails_create():
         http_method='POST',
         request_payload=request.json,
         hail_initial_status=None,
+        hail_final_status=hail.status,
         request_user=current_user,
         response_payload=ret,
         response_status_code=201

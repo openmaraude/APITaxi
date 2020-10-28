@@ -139,6 +139,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             http_method='POST to operator',
             request_payload=json.dumps(payload, indent=2),
             hail_initial_status=hail.status,
+            hail_final_status='failure',
             request_user=None,
             response_payload=str(exc),
             response_status_code=None
@@ -158,6 +159,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             http_method='POST to operator',
             request_payload=json.dumps(payload, indent=2),
             hail_initial_status=hail.status,
+            hail_final_status='failure',
             request_user=None,
             response_payload='Response should be valid JSON, but the API response was: %s' % resp.text,
             response_status_code=resp.status_code
@@ -177,6 +179,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             http_method='POST to operator',
             request_payload=json.dumps(payload, indent=2),
             hail_initial_status=hail.status,
+            hail_final_status='failure',
             request_user=None,
             response_payload=response_payload,
             response_status_code=resp.status_code
@@ -192,6 +195,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         http_method='POST to operator',
         request_payload=json.dumps(payload, indent=2),
         hail_initial_status=hail.status,
+        hail_final_status='received_by_operator',
         request_user=None,
         response_payload=response_payload,
         response_status_code=resp.status_code
