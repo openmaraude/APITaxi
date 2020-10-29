@@ -127,6 +127,8 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
         'accepted_by_customer': 'oncoming',
         'declined_by_taxi': 'off',
         'customer_on_board': 'occupied',
+        'incident_taxi': 'free',
+        'incident_customer': 'free',
         'finished': 'free',
     }
 
