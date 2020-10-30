@@ -69,7 +69,7 @@ def _run_postgresql_migrations(psql):
 
 class Postgresql(testing.postgresql.Postgresql):
     def setup(self):
-        """Because set set base_dir to fasten unittests, we need to override
+        """Because we set base_dir to fasten unittests, we need to override
         setup() to check if the source and destination given to shutil.copytree
         are not the same.
 
