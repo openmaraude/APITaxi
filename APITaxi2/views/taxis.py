@@ -47,7 +47,7 @@ def taxis_create():
         - name: payload
           required: true
           in: body
-          schema: WrappedTaxiSchema
+          schema: DataTaxiSchema
       security:
         - ApiKeyAuth: []
       responses:
@@ -55,11 +55,11 @@ def taxis_create():
           description: Return the existing ressource.
           content:
             application/json:
-              schema: WrappedTaxiSchema
+              schema: DataTaxiSchema
         201:
           description: Return a new ressource.
     """
-    schema = schemas.WrappedTaxiSchema()
+    schema = schemas.DataTaxiSchema()
 
     params, errors = validate_schema(schema, request.json)
     if errors:
@@ -171,7 +171,7 @@ def taxis_details(taxi_id):
         200:
           content:
             application/json:
-              schema: WrappedTaxiSchema
+              schema: DataTaxiSchema
 
     put:
       description: Edit taxi status. Only the field `status` can be changed.
@@ -191,7 +191,7 @@ def taxis_details(taxi_id):
         200:
           content:
             application/json:
-              schema: WrappedTaxiSchema
+              schema: DataTaxiSchema
     """
     # Get Taxi object with the VehicleDescription entry related to current
     # user.
@@ -231,7 +231,7 @@ def taxis_details(taxi_id):
     taxi, vehicle_description = (res.Taxi, res.VehicleDescription)
 
     # Build Schema
-    schema = schemas.WrappedTaxiSchema()
+    schema = schemas.DataTaxiSchema()
 
     # Dump data for GET requests
     if request.method != 'PUT':
@@ -309,7 +309,7 @@ def taxis_list():
         200:
           content:
             application/json:
-              schema: WrappedTaxiSchema
+              schema: DataTaxiSchema
     """
     schema = schemas.ListTaxisQueryStringSchema()
     params, errors = validate_schema(schema, request.args)
@@ -320,7 +320,7 @@ def taxis_list():
         func.ST_Intersects(ZUPC.shape, 'Point({} {})'.format(params['lon'], params['lat'])),
     ).all()
 
-    schema = schemas.WrappedTaxiSchema()
+    schema = schemas.DataTaxiSchema()
 
     if not zupcs:
         return schema.dump({'data': []})

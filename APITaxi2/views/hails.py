@@ -234,7 +234,7 @@ def hails_details(hail_id):
         200:
           content:
             application/json:
-              schema: WrappedHailSchema
+              schema: DataHailSchema
 
     put:
       description: Edit hail details.
@@ -247,14 +247,14 @@ def hails_details(hail_id):
         - name: payload
           required: true
           in: body
-          schema: WrappedHailSchema
+          schema: DataHailSchema
       security:
         - ApiKeyAuth: []
       responses:
         200:
           content:
             application/json:
-              schema: WrappedHailSchema
+              schema: DataHailSchema
     """
     query = db.session.query(
         Hail, VehicleDescription
@@ -289,7 +289,7 @@ def hails_details(hail_id):
             'url': ['You do not have the permissions to view this hail']
         }, status_code=403)
 
-    schema = schemas.WrappedHailSchema()
+    schema = schemas.DataHailSchema()
     taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.operateur.email)
 
     if request.method == 'GET':
@@ -451,7 +451,7 @@ def hails_list():
         200:
           content:
             application/json:
-              schema: WrappedHailListSchema
+              schema: DataHailListSchema
     """
     querystring_schema = schemas.ListHailQuerystringSchema()
     querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
@@ -504,7 +504,7 @@ def hails_list():
         error_out=False  # if True, invalid page or pages without results raise 404
     )
 
-    schema = schemas.WrappedHailListSchema()
+    schema = schemas.DataHailListSchema()
     ret = schema.dump({
         'data': hails.items,
         'meta': hails
@@ -526,18 +526,18 @@ def hails_create():
         - name: payload
           required: true
           in: body
-          schema: WrappedHailSchema
+          schema: DataHailSchema
       security:
         - ApiKeyAuth: []
       responses:
         200:
           content:
             application/json:
-              schema: WrappedHailSchema
+              schema: DataHailSchema
         201:
           description: Return a new ressource.
     """
-    schema = schemas.WrappedHailSchema()
+    schema = schemas.DataHailSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)

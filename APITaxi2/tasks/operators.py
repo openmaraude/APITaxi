@@ -114,7 +114,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         db.session.commit()
         return False
 
-    schema = schemas.WrappedHailSchema()
+    schema = schemas.DataHailSchema()
     # The second parameter of dump is None because we do not want to provide
     # the taxi's location to user now. Location can be retrieved later with GET
     # /hails/:id after taxi accepts the request.

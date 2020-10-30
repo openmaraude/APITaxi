@@ -29,7 +29,7 @@ def zupc_list():
         ZUPC.max_distance.desc()
     ).all()
 
-    schema = schemas.WrappedZUPCSchema()
+    schema = schemas.DataZUPCSchema()
     ret = schema.dump({
         'data': [
             (zupc, influx_backend.get_nb_active_taxis(zupc.insee))

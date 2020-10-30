@@ -507,8 +507,13 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
 
     class MCS(SchemaMeta):
         """DataSchema should have a different name for each contained type,
-        otherwise apispec displays a warning."""
+        otherwise apispec displays a warning.
+
+        See https://github.com/marshmallow-code/apispec/issues/603"""
         __name__ = 'Data' + WrappedSchema.__class__.__name__
+
+        def __init__(self, name, bases, attrs):
+            return super().__init__(self.__name__, bases, attrs)
 
     class DataSchema(Schema, metaclass=MCS):
         data = fields.List(fields.Nested(WrappedSchema), required=True)
@@ -524,41 +529,21 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
     return DataSchema
 
 
+#
 # API request payloads and API responses are wrapped in an object with one key,
 # "data", which is a list of exactly one element.
 #
 # In other words, for example:
 #
-# DriverSchema = {'first_name': xx, 'last_name': yyy, ...}
+# DriverSchema     = {'first_name': xx, 'last_name': yyy, ...}
+# DataDriverSchema = {'data': [{'first_name': xx, 'last_name': yyy, ...}]}
 #
-# WrappedWriverSchema = {'data': [{'first_name': xx, 'last_name': yyy, ...}]}
-#
-# We also register these wrapped models in Marshmallow registry so they can be
-# introspected by apispec to generate documentation.
-
-WrappedADSSchema = data_schema_wrapper(ADSSchema())
-class_registry.register('WrappedADSSchema', WrappedADSSchema)
-
-WrappedDriverSchema = data_schema_wrapper(DriverSchema())
-class_registry.register('WrappedDriverSchema', WrappedDriverSchema)
-
-WrappedTaxiSchema = data_schema_wrapper(TaxiSchema())
-class_registry.register('WrappedTaxiSchema', WrappedTaxiSchema)
-
-WrappedHailSchema = data_schema_wrapper(HailSchema())
-class_registry.register('WrappedHailSchema', WrappedHailSchema)
-
-WrappedHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
-class_registry.register('WrappedHailListSchema', WrappedHailListSchema)
-
-WrappedUserPublicSchema = data_schema_wrapper(UserPublicSchema())
-class_registry.register('WrappedUserPublicSchema', WrappedUserPublicSchema)
-
-WrappedUserPrivateSchema = data_schema_wrapper(UserPrivateSchema())
-class_registry.register('WrappedUserPrivateSchema', WrappedUserPrivateSchema)
-
-WrappedVehicleSchema = data_schema_wrapper(VehicleSchema())
-class_registry.register('WrappedVehicleSchema', WrappedVehicleSchema)
-
-WrappedZUPCSchema = data_schema_wrapper(ZUPCSchema())
-class_registry.register('WrappedZUPCSchema', WrappedZUPCSchema)
+DataADSSchema = data_schema_wrapper(ADSSchema())
+DataDriverSchema = data_schema_wrapper(DriverSchema())
+DataTaxiSchema = data_schema_wrapper(TaxiSchema())
+DataHailSchema = data_schema_wrapper(HailSchema())
+DataHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
+DataUserPublicSchema = data_schema_wrapper(UserPublicSchema())
+DataUserPrivateSchema = data_schema_wrapper(UserPrivateSchema())
+DataVehicleSchema = data_schema_wrapper(VehicleSchema())
+DataZUPCSchema = data_schema_wrapper(ZUPCSchema())

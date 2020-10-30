@@ -26,7 +26,7 @@ blueprint = Blueprint('vehicles', __name__)
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
 def vehicle_create():
-    schema = schemas.WrappedVehicleSchema()
+    schema = schemas.DataVehicleSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)
