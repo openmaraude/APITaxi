@@ -1,5 +1,4 @@
 from marshmallow import (
-    class_registry,
     EXCLUDE,
     fields,
     Schema,
