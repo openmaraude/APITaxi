@@ -655,19 +655,23 @@ def hails_create():
 
     ret = schema.dump({'data': [(hail, taxi_position)]})
 
-    tasks.send_request_operator.apply_async(args=[
-        hail.id,
-        hail.operateur.hail_endpoint_production,
-        hail.operateur.operator_header_name,
-        hail.operateur.operator_api_key
-    ])
-
     # Since models' relationships have lazy='raise', they cannot be accessed
     # after session.commit(). Save values for later use.
     hail_operateur_email = hail.operateur.email
     taxi_ads_insee = taxi.ads.insee
 
+    hail_endpoint_production = hail.operateur.hail_endpoint_production
+    operator_header_name = hail.operateur.operator_header_name
+    operator_api_key = hail.operateur.operator_api_key
+
     db.session.commit()
+
+    tasks.send_request_operator.apply_async(args=[
+        hail.id,
+        hail_endpoint_production,
+        operator_header_name,
+        operator_api_key
+    ])
 
     redis_backend.log_hail(
         hail_id=hail.id,
