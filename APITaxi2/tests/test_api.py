@@ -64,6 +64,10 @@ def test_errors_handlers(app, anonymous):
     def edit():
         return 'ok'
 
+    @app.route('/get_only', methods=['GET'])
+    def get_only():
+        return 'ok'
+
     # Request for view calling flask.abort(403)
     resp = anonymous.client.get('/abort_403')
     assert resp.status_code == 403
@@ -93,6 +97,11 @@ def test_errors_handlers(app, anonymous):
     assert resp.status_code == 401
     assert len(resp.json['errors'].get('', [])) == 1
     assert resp.json['errors'][''][0] == 'The X-Api-Key provided is not valid.'
+
+    # HTTP/405 invalid method type
+    resp = anonymous.client.post('/get_only', json={})
+    assert resp.status_code == 405
+    assert len(resp.json['errors']['url']) == 1
 
     # HTTP/500 for uncaught exception
     resp = anonymous.client.get('/error_500')

@@ -68,6 +68,14 @@ def handler_404(exc):
     }), 404
 
 
+def handler_405(exc):
+    return jsonify({
+        'errors': {
+            'url': ['This endpoint only accepts requests of type: %s.' % ', '.join(exc.valid_methods)]
+        }
+    }), 405
+
+
 def handler_500(exc):
     return jsonify({
         'errors': {
@@ -169,6 +177,7 @@ def create_app():
     app.login_manager.unauthorized_handler(handler_401)  # called if @login_required fails
     app.errorhandler(403)(handler_403)  # called by flask.abort(403)
     app.errorhandler(404)(handler_404)  # page not found
+    app.errorhandler(405)(handler_405)  # method not allowed
     app.errorhandler(500)(handler_500)  # internal error (uncaught exception...)
 
     app.before_request(check_content_type)
