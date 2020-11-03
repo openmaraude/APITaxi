@@ -5,3 +5,11 @@
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 INFLUXDB_DATABASE = 'taxis'
+
+CELERY_BEAT_SCHEDULE = {
+    # Call clean_geoindex_timestamps every 10 minutes
+    'clean-geoindex-timestamps': {
+        'task': 'clean_geoindex_timestamps',
+        'schedule': 60 * 10
+    }
+}

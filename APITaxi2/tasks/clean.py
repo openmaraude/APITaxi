@@ -14,7 +14,8 @@ def clean_geoindex_timestamps():
 
     This task remove expired data.
     """
-    max_time = time.time() - 120
+    max_time = int(time.time() - 120)
+    current_app.logger.info('Run task clean_geoindex_timestamps for tasks older than %s', max_time)
 
     current_app.redis.zremrangebyscore('timestamps', 0, max_time)
     current_app.redis.zinterstore('geoindex_2', {
