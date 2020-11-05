@@ -22,27 +22,27 @@ CELERY_BEAT_SCHEDULE = {
     'store-active-taxis-last-minute': {
         'task': 'store_active_taxis',
         'schedule': _ONE_MINUTE,
-        'args': (_ONE_MINUTE,),
+        'args': (1,),
     },
 
     # Every hour, store the list of taxis available the last minute.
     'store-active-taxis-last-hour': {
         'task': 'store_active_taxis',
         'schedule': _ONE_HOUR,
-        'args': (_ONE_HOUR,)
+        'args': (60,)
     },
 
     # Every day, store the list of taxis available the last day.
     'store-active-taxis-last-day': {
         'task': 'store_active_taxis',
         'schedule': _ONE_DAY,
-        'args': (_ONE_DAY,)
+        'args': (1440,)
     },
 
     # Every day, store the list of taxis available the last 7 days.
     'store-active-taxis-last-seven-days': {
         'task': 'store_active_taxis',
         'schedule': _ONE_DAY,
-        'args': (_SEVEN_DAYS,)
+        'args': (10080,)
     },
 }
