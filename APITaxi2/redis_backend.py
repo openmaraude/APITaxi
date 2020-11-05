@@ -112,7 +112,7 @@ def set_taxi_availability(taxi_id, taxi_operator, available):
     """Add or remove the entry "<taxi_id>:<operator>" from the ZSET
     "not_available"."""
     redis_key = 'not_available'
-    key = '%s:%s' % (taxi_id, taxi_operator.email)
+    key = '%s:%s' % (taxi_id, taxi_operator)
     if available:
         current_app.redis.zrem(redis_key, key)
     else:

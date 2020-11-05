@@ -252,7 +252,7 @@ def taxis_details(taxi_id):
 
         redis_backend.set_taxi_availability(
             taxi_id,
-            vehicle_description.added_by,
+            vehicle_description.added_by.email,
             vehicle_description.status == 'free'
         )
 
