@@ -27,7 +27,9 @@ class TestCleanGeoindexTimestamps:
         app.redis.zadd('timestamps', {'EXPIRED_TAXI_ID:OPERATOR': expired})
         app.redis.geoadd('geoindex_2', 2.22, 48.88, 'EXPIRED_TAXI_ID:OPERATOR')
 
-        tasks.clean_geoindex_timestamps()
+        with mock.patch.object(tasks.operators.current_app.logger, 'info') as mocked_logger:
+            tasks.clean_geoindex_timestamps()
+            assert mocked_logger.call_count == 1
 
         # Expired locations have been removed, fresh locations are still there
         assert len(app.redis.zrange('timestamps_id', 0, -1)) == 1
