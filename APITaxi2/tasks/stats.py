@@ -35,7 +35,7 @@ def _log_active_taxis(last_update, data):
     # Sort then group data by insee code
     for insee, group in itertools.groupby(
         sorted(data, key=lambda taxi: taxi.ads.zupc.parent.insee),
-        key=lambda taxi: taxi.ads.insee
+        key=lambda taxi: taxi.ads.zupc.parent.insee
     ):
         influx_backend.log_value(
             'nb_taxis_every_%s' % last_update,
