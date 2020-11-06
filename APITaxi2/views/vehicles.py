@@ -26,6 +26,27 @@ blueprint = Blueprint('vehicles', __name__)
 @login_required
 @roles_accepted('admin', 'operateur', 'prefecture')
 def vehicle_create():
+    """
+    ---
+    post:
+      description: |
+        Create a new vehicle.
+      parameters:
+        - name: payload
+          required: true
+          in: body
+          schema: DataVehicleSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          description: Return the existing ressource.
+          content:
+            application/json:
+              schema: DataVehicleSchema
+        201:
+          description: Return a new ressource.
+    """
     schema = schemas.DataVehicleSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:

@@ -16,6 +16,21 @@ blueprint = Blueprint('zupc', __name__)
 # For backward compatibility, this endpoint accepts anonymous requests.
 @blueprint.route('/zupc', methods=['GET'])
 def zupc_list():
+    """
+    ---
+    get:
+      description: Get data about ZUPC.
+      parameters:
+        - in: query
+          schema: ListZUPCQueryStringSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DataZUPCSchema
+    """
     querystring_schema = schemas.ListZUPCQueryStringSchema()
     args, errors = validate_schema(querystring_schema, request.args)
     if errors:

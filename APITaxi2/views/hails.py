@@ -243,7 +243,6 @@ def hails_details(hail_id):
           type: string
           name: hail_id
           in: path
-          parameters:
         - name: payload
           required: true
           in: body

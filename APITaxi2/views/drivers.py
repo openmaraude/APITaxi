@@ -20,6 +20,27 @@ blueprint = Blueprint('drivers', __name__)
 @login_required
 @roles_accepted('admin', 'operateur', 'preferecture')
 def drivers_create():
+    """
+    ---
+    post:
+      description: |
+        Create a new driver.
+      parameters:
+        - name: payload
+          required: true
+          in: body
+          schema: DataDriverSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          description: Return the existing ressource.
+          content:
+            application/json:
+              schema: DataDriverSchema
+        201:
+          description: Return a new ressource.
+    """
     schema = schemas.DataDriverSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:
