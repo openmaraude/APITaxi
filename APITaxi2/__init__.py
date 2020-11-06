@@ -222,19 +222,12 @@ def create_app():
     spec.components.security_scheme('ApiKeyAuth', api_key_scheme)
 
     # Register paths for public documentation.
+    # If the pydoc of the function contains the string '---', we assume it
+    # should be registered.
     with app.test_request_context():
-        # GET /taxis
-        spec.path(view=views.taxis.taxis_list)
-        # POST /taxis
-        spec.path(view=views.taxis.taxis_create)
-        # GET and PUT /taxis/:id
-        spec.path(view=views.taxis.taxis_details)
-        # GET /hails
-        spec.path(view=views.hails.hails_list)
-        # GET and PUT /hails/:id
-        spec.path(view=views.hails.hails_details)
-        # POST /hails
-        spec.path(view=views.hails.hails_create)
+        for function in app.view_functions.values():
+            if function.__doc__ and '---' in function.__doc__:
+                spec.path(view=function)
 
     @app.route('/swagger.json')
     def swagger():
