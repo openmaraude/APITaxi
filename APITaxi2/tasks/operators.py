@@ -105,12 +105,16 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
                                  hail.id, hail.status)
         return False
 
+    # This task has been called long after the hail has been created, probably
+    # because of a production outage or because an ongoing deployment.
+    # Cancel the hail, but set the taxi status back to free.
     if db.session.query(func.NOW() - hail.added_at).scalar() > timedelta(seconds=+10):
         current_app.logger.error(
             'Task send_request_operator called for hail %s after more than 10 seconds. Set as failure.',
             hail.id
         )
         hail.status = 'failure'
+        vehicle_description.status = 'free'
         db.session.commit()
         return False
 
@@ -145,6 +149,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_status_code=None
         )
         hail.status = 'failure'
+        vehicle_description.status = 'free'
         db.session.commit()
         return False
 
@@ -165,6 +170,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_status_code=resp.status_code
         )
         hail.status = 'failure'
+        vehicle_description.status = 'free'
         db.session.commit()
         return False
 
@@ -185,6 +191,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_status_code=resp.status_code
         )
         hail.status = 'failure'
+        vehicle_description.status = 'free'
         db.session.commit()
         return False
 
@@ -217,12 +224,13 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     hail.status = 'received_by_operator'
     db.session.commit()
 
-    # If hail is still "received_by_operator" and not "accepted_by_taxi" after 10 seconds, timeout.
+    # If hail is still "received_by_operator" and not "received_by_taxi" after 10 seconds, timeout.
     handle_hail_timeout.apply_async(
         args=(hail.id, vehicle_description.added_by_id),
         kwargs={
             'initial_hail_status': 'received_by_operator',
             'new_hail_status': 'failure',
+            'new_taxi_status': 'free'
         },
         countdown=10
     )

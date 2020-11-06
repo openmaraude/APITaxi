@@ -5,7 +5,12 @@ import time
 from unittest import mock
 
 from APITaxi_models2 import Hail, VehicleDescription
-from APITaxi_models2.unittest.factories import HailFactory, VehicleDescriptionFactory
+from APITaxi_models2.unittest.factories import (
+    HailFactory,
+    TaxiFactory,
+    VehicleFactory,
+    VehicleDescriptionFactory,
+)
 
 from .. import tasks
 
@@ -111,16 +116,28 @@ class TestSendRequestOperator:
         we should not attempt to deliver the hail to the operator and instead
         mark the hail as failure.
         """
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle, status='answering')
+        taxi = TaxiFactory(vehicle=vehicle)
         hail = HailFactory(
+            operateur=vehicle_description.added_by,
+            taxi=taxi,
             status='received',
             added_at=datetime.now() - timedelta(seconds=45)
         )
+
         hail_id = hail.id
+        vehicle_description_id = vehicle_description.id
+
         with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
             ret = tasks.send_request_operator(hail.id, None, None, None)
             assert mocked_logger.call_count == 1
             assert ret is False
-            assert Hail.query.get(hail_id).status == 'failure'
+
+        assert Hail.query.get(hail_id).status == 'failure'
+
+        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        assert vehicle_description.status == 'free'
 
     def test_ok(self, app):
         """Hail is successfully sent to the operator API, which returns the
@@ -176,10 +193,16 @@ class TestSendRequestOperator:
     def test_operator_api_unavailable(self, app):
         """Failure to connect to operator API makes the hail as failure, and
         logs the error."""
-        hail = HailFactory(status='received')
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle, status='answering')
+        taxi = TaxiFactory(vehicle=vehicle)
+        hail = HailFactory(operateur=vehicle_description.added_by, taxi=taxi, status='received')
+
         hail_id = hail.id
+        vehicle_description_id = vehicle_description.id
 
         def requests_post(*args, **kwargs):
+            """Simulate HTTP server not answering."""
             raise requests.exceptions.RequestException('failure')
 
         with mock.patch(
@@ -193,13 +216,22 @@ class TestSendRequestOperator:
 
         hail = Hail.query.get(hail_id)
         assert hail.status == 'failure'
+
+        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        assert vehicle_description.status == 'free'
+
         # Check that failure is logged
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
 
     def test_operator_api_response_not_json(self, app):
         """If operator API doesn't return JSON, mark hail as error."""
-        hail = HailFactory(status='received')
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle, status='answering')
+        taxi = TaxiFactory(vehicle=vehicle)
+        hail = HailFactory(operateur=vehicle_description.added_by, taxi=taxi, status='received')
+
         hail_id = hail.id
+        vehicle_description_id = vehicle_description.id
 
         def requests_post(*args, **kwargs):
             resp = requests.Response()
@@ -218,13 +250,22 @@ class TestSendRequestOperator:
 
         hail = Hail.query.get(hail_id)
         assert hail.status == 'failure'
+
+        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        assert vehicle_description.status == 'free'
+
         # Check that failure is logged
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
 
     def test_operator_api_response_not_2xx(self, app):
         """Operator API didn't respond with HTTP/2xx."""
-        hail = HailFactory(status='received')
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle, status='answering')
+        taxi = TaxiFactory(vehicle=vehicle)
+        hail = HailFactory(operateur=vehicle_description.added_by, taxi=taxi, status='received')
+
         hail_id = hail.id
+        vehicle_description_id = vehicle_description.id
 
         def requests_post(*args, **kwargs):
             resp = requests.Response()
@@ -243,5 +284,9 @@ class TestSendRequestOperator:
 
         hail = Hail.query.get(hail_id)
         assert hail.status == 'failure'
+
+        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        assert vehicle_description.status == 'free'
+
         # Check that failure is logged
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
