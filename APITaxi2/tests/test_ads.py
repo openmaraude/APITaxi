@@ -20,11 +20,13 @@ class TestADSCreate:
         resp = operateur.client.post('/ads', json={'data': [{
         }]})
         assert resp.status_code == 400
-        assert 'category' in resp.json['errors']['data']['0']
         assert 'insee' in resp.json['errors']['data']['0']
         assert 'numero' in resp.json['errors']['data']['0']
-        assert 'owner_name' in resp.json['errors']['data']['0']
-        assert 'owner_type' in resp.json['errors']['data']['0']
+        # These fields used to be mandatory, they are now optional.
+        assert 'category' not in resp.json['errors']['data']['0']
+        assert 'doublage' not in resp.json['errors']['data']['0']
+        assert 'owner_name' not in resp.json['errors']['data']['0']
+        assert 'owner_type' not in resp.json['errors']['data']['0']
 
         # Data OK, but invalid vehicle id
         resp = operateur.client.post('/ads', json={'data': [{

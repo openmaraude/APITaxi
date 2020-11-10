@@ -90,15 +90,11 @@ def ads_create():
             added_by=current_user
         )
 
-    # By default, doublage is false for backward compatibility but we should
-    # probably set it to NULL if it is not provided.
-    # Anyway, we should also consider removing the parameter completely. We
-    # don't really need this value.
-    ads.doublage = args.get('doublage', False)
+    ads.doublage = args.get('doublage', None)
     ads.vehicle = vehicle
-    ads.category = args['category']
-    ads.owner_name = args['owner_name']
-    ads.owner_type = args['owner_type']
+    ads.category = args.get('category', '')
+    ads.owner_name = args.get('owner_name', '')
+    ads.owner_type = args.get('owner_type', None)
     ads.zupc = zupc
 
     db.session.add(ads)

@@ -67,14 +67,15 @@ class RefADSSchema(Schema):
 
 class ADSSchema(RefADSSchema):
     """ADS creation require to provide all these fields."""
-    category = fields.String(required=True)
+    category = fields.String(required=False)
     vehicle_id = fields.Int(allow_none=True)
-    owner_name = fields.String(required=True)
+    owner_name = fields.String(required=False)
     owner_type = fields.String(
-        required=True,
-        validate=validate.OneOf(['individual', 'company'])
+        required=False,
+        validate=validate.OneOf(['individual', 'company']),
+        allow_none=True
     )
-    doublage = fields.Bool()
+    doublage = fields.Bool(required=False, allow_none=True)
 
 
 class RefDriverSchema(Schema):
