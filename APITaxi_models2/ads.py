@@ -19,13 +19,13 @@ class ADS(HistoryMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     numero = db.Column(db.String, nullable=False)
-    doublage = db.Column(db.Boolean)
+    doublage = db.Column(db.Boolean, nullable=True)
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
     insee = db.Column(db.String, nullable=False)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
     category = db.Column(db.String, nullable=False)
     owner_name = db.Column(db.String, nullable=False)
-    owner_type = db.Column(db.Enum(*OWNER_TYPES, name='owner_type_enum'), nullable=False)
+    owner_type = db.Column(db.Enum(*OWNER_TYPES, name='owner_type_enum'), nullable=True)
     zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'))
 
     added_by = db.relationship('User', lazy='raise')
