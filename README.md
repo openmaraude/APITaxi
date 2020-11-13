@@ -25,7 +25,7 @@ api@f4fd953d0667:/git/APITaxi: pytest -v -x -s
 
 Before tests are executed, a PostgreSQL database is created and alembic migrations are applied. To improve speed, database is kept for subsequent runs in `/tmp/tests_<hash>`. If the database is corrupted because the previous tests run didn't end properly, remove `/tmp/tests_<hash>` and run tests again.
 
-Example of error:
+Example of error requiring to remove the database manually:
 
 ```
 RuntimeError: *** failed to launch Postgresql ***
