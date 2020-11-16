@@ -52,3 +52,17 @@ def create_user(email, password, roles):
         user.roles.append(role)
 
     db.session.commit()
+
+
+@blueprint.cli.command('update_password', help='Update user password')
+@click.argument('email')
+@click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True)
+def update_password(email, password):
+    user = User.query.filter_by(email=email).one_or_none()
+    if not user:
+        current_app.logger.error('User does not exist')
+        return
+
+    user.password = hash_password(password)
+
+    db.session.commit()
