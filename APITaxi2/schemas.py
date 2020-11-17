@@ -234,12 +234,14 @@ class TaxiSchema(Schema):
 
     def dump(self, obj, *args, **kwargs):
         """This function should be called with a list of tuples of two or three
-        elements. The first element is the taxi object to dump. Since a taxi
-        can have several VehicleDescription (one for each operator), the second
-        element should be the description to dump. The third optional element
-        is the location used to display the crowlfy distance between the API
-        caller and the taxi.
-        """
+        elements:
+
+        * The taxi object to dump
+        * Since a taxi can have several VehicleDescription (one for each
+          operator), the second element should be the description to dump
+        * Optionally, a `redis_backend.Location` object to display the taxi
+          location and the crowlfy distance between the API caller and the
+          taxi."""
         try:
             taxi, vehicle_description, redis_location = obj
         except ValueError:
@@ -248,8 +250,6 @@ class TaxiSchema(Schema):
 
         ret = super().dump(taxi, *args, **kwargs)
 
-        taxi_redis = redis_backend.get_taxi(taxi.id, taxi.added_by.email)
-
         # Add fields from vehicle_description and redis_location
         ret.update({
             'operator': vehicle_description.added_by.email,
@@ -257,10 +257,10 @@ class TaxiSchema(Schema):
             'status': vehicle_description.status,
             # last_update is the last time location has been updated by
             # geotaxi.
-            'last_update': taxi_redis.timestamp if taxi_redis else None,
+            'last_update': int(redis_location.update_date.timestamp()) if redis_location else None,
             'position': {
-                'lon': taxi_redis.lon if taxi_redis else None,
-                'lat': taxi_redis.lat if taxi_redis else None,
+                'lon': redis_location.lon if redis_location else None,
+                'lat': redis_location.lat if redis_location else None,
             },
             'crowfly_distance': redis_location.distance if redis_location else None
         })

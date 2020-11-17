@@ -133,7 +133,7 @@ def log_taxi_status(taxi_id, status):
 
 
 @dataclass
-class _Location:
+class Location:
     lon: float
     lat: float
     distance: float
@@ -148,8 +148,8 @@ def taxis_locations_by_operator(lon, lat, distance):
 
     >>> {
     ...    <taxi_id>: {
-    ...       <operator_email>: _Location object,
-    ...       <operator_email>: _Location object,
+    ...       <operator_email>: Location object,
+    ...       <operator_email>: Location object,
     ...       ...
     ...    }
     ... }
@@ -176,7 +176,7 @@ def taxis_locations_by_operator(lon, lat, distance):
         if update_date:
             update_date = datetime.fromtimestamp(update_date)
 
-        locations[taxi_id][operator] = _Location(
+        locations[taxi_id][operator] = Location(
             lon=location[0],
             lat=location[1],
             distance=distance,
