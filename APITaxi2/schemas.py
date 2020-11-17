@@ -308,7 +308,7 @@ class CustomerSchema(Schema):
     ban_begin = fields.DateTime(allow_none=True)
     ban_end = fields.DateTime(allow_none=True)
 
-    def __init__(self, current_user):
+    def __init__(self, current_user=None):
         self.current_user = current_user
         super().__init__()
 
@@ -322,6 +322,7 @@ class CustomerSchema(Schema):
         3/ user is not admin: if provided, moteur_id must be equal to
            user's id
         """
+        assert self.current_user
         # Case 1:
         if (
             self.current_user.has_role('admin')
@@ -539,6 +540,7 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
 # DataDriverSchema = {'data': [{'first_name': xx, 'last_name': yyy, ...}]}
 #
 DataADSSchema = data_schema_wrapper(ADSSchema())
+DataCustomerSchema = data_schema_wrapper(CustomerSchema())
 DataDriverSchema = data_schema_wrapper(DriverSchema())
 DataTaxiSchema = data_schema_wrapper(TaxiSchema())
 DataHailSchema = data_schema_wrapper(HailSchema())

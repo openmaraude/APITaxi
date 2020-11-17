@@ -17,6 +17,28 @@ blueprint = Blueprint('customers', __name__)
 @login_required
 @roles_accepted('admin', 'moteur')
 def customers_edit(customer_id):
+    """
+    ---
+    put:
+        description: Update customer data.
+        parameters:
+            - name: customer_id
+              required: true
+              type: string
+              in: path
+            - name: payload
+              required: true
+              in: body
+              schema: DataCustomerSchema
+        security:
+            - ApiKeyAuth: []
+        responses:
+            200:
+                description: Resturn the updated resource.
+                content:
+                    application/json:
+                        schema: DataCustomerSchema
+    """
     schema = schemas.data_schema_wrapper(schemas.CustomerSchema(current_user))()
     params, errors = validate_schema(schema, request.json)
     if errors:
