@@ -25,14 +25,14 @@ jobs:
       - run:
           name: Build docker image
           command: |
-            docker build -t openmaraude/apitaxi:${CIRCLE_TAG} .
-            docker tag openmaraude/apitaxi:${CIRCLE_TAG} openmaraude/apitaxi:latest
+            docker build -t openmaraude/api_taxi:${CIRCLE_TAG} .
+            docker tag openmaraude/api_taxi:${CIRCLE_TAG} openmaraude/api_taxi:latest
       - run:
           name: Publish docker Image to hub.docker.com
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker push openmaraude/apitaxi:${CIRCLE_TAG}
-            docker push openmaraude/apitaxi:latest
+            docker push openmaraude/api_taxi:${CIRCLE_TAG}
+            docker push openmaraude/api_taxi:latest
 
 workflows:
   version: 2
