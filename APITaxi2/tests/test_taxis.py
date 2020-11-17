@@ -430,7 +430,12 @@ class TestTaxiList:
         assert len(resp.json['data']) == 2
         # First is closer
         assert resp.json['data'][0]['crowfly_distance'] < resp.json['data'][1]['crowfly_distance']
+        assert resp.json['data'][0]['position']['lon']
+        assert resp.json['data'][0]['position']['lat']
+
         assert resp.json['data'][1]['operator'] == taxi_2_vehicle_descriptions_1.added_by.email
+        assert resp.json['data'][1]['position']['lon']
+        assert resp.json['data'][1]['position']['lat']
 
         # If favorite_operator is set, do not return the default.
         resp = moteur.client.get('/taxis?lon=%s&lat=%s&favorite_operator=%s' % (
@@ -515,6 +520,8 @@ class TestTaxiList:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
+        assert resp.json['data'][0]['position']['lon']
+        assert resp.json['data'][0]['position']['lat']
 
     def test_different_zupc(self, app, moteur, operateur):
         """Request is made from Paris, and taxi reports it's location in Paris

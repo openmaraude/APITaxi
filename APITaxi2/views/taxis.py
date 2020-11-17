@@ -230,12 +230,22 @@ def taxis_details(taxi_id):
         }, status_code=404)
     taxi, vehicle_description = (res.Taxi, res.VehicleDescription)
 
+    redis_taxi = redis_backend.get_taxi(taxi.id, vehicle_description.added_by.email)
+    location = None
+    if redis_taxi:
+        location = redis_backend.Location(
+            lon=redis_taxi.lon,
+            lat=redis_taxi.lat,
+            distance=None,
+            update_date=datetime.fromtimestamp(redis_taxi.timestamp)
+        )
+
     # Build Schema
     schema = schemas.DataTaxiSchema()
 
     # Dump data for GET requests
     if request.method != 'PUT':
-        return schema.dump({'data': [(taxi, vehicle_description)]})
+        return schema.dump({'data': [(taxi, vehicle_description, location)]})
 
     params, errors = validate_schema(schema, request.json, partial=True)
     if errors:
@@ -264,7 +274,7 @@ def taxis_details(taxi_id):
 
     db.session.flush()
 
-    output = schema.dump({'data': [(taxi, vehicle_description)]})
+    output = schema.dump({'data': [(taxi, vehicle_description, location)]})
 
     db.session.commit()
 
