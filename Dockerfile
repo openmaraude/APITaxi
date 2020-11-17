@@ -14,6 +14,9 @@ FROM ubuntu
 ARG API_TAXI_MODELS_URL=https://github.com/openmaraude/APITaxi_models
 ARG API_TAXI_MODELS_COMMIT=master
 
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN=true
+
 RUN apt-get update && apt-get install -y \
   libpq-dev \
   python3-pip \
