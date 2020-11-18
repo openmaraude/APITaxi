@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  testv2:
+  test:
     docker:
       - image: circleci/python:3-buster
     steps:
@@ -40,12 +40,12 @@ workflows:
   # Run unittest
   test:
     jobs:
-      - testv2
+      - test
 
-  # Build artifacts
+  # Build artifacts, ignore all branches, only run for all tags.
   artifacts:
     jobs:
-      - testv2:
+      - test:
           filters:
             branches:
               ignore: /.*/
@@ -54,7 +54,7 @@ workflows:
 
       - build:
           requires:
-            - testv2
+            - test
           filters:
             tags:
               only: /.*/
