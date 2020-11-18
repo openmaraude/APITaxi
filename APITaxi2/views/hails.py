@@ -125,6 +125,7 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
     # Keys are the new hail's status, values the new taxi's status.
     new_taxi_status = {
         'accepted_by_customer': 'oncoming',
+        'declined_by_customer': 'free',
         'declined_by_taxi': 'off',
         'customer_on_board': 'occupied',
         'incident_taxi': 'free',
