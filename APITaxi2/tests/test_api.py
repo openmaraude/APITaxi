@@ -1,3 +1,4 @@
+import apispec
 from flask import abort
 
 from flask_security import login_required, roles_accepted
@@ -108,3 +109,8 @@ def test_errors_handlers(app, anonymous):
     assert resp.status_code == 500
     assert len(resp.json['errors'].get('', [])) == 1
     assert 'Internal server error' in resp.json['errors'][''][0]
+
+
+def test_api_spec(app):
+    """Ensure swagger documentation follows openapi specifications."""
+    apispec.utils.validate_spec(app.apispec)

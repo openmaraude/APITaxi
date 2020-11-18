@@ -207,7 +207,7 @@ def create_app():
         print_url_map(app.url_map)
 
     # Configuration for apispec to generate swagger documentation.
-    spec = APISpec(
+    app.apispec = APISpec(
         title='Le.taxi reference documentation',
         version='1.0.0',
         openapi_version='3.0.2',
@@ -219,7 +219,7 @@ def create_app():
         'in': 'header',
         'name': 'X-API-Key'
     }
-    spec.components.security_scheme('ApiKeyAuth', api_key_scheme)
+    app.apispec.components.security_scheme('ApiKeyAuth', api_key_scheme)
 
     # Register paths for public documentation.
     # If the pydoc of the function contains the string '---', we assume it
@@ -227,11 +227,11 @@ def create_app():
     with app.test_request_context():
         for function in app.view_functions.values():
             if function.__doc__ and '---' in function.__doc__:
-                spec.path(view=function)
+                app.apispec.path(view=function)
 
     @app.route('/swagger.json')
     def swagger():
-        return json.dumps(spec.to_dict(), indent=2)
+        return json.dumps(app.apispec.to_dict(), indent=2)
 
     if os.environ.get('DEBUG_REQUESTS') in ('t', 'y', 'yes', 'true', '1') or app.config.get('DEBUG_REQUESTS'):
         @app.after_request
