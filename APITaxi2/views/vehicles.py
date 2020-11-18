@@ -31,11 +31,10 @@ def vehicle_create():
     post:
       description: |
         Create a new vehicle.
-      parameters:
-        - name: payload
-          required: true
-          in: body
-          schema: DataVehicleSchema
+      requestBody:
+        content:
+          application/json:
+            schema: DataVehicleSchema
       security:
         - ApiKeyAuth: []
       responses:

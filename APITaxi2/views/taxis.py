@@ -43,11 +43,10 @@ def taxis_create():
         Create a new taxi. Taxi is the combination of an ADS, a Vehicle and a
         Driver. If the resource already exists, the existing resource is
         returned.
-      parameters:
-        - name: payload
-          required: true
-          in: body
-          schema: DataTaxiSchema
+      requestBody:
+        content:
+          application/json:
+            schema: DataTaxiSchema
       security:
         - ApiKeyAuth: []
       responses:
@@ -161,14 +160,16 @@ def taxis_details(taxi_id):
     get:
       description: Get taxi details.
       parameters:
-        - required: true
-          type: string
-          name: taxi_id
+        - name: taxi_id
           in: path
+          required: true
+          schema:
+            type: string
       security:
         - ApiKeyAuth: []
       responses:
         200:
+          description: Taxi details.
           content:
             application/json:
               schema: DataTaxiSchema
@@ -176,19 +177,20 @@ def taxis_details(taxi_id):
     put:
       description: Edit taxi status. Only the field `status` can be changed.
       parameters:
-        - required: true
-          type: string
-          name: taxi_id
+        - name: taxi_id
           in: path
-          parameters:
-        - name: payload
           required: true
-          in: body
-          schema: TaxiPUTSchema
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema: TaxiPUTSchema
       security:
         - ApiKeyAuth: []
       responses:
         200:
+          description: Edit taxi status.
           content:
             application/json:
               schema: DataTaxiSchema
@@ -306,17 +308,20 @@ def taxis_list():
       description: List available taxis around a location.
       parameters:
         - name: lon
-          type: string
+          schema:
+            type: string
           required: true
           in: query
         - name: lat
           required: true
-          type: string
+          schema:
+            type: string
           in: query
       security:
         - ApiKeyAuth: []
       responses:
         200:
+          description: List available taxis around a location.
           content:
             application/json:
               schema: DataTaxiSchema

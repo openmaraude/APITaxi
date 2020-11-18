@@ -25,21 +25,20 @@ def ads_create():
     post:
       description: |
         Create a new ADS.
-      parameters:
-        - name: payload
-          required: true
-          in: body
-          schema: DataADSSchema
+      requestBody:
+        content:
+          application/json:
+            schema: DataADSSchema
       security:
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return the existing ressource.
+          description: Return the already existing ADS.
           content:
             application/json:
               schema: DataADSSchema
         201:
-          description: Return a new ressource.
+          description: Create a new ADS.
     """
     schema = schemas.DataADSSchema()
     params, errors = validate_schema(schema, request.json)

@@ -27,6 +27,7 @@ def zupc_list():
         - ApiKeyAuth: []
       responses:
         200:
+          description: List of ZUPC.
           content:
             application/json:
               schema: DataZUPCSchema

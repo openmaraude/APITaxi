@@ -25,11 +25,10 @@ def drivers_create():
     post:
       description: |
         Create a new driver.
-      parameters:
-        - name: payload
-          required: true
-          in: body
-          schema: DataDriverSchema
+      requestBody:
+        content:
+          application/json:
+            schema: DataDriverSchema
       security:
         - ApiKeyAuth: []
       responses:

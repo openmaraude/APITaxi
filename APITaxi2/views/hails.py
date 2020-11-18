@@ -225,14 +225,16 @@ def hails_details(hail_id):
     get:
       description: Get hail details.
       parameters:
-        - required: true
-          type: string
-          name: hail_id
+        - name: hail_id
           in: path
+          required: true
+          schema:
+            type: string
       security:
         - ApiKeyAuth: []
       responses:
         200:
+          description: Get hail details.
           content:
             application/json:
               schema: DataHailSchema
@@ -240,18 +242,20 @@ def hails_details(hail_id):
     put:
       description: Edit hail details.
       parameters:
-        - required: true
-          type: string
-          name: hail_id
+        - name: hail_id
           in: path
-        - name: payload
           required: true
-          in: body
-          schema: DataHailSchema
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema: DataHailSchema
       security:
         - ApiKeyAuth: []
       responses:
         200:
+          description: Update hail details.
           content:
             application/json:
               schema: DataHailSchema
@@ -449,6 +453,7 @@ def hails_list():
         - ApiKeyAuth: []
       responses:
         200:
+          description: List of hails.
           content:
             application/json:
               schema: DataHailListSchema
@@ -522,20 +527,18 @@ def hails_create():
     post:
       description: |
         Create a hail request.
-      parameters:
-        - name: payload
-          required: true
-          in: body
-          schema: DataHailSchema
+      requestBody:
+        content:
+          application/json:
+            schema: DataHailSchema
       security:
         - ApiKeyAuth: []
       responses:
-        200:
+        201:
+          description: Return a new ressource.
           content:
             application/json:
               schema: DataHailSchema
-        201:
-          description: Return a new ressource.
     """
     schema = schemas.DataHailSchema()
     params, errors = validate_schema(schema, request.json)
