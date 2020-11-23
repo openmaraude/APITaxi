@@ -305,8 +305,8 @@ class TestEditHail:
                 args=(hail.id, operateur.user.id),
                 kwargs={
                     'initial_hail_status': 'customer_on_board',
-                    'new_hail_status': 'finished',
-                    'new_taxi_status': 'free'
+                    'new_hail_status': 'timeout_taxi',
+                    'new_taxi_status': 'off'
                 },
                 countdown=60 * 60 * 2
             )
