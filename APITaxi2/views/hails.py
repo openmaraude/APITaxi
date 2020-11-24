@@ -216,6 +216,49 @@ def _ban_customer(customer):
         customer.ban_end = sqlalchemy.func.NOW() + timedelta(hours=+24)
 
 
+def _check_session_id(operator, customer, session_id):
+    """Check if the UUID `session_id` is related to an existing session of
+    `operator`'s `customer`.
+
+    Raise ValueError if session id does not exist, or if it is linked to
+    another operator's customer.
+    """
+    res = db.session.query(
+        Hail.session_id, Hail.customer_id
+    ).filter(
+        Hail.session_id == session_id,
+        Hail.added_by == operator,
+    ).order_by(
+        Hail.last_status_change.desc()
+    ).first()
+
+    if not res:
+        raise ValueError('This sesssion ID does not exist.')
+
+    prev_session_id, prev_customer_id = res
+    if prev_customer_id != customer.id:
+        raise ValueError('The session ID exists, but it is linked to another customer.')
+
+
+def _get_existing_session_id(operator, customer):
+    """If the `customer` of `operator` made a Hail request a few minutes ago,
+    return the session id of this request. Otherwise, return None.
+    """
+    res = db.session.query(
+        Hail.session_id
+    ).filter(
+        Hail.customer == customer,
+        Hail.added_by == operator,
+        Hail.last_status_change >= func.now() - timedelta(minutes=5)
+    ).order_by(
+        Hail.last_status_change.desc()
+    ).first()
+
+    if not res:
+        return None
+    return res[0]
+
+
 @blueprint.route('/hails/<string:hail_id>', methods=['GET', 'PUT'])
 @login_required
 @roles_accepted('admin', 'moteur', 'operateur')
@@ -624,6 +667,22 @@ def hails_create():
             }
         }, status_code=400)
 
+    # Compute or reuse a session ID for the current user
+    session_id = args.get('session_id')
+    if session_id:
+        try:
+            _check_session_id(current_user, customer, session_id)
+        except ValueError as exc:
+            return make_error_json_response({
+                'data': {
+                    '0': {
+                        'session_id': [str(exc)]
+                    }
+                }
+            })
+    else:
+        session_id = _get_existing_session_id(current_user, customer)
+
     hail = Hail(
         id=_get_short_uuid(),
         creation_datetime=func.NOW(),
@@ -638,7 +697,7 @@ def hails_create():
         customer_phone_number=args['customer_phone_number'],
         initial_taxi_lon=taxi_position.lon,
         initial_taxi_lat=taxi_position.lat,
-        session_id=args.get('session_id', ''),
+        session_id=session_id,
 
         added_by=current_user,
         added_via='api',
