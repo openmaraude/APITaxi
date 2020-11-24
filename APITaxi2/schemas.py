@@ -387,7 +387,7 @@ class HailSchema(Schema):
         validate=validate.OneOf(REPORTING_CUSTOMER_REASONS),
         allow_none=True
     )
-    session_id = fields.String(required=False)
+    session_id = fields.UUID(required=False, allow_none=True)
     operateur = fields.String(required=True, attribute='operateur.email')
 
     taxi_relation = fields.Nested(HailTaxiRelationSchema)
