@@ -23,8 +23,6 @@ from APITaxi_models2.vehicle import (
     VehicleDescription,
 )
 
-from . import redis_backend
-
 
 class DepartementSchema(Schema):
     nom = fields.String()
