@@ -13,6 +13,9 @@ from flask_influxdb import InfluxDB
 from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
 
+import sentry_sdk
+from sentry_sdk.integrations.redis import RedisIntegration
+
 from werkzeug.exceptions import BadRequest
 
 from APITaxi_models2 import db, Role, User
@@ -157,6 +160,17 @@ def create_app():
         app.config.from_envvar('APITAXI_CONFIG_FILE')
     except FileNotFoundError:
         app.logger.warning('File %s does not exist, skip loading' % os.getenv('APITAXI_CONFIG_FILE'))
+
+    sentry_dsn = app.config.get('SENTRY_DSN')
+    if sentry_dsn:
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            # FlaskIntegration and Sqlalchemyintegration are enabled by default.
+            integrations=[
+                RedisIntegration(),
+            ],
+            traces_sample_rate=1.0
+        )
 
     db.init_app(app)
     app.influx = InfluxDB(app)
