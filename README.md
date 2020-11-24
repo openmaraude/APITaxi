@@ -19,7 +19,7 @@ To setup the API locally, use [APITaxi_devel](https://github.com/openmaraude/API
 On push, tests are automatically run by cirleci. To run tests locally, assuming you are using APITaxi_devel:
 
 ```bash
-$> docker exec -ti api_taxi bash
+$> docker-compose exec api bash
 api@f4fd953d0667:/git/APITaxi: pytest -v -x -s
 ```
 
