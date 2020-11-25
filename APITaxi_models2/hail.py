@@ -1,3 +1,6 @@
+from sqlalchemy import func
+from sqlalchemy.dialects import postgresql
+
 from . import db
 from .mixins import HistoryMixin
 
@@ -96,7 +99,10 @@ class Hail(HistoryMixin, db.Model):
     change_to_finished = db.Column(db.DateTime)
     change_to_timeout_accepted_by_customer = db.Column(db.DateTime)
 
-    session_id = db.Column(db.String, nullable=False, server_default='')
+    # TODO nullable=False after the data migration is complete
+    session_id = db.Column(
+            postgresql.UUID(as_uuid=True), nullable=True, server_default=func.uuid_generate_v4()
+    )
 
     # Relationships
     added_by = db.relationship('User', foreign_keys=[added_by_id], lazy='raise')
