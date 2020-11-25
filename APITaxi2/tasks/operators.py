@@ -36,7 +36,7 @@ def handle_hail_timeout(hail_id, operateur_id,
         VehicleDescription.added_by_id == operateur_id
     ).one_or_none()
     if not res:
-        current_app.logger.error(
+        current_app.logger.warning(
             'handle_hail_timeout: hail_id=%s operateur_id=%s not found',
             hail_id,
             operateur_id
@@ -95,21 +95,21 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         Hail.id == hail_id
     ).one_or_none()
     if not res:
-        current_app.logger.error('Unable to find hail %s' % hail_id)
+        current_app.logger.warning('Unable to find hail %s' % hail_id)
         return False
 
     hail, vehicle_description = res
 
     if hail.status != 'received':
-        current_app.logger.error('Task send_request_operator called for hail %s, but status is %s. Ignore.',
-                                 hail.id, hail.status)
+        current_app.logger.warning('Task send_request_operator called for hail %s, but status is %s. Ignore.',
+                                   hail.id, hail.status)
         return False
 
     # This task has been called long after the hail has been created, probably
     # because of a production outage or because an ongoing deployment.
     # Cancel the hail, but set the taxi status back to free.
     if db.session.query(func.NOW() - hail.added_at).scalar() > timedelta(seconds=+10):
-        current_app.logger.error(
+        current_app.logger.warning(
             'Task send_request_operator called for hail %s after more than 10 seconds. Set as failure.',
             hail.id
         )
@@ -135,7 +135,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     # If operator's API is unavailable, log the error, set hail as failure and
     # abort.
     except requests.exceptions.RequestException as exc:
-        current_app.logger.error('Unable to send request to operator %s on %s: %s' % (
+        current_app.logger.warning('Unable to send request to operator %s on %s: %s' % (
             hail.operateur.email, endpoint, exc
         ))
         redis_backend.log_hail(
@@ -158,7 +158,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     try:
         response_payload = json.dumps(resp.json(), indent=2)
     except json.decoder.JSONDecodeError:
-        current_app.logger.error('Operator API of %s did not return a JSON response' % hail.operateur.email)
+        current_app.logger.warning('Operator API of %s did not return a JSON response' % hail.operateur.email)
         redis_backend.log_hail(
             hail_id=hail.id,
             http_method='POST to operator',
@@ -177,7 +177,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     # If the operator's API isn't successful, log the response, set hail as
     # failure and abort.
     if resp.status_code < 200 or resp.status_code >= 300:
-        current_app.logger.error('Operator API of %s returned HTTP/%s instead of HTTP/2xx' % (
+        current_app.logger.warning('Operator API of %s returned HTTP/%s instead of HTTP/2xx' % (
             hail.operateur.email, resp.status_code
         ))
         redis_backend.log_hail(

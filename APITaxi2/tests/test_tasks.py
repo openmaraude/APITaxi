@@ -85,19 +85,19 @@ class TestHandleHailTimeout:
         hail = HailFactory(status='received_by_operator')
         VehicleDescriptionFactory(vehicle=hail.taxi.vehicle)
 
-        with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
+        with mock.patch.object(tasks.operators.current_app.logger, 'warning') as mocked_logger:
             tasks.handle_hail_timeout(hail.id, hail.operateur.id, 'sent_to_operator', 'failure')
             assert mocked_logger.call_count == 0
 
     def test_hail_not_found(self, app):
-        with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
+        with mock.patch.object(tasks.operators.current_app.logger, 'warning') as mocked_logger:
             tasks.handle_hail_timeout('1234', '5678', 'received', 'failure')
             assert mocked_logger.call_count == 1
 
 
 class TestSendRequestOperator:
     def test_hail_not_found(self, app):
-        with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
+        with mock.patch.object(tasks.operators.current_app.logger, 'warning') as mocked_logger:
             ret = tasks.send_request_operator('1234', None, None, None)
             assert mocked_logger.call_count == 1
             assert ret is False
@@ -105,7 +105,7 @@ class TestSendRequestOperator:
     def test_hail_not_received(self, app):
         """Send request for an operator when hail status is different from "received"."""
         hail = HailFactory(status='finished')
-        with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
+        with mock.patch.object(tasks.operators.current_app.logger, 'warning') as mocked_logger:
             ret = tasks.send_request_operator(hail.id, None, None, None)
             assert mocked_logger.call_count == 1
             assert ret is False
@@ -129,7 +129,7 @@ class TestSendRequestOperator:
         hail_id = hail.id
         vehicle_description_id = vehicle_description.id
 
-        with mock.patch.object(tasks.operators.current_app.logger, 'error') as mocked_logger:
+        with mock.patch.object(tasks.operators.current_app.logger, 'warning') as mocked_logger:
             ret = tasks.send_request_operator(hail.id, None, None, None)
             assert mocked_logger.call_count == 1
             assert ret is False
@@ -208,7 +208,7 @@ class TestSendRequestOperator:
         with mock.patch(
             'requests.post', requests_post
         ), mock.patch(
-            'flask.current_app.logger.error'
+            'flask.current_app.logger.warning'
         ) as mocked_logger:
             ret = tasks.send_request_operator(hail.id, 'http://whatever', None, None)
             assert ret is False
@@ -242,7 +242,7 @@ class TestSendRequestOperator:
         with mock.patch(
             'requests.post', requests_post
         ), mock.patch(
-            'flask.current_app.logger.error'
+            'flask.current_app.logger.warning'
         ) as mocked_logger:
             ret = tasks.send_request_operator(hail.id, 'http://whatever', None, None)
             assert ret is False
@@ -276,7 +276,7 @@ class TestSendRequestOperator:
         with mock.patch(
             'requests.post', requests_post
         ), mock.patch(
-            'flask.current_app.logger.error'
+            'flask.current_app.logger.warning'
         ) as mocked_logger:
             ret = tasks.send_request_operator(hail.id, 'http://whatever', None, None)
             assert ret is False

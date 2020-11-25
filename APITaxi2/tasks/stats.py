@@ -126,7 +126,7 @@ def store_active_taxis(last_update):
 
         res = query.one_or_none()
         if not res:
-            current_app.logger.error(
+            current_app.logger.warning(
                 'Taxi %s with operator %s exists in redis but not in postgresql. Skip it.',
                 update.taxi_id, update.operator
             )
