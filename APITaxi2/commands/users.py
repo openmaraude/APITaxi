@@ -26,7 +26,7 @@ def valid_role(value):
 def create_user(email, password, roles):
     user = User.query.filter_by(email=email).one_or_none()
     if user:
-        current_app.logger.error('User already exists')
+        current_app.logger.warning('User already exists, abort.')
         return
 
     hashed_password = hash_password(password)
@@ -60,7 +60,7 @@ def create_user(email, password, roles):
 def update_password(email, password):
     user = User.query.filter_by(email=email).one_or_none()
     if not user:
-        current_app.logger.error('User does not exist')
+        current_app.logger.warning('User does not exist, abort.')
         return
 
     user.password = hash_password(password)

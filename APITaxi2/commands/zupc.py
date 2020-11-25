@@ -166,7 +166,7 @@ def fill_zupc_union(filename):
         parent = ZUPC_tmp.query.filter_by(insee=insee_codes[0]).one()
     # Can happen in the case the referenced INSEE code has been previously "renamed" in "special_name_insee".
     except NoResultFound:
-        current_app.logger.error('File %s references ZUPC %s which does not exist', filename, insee_codes[0])
+        current_app.logger.warning('File %s references ZUPC %s which does not exist', filename, insee_codes[0])
         return None
 
     if len(insee_codes) == 1:
