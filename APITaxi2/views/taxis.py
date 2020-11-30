@@ -259,8 +259,6 @@ def taxis_details(taxi_id):
     # We should allow the edition of other fields (taxi.internal_id, ...).
     if 'status' in args and args['status'] != vehicle_description.status:
         taxi.last_update_at = func.now()
-        vehicle_description.last_update_at = func.now()
-        vehicle_description.status = args['status']
 
         # If there is a current hail, and the taxi changes it's status to
         # "occupied" when he previously accepted a hail, we assume the customer
@@ -281,6 +279,10 @@ def taxis_details(taxi_id):
         ):
             taxi.current_hail.status = 'finished'
 
+        db.session.flush()
+
+        vehicle_description.last_update_at = func.now()
+        vehicle_description.status = args['status']
         db.session.flush()
 
         redis_backend.set_taxi_availability(
