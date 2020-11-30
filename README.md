@@ -20,6 +20,7 @@ On push, tests are automatically run by cirleci. To run tests locally, assuming 
 
 ```bash
 $> docker-compose exec api bash
+api@f4fd953d0667:/git/APITaxi: sudo -H /venv/bin/pip install -ve .[tests]
 api@f4fd953d0667:/git/APITaxi: pytest -v -x -s
 ```
 
