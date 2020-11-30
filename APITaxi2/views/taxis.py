@@ -281,6 +281,8 @@ def taxis_details(taxi_id):
         ):
             taxi.current_hail.status = 'finished'
 
+        db.session.flush()
+
         redis_backend.set_taxi_availability(
             taxi_id,
             vehicle_description.added_by.email,
@@ -292,8 +294,6 @@ def taxis_details(taxi_id):
             taxi_id,
             args['status']
         )
-
-    db.session.flush()
 
     output = schema.dump({'data': [(taxi, vehicle_description, location)]})
 
