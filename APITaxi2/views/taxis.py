@@ -198,25 +198,12 @@ def taxis_details(taxi_id):
     # Get Taxi object with the VehicleDescription entry related to current
     # user.
     query = db.session.query(Taxi, VehicleDescription).options(
-        joinedload(Taxi.ads)
-    ).options(
-        joinedload(Taxi.driver)
-        .joinedload(Driver.departement)
-    ).options(
-        joinedload(Taxi.vehicle)
-        .joinedload(Vehicle.descriptions)
-        .joinedload(VehicleDescription.constructor)
-    ).options(
-        joinedload(Taxi.vehicle)
-        .joinedload(Vehicle.descriptions)
-        .joinedload(VehicleDescription.model)
-    ).options(
-        joinedload(Taxi.vehicle)
-        .joinedload(Vehicle.descriptions)
-        .joinedload(VehicleDescription.added_by)
-    ).options(
-        joinedload(Taxi.added_by)
-    ).options(
+        joinedload(Taxi.ads),
+        joinedload(Taxi.driver).joinedload(Driver.departement),
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.constructor),
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model),
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
+        joinedload(Taxi.added_by),
         joinedload(Taxi.current_hail)
     ).filter(
         VehicleDescription.vehicle_id == Taxi.vehicle_id
@@ -390,25 +377,12 @@ def taxis_list():
     query = db.session.query(Taxi, VehicleDescription).join(
         ADS
     ).options(
-        joinedload(Taxi.ads)
-    ).options(
-        joinedload(Taxi.driver)
-        .joinedload(Driver.departement)
-    ).options(
-        joinedload(Taxi.vehicle)
-        .joinedload(Vehicle.descriptions)
-        .joinedload(VehicleDescription.constructor)
-    ).options(
-        joinedload(Taxi.vehicle)
-        .joinedload(Vehicle.descriptions)
-        .joinedload(VehicleDescription.model)
-    ).options(
-        joinedload(Taxi.vehicle)
-        .joinedload(Vehicle.descriptions)
-        .joinedload(VehicleDescription.added_by)
-    ).options(
-        joinedload(Taxi.added_by)
-    ).options(
+        joinedload(Taxi.ads),
+        joinedload(Taxi.driver).joinedload(Driver.departement),
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.constructor),
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model),
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
+        joinedload(Taxi.added_by),
         joinedload(Taxi.current_hail)
     ).filter(
         VehicleDescription.vehicle_id == Taxi.vehicle_id

@@ -143,8 +143,7 @@ class TestVehiclePost:
         })
         assert resp.status_code == 200
         vehicle = Vehicle.query.options(
-            joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model)
-        ).options(
+            joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model),
             joinedload(Vehicle.descriptions).joinedload(VehicleDescription.constructor)
         ).filter_by(licence_plate='licence2').one()
         assert vehicle.descriptions

@@ -76,12 +76,9 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     res = db.session.query(
         Hail, VehicleDescription
     ).options(
-        joinedload(Hail.taxi)
-    ).options(
-        joinedload(Hail.added_by)
-    ).options(
-        joinedload(Hail.operateur)
-    ).options(
+        joinedload(Hail.taxi),
+        joinedload(Hail.added_by),
+        joinedload(Hail.operateur),
         joinedload(Hail.customer)
     ).join(
         Taxi, Taxi.id == Hail.taxi_id
