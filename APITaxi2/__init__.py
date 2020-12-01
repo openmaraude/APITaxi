@@ -169,7 +169,7 @@ def create_app():
             integrations=[
                 RedisIntegration(),
             ],
-            traces_sample_rate=1.0
+            traces_sample_rate=0.1
         )
 
     db.init_app(app)
