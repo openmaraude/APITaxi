@@ -61,7 +61,7 @@ def vehicle_create():
 
     vehicle_description = VehicleDescription.query.options(
         joinedload(VehicleDescription.model),
-        joinedload(VehicleDescription.constructor),
+        joinedload(VehicleDescription.constructor)
     ).filter_by(
         vehicle=vehicle,
         added_by=current_user

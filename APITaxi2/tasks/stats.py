@@ -112,10 +112,7 @@ def store_active_taxis(last_update):
             User,
             VehicleDescription.added_by_id == User.id
         ).options(
-            joinedload(Taxi.ads)
-            .joinedload(ADS.zupc)
-            .joinedload(ZUPC.parent)
-        ).options(
+            joinedload(Taxi.ads).joinedload(ADS.zupc).joinedload(ZUPC.parent),
             joinedload(VehicleDescription.added_by)
         ).filter(
             Taxi.vehicle_id == VehicleDescription.vehicle_id

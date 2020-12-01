@@ -263,12 +263,9 @@ def hails_details(hail_id):
     query = db.session.query(
         Hail, VehicleDescription
     ).options(
-        joinedload(Hail.taxi)
-    ).options(
-        joinedload(Hail.added_by)
-    ).options(
-        joinedload(Hail.operateur)
-    ).options(
+        joinedload(Hail.taxi),
+        joinedload(Hail.added_by),
+        joinedload(Hail.operateur),
         joinedload(Hail.customer)
     ).join(
         Taxi, Taxi.id == Hail.taxi_id
@@ -466,8 +463,7 @@ def hails_list():
     moteur_table = aliased(User)
     operateur_table = aliased(User)
     query = Hail.query.options(
-        joinedload(Hail.added_by)
-    ).options(
+        joinedload(Hail.added_by),
         joinedload(Hail.operateur)
     ).join(
         moteur_table, moteur_table.id == Hail.added_by_id
@@ -552,8 +548,7 @@ def hails_create():
         Taxi,
         VehicleDescription
     ).options(
-        joinedload(Taxi.ads)
-    ).options(
+        joinedload(Taxi.ads),
         joinedload(VehicleDescription.added_by)
     ).join(
         User,
