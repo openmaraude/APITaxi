@@ -1,8 +1,7 @@
 import datetime
 import uuid
 
-from flask import Blueprint, current_app
-from sqlalchemy import func
+from flask import Blueprint
 
 from APITaxi_models2 import db, Hail
 
@@ -30,7 +29,7 @@ def compute_session_ids():
             sessions[key] = (hail.session_id, hail.last_status_change)
             continue
 
-        new_session_id = func.uuid_generate_v4()
+        new_session_id = uuid.uuid4()
 
         # If there is already one session for this customer which has been
         # updated less than 5 minutes ago, reuse the same session id.
@@ -44,7 +43,7 @@ def compute_session_ids():
 
         # Script feedback
         if not i % 1000:
-            print("Hails reviewed up to %s", hail.last_status_change)
+            print("Hails reviewed up to", hail.last_status_change)
             db.session.flush()
 
         # and keep it for the next round
