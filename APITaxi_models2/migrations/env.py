@@ -59,6 +59,16 @@ load_config()
 # ... etc.
 
 
+excluded_tables = [t.strip() for t in config.get_section('alembic:exclude').get('tables', '').split(',')]
+
+
+def include_object(object_, name, type_, reflected, compare_to):
+    if type_ == 'table' and name in excluded_tables:
+        sys.stdout.write('Table "%s" is excluded and will be ignored.\n' % name)
+        return False
+    return True
+
+
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -98,7 +108,7 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, target_metadata=target_metadata, include_object=include_object
         )
 
         with context.begin_transaction():
