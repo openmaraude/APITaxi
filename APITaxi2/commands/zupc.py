@@ -351,6 +351,14 @@ def merge_zupc_tmp_table():
     db.session.commit()
 
 
+def drop_zupc_tmp_table():
+    table = ZUPC_tmp.__table__
+
+    current_app.logger.info('Drop temporary table %s' % table.name)
+    table.drop(db.engine)
+    db.session.commit()
+
+
 @blueprint.cli.command('import_zupc')
 @click.option(
     '--contours-url', default=CONTOURS_DEFAULT_URL,
@@ -380,3 +388,4 @@ def import_zupc(contours_url, contours_tmpdir, zupc_repo):
 
     load_zupc_tmp_table(shape_filenames[0], zupc_repo)
     merge_zupc_tmp_table()
+    drop_zupc_tmp_table()
