@@ -246,26 +246,6 @@ def taxis_details(taxi_id):
     # We should allow the edition of other fields (taxi.internal_id, ...).
     if 'status' in args and args['status'] != vehicle_description.status:
         taxi.last_update_at = func.now()
-
-        # If there is a current hail, and the taxi changes it's status to
-        # "occupied" when he previously accepted a hail, we assume the customer
-        # is now on board.
-        if (
-            taxi.current_hail
-            and args['status'] == 'occupied'
-            and taxi.current_hail.status == 'accepted_by_customer'
-        ):
-            taxi.current_hail.status = 'customer_on_board'
-
-        # If there is a current hail, and the taxi changes it's status to
-        # "free" or "off" during a trip, we assume the trip is finished.
-        if (
-            taxi.current_hail
-            and args['status'] in ('free', 'off')
-            and taxi.current_hail.status == 'customer_on_board'
-        ):
-            taxi.current_hail.status = 'finished'
-
         db.session.flush()
 
         vehicle_description.last_update_at = func.now()
