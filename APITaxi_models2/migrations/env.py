@@ -59,7 +59,7 @@ load_config()
 # ... etc.
 
 
-excluded_tables = [t.strip() for t in config.get_section('alembic:exclude').get('tables', '').split(',')]
+excluded_tables = [t.strip() for t in config.get_section('alembic:exclude', {}).get('tables', '').split(',')]
 
 
 def include_object(object_, name, type_, reflected, compare_to):
