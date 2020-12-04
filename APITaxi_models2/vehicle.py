@@ -2,17 +2,16 @@ from . import db
 from .mixins import HistoryMixin
 
 
-UPDATABLE_VEHICLE_STATUS = [
+# Possible status for a vehicle.
+# "answering" and "oncoming" are set automatically by the API.
+# Users can only change taxi status to "free", "occupied" or "off".
+VEHICLE_STATUS = [
+    'answering',
+    'oncoming',
+
     'free',
     'occupied',
     'off'
-]
-
-# VEHICLE_STATUS = statuses operator can update + statuses workers
-# automatically update.
-VEHICLE_STATUS = UPDATABLE_VEHICLE_STATUS + [
-    'answering',
-    'oncoming',
 ]
 
 
