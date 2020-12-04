@@ -247,50 +247,42 @@ def taxis_details(taxi_id):
     if 'status' in args and args['status'] != vehicle_description.status:
         taxi.last_update_at = func.now()
 
-        # Some clients attempt to update the taxi status to "answering" or
-        # "oncoming". These status are supposed to be set by the API when the
-        # hail is modified.
-        # We accept these values and return a success response so these clients
-        # don't break, but we ignore the status change.
-        if args['status'] in ('answering', 'oncoming'):
-            pass
-        else:
-            # If there is a current hail, and the taxi changes it's status to
-            # "occupied" when he previously accepted a hail, we assume the customer
-            # is now on board.
-            if (
-                taxi.current_hail
-                and args['status'] == 'occupied'
-                and taxi.current_hail.status == 'accepted_by_customer'
-            ):
-                taxi.current_hail.status = 'customer_on_board'
+        # If there is a current hail, and the taxi changes it's status to
+        # "occupied" when he previously accepted a hail, we assume the customer
+        # is now on board.
+        if (
+            taxi.current_hail
+            and args['status'] == 'occupied'
+            and taxi.current_hail.status == 'accepted_by_customer'
+        ):
+            taxi.current_hail.status = 'customer_on_board'
 
-            # If there is a current hail, and the taxi changes it's status to
-            # "free" or "off" during a trip, we assume the trip is finished.
-            if (
-                taxi.current_hail
-                and args['status'] in ('free', 'off')
-                and taxi.current_hail.status == 'customer_on_board'
-            ):
-                taxi.current_hail.status = 'finished'
+        # If there is a current hail, and the taxi changes it's status to
+        # "free" or "off" during a trip, we assume the trip is finished.
+        if (
+            taxi.current_hail
+            and args['status'] in ('free', 'off')
+            and taxi.current_hail.status == 'customer_on_board'
+        ):
+            taxi.current_hail.status = 'finished'
 
-            db.session.flush()
+        db.session.flush()
 
-            vehicle_description.last_update_at = func.now()
-            vehicle_description.status = args['status']
-            db.session.flush()
+        vehicle_description.last_update_at = func.now()
+        vehicle_description.status = args['status']
+        db.session.flush()
 
-            redis_backend.set_taxi_availability(
-                taxi_id,
-                vehicle_description.added_by.email,
-                vehicle_description.status == 'free'
-            )
+        redis_backend.set_taxi_availability(
+            taxi_id,
+            vehicle_description.added_by.email,
+            vehicle_description.status == 'free'
+        )
 
-            # Store history
-            redis_backend.log_taxi_status(
-                taxi_id,
-                args['status']
-            )
+        # Store history
+        redis_backend.log_taxi_status(
+            taxi_id,
+            args['status']
+        )
 
     output = schema.dump({'data': [(taxi, vehicle_description, location)]})
 

@@ -19,7 +19,7 @@ from APITaxi_models2.hail import (
     REPORTING_CUSTOMER_REASONS,
 )
 from APITaxi_models2.vehicle import (
-    VEHICLE_STATUS,
+    UPDATABLE_VEHICLE_STATUS,
     VehicleDescription,
 )
 
@@ -221,7 +221,7 @@ class TaxiSchema(Schema):
 
     status = fields.String(
         required=False, allow_none=False,
-        validate=validate.OneOf(VEHICLE_STATUS)
+        validate=validate.OneOf(UPDATABLE_VEHICLE_STATUS)
     )
 
     last_update = fields.Constant(None, required=False, allow_none=False)
@@ -283,7 +283,7 @@ class TaxiPUTSchema(Schema):
     """
     status = fields.String(
         required=False, allow_none=False,
-        validate=validate.OneOf(VEHICLE_STATUS)
+        validate=validate.OneOf(UPDATABLE_VEHICLE_STATUS)
     )
 
 
