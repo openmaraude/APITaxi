@@ -69,7 +69,7 @@ def vehicle_create():
 
     if not vehicle_description:
         # Get or create VehicleModel
-        model_name = args.get('model', '').lower()
+        model_name = (args.get('model') or '').lower()
         model = None
         if model_name:
             model = VehicleModel.query.filter(
@@ -80,7 +80,7 @@ def vehicle_create():
                 db.session.add(model)
 
         # Get or create VehicleConstructor
-        constructor_name = args.get('constructor', '').lower()
+        constructor_name = (args.get('constructor') or '').lower()
         constructor = None
         if constructor_name:
             constructor = VehicleConstructor.query.filter(

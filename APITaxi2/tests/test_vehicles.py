@@ -149,3 +149,17 @@ class TestVehiclePost:
         assert vehicle.descriptions
         assert vehicle.descriptions[0].model is None
         assert vehicle.descriptions[0].constructor is None
+
+    def test_null_model_and_constructor(self, operateur):
+        """Accept creating Vehicle with a null model and constructor."""
+        resp = operateur.client.post('/vehicles', json={
+            'data': [{
+                'licence_plate': 'licence1',
+                'model': None,
+                'constructor': None,
+            }]
+        })
+        assert resp.status_code == 200
+        assert Vehicle.query.count() == 1
+        assert VehicleConstructor.query.count() == 0
+        assert VehicleModel.query.count() == 0
