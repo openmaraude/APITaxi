@@ -39,7 +39,7 @@ def vehicle_create():
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return the existing ressource.
+          description: Return and update the existing ressource.
           content:
             application/json:
               schema: DataVehicleSchema
@@ -59,6 +59,7 @@ def vehicle_create():
         vehicle = Vehicle(licence_plate=args['licence_plate'])
         db.session.add(vehicle)
 
+    # Get or create VehicleDescription.
     vehicle_description = VehicleDescription.query.options(
         joinedload(VehicleDescription.model),
         joinedload(VehicleDescription.constructor)
@@ -67,66 +68,13 @@ def vehicle_create():
         added_by=current_user
     ).one_or_none()
 
-    if not vehicle_description:
-        # Get or create VehicleModel
-        model_name = (args.get('model') or '').lower()
-        model = None
-        if model_name:
-            model = VehicleModel.query.filter(
-                func.lower(VehicleModel.name) == model_name
-            ).first()
-            if not model:
-                model = VehicleModel(name=model_name)
-                db.session.add(model)
-
-        # Get or create VehicleConstructor
-        constructor_name = (args.get('constructor') or '').lower()
-        constructor = None
-        if constructor_name:
-            constructor = VehicleConstructor.query.filter(
-                func.lower(VehicleConstructor.name) == constructor_name
-            ).first()
-            if not constructor:
-                constructor = VehicleConstructor(name=constructor_name)
-                db.session.add(constructor)
-
+    if vehicle_description:
+        http_code = 200
+    else:
+        http_code = 201
         vehicle_description = VehicleDescription(
-            model=model,
-            constructor=constructor,
             vehicle=vehicle,
-
-            internal_id=args.get('internal_id'),
-            model_year=args.get('model_year'),
-            engine=args.get('engine'),
-            horse_power=args.get('horse_power'),
-            relais=args.get('relais'),
-            horodateur=args.get('horodateur'),
-            taximetre=args.get('taximetre'),
-            date_dernier_ct=args.get('date_dernier_ct'),
-            date_validite_ct=args.get('date_validite_ct'),
-            special_need_vehicle=args.get('special_need_vehicle'),
-            type=args.get('type_'),
-            luxury=args.get('luxury'),
-            credit_card_accepted=args.get('credit_card_accepted'),
-            nfc_cc_accepted=args.get('nfc_cc_accepted'),
-            amex_accepted=args.get('amex_accepted'),
-            bank_check_accepted=args.get('bank_check_accepted'),
-            fresh_drink=args.get('fresh_drink'),
-            dvd_player=args.get('dvd_player'),
-            tablet=args.get('tablet'),
-            wifi=args.get('wifi'),
-            baby_seat=args.get('baby_seat'),
-            bike_accepted=args.get('bike_accepted'),
-            pet_accepted=args.get('pet_accepted'),
-            air_con=args.get('air_con'),
-            electronic_toll=args.get('electronic_toll'),
-            gps=args.get('gps'),
-            cpam_conventionne=args.get('cpam_conventionne'),
-            every_destination=args.get('every_destination'),
-            color=args.get('color'),
-            nb_seats=args.get('nb_seats'),
             status='off',
-
             added_by=current_user,
             added_via='api',
             added_at=func.NOW(),
@@ -134,8 +82,79 @@ def vehicle_create():
         )
         db.session.add(vehicle_description)
 
+    # If model is specified in arguments, try to get the VehicleModel instance
+    # or create a new one.
+    if 'model' in args:
+        model_name = (args['model'] or '').lower()
+
+        if not model_name:
+            vehicle_description.model = None
+        else:
+            vehicle_description.model = VehicleModel.query.filter(
+                func.lower(VehicleModel.name) == model_name
+            ).first()
+            if not vehicle_description.model:
+                vehicle_description.model = VehicleModel(name=model_name)
+                db.session.add(vehicle_description.model)
+
+    # If constructor is specified in arguments, try to get the
+    # VehicleConstructor instance or create a new one.
+    if 'constructor' in args:
+        constructor_name = (args['constructor'] or '').lower()
+
+        if not constructor_name:
+            vehicle_description.constructor = None
+        else:
+            vehicle_description.constructor = VehicleConstructor.query.filter(
+                func.lower(VehicleConstructor.name) == constructor_name
+            ).first()
+            if not vehicle_description.constructor:
+                vehicle_description.constructor = VehicleConstructor(name=constructor_name)
+                db.session.add(vehicle_description.constructor)
+
+    # Update VehicleDescription object with the optional fields provided.
+    for attr in (
+        'internal_id',
+        'model_year',
+        'engine',
+        'horse_power',
+        'relais',
+        'horodateur',
+        'taximetre',
+        'date_dernier_ct',
+        'date_validite_ct',
+        'special_need_vehicle',
+        ('type', 'type_'),
+        'luxury',
+        'credit_card_accepted',
+        'nfc_cc_accepted',
+        'amex_accepted',
+        'bank_check_accepted',
+        'fresh_drink',
+        'dvd_player',
+        'tablet',
+        'wifi',
+        'baby_seat',
+        'bike_accepted',
+        'pet_accepted',
+        'air_con',
+        'electronic_toll',
+        'gps',
+        'cpam_conventionne',
+        'every_destination',
+        'color',
+        'nb_seats'
+    ):
+        try:
+            model_name, arg_name = attr
+        except ValueError:
+            model_name, arg_name = attr, attr
+
+        if arg_name in args:
+            setattr(vehicle_description, model_name, args[arg_name])
+
     ret = schema.dump({'data': [(vehicle, vehicle_description)]})
 
     db.session.commit()
 
-    return ret
+    return ret, http_code
