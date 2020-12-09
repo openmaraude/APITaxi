@@ -22,11 +22,14 @@ def valid_role(value):
 @blueprint.cli.command('create_user')
 @click.argument('email')
 @click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True)
-@click.argument('roles', nargs=-1, required=True, type=valid_role)
+@click.argument('roles', nargs=-1, required=False, type=valid_role)
 def create_user(email, password, roles):
     user = User.query.filter_by(email=email).one_or_none()
     if user:
         current_app.logger.warning('User already exists, abort.')
+        return
+
+    if not roles and not click.confirm('No role specified for user. Continue?'):
         return
 
     hashed_password = hash_password(password)
