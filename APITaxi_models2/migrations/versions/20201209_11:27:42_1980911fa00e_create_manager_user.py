@@ -20,13 +20,7 @@ def upgrade():
     op.add_column('user', sa.Column('manager_id', sa.Integer(), nullable=True))
     op.create_foreign_key('user_manager_id_fkey', 'user', 'user', ['manager_id'], ['id'])
 
-    conn = op.get_bind()
-    conn.execute(sa.text('INSERT into role(name) VALUES(:name)'), name='manager')
-
 
 def downgrade():
     op.drop_constraint('user_manager_id_fkey', 'user', type_='foreignkey')
     op.drop_column('user', 'manager_id')
-
-    conn = op.get_bind()
-    conn.execute(sa.text('DELETE FROM role WHERE name = :name'), name='manager')
