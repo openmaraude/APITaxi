@@ -47,5 +47,7 @@ class User(db.Model, UserMixin):
     phone_number_technical = Column(db.String)
     operator_api_key = Column(db.String)
     operator_header_name = Column(db.String)
+    manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined')
+    manager = db.relationship('User', lazy='raise')
