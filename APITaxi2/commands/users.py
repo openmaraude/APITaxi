@@ -19,6 +19,14 @@ def valid_role(value):
     return value
 
 
+@with_appcontext
+def user_exists(value):
+    """Returns True if user exists."""
+    if not User.query.filter_by(email=value).count():
+        raise click.BadParameter('User %s does not exist' % value)
+    return value
+
+
 @blueprint.cli.command('create_user')
 @click.argument('email')
 @click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True)
@@ -68,4 +76,27 @@ def update_password(email, password):
 
     user.password = hash_password(password)
 
+    db.session.commit()
+
+
+@blueprint.cli.command('set_manager', help='Set account as manager of other accounts')
+@click.argument('manager_account', type=user_exists)
+@click.argument('managed_accounts', nargs=-1, required=True, type=user_exists)
+def set_manager(manager_account, managed_accounts):
+    manager = User.query.filter_by(email=manager_account).one()
+
+    for user in User.query.filter(User.email.in_(managed_accounts)):
+        if user.manager_id != manager.id:
+            current_app.logger.info('Set user %s manager of user %s', manager.id, user.id)
+            user.manager_id = manager.id
+    db.session.commit()
+
+
+@blueprint.cli.command('remove_manager', help='Remove manager from account')
+@click.argument('managed_accounts', nargs=-1, required=True, type=user_exists)
+def remove_manager(managed_accounts):
+    for user in User.query.filter(User.email.in_(managed_accounts)):
+        if user.manager_id:
+            current_app.logger.info('Removing manager user %s from user %s', user.manager_id, user.id)
+            user.manager_id = None
     db.session.commit()
