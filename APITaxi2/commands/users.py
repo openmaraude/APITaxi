@@ -26,7 +26,7 @@ def valid_role(value):
 def create_user(email, password, roles):
     user = User.query.filter_by(email=email).one_or_none()
     if user:
-        current_app.logger.warning('User already exists, abort.')
+        current_app.logger.info('User already exists, abort.')
         return
 
     if not roles and not click.confirm('No role specified for user. Continue?'):
@@ -63,7 +63,7 @@ def create_user(email, password, roles):
 def update_password(email, password):
     user = User.query.filter_by(email=email).one_or_none()
     if not user:
-        current_app.logger.warning('User does not exist, abort.')
+        current_app.logger.info('User does not exist, abort.')
         return
 
     user.password = hash_password(password)
