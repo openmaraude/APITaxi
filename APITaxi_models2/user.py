@@ -49,17 +49,3 @@ class User(db.Model, UserMixin):
     operator_header_name = Column(db.String)
 
     roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined')
-    logos = db.relationship('Logo', lazy='raise')
-
-
-class Logo(db.Model):
-
-    def __repr__(self):
-        return '<Logo %s (size %s of user %s)>' % (self.id, self.size, self.user_id)
-
-    id = db.Column(UUID, primary_key=True)
-    size = db.Column(db.String)
-    format = db.Column('format_', db.String)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-    user = db.relationship(User, lazy='raise')
