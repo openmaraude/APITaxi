@@ -434,7 +434,7 @@ def hails_details(hail_id):
                 },
                 countdown=30
             )
-        # Hail has been accepted by the taxi. Customer has 1 minute to accept
+        # Hail has been accepted by the taxi. Customer has 20 seconds to accept
         # or refuse the hail. If not, hail becomes "timeout_customer" and taxi
         # is free again.
         elif hail.status == 'accepted_by_taxi':
