@@ -51,4 +51,8 @@ class User(db.Model, UserMixin):
 
     roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined')
 
-    manager = db.relationship('User', remote_side=[id], backref='managed', lazy='raise')
+    # Manager of this User
+    manager = db.relationship('User', remote_side=[id], lazy='raise')
+
+    # List of User managed by this User
+    managed = db.relationship('User', lazy='raise')
