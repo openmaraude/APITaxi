@@ -2,6 +2,7 @@ from APITaxi_models2 import ADS
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
     VehicleFactory,
+    VehicleDescriptionFactory,
     ZUPCFactory
 )
 
@@ -56,7 +57,7 @@ class TestADSCreate:
     def test_already_exists(self, operateur):
         """If ADS already exists, the existing item is updated and returned."""
         assert ADS.query.count() == 0
-        ads = ADSFactory()
+        ads = ADSFactory(added_by=operateur.user)
 
         resp = operateur.client.post('/ads', json={'data': [{
             # Fields used to retrieve the existing ADS
@@ -72,7 +73,8 @@ class TestADSCreate:
         assert ADS.query.count() == 1
 
     def test_ok(self, operateur, QueriesTracker):
-        vehicle = VehicleFactory()
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
         zupc = ZUPCFactory()
 
         with QueriesTracker() as qtracker:
@@ -99,24 +101,3 @@ class TestADSCreate:
         assert resp.json['data'][0]['vehicle_id'] == vehicle.id
 
         assert ADS.query.count() == 1
-
-    def test_duplicates_ads(self, operateur):
-        """ADS is identified by `numero` and `insee_code`. There is no unique
-        key for these fields in database, and duplicates exist. In case of
-        duplicate, we should return the last one.
-        """
-        vehicle = VehicleFactory()
-        ads = ADSFactory(vehicle=vehicle)
-        ADSFactory(numero=ads.numero, insee=ads.insee)
-
-        resp = operateur.client.post('/ads', json={'data': [{
-            'numero': ads.numero,
-            'insee': ads.insee,
-            'doublage': True,
-            'owner_type': 'individual',
-            'owner_name': 'Fabrice Santoro',
-            'category': 'category',
-            'vehicle_id': vehicle.id
-        }]})
-
-        assert resp.status_code == 200

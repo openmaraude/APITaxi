@@ -4,7 +4,7 @@ from flask import Blueprint, request
 
 from flask_security import current_user, login_required, roles_accepted
 
-from APITaxi_models2 import ADS, db, Vehicle, ZUPC
+from APITaxi_models2 import ADS, db, Vehicle, VehicleDescription, ZUPC
 
 from .. import schemas
 from ..validators import (
@@ -50,7 +50,10 @@ def ads_create():
     # Vehicle is optional, but if it is provided it must be valid.
     vehicle = None
     if args.get('vehicle_id') is not None:
-        vehicle = Vehicle.query.filter_by(id=args['vehicle_id']).one_or_none()
+        vehicle = Vehicle.query.join(VehicleDescription).filter(
+            Vehicle.id == args['vehicle_id'],
+            VehicleDescription.added_by == current_user
+        ).one_or_none()
         if not vehicle:
             return make_error_json_response({
                 'data': {
@@ -74,7 +77,8 @@ def ads_create():
     # Try to get existing ADS, or create it.
     ads = ADS.query.filter_by(
         numero=args['numero'],
-        insee=args['insee']
+        insee=args['insee'],
+        added_by=current_user
     ).order_by(ADS.id.desc()).first()
 
     status_code = 200
