@@ -18,7 +18,7 @@ blueprint = Blueprint('drivers', __name__)
 
 @blueprint.route('/drivers', methods=['POST'])
 @login_required
-@roles_accepted('admin', 'operateur', 'preferecture')
+@roles_accepted('admin', 'operateur')
 def drivers_create():
     """
     ---
