@@ -251,8 +251,8 @@ class TestTaxiPost:
         assert list(resp.json['errors']['data']['0']['driver'].keys()) == ['professional_licence']
 
     def test_ok(self, operateur, QueriesTracker):
-        ads = ADSFactory()
-        driver = DriverFactory()
+        ads = ADSFactory(added_by=operateur.user)
+        driver = DriverFactory(added_by=operateur.user)
         vehicle_description = VehicleDescriptionFactory(added_by=operateur.user)
 
         payload = {
@@ -293,50 +293,17 @@ class TestTaxiPost:
         assert resp.status_code == 200
         assert Taxi.query.count() == 1
 
-    def test_duplicates_ads_or_driver(self, operateur):
-        """If ADS or Driver have duplicates, take the last versions.
-        See test_duplicates_xxx in test_ads.py and test_driver.py."""
-        ads = ADSFactory()
-        ADSFactory(insee=ads.insee, numero=ads.numero)
-
-        driver = DriverFactory()
-        DriverFactory(
-            professional_licence=driver.professional_licence,
-            departement=driver.departement
-        )
-
-        vehicle_description = VehicleDescriptionFactory(added_by=operateur.user)
-
-        payload = {
-            'data': [{
-                'ads': {
-                    'insee': ads.insee,
-                    'numero': ads.numero
-                },
-                'vehicle': {
-                    'licence_plate': vehicle_description.vehicle.licence_plate
-                },
-                'driver': {
-                    'professional_licence': driver.professional_licence,
-                    'departement': driver.departement.numero
-                }
-            }]
-        }
-        resp = operateur.client.post('/taxis', json=payload)
-        assert resp.status_code == 201
-
     def test_duplicates_taxi(self, operateur):
         """Taxi is identified by `ads_id`, `driver_id` and `vehicle_id`. There
         is no unique key for these fields in database, and duplicates exist. In
         case of duplicate, we should return the last one.
         """
-        ads = ADSFactory()
-        driver = DriverFactory()
-        vehicle = VehicleFactory()
+        ads = ADSFactory(added_by=operateur.user)
+        driver = DriverFactory(added_by=operateur.user)
+        vehicle = VehicleFactory(descriptions=[])
         VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
 
-        TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
-        TaxiFactory(ads=ads, vehicle=vehicle, driver=driver)
+        TaxiFactory(ads=ads, vehicle=vehicle, driver=driver, added_by=operateur.user)
 
         payload = {
             'data': [{
