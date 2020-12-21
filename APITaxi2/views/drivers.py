@@ -90,7 +90,8 @@ def drivers_create():
     # Try to get an existing object
     driver = Driver.query.options(joinedload(Driver.departement)).filter_by(
         departement=departement,
-        professional_licence=args['professional_licence']
+        professional_licence=args['professional_licence'],
+        added_by=current_user
     ).order_by(Driver.id.desc()).first()
 
     status_code = 200

@@ -46,7 +46,7 @@ class TestDriversCreate:
         """POST to an existing driver doesn't create the driver."""
         assert Driver.query.count() == 0
 
-        driver = DriverFactory()
+        driver = DriverFactory(added_by=operateur.user)
         assert Driver.query.count() == 1
 
         # Driver already exists, Driver is updated but no new driver created
@@ -102,26 +102,6 @@ class TestDriversCreate:
 
         assert resp.status_code == 201
         assert Driver.query.count() == 1
-
-    def test_duplicates_driver(self, operateur):
-        """Driver is identified by `departement_id` and `professional_licence`.
-        There is no unique key for these fields in database, and duplicates
-        exist. In case of duplicate, we should return the last one created and
-        no exception should be raised."""
-        departement = DepartementFactory()
-
-        DriverFactory(departement=departement, professional_licence='abc')
-        DriverFactory(departement=departement, professional_licence='abc')
-
-        resp = operateur.client.post('/drivers', json={'data': [{
-            'first_name': 'Vasyl',
-            'last_name': 'Lomachenko',
-            'professional_licence': 'abc',
-            'departement': {
-                'nom': departement.nom
-            }
-        }]})
-        assert resp.status_code == 200
 
     def test_mispelled_departement(self, operateur):
         """If departement numero is correct but not the name, request should
