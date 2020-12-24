@@ -40,6 +40,10 @@ class VehicleModel(db.Model):
 
 class Vehicle(db.Model):
 
+    __table_args__ = (
+        db.UniqueConstraint('licence_plate', name='unique_vehicle'),
+    )
+
     def __repr__(self):
         return '<Vehicle %s (%s)>' % (self.id, self.licence_plate)
 

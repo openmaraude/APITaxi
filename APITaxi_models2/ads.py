@@ -10,6 +10,7 @@ class ADS(HistoryMixin, db.Model):
     __table_args__ = (
         db.Index('ads_insee_index', 'insee'),
         db.Index('ads_numero_index', 'numero'),
+        db.UniqueConstraint('numero', 'insee', 'added_by', name='unique_ads')
     )
 
     def __repr__(self):

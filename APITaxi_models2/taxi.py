@@ -13,6 +13,10 @@ class Taxi(HistoryMixin, db.Model):
             self.added_by_id
         )
 
+    __table_args__ = (
+        db.UniqueConstraint('vehicle_id', 'ads_id', 'driver_id', 'added_by', name='unique_taxi'),
+    )
+
     id = db.Column(db.String, primary_key=True)
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
     ads_id = db.Column(db.Integer, db.ForeignKey('ADS.id'))

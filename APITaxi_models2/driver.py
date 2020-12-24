@@ -7,6 +7,7 @@ class Driver(HistoryMixin, db.Model):
     __table_args__ = (
         db.Index('driver_departement_id_idx', 'departement_id'),
         db.Index('driver_professional_licence_idx', 'professional_licence'),
+        db.UniqueConstraint('departement_id', 'professional_licence', 'added_by', name='unique_driver')
     )
 
     def __repr__(self):
