@@ -1,5 +1,3 @@
-from sqlalchemy import Index
-
 from . import db
 from .mixins import HistoryMixin
 
@@ -7,8 +5,8 @@ from .mixins import HistoryMixin
 class Driver(HistoryMixin, db.Model):
 
     __table_args__ = (
-        Index('driver_departement_id_idx', 'departement_id'),
-        Index('driver_professional_licence_idx', 'professional_licence'),
+        db.Index('driver_departement_id_idx', 'departement_id'),
+        db.Index('driver_professional_licence_idx', 'professional_licence'),
     )
 
     def __repr__(self):

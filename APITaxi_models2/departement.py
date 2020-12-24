@@ -1,5 +1,3 @@
-from sqlalchemy import Index
-
 from . import db
 
 
@@ -8,7 +6,7 @@ class Departement(db.Model):
     # only declare it to reflect the database, but we will need to eventually
     # remove it.
     __table_args__ = (
-        Index('departement_numero_index', 'numero'),
+        db.Index('departement_numero_index', 'numero'),
     )
 
     def __repr__(self):

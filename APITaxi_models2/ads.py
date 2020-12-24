@@ -1,5 +1,3 @@
-from sqlalchemy import Index
-
 from . import db
 from .mixins import HistoryMixin
 
@@ -10,8 +8,8 @@ OWNER_TYPES = ('company', 'individual')
 class ADS(HistoryMixin, db.Model):
 
     __table_args__ = (
-        Index('ads_insee_index', 'insee'),
-        Index('ads_numero_index', 'numero'),
+        db.Index('ads_insee_index', 'insee'),
+        db.Index('ads_numero_index', 'numero'),
     )
 
     def __repr__(self):

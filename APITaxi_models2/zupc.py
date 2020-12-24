@@ -1,4 +1,3 @@
-from sqlalchemy import Index
 from geoalchemy2 import Geography
 
 from . import db
@@ -8,8 +7,8 @@ class ZUPC(db.Model):
     # The two indexes are duplicated. We only declare them to reflect the
     # database, but we will need to eventually remove at least one of them.
     __table_args__ = (
-        Index('zupc_shape_idx', 'shape'),
-        Index('zupc_shape_igx', 'shape')
+        db.Index('zupc_shape_idx', 'shape'),
+        db.Index('zupc_shape_igx', 'shape')
     )
 
     def __repr__(self):
