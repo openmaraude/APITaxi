@@ -146,21 +146,16 @@ def remove_sharing_driver():
     db.session.commit()
 
 
-def remove_orphans(ModelA, ModelB, on_clause=None):
-    """Remove ModelA entries with no references from ModelB.
+def remove_orphans(Model, query):
+    """Remove Model entries if id is returned by query.
     """
-    if on_clause is None:
-        query = db.session.query(ModelA.id).outerjoin(ModelB)
-    else:
-        query = db.session.query(ModelA.id).outerjoin(ModelB, on_clause)
-
-    query = query.filter(ModelB.id.is_(None))
     count = query.count()
+
     if not count:
         return
 
-    print(f'{count} {ModelA.__name__} are not linked to {ModelB.__name__}. Remove them.')
-    db.session.query(ModelA).filter(ModelA.id.in_(obj.id for obj in query)).delete(
+    print(f'{count} {Model.__name__} entries are orphan. Remove them.')
+    db.session.query(Model).filter(Model.id.in_(obj.id for obj in query)).delete(
         synchronize_session=False
     )
     db.session.commit()
@@ -203,7 +198,29 @@ def clean_db():
 
     remove_duplicates(Taxi, (Taxi.ads_id, Taxi.vehicle_id, Taxi.driver_id, Taxi.added_by_id), ref_taxi)
 
-    remove_orphans(Vehicle, VehicleDescription)
-    remove_orphans(Driver, Taxi)
-    remove_orphans(ADS, Taxi)
-    remove_orphans(VehicleDescription, Taxi, VehicleDescription.vehicle_id == Taxi.vehicle_id)
+    remove_orphans(
+        Driver,
+        Driver.query.outerjoin(Taxi).filter(Taxi.id.is_(None))
+    )
+    remove_orphans(
+        ADS,
+        ADS.query.outerjoin(Taxi).filter(Taxi.id.is_(None))
+    )
+    remove_orphans(
+        VehicleDescription,
+        VehicleDescription.query.outerjoin(
+            Taxi, VehicleDescription.vehicle_id == Taxi.vehicle_id
+        ).filter(
+            Taxi.id.is_(None)
+        )
+    )
+    remove_orphans(
+        Vehicle,
+        Vehicle.query.outerjoin(Taxi).outerjoin(
+            ADS,
+            ADS.vehicle_id == Vehicle.id
+        ).filter(
+            Taxi.id.is_(None),
+            ADS.id.is_(None)
+        )
+    )
