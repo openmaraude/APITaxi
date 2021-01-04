@@ -62,7 +62,7 @@ def remove_sharing_ads():
             numero=taxi.ads.numero,
             insee=taxi.ads.insee,
             added_by_id=taxi.added_by_id
-        ).one_or_none()
+        ).first()
 
         # If an ADS has already been registered by the taxi's operator, use it
         if existing:
@@ -115,7 +115,7 @@ def remove_sharing_driver():
             departement_id=taxi.driver.departement_id,
             professional_licence=taxi.driver.professional_licence,
             added_by_id=taxi.added_by_id
-        ).one_or_none()
+        ).first()
 
         if existing:
             taxi.driver = existing
