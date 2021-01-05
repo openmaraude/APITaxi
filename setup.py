@@ -30,6 +30,7 @@ DEPENDENCIES = [
     'shortuuid',
     'dataclasses',  # for Python3.6
     'sentry-sdk[flask]',
+    'prettytable',
 ]
 
 TEST_DEPENDENCIES = [
