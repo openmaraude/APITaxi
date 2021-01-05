@@ -50,7 +50,7 @@ def report(since, until):
         ]
     )
 
-    print(f'=== Driver created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
+    print(f'\n=== Driver created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
     display_model(
         Driver.query.filter(
             Driver.added_at >= since,
@@ -66,7 +66,7 @@ def report(since, until):
         ]
     )
 
-    print(f'=== Vehicles created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
+    print(f'\n=== Vehicles created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
     display_model(
         VehicleDescription.query.filter(
             VehicleDescription.added_at >= since,
@@ -79,7 +79,7 @@ def report(since, until):
         ]
     )
 
-    print(f'=== Taxis created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
+    print(f'\n=== Taxis created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
     display_model(
         Taxi.query.filter(
             Taxi.added_at >= since,
@@ -94,7 +94,7 @@ def report(since, until):
         ]
     )
 
-    print(f'=== Hails created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
+    print(f'\n=== Hails created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
     display_model(
         Hail.query.filter(
             Hail.added_at >= since,
