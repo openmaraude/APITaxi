@@ -74,7 +74,7 @@ class TestADSCreate:
 
     def test_ok(self, operateur, QueriesTracker):
         vehicle = VehicleFactory(descriptions=[])
-        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
+        VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
         zupc = ZUPCFactory()
 
         with QueriesTracker() as qtracker:
