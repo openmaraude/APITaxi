@@ -92,7 +92,7 @@ class VehicleSchema(Schema):
     horse_power = fields.Float(required=False, allow_none=True)
     relais = fields.Bool(required=False, allow_none=True)
     horodateur = fields.String(required=False, allow_none=True)
-    taximetre = fields.String(requried=False, allow_none=True)
+    taximetre = fields.String(required=False, allow_none=True)
     date_dernier_ct = fields.Date(required=False, allow_none=True)
     date_validite_ct = fields.Date(required=False, allow_none=True)
     special_need_vehicle = fields.Bool(required=False, allow_none=True)
