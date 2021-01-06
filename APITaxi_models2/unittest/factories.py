@@ -14,9 +14,7 @@ from APITaxi_models2 import (
     Role,
     RolesUsers,
     Vehicle,
-    VehicleConstructor,
     VehicleDescription,
-    VehicleModel,
     ZUPC
 )
 
@@ -160,38 +158,6 @@ class DriverFactory(BaseFactory):
     source = 'added_by'
 
 
-class VehicleConstructorFactory(BaseFactory):
-    class Meta:
-        model = VehicleConstructor
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        """Get VehicleConstructor, or create it if it doesn't exist."""
-        session = cls._meta.sqlalchemy_session
-        obj = session.query(VehicleConstructor).filter_by(name=kwargs['name']).one_or_none()
-        if not obj:
-            obj = super()._create(model_class, *args, **kwargs)
-        return obj
-
-    name = 'Citroën'
-
-
-class VehicleModelFactory(BaseFactory):
-    class Meta:
-        model = VehicleModel
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        """Get VehicleModel, or create it if it doesn't exist."""
-        session = cls._meta.sqlalchemy_session
-        obj = session.query(VehicleModel).filter_by(name=kwargs['name']).one_or_none()
-        if not obj:
-            obj = super()._create(model_class, *args, **kwargs)
-        return obj
-
-    name = 'C4 PICASSO'
-
-
 class VehicleDescriptionFactory(BaseFactory):
     class Meta:
         model = VehicleDescription
@@ -199,8 +165,8 @@ class VehicleDescriptionFactory(BaseFactory):
     # Circular dependencies require to provide the full import path of the
     # target.
     vehicle = factory.SubFactory(__name__ + '.VehicleFactory')
-    model = factory.SubFactory(VehicleModelFactory)
-    constructor = factory.SubFactory(VehicleConstructorFactory)
+    constructor = 'Citroën'
+    model = 'C4 PICASSO'
     added_at = factory.LazyAttribute(lambda o: datetime.datetime.now())
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'

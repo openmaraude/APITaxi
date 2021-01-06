@@ -36,5 +36,5 @@ from .driver import Driver
 from .hail import Hail
 from .taxi import Taxi
 from .user import Role, RolesUsers, User
-from .vehicle import VehicleConstructor, VehicleModel, Vehicle, VehicleDescription
+from .vehicle import Vehicle, VehicleDescription
 from .zupc import ZUPC

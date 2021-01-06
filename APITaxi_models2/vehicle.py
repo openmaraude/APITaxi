@@ -16,28 +16,6 @@ VEHICLE_STATUS = UPDATABLE_VEHICLE_STATUS + [
 ]
 
 
-class VehicleConstructor(db.Model):
-
-    __tablename__ = 'constructor'
-
-    def __repr__(self):
-        return '<Constructor %s (%s)>' % (self.id, self.name)
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
-
-
-class VehicleModel(db.Model):
-
-    __tablename__ = 'model'
-
-    def __repr__(self):
-        return '<Model %s (%s)>' % (self.id, self.name)
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
-
-
 class Vehicle(db.Model):
 
     __table_args__ = (
@@ -65,8 +43,9 @@ class VehicleDescription(HistoryMixin, db.Model):
         )
 
     id = db.Column(db.Integer, primary_key=True)
-    model_id = db.Column(db.Integer, db.ForeignKey(VehicleModel.id))
-    constructor_id = db.Column(db.Integer, db.ForeignKey(VehicleConstructor.id))
+
+    model = db.Column(db.String, nullable=False, server_default='')
+    constructor = db.Column(db.String, nullable=False, server_default='')
 
     model_year = db.Column(db.Integer)
     engine = db.Column(db.String(80))
@@ -103,8 +82,6 @@ class VehicleDescription(HistoryMixin, db.Model):
     internal_id = db.Column(db.String)
 
     added_by = db.relationship('User', lazy='raise')
-    constructor = db.relationship(VehicleConstructor, lazy='raise')
-    model = db.relationship(VehicleModel, lazy='raise')
     vehicle = db.relationship(Vehicle, lazy='raise')
 
     @property
