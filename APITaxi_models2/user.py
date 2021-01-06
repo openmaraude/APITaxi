@@ -1,5 +1,4 @@
 from sqlalchemy import Column
-from sqlalchemy.dialects.postgresql import UUID
 
 from flask_security import UserMixin, RoleMixin
 

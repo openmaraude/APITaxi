@@ -29,12 +29,12 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-from .ads import ADS
-from .customer import Customer
-from .departement import Departement
-from .driver import Driver
-from .hail import Hail
-from .taxi import Taxi
-from .user import Role, RolesUsers, User
-from .vehicle import Vehicle, VehicleDescription
-from .zupc import ZUPC
+from .ads import ADS  # noqa
+from .customer import Customer  # noqa
+from .departement import Departement  # noqa
+from .driver import Driver  # noqa
+from .hail import Hail  # noqa
+from .taxi import Taxi  # noqa
+from .user import Role, RolesUsers, User  # noqa
+from .vehicle import Vehicle, VehicleDescription  # noqa
+from .zupc import ZUPC  # noqa

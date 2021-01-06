@@ -100,7 +100,7 @@ class Hail(HistoryMixin, db.Model):
     change_to_timeout_accepted_by_customer = db.Column(db.DateTime)
 
     session_id = db.Column(
-            postgresql.UUID(as_uuid=True), nullable=False, server_default=func.uuid_generate_v4()
+        postgresql.UUID(as_uuid=True), nullable=False, server_default=func.uuid_generate_v4()
     )
 
     # Relationships

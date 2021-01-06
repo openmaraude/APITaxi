@@ -9,11 +9,11 @@ import time
 
 import alembic
 import alembic.config
-from flask_security import SQLAlchemyUserDatastore
 from influxdb import InfluxDBClient
 import psycopg2
 import pytest
 from pytest_factoryboy import register
+import requests
 import sqlalchemy
 import subprocess
 import testing.postgresql
@@ -279,7 +279,7 @@ bind-address = "127.0.0.1:0"
             try:
                 client.query('CREATE DATABASE unittests')
                 break
-            except:
+            except requests.exceptions.RequestException:
                 time.sleep(.1)
 
         yield {
