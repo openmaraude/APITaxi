@@ -7,8 +7,6 @@ from sqlalchemy.orm import joinedload
 from APITaxi_models2 import (
     db,
     Vehicle,
-    VehicleConstructor,
-    VehicleModel,
     VehicleDescription,
 )
 
@@ -60,10 +58,7 @@ def vehicle_create():
         db.session.add(vehicle)
 
     # Get or create VehicleDescription.
-    vehicle_description = VehicleDescription.query.options(
-        joinedload(VehicleDescription.model),
-        joinedload(VehicleDescription.constructor)
-    ).filter_by(
+    vehicle_description = VehicleDescription.query.filter_by(
         vehicle=vehicle,
         added_by=current_user
     ).one_or_none()
@@ -81,36 +76,6 @@ def vehicle_create():
             source='added_by'
         )
         db.session.add(vehicle_description)
-
-    # If model is specified in arguments, try to get the VehicleModel instance
-    # or create a new one.
-    if 'model' in args:
-        model_name = (args['model'] or '').lower()
-
-        if not model_name:
-            vehicle_description.model = None
-        else:
-            vehicle_description.model = VehicleModel.query.filter(
-                func.lower(VehicleModel.name) == model_name
-            ).first()
-            if not vehicle_description.model:
-                vehicle_description.model = VehicleModel(name=model_name)
-                db.session.add(vehicle_description.model)
-
-    # If constructor is specified in arguments, try to get the
-    # VehicleConstructor instance or create a new one.
-    if 'constructor' in args:
-        constructor_name = (args['constructor'] or '').lower()
-
-        if not constructor_name:
-            vehicle_description.constructor = None
-        else:
-            vehicle_description.constructor = VehicleConstructor.query.filter(
-                func.lower(VehicleConstructor.name) == constructor_name
-            ).first()
-            if not vehicle_description.constructor:
-                vehicle_description.constructor = VehicleConstructor(name=constructor_name)
-                db.session.add(vehicle_description.constructor)
 
     # Update VehicleDescription object with the optional fields provided.
     for attr in (
@@ -143,7 +108,9 @@ def vehicle_create():
         'cpam_conventionne',
         'every_destination',
         'color',
-        'nb_seats'
+        'nb_seats',
+        'model',
+        'constructor'
     ):
         try:
             model_name, arg_name = attr

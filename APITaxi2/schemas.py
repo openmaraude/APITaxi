@@ -125,6 +125,16 @@ class VehicleSchema(Schema):
     model = fields.String(required=False, allow_none=True)
     constructor = fields.String(required=False, allow_none=True)
 
+    def load(self, fields, *args, **kwargs):
+        # For backward compatibility, "model" and "constructor" can be provided
+        # as None but they are internally stored as empty strings
+        if 'model' in fields and fields['model'] is None:
+            fields['model'] = ''
+        if 'constructor' in fields and fields['constructor'] is None:
+            fields['constructor'] = ''
+
+        return super().load(fields, *args, **kwargs)
+
     def dump(self, obj, *args, **kwargs):
         vehicle, vehicle_description = obj
         ret = super().dump(vehicle, *args, **kwargs)
@@ -159,8 +169,9 @@ class VehicleSchema(Schema):
             'every_destination': vehicle_description.every_destination,
             'color': vehicle_description.color,
             'nb_seats': vehicle_description.nb_seats,
-            'model': vehicle_description.model.name if vehicle_description.model else None,
-            'constructor': vehicle_description.constructor.name if vehicle_description.constructor else None,
+            # Empty model or constructors are exposed as null fields.
+            'model': vehicle_description.model or None,
+            'constructor': vehicle_description.constructor or None,
         })
         return ret
 
@@ -263,8 +274,8 @@ class TaxiSchema(Schema):
             'crowfly_distance': redis_location.distance if redis_location else None
         })
         ret['vehicle'].update({
-            'model': vehicle_description.model.name if vehicle_description.model else None,
-            'constructor': vehicle_description.constructor.name if vehicle_description.constructor else None,
+            'model': vehicle_description.model or None,
+            'constructor': vehicle_description.constructor or None,
             'color': vehicle_description.color,
             'nb_seats': vehicle_description.nb_seats,
             'characteristics': vehicle_description.characteristics,

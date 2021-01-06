@@ -1,11 +1,6 @@
 from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import (
-    Vehicle,
-    VehicleConstructor,
-    VehicleDescription,
-    VehicleModel,
-)
+from APITaxi_models2 import Vehicle, VehicleDescription
 
 
 class TestVehiclePost:
@@ -62,21 +57,15 @@ class TestVehiclePost:
                 }]
             })
             # SELECT permissions
-            # SELECT vehicle, INSERT vehicle
+            # SELECT vehicle
+            # INSERT vehicle
             # SELECT vehicle_description
-            # SELECT model, INSERT model
-            # SELECT constructor, INSERT constructor
-            # INSERT then UPDATE vehicle_description
-            # XXX: there are 2 vehicle_description updates instead of 1, so 11
-            #      SQL queries instead of 10. Not a big deal though, so I
-            #      didn't investigate why.
-            assert qtracker.count == 11
+            # INSERT vehicle_description
+            assert qtracker.count == 5
 
         assert resp.status_code == 201
         assert Vehicle.query.count() == 1
-        assert VehicleConstructor.query.count() == 1
         assert VehicleDescription.query.count() == 1
-        assert VehicleModel.query.count() == 1
         vehicle = Vehicle.query.one()
         assert resp.json == {'data': [{
             'id': vehicle.id,
@@ -145,12 +134,11 @@ class TestVehiclePost:
         })
         assert resp.status_code == 201
         vehicle = Vehicle.query.options(
-            joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model),
-            joinedload(Vehicle.descriptions).joinedload(VehicleDescription.constructor)
+            joinedload(Vehicle.descriptions)
         ).filter_by(licence_plate='licence2').one()
         assert vehicle.descriptions
-        assert vehicle.descriptions[0].model is None
-        assert vehicle.descriptions[0].constructor is None
+        assert not vehicle.descriptions[0].model
+        assert not vehicle.descriptions[0].constructor
 
         # "model" and "constructor" can be None.
         resp = operateur.client.post('/vehicles', json={
@@ -162,9 +150,8 @@ class TestVehiclePost:
         })
         assert resp.status_code == 201
         vehicle = Vehicle.query.options(
-            joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model),
-            joinedload(Vehicle.descriptions).joinedload(VehicleDescription.constructor)
+            joinedload(Vehicle.descriptions)
         ).filter_by(licence_plate='licence2').one()
         assert vehicle.descriptions
-        assert vehicle.descriptions[0].model is None
-        assert vehicle.descriptions[0].constructor is None
+        assert not vehicle.descriptions[0].model
+        assert not vehicle.descriptions[0].constructor

@@ -203,8 +203,6 @@ def taxis_details(taxi_id):
     query = db.session.query(Taxi, VehicleDescription).options(
         joinedload(Taxi.ads),
         joinedload(Taxi.driver).joinedload(Driver.departement),
-        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.constructor),
-        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
         joinedload(Taxi.current_hail)
@@ -362,8 +360,6 @@ def taxis_list():
     ).options(
         joinedload(Taxi.ads),
         joinedload(Taxi.driver).joinedload(Driver.departement),
-        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.constructor),
-        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.model),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
         joinedload(Taxi.current_hail)
