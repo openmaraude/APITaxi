@@ -311,7 +311,6 @@ class UserPrivateSchema(Schema):
 
 
 class CustomerSchema(Schema):
-    moteur_id = fields.Int()
     reprieve_begin = fields.DateTime(allow_none=True)
     reprieve_end = fields.DateTime(allow_none=True)
     ban_begin = fields.DateTime(allow_none=True)
@@ -320,41 +319,6 @@ class CustomerSchema(Schema):
     def __init__(self, current_user=None):
         self.current_user = current_user
         super().__init__()
-
-    @validates_schema
-    def validate_moteur_id(self, data, **kwargs):
-        """There are three cases to handle:
-
-        1/ user is admin but not a moteur: moteur_id is required
-        2/ user is admin and moteur: moteur_id is optional, and defaults to
-           user's id
-        3/ user is not admin: if provided, moteur_id must be equal to
-           user's id
-        """
-        assert self.current_user
-        # Case 1:
-        if (
-            self.current_user.has_role('admin')
-            and not self.current_user.has_role('moteur')
-            and 'moteur_id' not in data
-        ):
-            raise ValidationError(
-                'Missing data for required field.',
-                'moteur_id'
-            )
-
-        # Case 2: nothing to do
-
-        # Case 3:
-        if (
-            not self.current_user.has_role('admin')
-            and 'moteur_id' in data
-            and data['moteur_id'] != self.current_user.id
-        ):
-            raise ValidationError(
-                'Invalid moteur_id. Should match your user id.',
-                'moteur_id'
-            )
 
 
 class HailTaxiRelationSchema(Schema):

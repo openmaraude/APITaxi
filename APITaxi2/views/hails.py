@@ -613,12 +613,11 @@ def hails_create():
     taxi, vehicle_description = res
 
     # Get or create Customer object
-    customer = Customer.query.filter_by(moteur=current_user, id=args['customer_id']).one_or_none()
+    customer = Customer.query.filter_by(added_by=current_user, id=args['customer_id']).one_or_none()
     if not customer:
         customer = Customer(
             id=args['customer_id'],
             phone_number=args['customer_phone_number'],
-            moteur=current_user,
 
             added_by=current_user,
             added_via='api',

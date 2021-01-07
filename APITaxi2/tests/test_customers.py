@@ -23,7 +23,6 @@ class TestEditCustomers:
 
         # Invalid types
         resp = moteur.client.put('/customers/xxx', json={'data': [{
-            'moteur_id': 'xxx',
             'reprieve_begin': 'xxx',
             'reprieve_end': 'xxx',
             'ban_begin': 'xxx',
@@ -31,7 +30,6 @@ class TestEditCustomers:
         }]})
         assert resp.status_code == 400
         for field in (
-            'moteur_id',
             'reprieve_begin', 'reprieve_end',
             'ban_begin', 'ban_end'
         ):
@@ -43,7 +41,7 @@ class TestEditCustomers:
         assert 'url' in resp.json['errors']
 
     def test_edit(self, moteur, QueriesTracker):
-        customer = CustomerFactory(moteur=moteur.user)
+        customer = CustomerFactory(added_by=moteur.user)
 
         # Empty
         with QueriesTracker() as qtrack:

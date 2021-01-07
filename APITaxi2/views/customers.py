@@ -46,13 +46,12 @@ def customers_edit(customer_id):
         return make_error_json_response(errors)
 
     args = params['data'][0]
-    moteur_id = args.get('moteur_id', current_user.id)
 
-    query = Customer.query.filter_by(id=customer_id, moteur_id=moteur_id)
+    query = Customer.query.filter_by(id=customer_id, added_by=current_user)
     customer = query.one_or_none()
     if not customer:
         return make_error_json_response({
-            'url': ['No customer found associated to moteur id %s' % moteur_id]
+            'url': ['No customer %s found associated to user %s' % (customer_id, current_user.email)]
         }, status_code=404)
 
     for attr in ['reprieve_begin', 'reprieve_end', 'ban_begin', 'ban_end']:

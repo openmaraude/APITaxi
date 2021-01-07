@@ -180,7 +180,7 @@ class TestEditHail:
 
     def test_ok_ban_customer(self, moteur, operateur):
         # Create unbanned customer
-        customer = CustomerFactory(moteur=moteur.user, ban_begin=None, ban_end=None,)
+        customer = CustomerFactory(added_by=moteur.user, ban_begin=None, ban_end=None,)
         hail = HailFactory(customer=customer, added_by=moteur.user,
                            operateur=operateur.user,
                            status='accepted_by_taxi')
@@ -196,7 +196,7 @@ class TestEditHail:
     def test_ok_unban_customer(self, moteur, operateur):
         # Create banned customer
         customer = CustomerFactory(
-            moteur=moteur.user,
+            added_by=moteur.user,
             ban_begin=sqlalchemy.func.NOW(),
             ban_end=sqlalchemy.func.NOW() + timedelta(hours=+24),
         )
@@ -409,7 +409,7 @@ class TestCreateHail:
         - when taxi is off
         """
         banned_customer = CustomerFactory(
-            moteur=moteur.user,
+            added_by=moteur.user,
             ban_begin=sqlalchemy.func.NOW(),
             ban_end=sqlalchemy.func.NOW() + timedelta(hours=+24),
         )
