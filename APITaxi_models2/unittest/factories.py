@@ -61,7 +61,6 @@ class CustomerFactory(BaseFactory):
         model = Customer
 
     id = factory.Sequence(lambda n: 'CUSTOMER_%d' % n)
-    moteur = factory.SubFactory(UserFactory)
     added_at = factory.LazyAttribute(lambda o: datetime.datetime.now())
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
@@ -221,7 +220,7 @@ class HailFactory(BaseFactory):
 
     @factory.lazy_attribute
     def customer(self):
-        return CustomerFactory(moteur=self.added_by)
+        return CustomerFactory(added_by=self.added_by)
 
     customer_lat = 48.850690
     customer_lon = 2.308620

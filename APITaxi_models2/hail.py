@@ -57,7 +57,7 @@ class Hail(HistoryMixin, db.Model):
     __table_args__ = (
         db.ForeignKeyConstraint(
             ('customer_id', 'added_by'),
-            ('customer.id', 'customer.moteur_id'), name='hail_customer_id'),
+            ('customer.id', 'customer.added_by'), name='hail_customer_id'),
     )
 
     id = db.Column(db.String, primary_key=True)
