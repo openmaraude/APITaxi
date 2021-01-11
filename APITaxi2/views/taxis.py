@@ -18,7 +18,7 @@ from APITaxi_models2 import (
     ZUPC,
 )
 
-from .. import redis_backend, schemas
+from .. import debug, redis_backend, schemas
 from ..utils import get_short_uuid
 from ..validators import (
     make_error_json_response,
@@ -315,6 +315,8 @@ def taxis_list():
             application/json:
               schema: DataTaxiSchema
     """
+    debug_ctx = debug.DebugContext()
+
     schema = schemas.ListTaxisQueryStringSchema()
     params, errors = validate_schema(schema, request.args)
     if errors:
@@ -323,10 +325,15 @@ def taxis_list():
     zupcs = ZUPC.query.filter(
         func.ST_Intersects(ZUPC.shape, 'Point({} {})'.format(params['lon'], params['lat'])),
     ).all()
+    debug_ctx.log(f'List of zupcs matching lon={params["lon"]} lat={params["lat"]}', [{
+        'id': zupc.id,
+        'nom': zupc.nom
+    } for zupc in zupcs])
 
     schema = schemas.DataTaxiSchema()
 
     if not zupcs:
+        debug_ctx.log('No ZUPC maching')
         return schema.dump({'data': []})
 
     # This variable used to be in configuration file, but I don't think it
@@ -352,6 +359,10 @@ def taxis_list():
     #
     locations = redis_backend.taxis_locations_by_operator(
         params['lon'], params['lat'], max_distance
+    )
+    debug_ctx.log_admin(
+        f'List of taxis around lon={params["lon"]} lat={params["lat"]}',
+        locations
     )
 
     # Fetch all Taxi and VehicleDescriptions objects related to "locations".
@@ -467,4 +478,4 @@ def taxis_list():
     if 'count' in params:
         data = data[:params['count']]
 
-    return schema.dump({'data': data})
+    return debug_ctx.add_to_response(schema.dump({'data': data}))
