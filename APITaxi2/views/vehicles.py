@@ -2,7 +2,6 @@ from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
 from sqlalchemy import func
-from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import (
     db,
