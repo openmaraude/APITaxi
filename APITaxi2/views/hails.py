@@ -445,7 +445,7 @@ def hails_details(hail_id):
                     'new_hail_status': 'timeout_customer',
                     'new_taxi_status': 'free'
                 },
-                countdown=20
+                countdown=30
             )
         # Hail is accepted by customer. Taxi has 30 minutes to pickup the
         # customer and change status to customer_on_board.
