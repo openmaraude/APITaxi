@@ -21,7 +21,7 @@ blueprint = Blueprint('vehicles', __name__)
 
 @blueprint.route('/vehicles', methods=['POST'])
 @login_required
-@roles_accepted('admin', 'operateur', 'prefecture')
+@roles_accepted('admin', 'operateur')
 def vehicle_create():
     """
     ---
