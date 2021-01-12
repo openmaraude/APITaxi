@@ -25,7 +25,7 @@ class ADS(HistoryMixin, db.Model):
     category = db.Column(db.String, nullable=False)
     owner_name = db.Column(db.String, nullable=False)
     owner_type = db.Column(db.Enum(*OWNER_TYPES, name='owner_type_enum'), nullable=True)
-    zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'))
+    zupc_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'), nullable=False)
 
     added_by = db.relationship('User', lazy='raise')
     vehicle = db.relationship('Vehicle', lazy='raise')
