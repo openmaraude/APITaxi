@@ -740,11 +740,4 @@ def hails_create():
         response_status_code=201
     )
 
-    influx_backend.log_value('hails_created', {
-        'added_by': current_user.email,
-        'operator': hail_operateur_email,
-        'zupc': taxi_ads_insee,
-        'geohash': geohash2.encode(args['customer_lat'], args['customer_lon'])
-    })
-
     return ret, 201

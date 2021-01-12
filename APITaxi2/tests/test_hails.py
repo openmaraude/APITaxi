@@ -497,9 +497,6 @@ class TestCreateHail:
         hail_id = resp.json['data'][0]['id']
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
 
-        # Hail is logged to influxdb
-        assert len(list(app.influx.measurement.tag_values(measurement='hails_created', key='operator'))) == 1
-
     def test_automatic_session_id(self, app, moteur, operateur):
 
         def _create_hail(customer_id, session_id=None):
