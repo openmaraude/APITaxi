@@ -1,4 +1,5 @@
 from flask import Blueprint, request
+from flask_security import login_required
 
 from APITaxi_models2 import ZUPC
 
@@ -13,8 +14,8 @@ from ..validators import (
 blueprint = Blueprint('zupc', __name__)
 
 
-# For backward compatibility, this endpoint accepts anonymous requests.
 @blueprint.route('/zupc', methods=['GET'])
+@login_required
 def zupc_list():
     """
     ---

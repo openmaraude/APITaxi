@@ -11,10 +11,8 @@ class TestZUPCList:
         assert 'lon' in resp.json['errors']
         assert 'lat' in resp.json['errors']
 
-        # For backward compatibility, authentication is not required for this
-        # endpoint.
         resp = anonymous.client.get('/zupc?lon=2.35&lat=48.86')
-        assert resp.status_code == 200
+        assert resp.status_code == 401
 
     def test_ok(self, moteur, QueriesTracker):
         # lon=2.35&lat=48.86 = location in middle of Paris. No ZUPC is created
