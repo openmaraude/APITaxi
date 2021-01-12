@@ -276,7 +276,7 @@ class TestEditHail:
                     'new_hail_status': 'timeout_customer',
                     'new_taxi_status': 'free'
                 },
-                countdown=20
+                countdown=30
             )
 
         # When customer accepts the request, taxi has 30 minutes to pickup the
