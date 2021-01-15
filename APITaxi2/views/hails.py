@@ -3,8 +3,6 @@ import json
 import time
 import uuid
 
-import geohash2
-
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
@@ -15,7 +13,7 @@ from sqlalchemy.orm import aliased, joinedload
 from APITaxi_models2 import Customer, db, Hail, Taxi, User, Vehicle, VehicleDescription
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
-from .. import influx_backend, redis_backend, schemas, tasks
+from .. import redis_backend, schemas, tasks
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -710,11 +708,6 @@ def hails_create():
     vehicle_description.status = 'answering'
 
     ret = schema.dump({'data': [(hail, taxi_position)]})
-
-    # Since models' relationships have lazy='raise', they cannot be accessed
-    # after session.commit(). Save values for later use.
-    hail_operateur_email = hail.operateur.email
-    taxi_ads_insee = taxi.ads.insee
 
     hail_endpoint_production = hail.operateur.hail_endpoint_production
     operator_header_name = hail.operateur.operator_header_name
