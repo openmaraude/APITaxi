@@ -298,11 +298,16 @@ class UserPublicSchema(Schema):
     commercial_name = fields.String(data_key='name')
 
 
-class UserPrivateSchema(Schema):
-    """Display restricted informations, only available for administrators,
-    about users."""
+class RoleSchema(Schema):
+    name = fields.String()
+
+
+class UserPrivateSchema(UserPublicSchema):
+    """Display restricted informations about users. Should only be exposed to
+    owners and administrators."""
     email = fields.String()
     apikey = fields.String()
+    roles = fields.List(fields.Nested(RoleSchema))
 
 
 class CustomerSchema(Schema):

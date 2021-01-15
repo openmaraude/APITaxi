@@ -54,7 +54,11 @@ class TestUsersList:
             for user in (admin.user, user2, user3):
                 assert {
                     'email': user.email,
-                    'apikey': user.apikey
+                    'apikey': user.apikey,
+                    'name': user.commercial_name,
+                    'roles': [{
+                        'name': role.name
+                    } for role in user.roles],
                 } in resp.json['data']
 
             assert qtrack.count == 2
