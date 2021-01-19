@@ -68,7 +68,7 @@ def _log_active_taxis(last_update, data):
                 zupc_operators[taxi.ads.zupc.parent.insee][description.added_by.email] += 1
 
     for insee, values in zupc_operators.items():
-        for opeartor, num_active in values.items():
+        for operator, num_active in values.items():
             influx_backend.log_value(
                 'nb_taxis_every_%s' % last_update,
                 {
