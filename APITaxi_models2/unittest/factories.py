@@ -43,6 +43,7 @@ class RoleFactory(BaseFactory):
 class UserFactory(BaseFactory):
     class Meta:
         model = User
+        sqlalchemy_get_or_create = ('email',)
 
     email = factory.Sequence(lambda n: 'test_user_%d' % n)
     password = 'super_password'
