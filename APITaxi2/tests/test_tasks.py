@@ -14,6 +14,7 @@ from APITaxi_models2.unittest.factories import (
 )
 
 from .. import tasks
+from .. import influx_backend
 
 
 class TestCleanGeoindexTimestamps:
@@ -293,23 +294,6 @@ class TestSendRequestOperator:
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
 
 
-def get_nb_active_taxis(app, insee_code='', operator=''):
-    """Slightly different from the influx backend one."""
-    query = '''
-        SELECT "value"
-        FROM "nb_taxis_every_1"
-        WHERE "zupc" = $insee_code
-        AND "operator" = $operator
-        LIMIT 1;
-    '''
-    resp = app.influx.query(query, bind_params={'insee_code': insee_code, 'operator': operator})
-    points = list(resp.get_points())
-    if not points:
-        return 0
-
-    return points[0].get('value')
-
-
 class TestStoreActiveTaxis:
     @staticmethod
     def _add_taxi(app, zupc, lon, lat, operator):
@@ -347,16 +331,16 @@ class TestStoreActiveTaxis:
         tasks.store_active_taxis(1)  # One minute
 
         # Fetch the timed series written
-        assert get_nb_active_taxis(app) == 6
+        assert influx_backend.get_nb_active_taxis('') == 6
         # Number of taxis per ZUPC/commune
-        assert get_nb_active_taxis(app, '33063') == 3
-        assert get_nb_active_taxis(app, '75101') == 3
+        assert influx_backend.get_nb_active_taxis('33063') == 3
+        assert influx_backend.get_nb_active_taxis('75101') == 3
         # Number of taxis per operator
-        assert get_nb_active_taxis(app, operator='H8') == 2
-        assert get_nb_active_taxis(app, operator='Beta Taxis') == 2
-        assert get_nb_active_taxis(app, operator="Cab'ernet") == 2
+        assert influx_backend.get_nb_active_taxis('', operator='H8') == 2
+        assert influx_backend.get_nb_active_taxis('', operator='Beta Taxis') == 2
+        assert influx_backend.get_nb_active_taxis('', operator="Cab'ernet") == 2
         # Number of taxis per ZUPC and operator
-        assert get_nb_active_taxis(app, '75101', 'H8') == 2
-        assert get_nb_active_taxis(app, '75101', 'Beta Taxis') == 1
-        assert get_nb_active_taxis(app, '33063', "Cab'ernet") == 2
-        assert get_nb_active_taxis(app, '33063', 'Beta Taxis') == 1
+        assert influx_backend.get_nb_active_taxis('75101', 'H8') == 2
+        assert influx_backend.get_nb_active_taxis('75101', 'Beta Taxis') == 1
+        assert influx_backend.get_nb_active_taxis('33063', "Cab'ernet") == 2
+        assert influx_backend.get_nb_active_taxis('33063', 'Beta Taxis') == 1
