@@ -331,14 +331,14 @@ class TestStoreActiveTaxis:
         tasks.store_active_taxis(1)  # One minute
 
         # Fetch the timed series written
-        assert influx_backend.get_nb_active_taxis('') == 6
+        assert influx_backend.get_nb_active_taxis() == 6
         # Number of taxis per ZUPC/commune
         assert influx_backend.get_nb_active_taxis('33063') == 3
         assert influx_backend.get_nb_active_taxis('75101') == 3
         # Number of taxis per operator
-        assert influx_backend.get_nb_active_taxis('', operator='H8') == 2
-        assert influx_backend.get_nb_active_taxis('', operator='Beta Taxis') == 2
-        assert influx_backend.get_nb_active_taxis('', operator="Cab'ernet") == 2
+        assert influx_backend.get_nb_active_taxis(operator='H8') == 2
+        assert influx_backend.get_nb_active_taxis(operator='Beta Taxis') == 2
+        assert influx_backend.get_nb_active_taxis(operator="Cab'ernet") == 2
         # Number of taxis per ZUPC and operator
         assert influx_backend.get_nb_active_taxis('75101', 'H8') == 2
         assert influx_backend.get_nb_active_taxis('75101', 'Beta Taxis') == 1

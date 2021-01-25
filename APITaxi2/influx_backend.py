@@ -5,7 +5,7 @@ import datetime
 from flask import current_app
 
 
-def get_nb_active_taxis(insee_code, operator=''):
+def get_nb_active_taxis(insee_code='', operator=''):
     """Returns the number of active taxis stored by the celery cron
     `store_active_taxis`."""
     query = '''
