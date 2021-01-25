@@ -331,19 +331,18 @@ class TestStoreActiveTaxis:
             tasks.store_active_taxis(last_update)
 
         assert mocked.call_count == 10
-        assert mocked.call_args_list[0] == [('nb_taxis_every_1', {}), {'value': 6}]
-
-        # Number of taxis per ZUPC/commune
-        assert mocked.call_args_list[1] == [('nb_taxis_every_1', {'zupc': '33063'}), {'value': 3}]
-        assert mocked.call_args_list[2] == [('nb_taxis_every_1', {'zupc': '75101'}), {'value': 3}]
-
-        # Number of taxis per operator
-        assert mocked.call_args_list[3] == [('nb_taxis_every_1', {'operator': 'H8'}), {'value': 2}]
-        assert mocked.call_args_list[4] == [('nb_taxis_every_1', {'operator': 'Beta Taxis'}), {'value': 2}]
-        assert mocked.call_args_list[5] == [('nb_taxis_every_1', {'operator': "Cab'ernet"}), {'value': 2}]
-
-        # Number of taxis per ZUPC and operator
-        assert mocked.call_args_list[6] == [('nb_taxis_every_1', {'operator': 'H8', 'zupc': '75101'}), {'value': 2}]
-        assert mocked.call_args_list[7] == [('nb_taxis_every_1', {'operator': 'Beta Taxis', 'zupc': '75101'}), {'value': 1}]
-        assert mocked.call_args_list[8] == [('nb_taxis_every_1', {'operator': "Cab'ernet", 'zupc': '33063'}), {'value': 2}]
-        assert mocked.call_args_list[9] == [('nb_taxis_every_1', {'operator': 'Beta Taxis', 'zupc': '33063'}), {'value': 1}]
+        assert mocked.call_args_list == [
+            [('nb_taxis_every_1', {}), {'value': 6}],
+            # Number of taxis per ZUPC/commune
+            [('nb_taxis_every_1', {'zupc': '33063'}), {'value': 3}],
+            [('nb_taxis_every_1', {'zupc': '75101'}), {'value': 3}],
+            # Number of taxis per operator
+            [('nb_taxis_every_1', {'operator': 'H8'}), {'value': 2}],
+            [('nb_taxis_every_1', {'operator': 'Beta Taxis'}), {'value': 2}],
+            [('nb_taxis_every_1', {'operator': "Cab'ernet"}), {'value': 2}],
+            # Number of taxis per ZUPC and operator
+            [('nb_taxis_every_1', {'operator': 'H8', 'zupc': '75101'}), {'value': 2}],
+            [('nb_taxis_every_1', {'operator': 'Beta Taxis', 'zupc': '75101'}), {'value': 1}],
+            [('nb_taxis_every_1', {'operator': "Cab'ernet", 'zupc': '33063'}), {'value': 2}],
+            [('nb_taxis_every_1', {'operator': 'Beta Taxis', 'zupc': '33063'}), {'value': 1}],
+        ]
