@@ -14,6 +14,7 @@ from APITaxi_models2.unittest.factories import (
 )
 
 from .. import tasks
+from .. import influx_backend
 
 
 class TestCleanGeoindexTimestamps:
@@ -293,6 +294,23 @@ class TestSendRequestOperator:
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
 
 
+def get_nb_active_taxis(app, insee_code='', operator=''):
+    """Slightly different from the influx backend one."""
+    query = '''
+        SELECT "value"
+        FROM "nb_taxis_every_1"
+        WHERE "zupc" = $insee_code
+        AND "operator" = $operator
+        LIMIT 1;
+    '''
+    resp = app.influx.query(query, bind_params={'insee_code': insee_code, 'operator': operator})
+    points = list(resp.get_points())
+    if not points:
+        return 0
+
+    return points[0].get('value')
+
+
 class TestStoreActiveTaxis:
     @staticmethod
     def _add_taxi(app, zupc, lon, lat, operator):
@@ -326,23 +344,20 @@ class TestStoreActiveTaxis:
         # Also cover the case of a national operator
         self._add_taxi(app, Bordeaux, -0.5795, 44.776, 'Beta Taxis')
 
-        last_update = 1  # One minute
-        with mock.patch('APITaxi2.influx_backend.log_value') as mocked:
-            tasks.store_active_taxis(last_update)
+        # Log to the real Influx backend
+        tasks.store_active_taxis(1)  # One minute
 
-        assert mocked.call_count == 10
-        assert mocked.call_args_list == [
-            [('nb_taxis_every_1', {}), {'value': 6}],
-            # Number of taxis per ZUPC/commune
-            [('nb_taxis_every_1', {'zupc': '33063'}), {'value': 3}],
-            [('nb_taxis_every_1', {'zupc': '75101'}), {'value': 3}],
-            # Number of taxis per operator
-            [('nb_taxis_every_1', {'operator': 'H8'}), {'value': 2}],
-            [('nb_taxis_every_1', {'operator': 'Beta Taxis'}), {'value': 2}],
-            [('nb_taxis_every_1', {'operator': "Cab'ernet"}), {'value': 2}],
-            # Number of taxis per ZUPC and operator
-            [('nb_taxis_every_1', {'operator': 'H8', 'zupc': '75101'}), {'value': 2}],
-            [('nb_taxis_every_1', {'operator': 'Beta Taxis', 'zupc': '75101'}), {'value': 1}],
-            [('nb_taxis_every_1', {'operator': "Cab'ernet", 'zupc': '33063'}), {'value': 2}],
-            [('nb_taxis_every_1', {'operator': 'Beta Taxis', 'zupc': '33063'}), {'value': 1}],
-        ]
+        # Fetch the timed series written
+        assert get_nb_active_taxis(app) == 6
+        # Number of taxis per ZUPC/commune
+        assert get_nb_active_taxis(app, '33063') == 3
+        assert get_nb_active_taxis(app, '75101') == 3
+        # Number of taxis per operator
+        assert get_nb_active_taxis(app, operator='H8') == 2
+        assert get_nb_active_taxis(app, operator='Beta Taxis') == 2
+        assert get_nb_active_taxis(app, operator="Cab'ernet") == 2
+        # Number of taxis per ZUPC and operator
+        assert get_nb_active_taxis(app, '75101', 'H8') == 2
+        assert get_nb_active_taxis(app, '75101', 'Beta Taxis') == 1
+        assert get_nb_active_taxis(app, '33063', "Cab'ernet") == 2
+        assert get_nb_active_taxis(app, '33063', 'Beta Taxis') == 1

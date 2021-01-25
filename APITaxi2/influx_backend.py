@@ -11,12 +11,12 @@ def get_nb_active_taxis(insee_code):
     query = '''
         SELECT "value"
         FROM "nb_taxis_every_1"
-        WHERE "zupc" = '%s'
+        WHERE "zupc" = $insee_code
         AND "operator" = ''
         AND time > NOW() - 1m FILL(null) LIMIT 1;
-    ''' % insee_code
+    '''
     try:
-        resp = current_app.influx.query(query)
+        resp = current_app.influx.query(query, bind_params={'insee_code': insee_code})
     except Exception as exc:
         current_app.logger.warning('Unable to query influxdb: %s', exc)
         return None
