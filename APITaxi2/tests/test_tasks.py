@@ -14,7 +14,6 @@ from APITaxi_models2.unittest.factories import (
 )
 
 from .. import tasks
-from .. import influx_backend
 
 
 class TestCleanGeoindexTimestamps:
