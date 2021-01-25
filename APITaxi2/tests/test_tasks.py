@@ -10,9 +10,11 @@ from APITaxi_models2.unittest.factories import (
     TaxiFactory,
     VehicleFactory,
     VehicleDescriptionFactory,
+    ZUPCFactory,
 )
 
 from .. import tasks
+from .. import influx_backend
 
 
 class TestCleanGeoindexTimestamps:
@@ -290,3 +292,55 @@ class TestSendRequestOperator:
 
         # Check that failure is logged
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
+
+
+class TestStoreActiveTaxis:
+    @staticmethod
+    def _add_taxi(app, zupc, lon, lat, operator):
+        vehicle = VehicleFactory(descriptions=[])
+        VehicleDescriptionFactory(vehicle=vehicle, added_by__email=operator)
+        taxi = TaxiFactory(ads__zupc=zupc, vehicle=vehicle)
+        app.redis.geoadd(
+            'geoindex_2',
+            lon,
+            lat,
+            '%s:%s' % (taxi.id, operator)
+        )
+        app.redis.zadd(
+            'timestamps', {
+                '%s:%s' % (taxi.id, operator): int(time.time())
+            }
+        )
+
+    def test_store_active_taxis(self, app):
+        Paris = ZUPCFactory()
+        BORDEAUX_SHAPE = '''MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,
+            -0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,
+            -0.686737474226045 44.9009485734125)))'''
+        Bordeaux = ZUPCFactory(nom='Bordeaux', shape=BORDEAUX_SHAPE, insee='33063')
+
+        self._add_taxi(app, Paris, 2.367895, 48.86789, 'H8')
+        self._add_taxi(app, Paris, 2.367895, 48.86789, 'H8')
+        self._add_taxi(app, Paris, 2.367895, 48.86789, 'Beta Taxis')
+        self._add_taxi(app, Bordeaux, -0.5795, 44.776, "Cab'ernet")
+        self._add_taxi(app, Bordeaux, -0.5795, 44.776, "Cab'ernet")
+        # Also cover the case of a national operator
+        self._add_taxi(app, Bordeaux, -0.5795, 44.776, 'Beta Taxis')
+
+        # Log to the real Influx backend
+        tasks.store_active_taxis(1)  # One minute
+
+        # Fetch the timed series written
+        assert influx_backend.get_nb_active_taxis() == 6
+        # Number of taxis per ZUPC/commune
+        assert influx_backend.get_nb_active_taxis('33063') == 3
+        assert influx_backend.get_nb_active_taxis('75101') == 3
+        # Number of taxis per operator
+        assert influx_backend.get_nb_active_taxis(operator='H8') == 2
+        assert influx_backend.get_nb_active_taxis(operator='Beta Taxis') == 2
+        assert influx_backend.get_nb_active_taxis(operator="Cab'ernet") == 2
+        # Number of taxis per ZUPC and operator
+        assert influx_backend.get_nb_active_taxis('75101', 'H8') == 2
+        assert influx_backend.get_nb_active_taxis('75101', 'Beta Taxis') == 1
+        assert influx_backend.get_nb_active_taxis('33063', "Cab'ernet") == 2
+        assert influx_backend.get_nb_active_taxis('33063', 'Beta Taxis') == 1

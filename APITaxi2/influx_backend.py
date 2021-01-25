@@ -5,18 +5,19 @@ import datetime
 from flask import current_app
 
 
-def get_nb_active_taxis(insee_code):
+def get_nb_active_taxis(insee_code='', operator=''):
     """Returns the number of active taxis stored by the celery cron
     `store_active_taxis`."""
     query = '''
         SELECT "value"
         FROM "nb_taxis_every_1"
-        WHERE "zupc" = '%s'
-        AND "operator" = ''
+        WHERE "zupc" = $insee_code
+        AND "operator" = $operator
         AND time > NOW() - 1m FILL(null) LIMIT 1;
-    ''' % insee_code
+    '''
+    bind_params = {'insee_code': insee_code, 'operator': operator}
     try:
-        resp = current_app.influx.query(query)
+        resp = current_app.influx.query(query, bind_params=bind_params)
     except Exception as exc:
         current_app.logger.warning('Unable to query influxdb: %s', exc)
         return None
