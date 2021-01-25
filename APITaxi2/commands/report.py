@@ -76,7 +76,8 @@ def report(since, until):
     print(f'\n=== Vehicles created between {since.strftime("%d/%m/%Y")} and {until.strftime("%d/%m/%Y")} ===')
     display_model(
         VehicleDescription.query.options(
-            joinedload(VehicleDescription.added_by)
+            joinedload(VehicleDescription.added_by),
+            joinedload(VehicleDescription.vehicle),
         ).filter(
             VehicleDescription.added_at >= since,
             VehicleDescription.added_at < until
@@ -84,6 +85,7 @@ def report(since, until):
         [
             ('Création', lambda vd: vd.added_at),
             ('Id', lambda vd: vd.id),
+            ('Licence plate', lambda vd: vd.vehicle.licence_plate),
             ('Opérateur', lambda vd: vd.added_by.email),
         ]
     )
