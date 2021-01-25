@@ -126,5 +126,6 @@ def report(since, until):
             ('Statut', lambda hail: hail.status),
             ('Moteur', lambda hail: hail.added_by.email),
             ('Opérateur', lambda hail: hail.operateur.email),
+            ('Session', lambda hail: hail.session_id),
         ]
     )
