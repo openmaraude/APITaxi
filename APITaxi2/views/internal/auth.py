@@ -1,6 +1,7 @@
 from flask import Blueprint, request
 from flask_security.utils import verify_password
 from marshmallow import fields, Schema
+from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import User
 
@@ -27,7 +28,9 @@ def auth():
     if errors:
         return make_error_json_response(errors)
 
-    user = User.query.filter_by(email=params['email']).one_or_none()
+    user = User.query.options(joinedload(User.manager)).filter_by(
+        email=params['email']
+    ).one_or_none()
     if not user or not verify_password(params['password'], user.password):
         return make_error_json_response({
             'data': {
@@ -37,5 +40,5 @@ def auth():
             }
         }, status_code=401)
 
-    dump_schema = schemas.DataUserPrivateSchema()
+    dump_schema = schemas.DataUserSchema()
     return dump_schema.dump({'data': [user]})

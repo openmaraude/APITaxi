@@ -24,6 +24,24 @@ from APITaxi_models2.vehicle import (
 )
 
 
+class PageQueryStringMixin:
+    """Used to accept a querystring param ?p, and make sure it is specified
+    only once.
+    """
+    p = fields.List(fields.Int())
+
+    @validates('p')
+    def check_length(self, pages):
+        """Querystring ?p can be only specified zero or one time, not more.
+
+        Valid:   xxx?
+        Valid:   xxx?p=1
+        Invalid: xxx?p=1&p=2
+        """
+        if len(pages) != 1:
+            raise ValidationError('Argument `p` is specified more than once')
+
+
 class DepartementSchema(Schema):
     nom = fields.String()
     numero = fields.String()
@@ -293,21 +311,36 @@ class TaxiPUTSchema(Schema):
     )
 
 
-class UserPublicSchema(Schema):
-    """Display public informations about users."""
-    commercial_name = fields.String(data_key='name')
-
-
 class RoleSchema(Schema):
     name = fields.String()
 
 
-class UserPrivateSchema(UserPublicSchema):
+class ListUserQuerystringSchema(Schema, PageQueryStringMixin):
+    pass
+
+
+class ManagerSchema(Schema):
+    id = fields.Int()
+    commercial_name = fields.String(data_key='name')
+    email = fields.String()
+
+
+class UserSchema(Schema):
     """Display restricted informations about users. Should only be exposed to
     owners and administrators."""
+    id = fields.Int()
+    commercial_name = fields.String(data_key='name')
     email = fields.String()
     apikey = fields.String()
     roles = fields.List(fields.Nested(RoleSchema))
+    email_customer = fields.String()
+    email_technical = fields.String()
+    hail_endpoint_production = fields.String()
+    phone_number_customer = fields.String()
+    phone_number_technical = fields.String()
+    operator_api_key = fields.String()
+    operator_header_name = fields.String()
+    manager = fields.Nested(ManagerSchema)
 
 
 class CustomerSchema(Schema):
@@ -408,7 +441,7 @@ class HailSchema(Schema):
         return ret
 
 
-class ListHailQuerystringSchema(Schema):
+class ListHailQuerystringSchema(Schema, PageQueryStringMixin):
     """Querystring arguments for GET /hails/."""
     status = fields.List(fields.String(
         validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
@@ -417,18 +450,6 @@ class ListHailQuerystringSchema(Schema):
     moteur = fields.List(fields.String)
     taxi_id = fields.List(fields.String)
     date = fields.List(fields.Date('%Y/%m/%d'))
-    p = fields.List(fields.Int())
-
-    @validates('p')
-    def check_length(self, pages):
-        """Querystring ?p can be only specified zero or one time, not more.
-
-        Valid:   xxx?
-        Valid:   xxx?p=1
-        Invalid: xxx?p=1&p=2
-        """
-        if len(pages) != 1:
-            raise ValidationError('Argument `p` is specified more than once')
 
 
 class HailListSchema(Schema):
@@ -518,7 +539,7 @@ DataDriverSchema = data_schema_wrapper(DriverSchema())
 DataTaxiSchema = data_schema_wrapper(TaxiSchema())
 DataHailSchema = data_schema_wrapper(HailSchema())
 DataHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
-DataUserPublicSchema = data_schema_wrapper(UserPublicSchema())
-DataUserPrivateSchema = data_schema_wrapper(UserPrivateSchema())
+DataUserSchema = data_schema_wrapper(UserSchema())
+DataUserListSchema = data_schema_wrapper(UserSchema(), with_pagination=True)
 DataVehicleSchema = data_schema_wrapper(VehicleSchema())
 DataZUPCSchema = data_schema_wrapper(ZUPCSchema())
