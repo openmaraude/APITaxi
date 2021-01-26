@@ -48,17 +48,12 @@ class TestUsersList:
         user3 = UserFactory()
 
         # Three users: admin, user2, user3
-        with QueriesTracker() as qtrack:
+        with QueriesTracker() as qtracker:
             resp = admin.client.get('/users')
             assert resp.status_code == 200
-            for user in (admin.user, user2, user3):
-                assert {
-                    'email': user.email,
-                    'apikey': user.apikey,
-                    'name': user.commercial_name,
-                    'roles': [{
-                        'name': role.name
-                    } for role in user.roles],
-                } in resp.json['data']
 
-            assert qtrack.count == 2
+            assert resp.json['data'][0]['email'] == admin.user.email
+            assert resp.json['data'][1]['email'] == user2.email
+            assert resp.json['data'][2]['email'] == user3.email
+
+            assert qtracker.count == 3
