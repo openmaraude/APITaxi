@@ -314,10 +314,7 @@ class TestStoreActiveTaxis:
 
     def test_store_active_taxis(self, app):
         Paris = ZUPCFactory()
-        BORDEAUX_SHAPE = '''MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,
-            -0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,
-            -0.686737474226045 44.9009485734125)))'''
-        Bordeaux = ZUPCFactory(nom='Bordeaux', shape=BORDEAUX_SHAPE, insee='33063')
+        Bordeaux = ZUPCFactory(bordeaux=True)
 
         self._add_taxi(app, Paris, 2.367895, 48.86789, 'H8')
         self._add_taxi(app, Paris, 2.367895, 48.86789, 'H8')

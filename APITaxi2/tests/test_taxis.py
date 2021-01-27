@@ -494,17 +494,9 @@ class TestTaxiList:
         """Request is made from Paris, and taxi reports it's location in Paris
         but it's ZUPC is in Bordeaux.
         """
-        # Create Paris ZUPC.
-        ZUPCFactory()
-
-        # Hardcode Bordeaux ZUPC. See comment in
-        # APITaxi_models2.unittest.factories to see how to build this.
-        BORDEAUX_SHAPE = \
-            'MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,' \
-            '-0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,' \
-            '-0.686737474226045 44.9009485734125)))'
-        zupc = ZUPCFactory(nom='Bordeaux', shape=BORDEAUX_SHAPE, insee='33063')
-        ads = ADSFactory(zupc=zupc)
+        ZUPCFactory()  # Paris
+        bordeaux = ZUPCFactory(bordeaux=True)
+        ads = ADSFactory(zupc=bordeaux)
 
         vehicle = VehicleFactory(descriptions=[])
         vehicle_description = VehicleDescriptionFactory(vehicle=vehicle)
