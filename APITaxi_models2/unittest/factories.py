@@ -29,15 +29,7 @@ class BaseFactory(factory.alchemy.SQLAlchemyModelFactory):
 class RoleFactory(BaseFactory):
     class Meta:
         model = Role
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        """Get Role, or create it if it doesn't exist."""
-        session = cls._meta.sqlalchemy_session
-        obj = session.query(Role).filter_by(name=kwargs['name']).one_or_none()
-        if not obj:
-            obj = super()._create(model_class, *args, **kwargs)
-        return obj
+        sqlalchemy_get_or_create = ['name']
 
 
 class UserFactory(BaseFactory):
@@ -72,15 +64,7 @@ class CustomerFactory(BaseFactory):
 class DepartementFactory(BaseFactory):
     class Meta:
         model = Departement
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        """Get Department, or create it if it doesn't exist."""
-        session = cls._meta.sqlalchemy_session
-        obj = session.query(Departement).filter_by(numero=kwargs['numero']).one_or_none()
-        if not obj:
-            obj = super(DepartementFactory, cls)._create(model_class, *args, **kwargs)
-        return obj
+        sqlalchemy_get_or_create = ['numero']
 
     nom = factory.Sequence(lambda n: 'DEPARTEMENT_%d' % n)
     numero = factory.Sequence(lambda n: '%d' % n)
@@ -89,15 +73,7 @@ class DepartementFactory(BaseFactory):
 class ZUPCFactory(BaseFactory):
     class Meta:
         model = ZUPC
-
-    @classmethod
-    def _create(cls, model_class, *args, **kwargs):
-        """Get ZUPC, or create it if it doesn't exist."""
-        session = cls._meta.sqlalchemy_session
-        obj = session.query(ZUPC).filter_by(nom=kwargs['nom']).one_or_none()
-        if not obj:
-            obj = super(ZUPCFactory, cls)._create(model_class, *args, **kwargs)
-        return obj
+        sqlalchemy_get_or_create = ['nom']
 
     departement = factory.SubFactory(DepartementFactory)
     nom = 'Paris'
