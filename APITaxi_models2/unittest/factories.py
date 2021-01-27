@@ -130,6 +130,16 @@ class ZUPCFactory(BaseFactory):
 
     max_distance = 1500
 
+    class Params:
+        bordeaux = factory.Trait(
+            nom='Bordeaux',
+            insee='33063',
+            # Hardcode Bordeaux ZUPC. See comment above to see how to build this
+            shape='MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,'
+            '-0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,'
+            '-0.686737474226045 44.9009485734125)))',
+        )
+
 
 class ADSFactory(BaseFactory):
     class Meta:
