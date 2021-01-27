@@ -3,6 +3,7 @@ import pathlib
 import requests
 from urllib.parse import urlparse
 import zipfile
+import yaml
 
 import click
 from flask import Blueprint, current_app
@@ -10,7 +11,7 @@ from geoalchemy2.shape import from_shape
 from shapely.geometry import shape, MultiPolygon
 import shapefile
 
-from APITaxi_models2 import db, Town
+from APITaxi_models2 import db, ADS, Town, ZUPC
 
 
 blueprint = Blueprint('commands_towns', __name__, cli_group=None)
@@ -21,6 +22,9 @@ CONTOURS_DEFAULT_URL = "http://osm13.openstreetmap.fr/~cquest/openfla/export/com
 
 # Temporary path where CONTOURS_URL is downloaded
 CONTOURS_DEFAULT_TMPDIR = '/tmp/temp_contours'
+
+# Directory where https://github.com/openmaraude/ZUPC has been cloned
+ZUPC_DEFAULT_DIRECTORY = '/tmp/ZUPC'
 
 
 def to_multipolygon(shape_obj):
@@ -57,6 +61,37 @@ def get_records_from_shapefile(shape_filename):
     for shape_record in reader.iterShapeRecords():
         feature = shape_record.__geo_interface__
         yield feature['geometry'], feature['properties']
+
+
+def update_ads_new_insee_codes(zupc_repo):
+    """Small towns may merge in a bigger city area every year."""
+    print("Reassigning INSEE codes of old towns...")
+
+    for fusion_filename in sorted((zupc_repo / 'fusion_communes').iterdir()):
+        with open(fusion_filename) as handle:
+            data = yaml.safe_load(handle)
+
+        for old_insee, new_insee in data['mapping'].items():
+            for ads in db.session.query(ADS).filter(ADS.insee == old_insee):
+                if db.session.query(ADS).filter(
+                    ADS.numero == ads.numero, ADS.insee == new_insee
+                ).count():
+                    current_app.logger.warning("The ADS numero=%s insee=%s already exists", ads.numero, new_insee)
+                    continue
+                ads.insee = new_insee
+                db.session.add(ads)
+
+            old_town = db.session.query(Town).filter(Town.insee == old_insee).one_or_none()
+            if old_town:
+                for zupc in db.session.query(ZUPC).filter(ZUPC.allowed.contains(old_town)):
+                    # Just remove it, the new shape will cover the old town
+                    zupc.allowed.remove(old_town)
+                    db.session.add(zupc)
+
+            current_app.logger.info('Reassigning INSEE code %s to %s', old_insee, new_insee)
+
+    db.session.commit()
+    print("Done, probably safer to review and reimport ZUPC with the new INSEE codes.")
 
 
 def update_towns_from_contours(shape_filename):
@@ -116,11 +151,23 @@ PATH = PathlibPath()
     '--contours-tmpdir', default=CONTOURS_DEFAULT_TMPDIR, type=PATH,
     help='Where --contours-url is downloaded and extracted, default=%s' % CONTOURS_DEFAULT_TMPDIR
 )
-def import_towns(contours_url, contours_tmpdir):
+@click.option(
+    '--zupc-repo', default=ZUPC_DEFAULT_DIRECTORY, type=PATH,
+    help='Directory where https://github.com/openmaraude/ZUPC has been cloned, default=%s' % ZUPC_DEFAULT_DIRECTORY
+)
+def import_towns(contours_url, contours_tmpdir, zupc_repo):
+    # Ensure zupc_repo has been cloned
+    if not zupc_repo.exists():
+        raise ValueError('Please clone https://github.com/openmaraude/ZUPC to %s or set --zupc-dir option to the '
+                         'cloned directory' % zupc_repo)
+
     download_zipfile(contours_url, contours_tmpdir)
 
     shape_filenames = list(contours_tmpdir.glob('*.shp'))
     if len(shape_filenames) != 1:
         raise RuntimeError('None or more than one shapefile .shp in %s' % contours_tmpdir)
+
+    # Before maybe deleting old towns, reassign the relationships
+    update_ads_new_insee_codes(zupc_repo)
 
     update_towns_from_contours(shape_filenames[0])
