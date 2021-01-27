@@ -33,7 +33,7 @@ class TestADSCreate:
         resp = operateur.client.post('/ads', json={'data': [{
             'numero': '1234567',
             'doublage': True,
-            'insee': '75101',
+            'insee': '75056',
             'owner_type': 'individual',
             'owner_name': 'Roger Federer',
             'category': 'INCESSIBLE',
@@ -56,6 +56,7 @@ class TestADSCreate:
 
     def test_already_exists(self, operateur):
         """If ADS already exists, the existing item is updated and returned."""
+        ZUPCFactory()
         assert ADS.query.count() == 0
         ads = ADSFactory(added_by=operateur.user)
 
@@ -76,11 +77,12 @@ class TestADSCreate:
         vehicle = VehicleFactory(descriptions=[])
         VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
         zupc = ZUPCFactory()
+        insee = '75056'
 
         with QueriesTracker() as qtracker:
             resp = operateur.client.post('/ads', json={'data': [{
                 'numero': '1337',
-                'insee': zupc.insee,
+                'insee': insee,
                 'doublage': True,
                 'owner_type': 'individual',
                 'owner_name': 'Roger Federer',
@@ -93,7 +95,7 @@ class TestADSCreate:
 
         assert resp.status_code == 201
         assert resp.json['data'][0]['numero'] == '1337'
-        assert resp.json['data'][0]['insee'] == zupc.insee
+        assert resp.json['data'][0]['insee'] == insee
         assert resp.json['data'][0]['doublage'] is True
         assert resp.json['data'][0]['owner_type'] == 'individual'
         assert resp.json['data'][0]['owner_name'] == 'Roger Federer'
