@@ -91,8 +91,6 @@ class ZUPCFactory(BaseFactory):
     # SELECT ST_AsText(ST_Multi(ST_GeomFromText('POLYGON((2.24......))')));
     shape = 'MULTIPOLYGON(((2.24332732355285 48.9066360266329,2.42460173761535 48.9066360266329,2.42460173761535 48.8122203058303,2.24332732355285 48.8122203058303,2.24332732355285 48.9066360266329)))'
 
-    active = True
-
     @factory.post_generation
     def parent_id(obj, create, extracted, **kwargs):
         """Set parent_id equal to parent to represent a "root" ZUPC.

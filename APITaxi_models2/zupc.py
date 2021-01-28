@@ -21,7 +21,6 @@ class ZUPC(db.Model):
     parent_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'))
 
     shape = db.Column(Geography(geometry_type='MULTIPOLYGON', srid=4326, spatial_index=False))
-    active = db.Column(db.Boolean, nullable=False)
     max_distance = db.Column(db.Integer)
 
     departement = db.relationship('Departement', lazy='raise')
