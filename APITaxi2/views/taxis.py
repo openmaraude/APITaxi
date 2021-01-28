@@ -242,7 +242,7 @@ def taxis_details(taxi_id):
     if errors:
         return make_error_json_response(errors)
 
-    args = request.json['data'][0]
+    args = request.json.get('data', [{}])[0]
 
     # For now it is only possible to update the taxi's status.
     if 'status' in args and args['status'] != vehicle_description.status:
