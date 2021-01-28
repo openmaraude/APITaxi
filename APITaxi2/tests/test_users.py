@@ -3,6 +3,8 @@ from APITaxi_models2.unittest.factories import UserFactory
 
 class TestUsersDetails:
     def test_invalid(self, anonymous, admin, operateur, moteur):
+        user = UserFactory()
+
         # user id is not an integer, route is not found
         resp = anonymous.client.get('/users/xxx')
         assert resp.status_code == 404
@@ -11,9 +13,13 @@ class TestUsersDetails:
         resp = anonymous.client.get('/users/999')
         assert resp.status_code == 401
 
-        # Permission denied
         for role in (operateur, moteur):
+            # User does not exist
             resp = role.client.get('/users/999')
+            assert resp.status_code == 404
+
+            # User exists but client is not the owner
+            resp = role.client.get('/users/%s' % user.id)
             assert resp.status_code == 403
 
         # 404
@@ -30,6 +36,73 @@ class TestUsersDetails:
 
         assert resp.status_code == 200
         assert resp.json['data'][0]['name'] == 'Bob Dylan'
+
+
+class TestUsersPut:
+    def test_ok(self, operateur):
+        original_password = operateur.user.password
+
+        # Empty payload is a no op
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={})
+        assert resp.status_code == 200
+
+        # If data is provided, it must have one element.
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': []})
+        assert resp.status_code == 400
+
+        # No op
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{}]})
+        assert resp.status_code == 200
+
+        # If password is empty, it is not changed.
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
+            'password': ''
+        }]})
+        assert resp.status_code == 200
+        assert operateur.user.password == original_password
+
+        # Password too short.
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
+            'password': 'abc'
+        }]})
+        assert resp.status_code == 400
+
+        # Password changed.
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
+            'password': 'abcdefghi'
+        }]})
+        assert resp.status_code == 200
+        assert operateur.user.password != original_password
+
+        # Email and API key can *not* be changed, they are ignored.
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
+            'email': 'xxx',
+            'apikey': 'yyy',
+        }]})
+        assert resp.status_code == 200
+        assert operateur.user.email != 'xxx'
+        assert operateur.user.apikey != 'yyy'
+
+        # Other fields can be updated.
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
+            'name': 'New commercial name',
+            'email_customer': 'new email customer',
+            'email_technical': 'new email technical',
+            'hail_endpoint_production': 'new hail endpoint production',
+            'phone_number_customer': 'new phone number customer',
+            'phone_number_technical': 'new phone number technical',
+            'operator_api_key': 'new operator api key',
+            'operator_header_name': 'new operator header name',
+        }]})
+        assert resp.status_code == 200
+        assert operateur.user.commercial_name == 'New commercial name'
+        assert operateur.user.email_customer == 'new email customer'
+        assert operateur.user.email_technical == 'new email technical'
+        assert operateur.user.hail_endpoint_production == 'new hail endpoint production'
+        assert operateur.user.phone_number_customer == 'new phone number customer'
+        assert operateur.user.phone_number_technical == 'new phone number technical'
+        assert operateur.user.operator_api_key == 'new operator api key'
+        assert operateur.user.operator_header_name == 'new operator header name'
 
 
 class TestUsersList:

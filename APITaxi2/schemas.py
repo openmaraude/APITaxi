@@ -340,7 +340,16 @@ class UserSchema(Schema):
     phone_number_technical = fields.String()
     operator_api_key = fields.String()
     operator_header_name = fields.String()
-    manager = fields.Nested(ManagerSchema)
+    manager = fields.Nested(ManagerSchema, allow_none=True)
+
+    # User password can only be provided
+    password = fields.String(load_only=True)
+
+    @validates('password')
+    def check_password(self, password):
+        """Minimum is 8 chars if set, but empty values are also accepted."""
+        if password:
+            return validate.Length(min=8)(password)
 
 
 class CustomerSchema(Schema):
