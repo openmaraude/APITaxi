@@ -31,7 +31,6 @@ class TestZUPCList:
 
         assert resp.status_code == 200
         assert resp.json['data'][0] == {
-            'active': zupc.active,
             'insee': zupc.insee,
             'nom': zupc.nom,
             'nb_active': 0
