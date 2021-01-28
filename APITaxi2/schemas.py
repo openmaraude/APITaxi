@@ -210,7 +210,6 @@ class ListTaxisQueryStringSchema(Schema):
 
 class ZUPCSchema(Schema):
     insee = fields.String()
-    active = fields.Bool()
     nom = fields.String()
 
     def dump(self, obj, *args, **kwargs):

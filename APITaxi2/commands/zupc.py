@@ -307,8 +307,8 @@ def merge_zupc_tmp_table():
 
     current_app.logger.info('Insert data from zupc_temp to ZUPC')
     db.session.execute('''
-        INSERT INTO "ZUPC"(departement_id, nom, insee, shape, active)
-        SELECT departement_id, nom, insee, shape, false FROM zupc_temp
+        INSERT INTO "ZUPC"(departement_id, nom, insee, shape)
+        SELECT departement_id, nom, insee, shape FROM zupc_temp
     ''')
 
     db.session.flush()
