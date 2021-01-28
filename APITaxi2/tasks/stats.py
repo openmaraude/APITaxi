@@ -32,24 +32,23 @@ def _log_active_taxis(last_update, data):
         value=len(data)
     )
 
-    # Sort then group data by insee code
-    for insee, group in itertools.groupby(
-        sorted(data, key=lambda taxi: taxi.ads.zupc.parent.insee),
-        key=lambda taxi: taxi.ads.zupc.parent.insee
-    ):
+    # Count data by insee code
+    taxis_by_insee = collections.Counter(taxi.ads.zupc.parent.insee for taxi in data)
+
+    # Sort data by insee code
+    for insee in sorted(taxis_by_insee):
         influx_backend.log_value(
             'nb_taxis_every_%s' % last_update,
             {
                 'zupc': insee
             },
-            value=len(list(group))
+            value=taxis_by_insee[insee]
         )
 
     # Group by operator
-    operators = collections.defaultdict(int)
-    for taxi, descriptions in data.items():
-        for description in descriptions:
-            operators[description.added_by.email] += 1
+    operators = collections.Counter(
+        desc.added_by.email for descriptions in data.values() for desc in descriptions
+    )
 
     for operator, num_active in operators.items():
         influx_backend.log_value(
@@ -61,22 +60,21 @@ def _log_active_taxis(last_update, data):
         )
 
     # Group by ZUPC and operator
-    zupc_operators = collections.defaultdict(lambda: collections.defaultdict(int))
+    zupc_operators = collections.Counter()
     for taxi, descriptions in data.items():
         for description in descriptions:
             if description.status == 'free':
-                zupc_operators[taxi.ads.zupc.parent.insee][description.added_by.email] += 1
+                zupc_operators[(taxi.ads.zupc.parent.insee, description.added_by.email)] += 1
 
-    for insee, values in zupc_operators.items():
-        for operator, num_active in values.items():
-            influx_backend.log_value(
-                'nb_taxis_every_%s' % last_update,
-                {
-                    'operator': operator,
-                    'zupc': insee
-                },
-                value=num_active
-            )
+    for (insee, operator), num_active in zupc_operators.items():
+        influx_backend.log_value(
+            'nb_taxis_every_%s' % last_update,
+            {
+                'operator': operator,
+                'zupc': insee
+            },
+            value=num_active
+        )
 
 
 @celery.task(name='store_active_taxis')
