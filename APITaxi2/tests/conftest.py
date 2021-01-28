@@ -37,6 +37,7 @@ SQLALCHEMY_DATABASE_URI = '%(database)s'
 REDIS_URL = '%(redis)s'
 INFLUXDB_DATABASE = '%(influx_database)s'
 INFLUXDB_PORT = %(influx_port)s
+SECURITY_PASSWORD_HASH = 'plaintext'
 ''' % {
         'database': postgresql.url(),
         'redis': 'unix://%s' % redis_server,
