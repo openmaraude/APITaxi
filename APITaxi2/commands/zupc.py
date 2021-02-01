@@ -97,7 +97,6 @@ class ZUPC_tmp(db.Model):
     __tablename__ = 'zupc_temp'
 
     id = Column(db.Integer, primary_key=True)
-    departement_id = Column(db.Integer, db.ForeignKey('departement.id'))
     nom = Column(db.String(255))
     insee = Column(db.String(), nullable=True)
     shape = Column(Geography(geometry_type='MULTIPOLYGON', srid=4326, spatial_index=False))
@@ -135,7 +134,6 @@ def fill_zupc_tmp_table_from_contours(shape_filename):
         obj = ZUPC_tmp(
             nom=properties['nom'],
             insee=properties['insee'],
-            departement_id=departement.id,
             # 4326 is a reference to https://spatialreference.org/ref/epsg/wgs-84/
             shape=from_shape(MultiPolygon([shape(geom)]), srid=4326)
         )
@@ -307,8 +305,8 @@ def merge_zupc_tmp_table():
 
     current_app.logger.info('Insert data from zupc_temp to ZUPC')
     db.session.execute('''
-        INSERT INTO "ZUPC"(departement_id, nom, insee, shape)
-        SELECT departement_id, nom, insee, shape FROM zupc_temp
+        INSERT INTO "ZUPC"(nom, insee, shape)
+        SELECT nom, insee, shape FROM zupc_temp
     ''')
 
     db.session.flush()
