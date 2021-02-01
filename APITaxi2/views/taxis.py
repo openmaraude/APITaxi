@@ -342,11 +342,6 @@ def taxis_list():
     # configurable by the taxi.
     default_max_distance = 500
 
-    max_distance = max(
-        [zupc.max_distance for zupc in zupcs if zupc.max_distance and zupc.max_distance > 0]
-        + [default_max_distance]
-    )
-
     # Locations is a dict containing taxis close from the location given as
     # param. Each taxi can report its location from several operators.
     #
@@ -358,7 +353,7 @@ def taxis_list():
     # }
     #
     locations = redis_backend.taxis_locations_by_operator(
-        params['lon'], params['lat'], max_distance
+        params['lon'], params['lat'], default_max_distance
     )
     debug_ctx.log_admin(
         f'List of taxis around lon={params["lon"]} lat={params["lat"]}',

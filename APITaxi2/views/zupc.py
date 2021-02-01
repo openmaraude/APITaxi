@@ -43,7 +43,7 @@ def zupc_list():
     ).filter(
         ZUPC.id == ZUPC.parent_id
     ).order_by(
-        ZUPC.max_distance.desc()
+        ZUPC.id
     ).all()
 
     schema = schemas.DataZUPCSchema()
