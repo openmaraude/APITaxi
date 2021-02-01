@@ -12,15 +12,13 @@ class ZUPC(db.Model):
     )
 
     def __repr__(self):
-        return '<ZUPC %s (%s - %s)>' % (self.id, self.departement_id, self.nom)
+        return '<ZUPC %s (%s - %s)>' % (self.id, self.insee, self.nom)
 
     id = db.Column(db.Integer, primary_key=True)
-    departement_id = db.Column(db.Integer, db.ForeignKey('departement.id'))
     nom = db.Column(db.String(255), nullable=False)
     insee = db.Column(db.String)
     parent_id = db.Column(db.Integer, db.ForeignKey('ZUPC.id'))
 
     shape = db.Column(Geography(geometry_type='MULTIPOLYGON', srid=4326, spatial_index=False))
 
-    departement = db.relationship('Departement', lazy='raise')
     parent = db.relationship('ZUPC', remote_side=[id], lazy='raise')

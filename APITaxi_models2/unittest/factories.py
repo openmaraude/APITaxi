@@ -75,7 +75,6 @@ class ZUPCFactory(BaseFactory):
         model = ZUPC
         sqlalchemy_get_or_create = ['nom']
 
-    departement = factory.SubFactory(DepartementFactory)
     nom = 'Paris'
     insee = '75101'
 
