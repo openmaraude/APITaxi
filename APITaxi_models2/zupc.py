@@ -4,6 +4,14 @@ from sqlalchemy.dialects import postgresql
 from . import db
 
 
+# A given town can be part of several ZUPC
+town_zupc = db.Table(
+    'town_zupc', db.metadata,
+    db.Column('town_id', db.Integer, db.ForeignKey('town.id')),
+    db.Column('zupc_id', db.Integer, db.ForeignKey('ZUPC.id'))
+)
+
+
 class Town(db.Model):
     """All the French towns, whether they are part of a ZUPC or not."""
 
@@ -38,3 +46,6 @@ class ZUPC(db.Model):
     shape = db.Column(Geography(geometry_type='MULTIPOLYGON', srid=4326, spatial_index=False))
 
     parent = db.relationship('ZUPC', remote_side=[id], lazy='raise')
+
+    # Taxis from these towns are allowed to accept customer hails in this zone
+    allowed = db.relationship('Town', secondary=town_zupc)
