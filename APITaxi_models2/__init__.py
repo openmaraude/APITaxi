@@ -37,4 +37,4 @@ from .hail import Hail  # noqa
 from .taxi import Taxi  # noqa
 from .user import Role, RolesUsers, User  # noqa
 from .vehicle import Vehicle, VehicleDescription  # noqa
-from .zupc import ZUPC  # noqa
+from .zupc import Town, ZUPC  # noqa
