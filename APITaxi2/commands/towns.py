@@ -40,13 +40,13 @@ def download_zipfile(url, download_path):
         print(f"{filename} has already been downloaded, delete to download it again")
     else:
         os.makedirs(download_path)
-        current_app.logger.info('Download %s to %s', url, fullpath)
+        print(f'Download {url} to {fullpath}')
         r = requests.get(url)
         with open(fullpath, 'wb') as handle:
             handle.write(r.content)
 
     with zipfile.ZipFile(fullpath) as archive:
-        current_app.logger.info('Extract %s to %s', fullpath, download_path)
+        print(f'Extract {fullpath} to {download_path}')
         archive.extractall(download_path)
 
 
