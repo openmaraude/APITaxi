@@ -13,6 +13,7 @@ from APITaxi_models2 import (
     Departement,
     Driver,
     Taxi,
+    Town,
     Vehicle,
     VehicleDescription,
     ZUPC,
@@ -322,20 +323,33 @@ def taxis_list():
     if errors:
         return make_error_json_response(errors)
 
-    zupcs = ZUPC.query.filter(
-        func.ST_Intersects(ZUPC.shape, 'Point({} {})'.format(params['lon'], params['lat'])),
+    schema = schemas.DataTaxiSchema()
+
+    # First ask in what town the customer is
+    town = Town.query.filter(
+        func.ST_Intersects(Town.shape, 'Point({} {})'.format(params['lon'], params['lat'])),
+    ).one_or_none()
+    debug_ctx.log(f'Town matching lon={params["lon"]} lat={params["lat"]}: {town}')
+
+    if not town:
+        debug_ctx.log('No town matching')
+        return schema.dump({'data': []})
+
+    # Now ask the potential ZUPCs the town is part of
+    # There may be several: union of towns, airport, TGV station...
+    zupcs = ZUPC.query.options(
+        joinedload(Town, ZUPC.allowed)
+    ).filter(
+        ZUPC.allowed.contains(town)
     ).all()
     debug_ctx.log(f'List of zupcs matching lon={params["lon"]} lat={params["lat"]}', [{
         'id': zupc.id,
         'nom': zupc.nom
     } for zupc in zupcs])
 
-    schema = schemas.DataTaxiSchema()
-
-    if not zupcs:
-        debug_ctx.log('No ZUPC maching')
-        return schema.dump({'data': []})
-
+    # Now we know the taxis allowed at this position are the ones from this town
+    # plus the potential other taxis from the ZUPC
+    allowed_insee_codes = {town.insee, *(town.insee for zupc in zupcs for town in zupc.allowed)}
     # This variable used to be in configuration file, but I don't think it
     # makes much sense to have it configurable globally. Configuration should
     # ideally be fine grained, depending on day, time, location, and be even
@@ -375,9 +389,8 @@ def taxis_list():
         Taxi.id.in_(locations.keys()),
         # Removes taxis with an ADS located in another ZUPC than the one where
         # the request is made. For example, if a taxi from Bordeaux reports
-        # it's location in Paris, we don't want it returned for a request in
-        # Paris.
-        ADS.zupc_id.in_([zupc.id for zupc in zupcs])
+        # its location in Paris, we don't want it returned for a request in Paris.
+        ADS.insee.in_(allowed_insee_codes)
     )
 
     # Create data as a dictionary such as:

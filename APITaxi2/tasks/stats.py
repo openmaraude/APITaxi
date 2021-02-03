@@ -2,13 +2,12 @@
 
 import collections
 from datetime import datetime
-import itertools
 import time
 
 from flask import current_app
 from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import ADS, db, Taxi, User, VehicleDescription, ZUPC
+from APITaxi_models2 import db, Taxi, Town, User, VehicleDescription, ZUPC
 
 from . import celery
 from .. import influx_backend
@@ -33,16 +32,32 @@ def _log_active_taxis(last_update, data):
     )
 
     # Count data by insee code
-    taxis_by_insee = collections.Counter(taxi.ads.zupc.parent.insee for taxi in data)
+    taxis_by_insee = collections.Counter(taxi.ads.insee for taxi in data)
 
     # Sort data by insee code
     for insee in sorted(taxis_by_insee):
         influx_backend.log_value(
             'nb_taxis_every_%s' % last_update,
             {
-                'zupc': insee
+                'zupc': insee  # Insee code used as the key
             },
             value=taxis_by_insee[insee]
+        )
+
+    # Then sump up the taxis serving each ZUPC
+    covered_zupc = db.session.query(ZUPC).options(
+        joinedload(Town, ZUPC.allowed)
+    ).filter(
+        ZUPC.allowed.any(Town.insee.in_(taxis_by_insee))
+    ).all()
+    for zupc in covered_zupc:
+        nb_taxis = sum(taxis_by_insee[town.insee] for town in zupc.allowed)
+        influx_backend.log_value(
+            'nb_taxis_every_%s' % last_update,
+            {
+                'zupc': zupc.zupc_id
+            },
+            value=nb_taxis
         )
 
     # Group by operator
@@ -59,19 +74,22 @@ def _log_active_taxis(last_update, data):
             value=num_active
         )
 
-    # Group by ZUPC and operator
+    # Group by ZUPC (not individual towns) and operator
     zupc_operators = collections.Counter()
-    for taxi, descriptions in data.items():
-        for description in descriptions:
-            if description.status == 'free':
-                zupc_operators[(taxi.ads.zupc.parent.insee, description.added_by.email)] += 1
+    for zupc in covered_zupc:
+        for taxi, descriptions in data.items():
+            if taxi.ads.insee not in [town.insee for town in zupc.allowed]:
+                continue
+            for description in descriptions:
+                if description.status == 'free':
+                    zupc_operators[(zupc.zupc_id, description.added_by.email)] += 1
 
-    for (insee, operator), num_active in zupc_operators.items():
+    for (zupc_id, operator), num_active in zupc_operators.items():
         influx_backend.log_value(
             'nb_taxis_every_%s' % last_update,
             {
                 'operator': operator,
-                'zupc': insee
+                'zupc': zupc_id
             },
             value=num_active
         )
@@ -110,7 +128,7 @@ def store_active_taxis(last_update):
             User,
             VehicleDescription.added_by_id == User.id
         ).options(
-            joinedload(Taxi.ads).joinedload(ADS.zupc).joinedload(ZUPC.parent),
+            joinedload(Taxi.ads),
             joinedload(VehicleDescription.added_by)
         ).filter(
             Taxi.vehicle_id == VehicleDescription.vehicle_id

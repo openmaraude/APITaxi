@@ -1,7 +1,8 @@
 from flask import Blueprint, request
 from flask_security import login_required
+from sqlalchemy import func
 
-from APITaxi_models2 import ZUPC
+from APITaxi_models2 import Town, ZUPC
 
 from .. import influx_backend
 from .. import schemas
@@ -38,18 +39,29 @@ def zupc_list():
     if errors:
         return make_error_json_response(errors)
 
+    schema = schemas.DataZUPCSchema()
+
+    town = Town.query.filter(
+        func.ST_Intersects(Town.shape, 'Point({} {})'.format(args['lon'], args['lat'])),
+    ).one_or_none()
+
+    if not town:
+        return schema.dump({'data': []})
+
     zupcs = ZUPC.query.filter(
-        ZUPC.shape.ST_Intersects('POINT(%s %s)' % (args['lon'], args['lat']))
-    ).filter(
-        ZUPC.id == ZUPC.parent_id
+        ZUPC.allowed.contains(town)
     ).order_by(
         ZUPC.id
     ).all()
+    allowed_insee_codes = {town.insee, *(town.insee for zupc in zupcs for town in zupc.allowed)}
 
-    schema = schemas.DataZUPCSchema()
     ret = schema.dump({
         'data': [
-            (zupc, influx_backend.get_nb_active_taxis(zupc.insee))
+            [
+                zupc,
+                # Count the total of active taxis allowed in this ZUPC
+                sum(influx_backend.get_nb_active_taxis(insee) for insee in allowed_insee_codes),
+            ]
             for zupc in zupcs
         ]
     })
