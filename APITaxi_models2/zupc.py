@@ -15,6 +15,9 @@ town_zupc = db.Table(
 
 class Town(db.Model):
     """All the French towns, whether they are part of a ZUPC or not."""
+    __table_args__ = (
+        db.Index('idx_town_shape', 'shape'),
+    )
 
     def __repr__(self):
         return f'<Town {self.id} - {self.insee} ({self.name})>'
