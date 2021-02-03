@@ -8,7 +8,8 @@ from . import db
 town_zupc = db.Table(
     'town_zupc', db.metadata,
     db.Column('town_id', db.Integer, db.ForeignKey('town.id')),
-    db.Column('zupc_id', db.Integer, db.ForeignKey('ZUPC.id'))
+    db.Column('zupc_id', db.Integer, db.ForeignKey('ZUPC.id')),
+    db.UniqueConstraint('town_id', 'zupc_id', name='unique_pair'),
 )
 
 
