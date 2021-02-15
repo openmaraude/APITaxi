@@ -336,10 +336,10 @@ class TestTaxiList:
         assert resp.status_code == 403
 
     def test_ok(self, app, moteur, QueriesTracker):
-        zupc = ZUPCFactory()
+        ZUPCFactory()
         now = datetime.now()
 
-        taxi_1 = TaxiFactory(ads__zupc=zupc)
+        taxi_1 = TaxiFactory()
 
         taxi_2_vehicle = VehicleFactory(descriptions=[])
 
@@ -354,7 +354,7 @@ class TestTaxiList:
             last_update_at=now - timedelta(days=15)
         )
 
-        TaxiFactory(ads__zupc=zupc, vehicle=taxi_2_vehicle)
+        TaxiFactory(vehicle=taxi_2_vehicle)
 
         lon = tmp_lon = 2.35
         lat = tmp_lat = 48.86
@@ -390,8 +390,8 @@ class TestTaxiList:
 
         with QueriesTracker() as qtracker:
             resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
-            # SELECT permissions, SELECT ZUPC, SELECT taxi
-            assert qtracker.count == 3
+            # SELECT permissions, SELECT TOWN, SELECT ZUPC, SELECT taxi
+            assert qtracker.count == 4
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2
@@ -467,6 +467,7 @@ class TestTaxiList:
         )
 
         taxi = TaxiFactory(vehicle=vehicle)
+        ZUPCFactory()
 
         lon = 2.367895
         lat = 48.86789
@@ -491,17 +492,16 @@ class TestTaxiList:
         assert resp.json['data'][0]['position']['lat']
 
     def test_different_zupc(self, app, moteur, operateur):
-        """Request is made from Paris, and taxi reports it's location in Paris
-        but it's ZUPC is in Bordeaux.
+        """Request is made from Paris, and taxi reports its location in Paris
+        but its ZUPC is in Bordeaux.
         """
         ZUPCFactory()  # Paris
-        bordeaux = ZUPCFactory(bordeaux=True)
-        ads = ADSFactory(zupc=bordeaux)
+        ZUPCFactory(bordeaux=True)
 
         vehicle = VehicleFactory(descriptions=[])
         vehicle_description = VehicleDescriptionFactory(vehicle=vehicle)
         # Taxi ADS is in Bordeaux.
-        taxi = TaxiFactory(ads=ads, vehicle=vehicle)
+        taxi = TaxiFactory(ads__insee='33063', vehicle=vehicle)
 
         # Report location in Paris.
         lon = 2.367895

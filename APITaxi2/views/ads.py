@@ -4,7 +4,7 @@ from flask import Blueprint, request
 
 from flask_security import current_user, login_required, roles_accepted
 
-from APITaxi_models2 import ADS, db, Vehicle, VehicleDescription, ZUPC
+from APITaxi_models2 import ADS, db, Town, Vehicle, VehicleDescription
 
 from .. import schemas
 from ..validators import (
@@ -64,8 +64,8 @@ def ads_create():
             }, status_code=404)
 
     # Check if INSEE is valid.
-    zupc = ZUPC.query.filter_by(insee=args['insee']).one_or_none()
-    if not zupc:
+    town = Town.query.filter_by(insee=args['insee']).one_or_none()
+    if not town:
         return make_error_json_response({
             'data': {
                 '0': {
@@ -98,7 +98,6 @@ def ads_create():
     ads.category = args.get('category', '')
     ads.owner_name = args.get('owner_name', '')
     ads.owner_type = args.get('owner_type', None)
-    ads.zupc = zupc
 
     db.session.add(ads)
     db.session.flush()
