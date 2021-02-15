@@ -53,14 +53,13 @@ def zupc_list():
     ).order_by(
         ZUPC.id
     ).all()
-    allowed_insee_codes = {town.insee, *(town.insee for zupc in zupcs for town in zupc.allowed)}
 
     ret = schema.dump({
         'data': [
             [
                 zupc,
                 # Count the total of active taxis allowed in this ZUPC
-                sum(influx_backend.get_nb_active_taxis(insee) for insee in allowed_insee_codes),
+                influx_backend.get_nb_active_taxis(zupc_id=zupc.zupc_id)
             ]
             for zupc in zupcs
         ]

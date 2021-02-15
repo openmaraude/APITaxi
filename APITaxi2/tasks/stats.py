@@ -34,17 +34,17 @@ def _log_active_taxis(last_update, data):
     # Count data by insee code
     taxis_by_insee = collections.Counter(taxi.ads.insee for taxi in data)
 
-    # Sort data by insee code
+    # Group data by insee code
     for insee in sorted(taxis_by_insee):
         influx_backend.log_value(
             'nb_taxis_every_%s' % last_update,
             {
-                'zupc': insee  # Insee code used as the key
+                'insee': insee  # Insee code used as the key
             },
             value=taxis_by_insee[insee]
         )
 
-    # Then sump up the taxis serving each ZUPC
+    # Group by ZUPC
     covered_zupc = db.session.query(ZUPC).options(
         joinedload(Town, ZUPC.allowed)
     ).filter(
@@ -74,7 +74,24 @@ def _log_active_taxis(last_update, data):
             value=num_active
         )
 
-    # Group by ZUPC (not individual towns) and operator
+    # Group by town and operator
+    town_operators = collections.Counter()
+    for taxi, descriptions in data.items():
+        for description in descriptions:
+            if description.status == 'free':
+                town_operators[(taxi.ads.insee, description.added_by.email)] += 1
+
+    for (insee, operator), num_active in town_operators.items():
+        influx_backend.log_value(
+            'nb_taxis_every_%s' % last_update,
+            {
+                'operator': operator,
+                'insee': insee
+            },
+            value=num_active
+        )
+
+    # Group by ZUPC and operator
     zupc_operators = collections.Counter()
     for zupc in covered_zupc:
         for taxi, descriptions in data.items():

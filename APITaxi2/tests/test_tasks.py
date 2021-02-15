@@ -333,14 +333,14 @@ class TestStoreActiveTaxis:
         # Fetch the timed series written
         assert influx_backend.get_nb_active_taxis() == 6
         # Number of taxis per ZUPC/commune
-        assert influx_backend.get_nb_active_taxis('33063') == 3
         assert influx_backend.get_nb_active_taxis('75056') == 3
+        assert influx_backend.get_nb_active_taxis('33063') == 3
         # Number of taxis per operator
-        assert influx_backend.get_nb_active_taxis(operator='H8') == 2
-        assert influx_backend.get_nb_active_taxis(operator='Beta Taxis') == 2
-        assert influx_backend.get_nb_active_taxis(operator="Cab'ernet") == 2
+        assert influx_backend.get_nb_active_taxis('75056', operator='Beta Taxis') == 1
+        assert influx_backend.get_nb_active_taxis('33063', operator="Beta Taxis") == 1
+        # Number of taxis per town and operator
         # Number of taxis per ZUPC and operator
-        assert influx_backend.get_nb_active_taxis(zupc_paris.zupc_id, 'H8') == 2
-        assert influx_backend.get_nb_active_taxis(zupc_paris.zupc_id, 'Beta Taxis') == 1
-        assert influx_backend.get_nb_active_taxis(zupc_bordeaux.zupc_id, "Cab'ernet") == 2
-        assert influx_backend.get_nb_active_taxis(zupc_bordeaux.zupc_id, 'Beta Taxis') == 1
+        assert influx_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='H8') == 2
+        assert influx_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='Beta Taxis') == 1
+        assert influx_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator="Cab'ernet") == 2
+        assert influx_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator='Beta Taxis') == 1

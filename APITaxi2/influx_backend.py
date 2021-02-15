@@ -5,17 +5,18 @@ import datetime
 from flask import current_app
 
 
-def get_nb_active_taxis(insee_code='', operator=''):
+def get_nb_active_taxis(insee_code='', zupc_id='', operator=''):
     """Returns the number of active taxis stored by the celery cron
     `store_active_taxis`."""
     query = '''
         SELECT "value"
         FROM "nb_taxis_every_1"
-        WHERE "zupc" = $insee_code
+        WHERE "insee" = $insee_code
+        AND "zupc" = $zupc_id
         AND "operator" = $operator
         AND time > NOW() - 1m FILL(null) LIMIT 1;
     '''
-    bind_params = {'insee_code': insee_code, 'operator': operator}
+    bind_params = {'insee_code': insee_code, 'zupc_id': zupc_id, 'operator': operator}
     try:
         resp = current_app.influx.query(query, bind_params=bind_params)
     except Exception as exc:
