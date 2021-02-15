@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 import factory
 
@@ -10,6 +11,7 @@ from APITaxi_models2 import (
     Driver,
     Hail,
     Taxi,
+    Town,
     User,
     Role,
     RolesUsers,
@@ -70,13 +72,46 @@ class DepartementFactory(BaseFactory):
     numero = factory.Sequence(lambda n: '%d' % n)
 
 
+class TownFactory(BaseFactory):
+    class Meta:
+        model = Town
+        sqlalchemy_get_or_create = ['insee']
+
+    name = 'Paris'
+    insee = '75056'
+
+    # The MUTLIPOLYGON below is a simple square containing Paris. It has been
+    # generated with a WKT editor such as:
+    #
+    # http://arthur-e.github.io/Wicket/sandbox-gmaps3.html
+    # https://clydedacruz.github.io/openstreetmap-wkt-playground/
+    #
+    # To convert a POLYGON (as returned by these editors) to a MULTIPOLYGON (as
+    # expected by ZUPC.shape), run the following query from a postgis database:
+    #
+    # SELECT ST_AsText(ST_Multi(ST_GeomFromText('POLYGON((2.24......))')));
+    shape = 'MULTIPOLYGON(((2.24332732355285 48.9066360266329,2.42460173761535 48.9066360266329,2.42460173761535 48.8122203058303,2.24332732355285 48.8122203058303,2.24332732355285 48.9066360266329)))'
+
+    class Params:
+        bordeaux = factory.Trait(
+            name='Bordeaux',
+            insee='33063',
+            shape='MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,-0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,-0.686737474226045 44.9009485734125)))',
+        )
+        charenton = factory.Trait(
+            name='Charenton-le-Pont',
+            insee='94018',
+            shape='MULTIPOLYGON(((2.40222930908203 48.8296390842375,2.41973876953125 48.8241580560601,2.41939544677734 48.8177721847637,2.40119934082031 48.8211630141963,2.39235877990723 48.8267008756382,2.40222930908203 48.8296390842375)))',
+        )
+
+
 class ZUPCFactory(BaseFactory):
     class Meta:
         model = ZUPC
         sqlalchemy_get_or_create = ['nom']
 
     nom = 'Paris'
-    insee = '75101'
+    insee = '75056'
 
     # The MUTLIPOLYGON below is a simple square containing Paris. It has been
     # generated with a WKT editor such as:
@@ -101,6 +136,9 @@ class ZUPCFactory(BaseFactory):
         db.session.flush()
         return obj.parent_id
 
+    zupc_id = factory.LazyAttribute(lambda o: str(uuid.uuid4()))
+    allowed = factory.LazyAttribute(lambda o: [TownFactory(), TownFactory(charenton=True)])
+
     class Params:
         bordeaux = factory.Trait(
             nom='Bordeaux',
@@ -109,6 +147,7 @@ class ZUPCFactory(BaseFactory):
             shape='MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,'
             '-0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,'
             '-0.686737474226045 44.9009485734125)))',
+            allowed=factory.LazyAttribute(lambda o: [TownFactory(bordeaux=True)])
         )
 
 
@@ -117,7 +156,7 @@ class ADSFactory(BaseFactory):
         model = ADS
 
     numero = factory.Sequence(lambda n: 'ads_number_%d' % n)
-    insee = '75101'
+    insee = '75056'
     owner_type = 'individual'
     owner_name = 'Owner ADS'
     category = ''

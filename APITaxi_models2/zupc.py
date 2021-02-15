@@ -9,7 +9,7 @@ town_zupc = db.Table(
     'town_zupc', db.metadata,
     db.Column('town_id', db.Integer, db.ForeignKey('town.id')),
     db.Column('zupc_id', db.Integer, db.ForeignKey('ZUPC.id')),
-    db.UniqueConstraint('town_id', 'zupc_id', name='unique_pair'),
+    db.PrimaryKeyConstraint('town_id', 'zupc_id', name='town_zupc_pk'),
 )
 
 
@@ -30,6 +30,11 @@ class Town(db.Model):
 
 
 class ZUPC(db.Model):
+    """An actual ZUPC as created by an administrative decree.
+
+    Towns are now in a separate model above.
+    """
+
     # The two indexes are duplicated. We only declare them to reflect the
     # database, but we will need to eventually remove at least one of them.
     __table_args__ = (
