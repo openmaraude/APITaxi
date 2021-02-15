@@ -326,14 +326,15 @@ def taxis_list():
     schema = schemas.DataTaxiSchema()
 
     # First ask in what town the customer is
-    town = Town.query.filter(
+    towns = Town.query.filter(
         func.ST_Intersects(Town.shape, 'Point({} {})'.format(params['lon'], params['lat'])),
-    ).one_or_none()
-    debug_ctx.log(f'Town matching lon={params["lon"]} lat={params["lat"]}: {town}')
+    ).all()  # Shouldn't happen but in case geometries overlap on OSM
+    debug_ctx.log(f'Towns matching lon={params["lon"]} lat={params["lat"]}: {towns}')
 
-    if not town:
+    if not towns:
         debug_ctx.log('No town matching')
         return schema.dump({'data': []})
+    town = towns[0]
 
     # Now ask the potential ZUPCs the town is part of
     # There may be several: union of towns, airport, TGV station...
