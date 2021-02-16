@@ -74,7 +74,7 @@ def update_ads_new_insee_codes(zupc_repo):
         for old_insee, new_insee in data['mapping'].items():
             for ads in db.session.query(ADS).filter(ADS.insee == old_insee):
                 if db.session.query(ADS).filter(
-                    ADS.numero == ads.numero, ADS.insee == new_insee
+                    ADS.numero == ads.numero, ADS.added_by_id == ads.added_by_id, ADS.insee == new_insee
                 ).count():
                     current_app.logger.warning("The ADS numero=%s insee=%s already exists", ads.numero, new_insee)
                     continue
