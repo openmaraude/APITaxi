@@ -22,7 +22,12 @@ class TestZUPCList:
         # yet, so the result is empty.
         resp = moteur.client.get('zupc?lon=2.35&lat=48.86')
         assert resp.status_code == 200
-        assert resp.json == {'data': []}
+        # A ZUPC is simulated at the town level
+        assert resp.json == {'data': [{
+            'zupc_id': '75056',
+            'nom': "Paris",
+            'nb_active': 0,
+        }]}
 
         zupc = ZUPCFactory()
         ZUPCFactory(bordeaux=True)  # Shouldn't appear in the results
