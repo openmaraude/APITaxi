@@ -1,12 +1,13 @@
 import json
 import pathlib
+import sys
 import yaml
 
 import click
 from flask import Blueprint, current_app
 from shapely.geometry import shape, MultiPolygon
 from shapely.ops import cascaded_union
-
+from sqlalchemy import func
 from APITaxi_models2 import db, Town, ZUPC
 
 
@@ -139,3 +140,40 @@ def import_zupc(zupc_repo):
 
     # Delete existing zones beforehand?
     fill_zupc_table_from_arretes(zupc_repo)
+
+
+@blueprint.cli.command('export_zupc')
+def export_zupc():
+    """Export the list of ZUPC as a GeoJSON map to share."""
+
+    output = {
+        'type': "FeatureCollection",
+        'features': []
+    }
+
+    for zupc in ZUPC.query.order_by('id'):
+        query = db.session.query(
+            func.st_AsGeoJSON(
+                func.Geography(
+                    func.st_Multi(
+                        func.ST_Union(
+                            func.Geometry(Town.shape)
+                        )
+                    )
+                )
+            ),
+            func.json_agg(Town.insee),
+        ).filter(Town.allowed.contains(zupc))
+        shape, insee_codes = query.one()
+        output['features'].append({
+            'type': "Feature",
+            'geometry': json.loads(shape),
+            'properties': {
+                'zupc_id': zupc.zupc_id,
+                'name': zupc.nom,
+                'insee': insee_codes,
+            }
+        })
+
+    json.dump(output, sys.stdout, indent=2)
+    sys.stdout.flush()
