@@ -19,6 +19,7 @@ blueprint = Blueprint('zupc', __name__)
 @login_required
 def zupc_list():
     """
+    This endpoint is only used by the online and is not part of the public API.
     ---
     get:
       description: Get data about ZUPC.
@@ -53,6 +54,19 @@ def zupc_list():
     ).order_by(
         ZUPC.id
     ).all()
+
+    # For backwards compatibility until the map is rewritten,
+    # expose towns as their own ZUPC (they are ZPC anyway)
+    if not zupcs:
+        ret = schema.dump({
+            'data': [
+                [
+                    ZUPC(zupc_id=town.insee, nom=town.name),
+                    influx_backend.get_nb_active_taxis(insee_code=town.insee)
+                ]
+            ]
+        })
+        return ret
 
     ret = schema.dump({
         'data': [
