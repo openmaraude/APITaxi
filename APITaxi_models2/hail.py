@@ -1,5 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.ext.mutable import MutableList
 
 from . import db
 from .mixins import HistoryMixin
@@ -83,25 +84,12 @@ class Hail(HistoryMixin, db.Model):
     initial_taxi_lat = db.Column(db.Float)
     initial_taxi_lon = db.Column(db.Float)
 
-    change_to_accepted_by_customer = db.Column(db.DateTime)
-    change_to_accepted_by_taxi = db.Column(db.DateTime)
-    change_to_declined_by_customer = db.Column(db.DateTime)
-    change_to_declined_by_taxi = db.Column(db.DateTime)
-    change_to_failure = db.Column(db.DateTime)
-    change_to_incident_customer = db.Column(db.DateTime)
-    change_to_incident_taxi = db.Column(db.DateTime)
-    change_to_received_by_operator = db.Column(db.DateTime)
-    change_to_received_by_taxi = db.Column(db.DateTime)
-    change_to_sent_to_operator = db.Column(db.DateTime)
-    change_to_timeout_customer = db.Column(db.DateTime)
-    change_to_timeout_taxi = db.Column(db.DateTime)
-    change_to_customer_on_board = db.Column(db.DateTime)
-    change_to_finished = db.Column(db.DateTime)
-    change_to_timeout_accepted_by_customer = db.Column(db.DateTime)
-
     session_id = db.Column(
         postgresql.UUID(as_uuid=True), nullable=False, server_default=func.uuid_generate_v4()
     )
+
+    # Record status changes (manually)
+    transition_log = db.Column(MutableList.as_mutable(postgresql.JSON()), nullable=False, server_default="[]")
 
     # Relationships
     added_by = db.relationship('User', foreign_keys=[added_by_id], lazy='raise')
