@@ -15,7 +15,7 @@ class Driver(HistoryMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    departement_id = db.Column(db.Integer, db.ForeignKey('departement.id'))
+    departement_id = db.Column(db.Integer, db.ForeignKey('departement.id'), nullable=False)
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
     birth_date = db.Column(db.Date)
     first_name = db.Column(db.String(255), nullable=False)
