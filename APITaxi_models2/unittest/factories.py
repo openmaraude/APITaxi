@@ -111,30 +111,6 @@ class ZUPCFactory(BaseFactory):
         sqlalchemy_get_or_create = ['nom']
 
     nom = 'Paris'
-    insee = '75056'
-
-    # The MUTLIPOLYGON below is a simple square containing Paris. It has been
-    # generated with a WKT editor such as:
-    #
-    # http://arthur-e.github.io/Wicket/sandbox-gmaps3.html
-    # https://clydedacruz.github.io/openstreetmap-wkt-playground/
-    #
-    # To convert a POLYGON (as returned by these editors) to a MULTIPOLYGON (as
-    # expected by ZUPC.shape), run the following query from a postgis database:
-    #
-    # SELECT ST_AsText(ST_Multi(ST_GeomFromText('POLYGON((2.24......))')));
-    shape = 'MULTIPOLYGON(((2.24332732355285 48.9066360266329,2.42460173761535 48.9066360266329,2.42460173761535 48.8122203058303,2.24332732355285 48.8122203058303,2.24332732355285 48.9066360266329)))'
-
-    @factory.post_generation
-    def parent_id(obj, create, extracted, **kwargs):
-        """Set parent_id equal to parent to represent a "root" ZUPC.
-        """
-        if not create or extracted is not None:
-            return extracted
-
-        obj.parent_id = obj.id
-        db.session.flush()
-        return obj.parent_id
 
     zupc_id = factory.LazyAttribute(lambda o: str(uuid.uuid4()))
     allowed = factory.LazyAttribute(lambda o: [TownFactory(), TownFactory(charenton=True)])
@@ -142,11 +118,6 @@ class ZUPCFactory(BaseFactory):
     class Params:
         bordeaux = factory.Trait(
             nom='Bordeaux',
-            insee='33063',
-            # Hardcode Bordeaux ZUPC. See comment above to see how to build this
-            shape='MULTIPOLYGON(((-0.686737474226045 44.9009485734125,-0.494476732038545 44.9009485734125,'
-            '-0.494476732038545 44.7826391041975,-0.686737474226045 44.7826391041975,'
-            '-0.686737474226045 44.9009485734125)))',
             allowed=factory.LazyAttribute(lambda o: [TownFactory(bordeaux=True)])
         )
 
