@@ -13,7 +13,7 @@ from sqlalchemy.orm import aliased, joinedload
 from APITaxi_models2 import Customer, db, Hail, Taxi, User, Vehicle, VehicleDescription
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
-from .. import redis_backend, schemas, tasks
+from .. import redis_backend, schemas, tasks, processes
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -80,7 +80,7 @@ def _get_short_uuid():
     return str(uuid.uuid4())[0:7]
 
 
-def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_number):
+def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_number, user):
     """Change `hail`'s status to `new_status`. Raises ValueError if the change
     is impossible.
 
@@ -119,7 +119,7 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
                 f'from {hail.status} to {new_status}'
             )
 
-    hail.status = new_status
+    processes.change_status(hail, new_status, user=user)
 
     # Keys are the new hail's status, values the new taxi's status.
     new_taxi_status = {
@@ -351,7 +351,8 @@ def hails_details(hail_id):
             hail,
             vehicle_description,
             args.get('status', NOT_PROVIDED),
-            args.get('taxi_phone_number')
+            args.get('taxi_phone_number'),
+            current_user,
         )
     except ValueError as exc:
         return make_error_json_response({
@@ -685,7 +686,7 @@ def hails_create():
         id=_get_short_uuid(),
         creation_datetime=func.NOW(),
         taxi=taxi,
-        status='received',
+        status=None,
         last_status_change=func.NOW(),
         customer=customer,
         customer_lat=args['customer_lat'],
@@ -702,6 +703,7 @@ def hails_create():
         added_at=func.NOW(),
         source='added_by'
     )
+    processes.change_status(hail, 'received', user=current_user)
     db.session.add(hail)
     db.session.flush()
 
