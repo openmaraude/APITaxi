@@ -8,22 +8,19 @@ from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import db, Hail, Taxi, Vehicle, VehicleDescription
 
-from .. import redis_backend, schemas
+from .. import redis_backend, schemas, processes
 from . import celery
 
 
 @celery.task(name='handle_hail_timeout')
 def handle_hail_timeout(hail_id, operateur_id,
-                        initial_hail_status=None, new_hail_status=None,
+                        initial_hail_status, new_hail_status,
                         new_taxi_status=None):
     """This task is called asynchronously. If hail status is still
     `initial_hail_status`, then we log a warning message and set the hail
     status to `new_hail_status` (required) and the taxi status to
     `new_taxi_status` (optional).
     """
-    assert initial_hail_status
-    assert new_hail_status
-
     res = db.session.query(
         Hail, VehicleDescription
     ).options(
@@ -58,7 +55,7 @@ def handle_hail_timeout(hail_id, operateur_id,
 
     current_app.logger.warning(error_msg)
 
-    hail.status = new_hail_status
+    processes.change_status(hail, new_hail_status, reason='timeout')
 
     if new_taxi_status:
         vehicle_description.status = new_taxi_status
@@ -110,7 +107,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             'Task send_request_operator called for hail %s after more than 10 seconds. Set as failure.',
             hail.id
         )
-        hail.status = 'failure'
+        processes.change_status(hail, 'failure', reason='Task send_request_operator called after more than 10 seconds.')
         vehicle_description.status = 'free'
         db.session.commit()
         return False
@@ -145,7 +142,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_payload=str(exc),
             response_status_code=None
         )
-        hail.status = 'failure'
+        processes.change_status(hail, 'failure', reason=str(exc))
         vehicle_description.status = 'free'
         db.session.commit()
         return False
@@ -154,7 +151,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     # error, set hail as failure and abort.
     try:
         response_payload = json.dumps(resp.json(), indent=2)
-    except json.decoder.JSONDecodeError:
+    except json.decoder.JSONDecodeError as exc:
         current_app.logger.warning('Operator API of %s did not return a JSON response' % hail.operateur.email)
         redis_backend.log_hail(
             hail_id=hail.id,
@@ -166,7 +163,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_payload='Response should be valid JSON, but the API response was: %s' % resp.text,
             response_status_code=resp.status_code
         )
-        hail.status = 'failure'
+        processes.change_status(hail, 'failure', reason=str(exc))
         vehicle_description.status = 'free'
         db.session.commit()
         return False
@@ -187,7 +184,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_payload=response_payload,
             response_status_code=resp.status_code
         )
-        hail.status = 'failure'
+        processes.change_status(hail, 'failure', reason="HTTP response status code %s" % resp.status_code)
         vehicle_description.status = 'free'
         db.session.commit()
         return False
@@ -218,7 +215,7 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
     if isinstance(data, dict) and len(data.get('data', [])) >= 1 and 'taxi_phone_number' in data['data'][0]:
         hail.taxi_phone_number = data['data'][0]['taxi_phone_number']
 
-    hail.status = 'received_by_operator'
+    processes.change_status(hail, 'received_by_operator')
     db.session.commit()
 
     # If hail is still "received_by_operator" and not "received_by_taxi" after 10 seconds, timeout.

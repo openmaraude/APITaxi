@@ -6,7 +6,7 @@ import uuid
 import sqlalchemy
 
 from APITaxi2 import tasks
-from APITaxi_models2 import Taxi, Vehicle, VehicleDescription
+from APITaxi_models2 import Hail, Taxi, Vehicle, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     CustomerFactory,
     HailFactory,
@@ -138,6 +138,12 @@ class TestEditHail:
         # Make sure request is logged
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
 
+        # Check transition log
+        hail = Hail.query.filter(Hail.id == hail.id).one()
+        assert hail.transition_log[-1]['from_status'] == 'received_by_taxi'
+        assert hail.transition_log[-1]['to_status'] == 'accepted_by_taxi'
+        assert hail.transition_log[-1]['user'] == operateur.user.id
+
     def test_ok_change_taxi_status(self, app, operateur, moteur):
         """Same than test_ok, but when status changes to accepted_by_customer, taxi's status changes to "oncoming".
         """
@@ -166,6 +172,12 @@ class TestEditHail:
 
         # Make sure request is logged
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
+
+        # Check transition log
+        hail = Hail.query.filter(Hail.id == hail.id).one()
+        assert hail.transition_log[-1]['from_status'] == 'accepted_by_taxi'
+        assert hail.transition_log[-1]['to_status'] == 'accepted_by_customer'
+        assert hail.transition_log[-1]['user'] == moteur.user.id
 
     def test_ko_change_operateur_param_by_moteur(self, moteur, operateur):
         """Moteur attempts to change a field that can only be updated by an
@@ -496,6 +508,12 @@ class TestCreateHail:
         # Hail is logged to redis
         hail_id = resp.json['data'][0]['id']
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
+
+        # Check transition log
+        hail = Hail.query.one()
+        assert hail.transition_log[-1]['from_status'] is None
+        assert hail.transition_log[-1]['to_status'] == 'received'
+        assert hail.transition_log[-1]['user'] == moteur.user.id
 
     def test_automatic_session_id(self, app, moteur, operateur):
 

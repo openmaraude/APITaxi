@@ -67,6 +67,12 @@ class TestHandleHailTimeout:
         vehicle_description = VehicleDescription.query.one()
         assert vehicle_description.status == 'off'
 
+        # Check transition log
+        assert hail.transition_log[-1]['from_status'] == 'sent_to_operator'
+        assert hail.transition_log[-1]['to_status'] == 'failure'
+        assert hail.transition_log[-1]['reason'] is not None
+        assert hail.transition_log[-1]['user'] is None
+
     def test_no_timeout(self, app):
         """Hail doesn't reach timeout. Status is initially
         received_by_operator, and it is sent_to_operator when timeout function
@@ -82,6 +88,9 @@ class TestHandleHailTimeout:
         # No need to fetch back hail since session has not been committed.
         assert hail.status == 'received_by_operator'
 
+        # Check transition log
+        assert not hail.transition_log  # Manually altered by the test
+
     def test_two_operators(self, app):
         """Make sure it is possible to fetch Hail related to a Taxi with two
         VehicleDescription."""
@@ -91,6 +100,12 @@ class TestHandleHailTimeout:
         with mock.patch.object(tasks.operators.current_app.logger, 'warning') as mocked_logger:
             tasks.handle_hail_timeout(hail.id, hail.operateur.id, 'sent_to_operator', 'failure')
             assert mocked_logger.call_count == 0
+
+        # No need to fetch back hail since session has not been committed.
+        assert hail.status == 'received_by_operator'
+
+        # Check transition log
+        assert not hail.transition_log
 
     def test_hail_not_found(self, app):
         with mock.patch.object(tasks.operators.current_app.logger, 'warning') as mocked_logger:
@@ -137,10 +152,17 @@ class TestSendRequestOperator:
             assert mocked_logger.call_count == 1
             assert ret is False
 
-        assert Hail.query.get(hail_id).status == 'failure'
+        hail = Hail.query.get(hail_id)
+        assert hail.status == 'failure'
 
         vehicle_description = VehicleDescription.query.get(vehicle_description_id)
         assert vehicle_description.status == 'free'
+
+        # Check transition log
+        assert hail.transition_log[-1]['from_status'] == 'received'
+        assert hail.transition_log[-1]['to_status'] == 'failure'
+        assert hail.transition_log[-1]['reason'] is not None
+        assert hail.transition_log[-1]['user'] is None
 
     def test_ok(self, app):
         """Hail is successfully sent to the operator API, which returns the
@@ -193,6 +215,11 @@ class TestSendRequestOperator:
         # Make sure hail request is logged.
         assert len(app.redis.zrange('hail:%s' % hail.id, 0, -1)) == 1
 
+        # Check transition log
+        assert hail.transition_log[-1]['from_status'] == 'received'
+        assert hail.transition_log[-1]['to_status'] == 'received_by_operator'
+        assert hail.transition_log[-1]['user'] is None
+
     def test_operator_api_unavailable(self, app):
         """Failure to connect to operator API makes the hail as failure, and
         logs the error."""
@@ -225,6 +252,12 @@ class TestSendRequestOperator:
 
         # Check that failure is logged
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
+
+        # Check transition log
+        assert hail.transition_log[-1]['from_status'] == 'received'
+        assert hail.transition_log[-1]['to_status'] == 'failure'
+        assert hail.transition_log[-1]['reason'] is not None
+        assert hail.transition_log[-1]['user'] is None
 
     def test_operator_api_response_not_json(self, app):
         """If operator API doesn't return JSON, mark hail as error."""
@@ -260,6 +293,12 @@ class TestSendRequestOperator:
         # Check that failure is logged
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
 
+        # Check transition log
+        assert hail.transition_log[-1]['from_status'] == 'received'
+        assert hail.transition_log[-1]['to_status'] == 'failure'
+        assert hail.transition_log[-1]['reason'] is not None
+        assert hail.transition_log[-1]['user'] is None
+
     def test_operator_api_response_not_2xx(self, app):
         """Operator API didn't respond with HTTP/2xx."""
         vehicle = VehicleFactory(descriptions=[])
@@ -273,7 +312,7 @@ class TestSendRequestOperator:
         def requests_post(*args, **kwargs):
             resp = requests.Response()
             resp.status_code = 404
-            resp._content = b''
+            resp._content = b'[]'  # Valid JSON
             return resp
 
         with mock.patch(
@@ -293,6 +332,12 @@ class TestSendRequestOperator:
 
         # Check that failure is logged
         assert len(app.redis.zrange('hail:%s' % hail_id, 0, -1)) == 1
+
+        # Check transition log
+        assert hail.transition_log[-1]['from_status'] == 'received'
+        assert hail.transition_log[-1]['to_status'] == 'failure'
+        assert hail.transition_log[-1]['reason'] is not None
+        assert hail.transition_log[-1]['user'] is None
 
 
 class TestStoreActiveTaxis:
