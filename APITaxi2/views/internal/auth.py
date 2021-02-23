@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from flask_security.utils import verify_password
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, validates_schema, ValidationError
 from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import User
@@ -17,21 +17,47 @@ blueprint = Blueprint('internal.auth', __name__)
 
 class AuthSchema(Schema):
     email = fields.String(required=True)
-    password = fields.String(required=True)
+
+    apikey = fields.String(required=False)
+    password = fields.String(required=False)
+
+    @validates_schema
+    def check_required(self, data, **kwargs):
+        if data.get('apikey') and data.get('password'):
+            raise ValidationError('Specify either apikey or password, not both.')
+
+        if not data.get('apikey') and not data.get('password'):
+            raise ValidationError('Specify apikey or password.')
+
+
+DataAuthSchema = schemas.data_schema_wrapper(AuthSchema())
 
 
 @blueprint.route('/internal/auth', methods=['POST'])
 def auth():
-    schema = AuthSchema()
+    """Authenticate user. Request should specify either "apikey", or "email"
+    and "password".
+    """
+    schema = DataAuthSchema()
 
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)
 
-    user = User.query.options(joinedload(User.manager)).filter_by(
-        email=params['email']
-    ).one_or_none()
-    if not user or not verify_password(params['password'], user.password):
+    args = params['data'][0]
+
+    query = User.query.options(joinedload(User.manager)).filter_by(
+        email=args['email']
+    )
+
+    if args.get('apikey'):
+        query = query.filter_by(apikey=args.get('apikey'))
+
+    user = query.one_or_none()
+
+    if not user or (
+        args.get('password') and not verify_password(args['password'], user.password)
+    ):
         return make_error_json_response({
             'data': {
                 '0': {
