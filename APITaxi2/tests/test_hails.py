@@ -372,8 +372,9 @@ class TestGetHailList:
         assert resp.json['meta'] == {
             'next_page': None,
             'prev_page': None,
+            'per_page': 30,
             'pages': 1,
-            'total': 3
+            'total': 3,
         }
 
         # Filter on status

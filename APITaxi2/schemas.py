@@ -506,6 +506,7 @@ def data_schema_wrapper(WrappedSchema, with_pagination=False):
     class Pagination(Schema):
         next_page = fields.Int(attribute='next_num')
         prev_page = fields.Int(attribute='prev_num')
+        per_page = fields.Int()
         pages = fields.Int()
         total = fields.Int()
 
