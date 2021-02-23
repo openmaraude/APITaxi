@@ -338,8 +338,8 @@ class UserSchema(Schema):
     hail_endpoint_production = fields.String()
     phone_number_customer = fields.String()
     phone_number_technical = fields.String()
-    operator_api_key = fields.String()
-    operator_header_name = fields.String()
+    operator_api_key = fields.String(allow_none=True)
+    operator_header_name = fields.String(allow_none=True)
     manager = fields.Nested(ManagerSchema, allow_none=True)
 
     # User password can only be provided
