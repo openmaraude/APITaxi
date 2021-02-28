@@ -2,6 +2,7 @@ from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 from flask_security.utils import hash_password
 
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import db, User
@@ -78,7 +79,14 @@ def users_list():
     if errors:
         return make_error_json_response(errors)
 
-    users = User.query.options(joinedload(User.manager)).order_by(User.id).paginate(
+    query = User.query.options(joinedload(User.manager)).order_by(User.id)
+
+    if 'email' in querystring:
+        query = query.filter(func.lower(User.email).startswith(querystring['email'][0].lower()))
+    if 'name' in querystring:
+        query = query.filter(func.lower(User.commercial_name).startswith(querystring['name'][0].lower()))
+
+    users = query.paginate(
         page=querystring.get('p', [1])[0],
         per_page=30,
         error_out=False  # if True, invalid page or pages without results raise 404
