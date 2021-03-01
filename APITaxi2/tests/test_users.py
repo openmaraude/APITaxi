@@ -111,22 +111,31 @@ class TestUsersList:
         resp = anonymous.client.get('/users')
         assert resp.status_code == 401
 
-        # Not enough permissions
-        for role in (operateur, moteur):
-            resp = role.client.get('/users')
-            assert resp.status_code == 403
-
-    def test_ok(self, admin, QueriesTracker):
+    def test_ok(self, admin, operateur, QueriesTracker):
         user2 = UserFactory()
         user3 = UserFactory()
 
-        # Three users: admin, user2, user3
+        # Four users: admin, operateur, user2, user3
         with QueriesTracker() as qtracker:
             resp = admin.client.get('/users')
             assert resp.status_code == 200
 
             assert resp.json['data'][0]['email'] == admin.user.email
-            assert resp.json['data'][1]['email'] == user2.email
-            assert resp.json['data'][2]['email'] == user3.email
+            assert resp.json['data'][1]['email'] == operateur.user.email
+            assert resp.json['data'][2]['email'] == user2.email
+            assert resp.json['data'][3]['email'] == user3.email
 
             assert qtracker.count == 3
+
+        # Operateur is not administrator, it sees only the accounts it manages.
+        resp = operateur.client.get('/users')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
+
+        # Operateur becomes manager of user2 and user3.
+        user2.manager = operateur.user
+        user3.manager = operateur.user
+
+        resp = operateur.client.get('/users')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2

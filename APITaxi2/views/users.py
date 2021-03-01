@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from flask_security import current_user, login_required, roles_accepted
+from flask_security import current_user, login_required
 from flask_security.utils import hash_password
 
 from sqlalchemy import func
@@ -75,8 +75,10 @@ def users_details(user_id):
 
 @blueprint.route('/users/', methods=['GET'])
 @login_required
-@roles_accepted('admin')
 def users_list():
+    """If user is administrator, list all accounts. Otherwise, list all managed
+    accounts.
+    """
     querystring_schema = schemas.ListUserQuerystringSchema()
     querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
     if errors:
@@ -86,6 +88,10 @@ def users_list():
         joinedload(User.manager),
         joinedload(User.managed)
     ).order_by(User.id)
+
+    # Administrators can list all users. Regular users only the accounts they manage.
+    if not current_user.has_role('admin'):
+        query = query.filter_by(manager=current_user)
 
     if 'email' in querystring:
         query = query.filter(func.lower(User.email).startswith(querystring['email'][0].lower()))
