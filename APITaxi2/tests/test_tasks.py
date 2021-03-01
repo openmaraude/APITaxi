@@ -328,7 +328,9 @@ class TestStoreActiveTaxis:
         self._add_taxi(app, Bordeaux.insee, -0.5795, 44.776, 'Beta Taxis')
 
         # Log to the real Influx backend
-        tasks.store_active_taxis(1)  # One minute
+        with mock.patch.object(tasks.operators.current_app.logger, 'info') as mocked_logger:
+            tasks.store_active_taxis(1)  # One minute
+            assert mocked_logger.call_count == 1
 
         # Fetch the timed series written
         assert influx_backend.get_nb_active_taxis() == 6
