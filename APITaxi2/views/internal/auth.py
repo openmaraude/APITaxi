@@ -46,7 +46,10 @@ def auth():
 
     args = params['data'][0]
 
-    query = User.query.options(joinedload(User.manager)).filter_by(
+    query = User.query.options(
+        joinedload(User.manager),
+        joinedload(User.managed)
+    ).filter_by(
         email=args['email']
     )
 

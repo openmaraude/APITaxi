@@ -20,7 +20,10 @@ blueprint = Blueprint('users', __name__)
 @blueprint.route('/users/<int:user_id>', methods=['GET', 'PUT'])
 @login_required
 def users_details(user_id):
-    query = User.query.options(joinedload(User.manager)).filter_by(id=user_id)
+    query = User.query.options(
+        joinedload(User.manager),
+        joinedload(User.managed)
+    ).filter_by(id=user_id)
 
     user = query.one_or_none()
     if not user:
@@ -79,7 +82,10 @@ def users_list():
     if errors:
         return make_error_json_response(errors)
 
-    query = User.query.options(joinedload(User.manager)).order_by(User.id)
+    query = User.query.options(
+        joinedload(User.manager),
+        joinedload(User.managed)
+    ).order_by(User.id)
 
     if 'email' in querystring:
         query = query.filter(func.lower(User.email).startswith(querystring['email'][0].lower()))

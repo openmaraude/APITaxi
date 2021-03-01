@@ -350,6 +350,12 @@ class UserSchema(Schema):
     operator_header_name = fields.String(allow_none=True)
     manager = fields.Nested(ManagerSchema, allow_none=True)
 
+    managed = fields.Nested(
+        'UserSchema',
+        many=True,
+        only=('id', 'email', 'commercial_name')
+    )
+
     # User password can only be provided
     password = fields.String(load_only=True)
 
