@@ -112,8 +112,8 @@ class TestUsersList:
         assert resp.status_code == 401
 
     def test_ok(self, admin, operateur, QueriesTracker):
-        user2 = UserFactory()
-        user3 = UserFactory()
+        user2 = UserFactory(commercial_name='user2')
+        user3 = UserFactory(commercial_name='user3')
 
         # Four users: admin, operateur, user2, user3
         with QueriesTracker() as qtracker:
@@ -126,6 +126,18 @@ class TestUsersList:
             assert resp.json['data'][3]['email'] == user3.email
 
             assert qtracker.count == 3
+
+        # Filter on email
+        resp = admin.client.get('/users?email=%s' % user2.email)
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['email'] == user2.email
+
+        # Filter on commercial name
+        resp = admin.client.get('/users?name=%s' % user2.commercial_name)
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['email'] == user2.email
 
         # Operateur is not administrator, it sees only the accounts it manages.
         resp = operateur.client.get('/users')
