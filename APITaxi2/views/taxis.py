@@ -244,8 +244,7 @@ def taxis_details(taxi_id):
 
     args = request.json['data'][0]
 
-    # For now it is only possible to update the taxi's status. In the future,
-    # We should allow the edition of other fields (taxi.internal_id, ...).
+    # For now it is only possible to update the taxi's status.
     if 'status' in args and args['status'] != vehicle_description.status:
         taxi.last_update_at = func.now()
         db.session.flush()

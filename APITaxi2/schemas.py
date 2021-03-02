@@ -86,7 +86,6 @@ class VehicleSchema(Schema):
 
     licence_plate = fields.String(required=True, allow_none=False)
 
-    internal_id = fields.String(allow_none=True)
     model_year = fields.Integer(required=False, allow_none=True)
     engine = fields.String(required=False, allow_none=True)
     horse_power = fields.Float(required=False, allow_none=True)
@@ -139,7 +138,6 @@ class VehicleSchema(Schema):
         vehicle, vehicle_description = obj
         ret = super().dump(vehicle, *args, **kwargs)
         ret.update({
-            'internal_id': vehicle_description.internal_id,
             'model_year': vehicle_description.model_year,
             'engine': vehicle_description.engine,
             'horse_power': vehicle_description.horse_power,
@@ -222,7 +220,6 @@ class ZUPCSchema(Schema):
 
 class TaxiSchema(Schema):
     id = fields.String()
-    internal_id = fields.String(allow_none=True)
     operator = fields.String(required=False, allow_none=False)
     vehicle = fields.Nested(RefVehicleSchema, required=True)
     ads = fields.Nested(RefADSSchema, required=True)
@@ -261,7 +258,6 @@ class TaxiSchema(Schema):
         # Add fields from vehicle_description and redis_location
         ret.update({
             'operator': vehicle_description.added_by.email,
-            'internal_id': vehicle_description.internal_id,
             'status': vehicle_description.status,
             # last_update is the last time location has been updated by
             # geotaxi.

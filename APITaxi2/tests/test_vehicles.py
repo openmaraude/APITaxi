@@ -22,7 +22,6 @@ class TestVehiclePost:
             resp = operateur.client.post('/vehicles', json={
                 'data': [{
                     'licence_plate': 'licence1',
-                    'internal_id': 'internal_id',
                     'model_year': 1938,
                     'engine': 'v12',
                     'horse_power': 42.2,
@@ -88,7 +87,6 @@ class TestVehiclePost:
             'gps': True,
             'horodateur': 'horodateur',
             'horse_power': 42.2,
-            'internal_id': 'internal_id',
             'licence_plate': 'licence1',
             'luxury': True,
             'model': 'mymodel',

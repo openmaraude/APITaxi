@@ -78,7 +78,6 @@ def vehicle_create():
 
     # Update VehicleDescription object with the optional fields provided.
     for attr in (
-        'internal_id',
         'model_year',
         'engine',
         'horse_power',
