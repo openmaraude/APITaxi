@@ -33,6 +33,45 @@ from ..validators import (
 #
 NOT_PROVIDED = object()
 
+# TRANSITIONS define the permissions required to go from a state to another.
+# Top level keys are the origin hails' status. Subkeys are the possible future state, and values the permission
+# required to perform the transition.
+TRANSITIONS = {
+    'received': {
+        'declined_by_customer': 'moteur',
+    },
+    'sent_to_operator': {
+        'declined_by_customer': 'moteur',
+    },
+    'received_by_operator': {
+        'declined_by_customer': 'moteur',
+        'received_by_taxi': 'operateur',
+    },
+    'received_by_taxi': {
+        'accepted_by_taxi': 'operateur',
+        'declined_by_taxi': 'operateur',
+        'incident_taxi': 'operateur',
+        'incident_customer': 'moteur',
+        'declined_by_customer': 'moteur',
+    },
+    'accepted_by_taxi': {
+        'incident_customer': 'moteur',
+        'declined_by_customer': 'moteur',
+        'accepted_by_customer': 'moteur',
+        'incident_taxi': 'operateur',
+    },
+    'accepted_by_customer': {
+        'customer_on_board': 'operateur',
+        'incident_customer': 'moteur',
+        'incident_taxi': 'operateur',
+    },
+    'customer_on_board': {
+        'incident_customer': 'moteur',
+        'incident_taxi': 'operateur',
+        'finished': 'operateur',
+    }
+}
+
 
 blueprint = Blueprint('hails', __name__)
 
@@ -68,44 +107,6 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
         elif not hail.taxi_phone_number:
             raise ValueError('Status changes to accepted_by_taxi but taxi_phone_number is not provided')
 
-    # TRANSITIONS define the permissions required to go from a state to another.
-    # Top level keys are the origin hails' status. Subkeys are the possible future state, and values the permission
-    # required to perform the transition.
-    TRANSITIONS = {
-        'received': {
-            'declined_by_customer': 'moteur',
-        },
-        'sent_to_operator': {
-            'declined_by_customer': 'moteur',
-        },
-        'received_by_operator': {
-            'declined_by_customer': 'moteur',
-            'received_by_taxi': 'operateur',
-        },
-        'received_by_taxi': {
-            'accepted_by_taxi': 'operateur',
-            'declined_by_taxi': 'operateur',
-            'incident_taxi': 'operateur',
-            'incident_customer': 'moteur',
-            'declined_by_customer': 'moteur',
-        },
-        'accepted_by_taxi': {
-            'incident_customer': 'moteur',
-            'declined_by_customer': 'moteur',
-            'accepted_by_customer': 'moteur',
-            'incident_taxi': 'operateur',
-        },
-        'accepted_by_customer': {
-            'customer_on_board': 'operateur',
-            'incident_customer': 'moteur',
-            'incident_taxi': 'operateur',
-        },
-        'customer_on_board': {
-            'incident_customer': 'moteur',
-            'incident_taxi': 'operateur',
-            'finished': 'operateur',
-        }
-    }
     if hail.status in TRANSITIONS:
         if new_status not in TRANSITIONS[hail.status]:
             raise ValueError(f'Impossible to set status from {hail.status} to {new_status}')
