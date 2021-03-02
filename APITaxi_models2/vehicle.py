@@ -79,7 +79,6 @@ class VehicleDescription(HistoryMixin, db.Model):
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
     status = db.Column(db.Enum(*VEHICLE_STATUS, name='status_vehicle_enum'))
     nb_seats = db.Column(db.Integer)
-    internal_id = db.Column(db.String)
 
     added_by = db.relationship('User', lazy='raise')
     vehicle = db.relationship(Vehicle, lazy='raise')
