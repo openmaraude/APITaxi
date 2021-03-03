@@ -4,7 +4,7 @@ from functools import reduce
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import (
@@ -487,3 +487,57 @@ def taxis_list():
         data = data[:params['count']]
 
     return debug_ctx.add_to_response(schema.dump({'data': data}))
+
+
+@blueprint.route('/taxis/all', methods=['GET'])
+@login_required
+@roles_accepted('operateur')
+def taxis_all():
+    """Return the list of taxis registered for an operator. This endpoint
+    should have been called /taxis (and /taxis should have been /search or
+    /find) but we can't break the backward compatibility.
+    """
+    querystring_schema = schemas.ListTaxisAllQuerystringSchema()
+    querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
+    if errors:
+        return make_error_json_response(errors)
+
+    # Get Taxi object with the VehicleDescription entry related to current
+    # user.
+    query = db.session.query(Taxi, VehicleDescription).options(
+        joinedload(Taxi.ads),
+        joinedload(Taxi.driver).joinedload(Driver.departement),
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
+        joinedload(Taxi.added_by),
+        joinedload(Taxi.current_hail)
+    ).filter(
+        Vehicle.id == Taxi.vehicle_id,
+        VehicleDescription.vehicle_id == Taxi.vehicle_id
+    ).filter(
+        VehicleDescription.added_by == current_user
+    )
+
+    query = query.order_by(Taxi.added_at.desc())
+
+    for qname, field in (
+        ('id', Taxi.id),
+        ('licence_plate', Vehicle.licence_plate),
+    ):
+        if qname not in querystring:
+            continue
+        query = query.filter(or_(*[
+            func.lower(field).startswith(value.lower()) for value in querystring[qname]
+        ]))
+
+    taxis = query.paginate(
+        page=querystring.get('p', [1])[0],
+        per_page=30,
+        error_out=False  # if True, invalid page or pages without results raise 404
+    )
+
+    schema = schemas.DataTaxiListSchema()
+    ret = schema.dump({
+        'data': taxis.items,
+        'meta': taxis
+    })
+    return ret

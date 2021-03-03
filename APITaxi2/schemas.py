@@ -97,6 +97,8 @@ class ADSSchema(RefADSSchema):
 class RefDriverSchema(Schema):
     professional_licence = fields.String(required=True, allow_none=False)
     departement = fields.String(attribute='departement.numero', required=True)
+    first_name = fields.String(required=False)
+    last_name = fields.String(required=False)
 
 
 class VehicleSchema(Schema):
@@ -238,6 +240,7 @@ class ZUPCSchema(Schema):
 
 class TaxiSchema(Schema):
     id = fields.String()
+    added_at = fields.DateTime()
     operator = fields.String(required=False, allow_none=False)
     vehicle = fields.Nested(RefVehicleSchema, required=True)
     ads = fields.Nested(RefADSSchema, required=True)
@@ -297,6 +300,12 @@ class TaxiSchema(Schema):
             'engine': vehicle_description.engine,
         })
         return ret
+
+
+class ListTaxisAllQuerystringSchema(Schema, PageQueryStringMixin):
+    """Querystring arguments for GET /taxis/all."""
+    id = fields.List(fields.String)
+    licence_plate = fields.List(fields.String)
 
 
 class TaxiPUTSchema(Schema):
@@ -464,7 +473,7 @@ class HailSchema(Schema):
         return ret
 
 
-class ListHailQuerystringSchema(Schema, PageQueryStringMixin):
+class ListHailsQuerystringSchema(Schema, PageQueryStringMixin):
     """Querystring arguments for GET /hails/."""
     id = fields.List(fields.String)
     status = fields.List(fields.String(
@@ -562,6 +571,7 @@ DataADSSchema = data_schema_wrapper(ADSSchema())
 DataCustomerSchema = data_schema_wrapper(CustomerSchema())
 DataDriverSchema = data_schema_wrapper(DriverSchema())
 DataTaxiSchema = data_schema_wrapper(TaxiSchema())
+DataTaxiListSchema = data_schema_wrapper(TaxiSchema(), with_pagination=True)
 DataHailSchema = data_schema_wrapper(HailSchema())
 DataHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
 DataUserSchema = data_schema_wrapper(UserSchema())

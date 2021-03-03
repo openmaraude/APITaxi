@@ -283,7 +283,8 @@ class TestTaxiPost:
             # - SELECT driver
             # - SELECT taxi to check if it exists
             # - INSERT taxi
-            assert qtracker.count == 7
+            # - SELECT added_at
+            assert qtracker.count == 8
 
         assert resp.status_code == 201
         assert Taxi.query.count() == 1
@@ -522,4 +523,48 @@ class TestTaxiList:
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         # No taxi should be returned.
+        assert len(resp.json['data']) == 0
+
+
+class TestTaxiAllList:
+
+    def test_invalid(self, anonymous, moteur, admin, operateur):
+        resp = anonymous.client.get('/taxis/all')
+        assert resp.status_code == 401
+
+        for who in (moteur, admin):
+            resp = who.client.get('/taxis/all')
+            assert resp.status_code == 403
+
+        # Invalid param
+        resp = operateur.client.get('/taxis/all/?xxx=yyy')
+        assert resp.status_code == 400
+
+    def test_ok(self, operateur, QueriesTracker):
+        # Two taxis belong to the operator.
+        taxi_1 = TaxiFactory(added_by=operateur.user)
+        TaxiFactory(added_by=operateur.user)
+        # One taxi belongs to another user.
+        taxi_other = TaxiFactory()
+
+        with QueriesTracker() as qtracker:
+            # SELECT role
+            # SELECT taxis
+            # SELECT COUNT (for pagination)
+            resp = operateur.client.get('/taxis/all')
+            assert qtracker.count == 3
+
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+
+        resp = operateur.client.get('/taxis/all?licence_plate=%s' % taxi_1.vehicle.licence_plate.lower())
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+        resp = operateur.client.get('/taxis/all?id=%s' % taxi_1.id.lower())
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+        resp = operateur.client.get('/taxis/all?id=%s' % taxi_other.id.lower())
+        assert resp.status_code == 200
         assert len(resp.json['data']) == 0

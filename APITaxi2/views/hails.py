@@ -488,7 +488,7 @@ def hails_list():
       description: List hails.
       parameters:
         - in: query
-          schema: ListHailQuerystringSchema
+          schema: ListHailsQuerystringSchema
       security:
         - ApiKeyAuth: []
       responses:
@@ -498,7 +498,7 @@ def hails_list():
             application/json:
               schema: DataHailListSchema
     """
-    querystring_schema = schemas.ListHailQuerystringSchema()
+    querystring_schema = schemas.ListHailsQuerystringSchema()
     querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
     if errors:
         return make_error_json_response(errors)
