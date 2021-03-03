@@ -524,14 +524,23 @@ def hails_list():
             filters.append(Hail.operateur == current_user)
         query = query.filter(or_(*filters))
 
-    # Filter on querystring arguments
+    # Filter on querystring arguments, partial match.
     for qname, field in (
         ('id', Hail.id),
-        ('status', Hail.status),
-        ('date', func.date(Hail.creation_datetime)),
         ('operateur', operateur_table.email),
         ('moteur', moteur_table.email),
         ('taxi_id', Hail.taxi_id),
+    ):
+        if qname not in querystring:
+            continue
+        query = query.filter(or_(*[
+            field.startswith(value) for value in querystring[qname]
+        ]))
+
+    # Filter on querystring arguments, exact match.
+    for qname, field in (
+        ('status', Hail.status),
+        ('date', func.date(Hail.creation_datetime)),
     ):
         if qname not in querystring:
             continue
