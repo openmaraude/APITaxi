@@ -466,6 +466,7 @@ class HailSchema(Schema):
 
 class ListHailQuerystringSchema(Schema, PageQueryStringMixin):
     """Querystring arguments for GET /hails/."""
+    id = fields.List(fields.String)
     status = fields.List(fields.String(
         validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
     ))

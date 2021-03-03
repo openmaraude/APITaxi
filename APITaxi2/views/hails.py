@@ -479,8 +479,8 @@ def hails_details(hail_id):
 def hails_list():
     """Returns the list of hails paginated.
 
-    Accept querystring arguments ?p, ?status, ?date, ?operateur, ?operateur and
-    ?taxi_id.
+    Accept querystring arguments ?p, ?id, ?status, ?date, ?operateur,
+    ?operateur and ?taxi_id.
 
     Pagination is returned in the "meta" field.
     ---
@@ -526,6 +526,7 @@ def hails_list():
 
     # Filter on querystring arguments
     for qname, field in (
+        ('id', Hail.id),
         ('status', Hail.status),
         ('date', func.date(Hail.creation_datetime)),
         ('operateur', operateur_table.email),
