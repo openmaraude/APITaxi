@@ -534,7 +534,7 @@ def hails_list():
         if qname not in querystring:
             continue
         query = query.filter(or_(*[
-            field.startswith(value) for value in querystring[qname]
+            func.lower(field).startswith(value.lower()) for value in querystring[qname]
         ]))
 
     # Filter on querystring arguments, exact match.
