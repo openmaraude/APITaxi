@@ -42,6 +42,12 @@ class PageQueryStringMixin:
             raise ValidationError('Argument `p` is specified more than once')
 
 
+class PositionMixin:
+    """Used where a position is required."""
+    lon = fields.Float(required=True, validate=validate.Range(min=-180, max=180))
+    lat = fields.Float(required=True, validate=validate.Range(min=-90, max=90))
+
+
 class DepartementSchema(Schema):
     nom = fields.String()
     numero = fields.String()
@@ -210,18 +216,17 @@ class RefVehicleSchema(Schema):
 
 
 class PositionSchema(Schema):
-    lon = fields.Float(required=True, allow_none=True)
-    lat = fields.Float(required=True, allow_none=True)
+    # PositionMixin is not used as the position can be null
+    lon = fields.Float(required=True, validate=validate.Range(min=-180, max=180), allow_none=True)
+    lat = fields.Float(required=True, validate=validate.Range(min=-90, max=90), allow_none=True)
 
 
-class ListTaxisQueryStringSchema(Schema):
+class ListTaxisQueryStringSchema(PositionMixin, Schema):
     """Schema for querystring arguments of GET /taxis."""
     class Meta:
         """Allow and discard unknown fields."""
         unknown = EXCLUDE
 
-    lon = fields.Float(required=True)
-    lat = fields.Float(required=True)
     favorite_operator = fields.String()
     count = fields.Int(validate=validate.Range(min=1, max=50))
 
@@ -486,6 +491,7 @@ class ListHailsQuerystringSchema(Schema, PageQueryStringMixin):
 
 
 class HailListSchema(Schema):
+    """Response schema for GET /hails/"""
     id = fields.String()
     added_by = fields.String(attribute='added_by.email')
     operateur = fields.String(attribute='operateur.email')
@@ -533,10 +539,25 @@ class ListHailsBySessionQuerystringSchema(Schema, PageQueryStringMixin):
     pass
 
 
-class ListZUPCQueryStringSchema(Schema):
+class ListZUPCQueryStringSchema(PositionMixin, Schema):
     """Querystring arguments for GET /zupc."""
-    lon = fields.Float(required=True)
-    lat = fields.Float(required=True)
+    pass
+
+
+class GeotaxiPositionSchema(PositionMixin, Schema):
+    """Schema for a single unit of taxi coordinates."""
+    taxi_id = fields.String(required=True)
+
+
+class GeotaxiSchema(Schema):
+    """Schema for the body of POST /geotaxi/"""
+    positions = fields.Nested(GeotaxiPositionSchema, required=True, many=True)
+
+    @validates('positions')
+    def check_length(self, positions):
+        """Reject the whole request if more than 50 positions are posted"""
+        if len(positions) > 50:
+            raise ValidationError('Up to 50 positions are accepted')
 
 
 def data_schema_wrapper(WrappedSchema, with_pagination=False):
@@ -618,3 +639,4 @@ DataUserSchema = data_schema_wrapper(UserSchema())
 DataUserListSchema = data_schema_wrapper(UserSchema(), with_pagination=True)
 DataVehicleSchema = data_schema_wrapper(VehicleSchema())
 DataZUPCSchema = data_schema_wrapper(ZUPCSchema())
+DataGeotaxiSchema = data_schema_wrapper(GeotaxiSchema())
