@@ -494,6 +494,45 @@ class HailListSchema(Schema):
     taxi_id = fields.String()
 
 
+class HailBySessionUserSchema(Schema):
+    id = fields.String()
+    email = fields.String()
+    commercial_name = fields.String()
+
+
+class HailBySessionTaxiSchema(Schema):
+    id = fields.String()
+
+
+class HailBySessionSchema(Schema):
+    id = fields.String()
+    status = fields.String()
+    operateur = fields.Nested(HailBySessionUserSchema)
+    moteur = fields.Nested(HailBySessionUserSchema)
+    taxi = fields.Nested(HailBySessionTaxiSchema)
+    added_at = fields.String()
+    customer_lon = fields.Float()
+    customer_lat = fields.Float()
+    customer_address = fields.String()
+    customer_phone_number = fields.String()
+    taxi_phone_number = fields.String()
+    initial_taxi_lat = fields.Float()
+    initial_taxi_lon = fields.Float()
+
+
+class HailBySessionListSchema(Schema):
+    customer_id = fields.String()
+    session_id = fields.String()
+    added_by_id = fields.String()
+    added_at = fields.DateTime()
+    hails = fields.List(fields.Nested(HailBySessionSchema))
+
+
+class ListHailsBySessionQuerystringSchema(Schema, PageQueryStringMixin):
+    """Querystring arguments for GET /hails_by_session."""
+    pass
+
+
 class ListZUPCQueryStringSchema(Schema):
     """Querystring arguments for GET /zupc."""
     lon = fields.Float(required=True)
@@ -574,6 +613,7 @@ DataTaxiSchema = data_schema_wrapper(TaxiSchema())
 DataTaxiListSchema = data_schema_wrapper(TaxiSchema(), with_pagination=True)
 DataHailSchema = data_schema_wrapper(HailSchema())
 DataHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
+DataHailBySessionListSchema = data_schema_wrapper(HailBySessionListSchema(), with_pagination=True)
 DataUserSchema = data_schema_wrapper(UserSchema())
 DataUserListSchema = data_schema_wrapper(UserSchema(), with_pagination=True)
 DataVehicleSchema = data_schema_wrapper(VehicleSchema())
