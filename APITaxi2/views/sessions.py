@@ -14,10 +14,10 @@ from ..validators import (
 )
 
 
-blueprint = Blueprint('admin', __name__)
+blueprint = Blueprint('sessions', __name__)
 
 
-@blueprint.route('/hails_by_session')
+@blueprint.route('/sessions')
 @login_required
 @roles_accepted('admin')
 def hails_sessions():

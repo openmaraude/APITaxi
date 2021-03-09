@@ -6,19 +6,19 @@ from APITaxi_models2.unittest.factories import (
 )
 
 
-class TestHailsBySession:
+class TestSession:
     def test_invalid(self, anonymous, moteur, operateur, admin):
-        resp = anonymous.client.get('/hails_by_session')
+        resp = anonymous.client.get('/sessions')
         assert resp.status_code == 401
 
-        resp = moteur.client.get('/hails_by_session')
+        resp = moteur.client.get('/sessions')
         assert resp.status_code == 403
 
-        resp = operateur.client.get('/hails_by_session')
+        resp = operateur.client.get('/sessions')
         assert resp.status_code == 403
 
         # Invalid querystring parameters
-        resp = admin.client.get('/hails_by_session?x=y')
+        resp = admin.client.get('/sessions?x=y')
         assert resp.status_code == 400
         assert 'x' in resp.json['errors']
 
@@ -48,7 +48,7 @@ class TestHailsBySession:
         )
 
         with QueriesTracker() as qtracker:
-            resp = admin.client.get('/hails_by_session')
+            resp = admin.client.get('/sessions')
             # SELECT permissions
             # Pagination, select query
             assert qtracker.count == 3
