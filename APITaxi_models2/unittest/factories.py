@@ -183,11 +183,7 @@ class TaxiFactory(BaseFactory):
         model = Taxi
 
     id = factory.Sequence(lambda n: 'TAXI_%d' % n)
-
-    @factory.lazy_attribute
-    def vehicle(self):
-        return VehicleFactory(descriptions__added_by=self.added_by)
-
+    vehicle = factory.SubFactory(VehicleFactory, descriptions__added_by=factory.SelfAttribute('...added_by'))
     ads = factory.SubFactory(ADSFactory)
     added_at = factory.LazyAttribute(lambda o: datetime.datetime.now())
     added_by = factory.SubFactory(UserFactory)
@@ -202,17 +198,9 @@ class HailFactory(BaseFactory):
 
     id = factory.Sequence(lambda n: 'HAIL_%d' % n)
     creation_datetime = datetime.datetime(2012, 12, 21, 13, 37, 13)
-
-    @factory.lazy_attribute
-    def taxi(self):
-        return TaxiFactory(added_by=self.operateur)
-
+    taxi = factory.SubFactory(TaxiFactory, added_by=factory.SelfAttribute('..operateur'))
     status = 'received'
-
-    @factory.lazy_attribute
-    def customer(self):
-        return CustomerFactory(added_by=self.added_by)
-
+    customer = factory.SubFactory(CustomerFactory, added_by=factory.SelfAttribute('..added_by'))
     customer_lat = 48.850690
     customer_lon = 2.308620
     operateur = factory.SubFactory(UserFactory)
