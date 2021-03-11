@@ -1,7 +1,9 @@
 import apispec
 from flask import abort
 
-from flask_security import login_required, roles_accepted
+from flask_security import current_user, login_required, roles_accepted
+
+from APITaxi_models2.unittest.factories import UserFactory
 
 
 def test_content_type(anonymous):
@@ -91,13 +93,13 @@ def test_errors_handlers(app, anonymous):
     resp = anonymous.client.get('/login_401')
     assert resp.status_code == 401
     assert len(resp.json['errors'].get('', [])) == 1
-    assert resp.json['errors'][''][0] == 'The header X-Api-Key is required.'
+    assert resp.json['errors'][''][0] == 'Header X-Api-Key required.'
 
     # Login required, invalid X-Api-Key
     resp = anonymous.client.get('/login_401', headers={'X-Api-Key': 'xxx'})
     assert resp.status_code == 401
     assert len(resp.json['errors'].get('', [])) == 1
-    assert resp.json['errors'][''][0] == 'The X-Api-Key provided is not valid.'
+    assert resp.json['errors'][''][0] == 'Header X-Api-Key not valid.'
 
     # HTTP/405 invalid method type
     resp = anonymous.client.post('/get_only', json={})
@@ -109,6 +111,37 @@ def test_errors_handlers(app, anonymous):
     assert resp.status_code == 500
     assert len(resp.json['errors'].get('', [])) == 1
     assert 'Internal server error' in resp.json['errors'][''][0]
+
+
+def test_logas(app, admin, operateur):
+    """User can set X-Logas with the email of the account to login. User needs
+    to be administrator or the manager of the logas account."""
+
+    @app.route('/', methods=['GET'])
+    @login_required
+    def root():
+        return {'user': current_user.email}
+
+    resp = admin.client.get('/')
+    assert resp.status_code == 200
+    assert resp.json['user'] == admin.user.email
+
+    resp = operateur.client.get('/')
+    assert resp.status_code == 200
+    assert resp.json['user'] == operateur.user.email
+
+    resp = admin.client.get('/', headers={'X-Logas': operateur.user.email})
+    assert resp.status_code == 200
+    assert resp.json['user'] == operateur.user.email
+
+    resp = operateur.client.get('/', headers={'X-Logas': admin.user.email})
+    assert resp.status_code == 401
+    assert resp.json['errors'][''][0] == 'Header X-Api-Key and/or X-Logas not valid.'
+
+    new_user = UserFactory(manager=operateur.user)
+
+    resp = operateur.client.get('/', headers={'X-Logas': new_user.email})
+    assert resp.status_code == 200
 
 
 def test_api_spec(app):

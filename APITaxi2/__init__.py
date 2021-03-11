@@ -26,13 +26,25 @@ from .middlewares import ForceJSONContentTypeMiddleware
 from .tasks import celery
 
 
+def load_logas(user):
+    logas_email = request.headers.get('X-Logas')
+    if logas_email:
+        query = User.query.filter_by(email=logas_email)
+        # If user is not admin, logas is only possible if user is manager of
+        # logas_email.
+        if not user.has_role('admin'):
+            query = query.filter_by(manager=user)
+        user = query.one_or_none()
+    return user
+
+
 def load_user_from_api_key_header(request):
     """Callback to extract X-Api-Key header from the request and get user."""
     value = request.headers.get('X-Api-Key')
     if value:
         user = User.query.filter_by(apikey=value).first()
         if user:
-            return user
+            return load_logas(user)
     return None
 
 
@@ -41,12 +53,18 @@ def handler_401():
     if 'X-Api-Key' not in request.headers:
         return jsonify({
             'errors': {
-                '': ['The header X-Api-Key is required.']
+                '': ['Header X-Api-Key required.']
             }
         }), 401
+
+    if 'X-Logas' in request.headers:
+        msg = 'Header X-Api-Key and/or X-Logas not valid.'
+    else:
+        msg = 'Header X-Api-Key not valid.'
+
     return jsonify({
         'errors': {
-            '': ['The X-Api-Key provided is not valid.']
+            '': [msg]
         }
     }), 401
 
