@@ -7,7 +7,7 @@ import sys
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from apispec_webframeworks.flask import FlaskPlugin
-from flask import Flask, jsonify, request
+from flask import current_app, Flask, jsonify, request
 from flask_cors import CORS
 from flask_influxdb import InfluxDB
 from flask_redis import FlaskRedis
@@ -29,12 +29,26 @@ from .tasks import celery
 def load_logas(user):
     logas_email = request.headers.get('X-Logas')
     if logas_email:
+        # Trying to log as yourself.
+        if logas_email == user.email:
+            return user
+
         query = User.query.filter_by(email=logas_email)
-        # If user is not admin, logas is only possible if user is manager of
-        # logas_email.
-        if not user.has_role('admin'):
+
+        # Administrators can log as any other user.
+        if user.has_role('admin'):
+            user = query.one_or_none()
+        # If integration feature is enabled, logas is always possible for
+        # integration user.
+        elif (
+            current_app.config.get('INTEGRATION_ENABLED')
+            and current_app.config.get('INTEGRATION_ACCOUNT_EMAIL') == logas_email
+        ):
+            user = query.one_or_none()
+        # Otherwise, logas is only possible if user is the manager.
+        else:
             query = query.filter_by(manager=user)
-        user = query.one_or_none()
+            user = query.one_or_none()
     return user
 
 
