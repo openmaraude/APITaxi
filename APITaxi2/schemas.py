@@ -61,6 +61,7 @@ class DepartementSchema(Schema):
 
 
 class DriverSchema(Schema):
+    """Schema to create a driver"""
     first_name = fields.String(required=True)
     last_name = fields.String(required=True)
     birth_date = fields.Date(allow_none=True)
@@ -101,6 +102,7 @@ class ADSSchema(RefADSSchema):
 
 
 class RefDriverSchema(Schema):
+    """Reference to an existing driver"""
     professional_licence = fields.String(required=True, allow_none=False)
     departement = fields.String(attribute='departement.numero', required=True)
     first_name = fields.String(required=False)
@@ -108,6 +110,7 @@ class RefDriverSchema(Schema):
 
 
 class VehicleSchema(Schema):
+    """Schema to create a vehicle"""
     id = fields.Integer(dump_only=True, required=False, allow_none=False)
 
     licence_plate = fields.String(required=True, allow_none=False)
@@ -201,6 +204,8 @@ class VehicleSchema(Schema):
 
 
 class RefVehicleSchema(Schema):
+    """Reference to an existing vehicle"""
+
     class Meta:
         """Allow and discard unknown fields."""
         unknown = EXCLUDE
@@ -232,6 +237,7 @@ class ListTaxisQueryStringSchema(PositionMixin, Schema):
 
 
 class ZUPCSchema(Schema):
+    """Response schema to list ZUPCs on the map"""
     zupc_id = fields.String()
     nom = fields.String()
 
@@ -244,6 +250,7 @@ class ZUPCSchema(Schema):
 
 
 class TaxiSchema(Schema):
+    """Schema to list, create, read or update taxis"""
     id = fields.String()
     added_at = fields.DateTime()
     operator = fields.String(required=False, allow_none=False)
@@ -326,10 +333,12 @@ class TaxiPUTSchema(Schema):
 
 
 class RoleSchema(Schema):
+    """Reference to a role"""
     name = fields.String()
 
 
 class ListUserQuerystringSchema(Schema, PageQueryStringMixin):
+    """Querystring arguments for GET /users"""
     name = fields.List(fields.String)
     email = fields.List(fields.String)
 
@@ -342,6 +351,7 @@ class ListUserQuerystringSchema(Schema, PageQueryStringMixin):
 
 
 class ManagerSchema(Schema):
+    """Reference to a manager"""
     id = fields.Int()
     commercial_name = fields.String(data_key='name')
     email = fields.String()
@@ -381,6 +391,7 @@ class UserSchema(Schema):
 
 
 class CustomerSchema(Schema):
+    """Schema to update customer"""
     reprieve_begin = fields.DateTime(allow_none=True)
     reprieve_end = fields.DateTime(allow_none=True)
     ban_begin = fields.DateTime(allow_none=True)
@@ -392,10 +403,12 @@ class CustomerSchema(Schema):
 
 
 class HailTaxiRelationSchema(Schema):
+    """Taxi rating is part of a "relation" subentry"""
     rating = fields.Float()
 
 
 class HailTaxiSchema(Schema):
+    """Reference to a taxi in a hail"""
     last_update = fields.Int()
     id = fields.String()
     position = fields.Nested(PositionSchema)
@@ -403,6 +416,7 @@ class HailTaxiSchema(Schema):
 
 
 class HailSchema(Schema):
+    """Schema to create read and update hails"""
     id = fields.String()
     status = fields.String(
         validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
@@ -501,16 +515,19 @@ class HailListSchema(Schema):
 
 
 class HailBySessionUserSchema(Schema):
+    """Reference to the operateur or moteur of a hail session"""
     id = fields.String()
     email = fields.String()
     commercial_name = fields.String()
 
 
 class HailBySessionTaxiSchema(Schema):
+    """Reference to the taxi of a hail session"""
     id = fields.String()
 
 
 class HailBySessionSchema(Schema):
+    """Reference to hails of the same session"""
     id = fields.String()
     status = fields.String()
     operateur = fields.Nested(HailBySessionUserSchema)
@@ -527,6 +544,7 @@ class HailBySessionSchema(Schema):
 
 
 class HailBySessionListSchema(Schema):
+    """Schema to list hails (grouped by session) in the console"""
     customer_id = fields.String()
     session_id = fields.String()
     added_by_id = fields.String()
