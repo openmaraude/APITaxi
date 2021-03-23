@@ -90,9 +90,9 @@ def _update_redis(pipe, data, user):
     )
 
 
-@ blueprint.route('/geotaxi/', methods=['POST'])
-@ login_required
-@ roles_accepted('admin', 'operateur')
+@blueprint.route('/geotaxi/', methods=['POST'])
+@login_required
+@roles_accepted('admin', 'operateur')
 def geotaxi_batch():
     """
     ---
