@@ -36,7 +36,8 @@ HAIL_STATUS = (
 ) + HAIL_TERMINAL_STATUS
 
 REPORTING_CUSTOMER_REASONS = (
-    'ko', 'payment', 'courtesy', 'route', 'cleanliness', 'late', 'aggressive', 'no_show'
+    'ko',  # Kept for backwards compatibility but not documented, 'no_show' is preferred
+    'payment', 'courtesy', 'route', 'cleanliness', 'late', 'aggressive', 'no_show'
 )
 
 INCIDENT_CUSTOMER_REASONS = (
