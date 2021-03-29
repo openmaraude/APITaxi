@@ -28,3 +28,5 @@ class ADS(HistoryMixin, db.Model):
 
     added_by = db.relationship('User', lazy='raise')
     vehicle = db.relationship('Vehicle', lazy='raise')
+
+    town = db.relationship('Town', primaryjoin='foreign(ADS.insee) == remote(Town.insee)', lazy='raise')
