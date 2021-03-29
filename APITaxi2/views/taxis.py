@@ -281,7 +281,7 @@ def taxis_list():
     * Most of locations should belong to zero or one ZUPC, but some might
       belong to several, for example at borders.
 
-    * geotaxi stores data into redis.
+    * geotaxi stores data into Redis.
         To retrieve the longitude and latitude of taxis:
             - geoindex: HSET key = <taxi_id>
             - geoindex_2: HSET key = <taxi_id:operator_id>
@@ -296,16 +296,8 @@ def taxis_list():
     get:
       description: List available taxis around a location.
       parameters:
-        - name: lon
-          schema:
-            type: string
-          required: true
-          in: query
-        - name: lat
-          required: true
-          schema:
-            type: string
-          in: query
+        - in: query
+          schema: ListTaxisQueryStringSchema
       security:
         - ApiKeyAuth: []
       responses:
@@ -416,22 +408,6 @@ def taxis_list():
 
         data[taxi][vehicle_description] = locations[taxi.id][vehicle_description.added_by.email]
 
-    # Taxis can report their locations with several operators. If
-    # favorite_operator is set:
-    # - if the taxi reports its location with this operator, discard all other
-    #   entries
-    # - otherwise, keep all entries
-    if params.get('favorite_operator'):
-        for taxi in data:
-            filtered = next((
-                vehicle_description for vehicle_description in data[taxi]
-                if vehicle_description.added_by.email == params['favorite_operator']
-            ), None)
-            if filtered:
-                data[taxi] = {
-                    filtered: data[taxi][filtered]
-                }
-
     # For each location reported, only keep if the location has been reported
     # less than 120 seconds ago, and if the taxi is available.
     now = datetime.now()
@@ -481,10 +457,6 @@ def taxis_list():
         data,
         key=lambda o: o[2].distance
     )
-
-    # Only keep "count" entries.
-    if 'count' in params:
-        data = data[:params['count']]
 
     return debug_ctx.add_to_response(schema.dump({'data': data}))
 
