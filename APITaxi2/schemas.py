@@ -230,10 +230,9 @@ class ListTaxisQueryStringSchema(PositionMixin, Schema):
     """Schema for querystring arguments of GET /taxis."""
     class Meta:
         """Allow and discard unknown fields."""
+        # TODO left for backwards compatibility with the map still using favorite_operator and count
+        # finish to remove it when the map is merged into the console, search engines don't know about them
         unknown = EXCLUDE
-
-    favorite_operator = fields.String()
-    count = fields.Int(validate=validate.Range(min=1, max=50))
 
 
 class ZUPCSchema(Schema):
