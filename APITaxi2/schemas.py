@@ -69,6 +69,11 @@ class DriverSchema(Schema):
     departement = fields.Nested(DepartementSchema, required=True)
 
 
+class RefTownSchema(Schema):
+    """When we make a reference to an ADS, make the INSEE code more user-friendly."""
+    name = fields.String(required=False)
+
+
 class RefADSSchema(Schema):
     """When we make a reference to an existing ADS, only the fields numero and
     insee are required.
@@ -86,6 +91,8 @@ class RefADSSchema(Schema):
         validate=validate.OneOf(['individual', 'company'])
     )
     doublage = fields.Bool(required=False)
+    # Optional field translating the INSEE code to a town name
+    town = fields.Nested(RefTownSchema, required=False, dump_only=True)
 
 
 class ADSSchema(RefADSSchema):
