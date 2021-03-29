@@ -1,4 +1,5 @@
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from flask import Blueprint, request
 
@@ -75,7 +76,7 @@ def ads_create():
         }, status_code=404)
 
     # Try to get existing ADS, or create it.
-    ads = ADS.query.filter_by(
+    ads = ADS.query.options(joinedload(ADS.town)).filter_by(
         numero=args['numero'],
         insee=args['insee'],
         added_by=current_user
@@ -90,7 +91,8 @@ def ads_create():
             added_via='api',
             added_at=func.NOW(),
             source='added_by',
-            added_by=current_user
+            added_by=current_user,
+            town=town,
         )
 
     ads.doublage = args.get('doublage', None)

@@ -69,7 +69,7 @@ def taxis_create():
 
     errors = {}
 
-    ads = ADS.query.filter_by(
+    ads = ADS.query.options(joinedload(ADS.town)).filter_by(
         insee=args['ads']['insee'],
         numero=args['ads']['numero'],
         added_by=current_user
@@ -202,7 +202,7 @@ def taxis_details(taxi_id):
     # Get Taxi object with the VehicleDescription entry related to current
     # user.
     query = db.session.query(Taxi, VehicleDescription).options(
-        joinedload(Taxi.ads),
+        joinedload(Taxi.ads).joinedload(ADS.town),
         joinedload(Taxi.driver).joinedload(Driver.departement),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
@@ -370,7 +370,7 @@ def taxis_list():
     query = db.session.query(Taxi, VehicleDescription).join(
         ADS
     ).options(
-        joinedload(Taxi.ads),
+        joinedload(Taxi.ads).joinedload(ADS.town),
         joinedload(Taxi.driver).joinedload(Driver.departement),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
@@ -477,7 +477,7 @@ def taxis_all():
     # Get Taxi object with the VehicleDescription entry related to current
     # user.
     query = db.session.query(Taxi, VehicleDescription).options(
-        joinedload(Taxi.ads),
+        joinedload(Taxi.ads).joinedload(ADS.town),
         joinedload(Taxi.driver).joinedload(Driver.departement),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
