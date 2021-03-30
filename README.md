@@ -33,3 +33,38 @@ RuntimeError: *** failed to launch Postgresql ***
 2020-10-15 08:49:33.269 UTC [1080] FATAL:  lock file "postmaster.pid" already exists
 2020-10-15 08:49:33.269 UTC [1080] HINT:  Is another postmaster (PID 1028) running in data directory "/tmp/tests_fa54bbeddf53eb368fd05b9ca121dbc5/data"?
 ```
+
+## Migrations
+
+Migrations are versioned with alembic. To run migrations locally using the "api" container from APITaxi_devel, run the following commands:
+
+```
+# Connect to api container
+$> docker-compose exec api bash
+
+# Change directory to migrations directory
+$> cd APITaxi_models2
+
+# Run alembic commands: view current migration
+$> alembic current
+
+# Create a new revision file
+$> alembic revision --autogenerate -m 'New revision'
+
+# Apply migrations
+$> alembic upgrade head
+```
+
+To apply migrations to production, connect with ssh to the PostgreSQL master server (taxis01.api.taxi or dev01.api.taxi as specified by [APITaxi_deploy](https://github.com/openmaraude/APITaxi_deploy)), then:
+
+```
+# Connect to api container
+$> docker exec -ti api_taxi bash
+
+# Change directory to migrations directory
+$> cd APITaxi_models2
+
+# Run alembic commands
+$> alembic current
+$> alembic upgrade head
+```
