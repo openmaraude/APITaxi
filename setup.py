@@ -6,30 +6,44 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
-    'Flask-Redis',
-    'Flask-Cors',
-    'psycopg2',
-    'geopy',
-    'Flask-Migrate',
-    'bcrypt',
-    'Geohash2',
-    'redis',
-    'email-validator',
-    'marshmallow',
-    'flask-influxdb',
+    'aniso8601',
+    'apispec[validation]',
     'apispec-webframeworks',
+    'bcrypt',
     # Celery 5 has been recently released, but celery-flower is not yet
     # compatible with the latest version.
     # We should upgrade to 5 when flower is ok.
     # To check if flower is compatible with celery 5, simply start it. Now
     # (2020/10/15) an error as startup from starting.
     'celery==4.4.7',
-    'apispec[validation]',
-    'pyshp',
-    'shortuuid',
     'dataclasses',  # for Python3.6
-    'sentry-sdk[flask]',
+    'email-validator',
+    'Flask',
+    'Flask-Cors',
+    'flask-influxdb',
+    'Flask-Login',
+    'Flask-Migrate',
+    'Flask-Principal',
+    'Flask-Redis',
+    'Flask-Security',
+    'Flask-SQLAlchemy',
+    'GeoAlchemy2',
+    'Geohash2',
+    'geopy',
+    'marshmallow',
+    'parse',
     'prettytable',
+    'psycopg2',
+    'pyshp',
+    'redis',
+    'sentry-sdk[flask]',
+    'Shapely',
+    'shortuuid',
+    # sqlalchemy 1.4.0 breaks everything. Need to investigate to remove the
+    # pinned dependency.
+    'SQLAlchemy<1.4.0',
+    'SQLAlchemy-Defaults',
+    'SQLAlchemy-Utils',
 ]
 
 TEST_DEPENDENCIES = [
