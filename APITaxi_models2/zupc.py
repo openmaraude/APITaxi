@@ -42,7 +42,7 @@ class ZUPC(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     # The UUID comes from the ZUPC repo
-    zupc_id = db.Column(postgresql.UUID, nullable=False)
+    zupc_id = db.Column(postgresql.UUID, nullable=False, unique=True)
     nom = db.Column(db.String(255), nullable=False)
 
     # Taxis from these towns are allowed to accept customer hails in this zone
