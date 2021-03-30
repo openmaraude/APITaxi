@@ -6,7 +6,6 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
-    'APITaxi_models',
     'Flask-Redis',
     'Flask-Cors',
     'psycopg2',
