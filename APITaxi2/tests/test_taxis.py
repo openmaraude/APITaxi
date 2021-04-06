@@ -325,16 +325,26 @@ class TestTaxiPost:
         assert resp.status_code == 200
 
 
-class TestTaxiList:
+class TestTaxiSearch:
+
+    @staticmethod
+    def _post_geotaxi(app, lon, lat, taxi, vehicle_description):
+        app.redis.geoadd(
+            'geoindex_2',
+            lon,
+            lat,
+            '%s:%s' % (taxi.id, vehicle_description.added_by.email)
+        )
+        app.redis.zadd(
+            'timestamps', {
+                '%s:%s' % (taxi.id, vehicle_description.added_by.email): int(time.time()),
+            }
+        )
 
     def test_invalid(self, anonymous, operateur):
         # Login required
         resp = anonymous.client.get('/taxis')
         assert resp.status_code == 401
-
-        # Permission denied
-        resp = operateur.client.get('/taxis')
-        assert resp.status_code == 403
 
     def test_ok(self, app, moteur, QueriesTracker):
         ZUPCFactory()
@@ -373,18 +383,7 @@ class TestTaxiList:
             ).order_by(
                 VehicleDescription.id
             ):
-                app.redis.geoadd(
-                    'geoindex_2',
-                    tmp_lon,
-                    tmp_lat,
-                    '%s:%s' % (taxi.id, description.added_by.email)
-                )
-                app.redis.zadd(
-                    'timestamps', {
-                        '%s:%s' % (taxi.id, description.added_by.email): int(time.time())
-                    }
-                )
-
+                self._post_geotaxi(app, tmp_lon, tmp_lat, taxi, description)
                 # Move taxi a little bit further
                 tmp_lon += 0.0001
                 tmp_lat += 0.0001
@@ -472,18 +471,7 @@ class TestTaxiList:
 
         lon = 2.367895
         lat = 48.86789
-
-        app.redis.geoadd(
-            'geoindex_2',
-            lon,
-            lat,
-            '%s:%s' % (taxi.id, vehicle_description.added_by.email)
-        )
-        app.redis.zadd(
-            'timestamps', {
-                '%s:%s' % (taxi.id, vehicle_description.added_by.email): int(time.time())
-            }
-        )
+        self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
 
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
@@ -507,26 +495,37 @@ class TestTaxiList:
         # Report location in Paris.
         lon = 2.367895
         lat = 48.86789
-
-        app.redis.geoadd(
-            'geoindex_2',
-            lon,
-            lat,
-            '%s:%s' % (taxi.id, vehicle_description.added_by.email)
-        )
-        app.redis.zadd(
-            'timestamps', {
-                '%s:%s' % (taxi.id, vehicle_description.added_by.email): int(time.time())
-            }
-        )
+        self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
 
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         # No taxi should be returned.
         assert len(resp.json['data']) == 0
 
+    def test_ok_operateur(self, app, operateur):
+        ZUPCFactory()  # Paris
+        my_taxi = TaxiFactory(added_by=operateur.user)
+        TaxiFactory()  # Competitor
 
-class TestTaxiAllList:
+        lon = 2.35
+        lat = 48.86
+
+        for taxi in Taxi.query.options(lazyload('*')):
+            for description in VehicleDescription.query.options(
+                lazyload('*')
+            ).filter_by(
+                vehicle=taxi.vehicle
+            ):
+                self._post_geotaxi(app, lon, lat, taxi, description)
+
+        # Operators can now see their own taxis, but only theirs obviously
+        resp = operateur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['id'] == my_taxi.id
+
+
+class TestTaxiList:
 
     def test_invalid(self, anonymous, moteur, admin, operateur):
         resp = anonymous.client.get('/taxis/all')
