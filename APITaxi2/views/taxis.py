@@ -274,8 +274,8 @@ def taxis_details(taxi_id):
 
 @blueprint.route('/taxis', methods=['GET'])
 @login_required
-@roles_accepted('admin', 'moteur')
-def taxis_list():
+@roles_accepted('admin', 'moteur', 'operateur')
+def taxis_search():
     """Get the taxis around a location.
 
     * Most of locations should belong to zero or one ZUPC, but some might
@@ -385,6 +385,11 @@ def taxis_list():
         ADS.insee.in_(allowed_insee_codes)
     )
 
+    # Users that are only operateur can't see but their own taxis
+    # Users that are both operateur and moteur can see all as expected
+    if not current_user.has_role('moteur') and not current_user.has_role('admin'):
+        query = query.filter(Taxi.added_by == current_user)
+
     # Create data as a dictionary such as:
     #
     # {
@@ -464,7 +469,7 @@ def taxis_list():
 @blueprint.route('/taxis/all', methods=['GET'])
 @login_required
 @roles_accepted('operateur')
-def taxis_all():
+def taxis_list():
     """Return the list of taxis registered for an operator. This endpoint
     should have been called /taxis (and /taxis should have been /search or
     /find) but we can't break the backward compatibility.
