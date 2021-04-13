@@ -27,6 +27,7 @@ DEPENDENCIES = [
     'parse',
     'prettytable',
     'psycopg2',
+    'pyproj',
     'pyshp',
     'redis',
     'hiredis',

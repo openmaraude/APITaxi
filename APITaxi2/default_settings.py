@@ -13,9 +13,9 @@ _ONE_DAY = _ONE_HOUR * 24
 _SEVEN_DAYS = _ONE_DAY * 7
 
 CELERY_BEAT_SCHEDULE = {
+    # Every 10 minutes, delete outdated telemetries
     'clean-geoindex-timestamps': {
         'task': 'clean_geoindex_timestamps',
-        # Every 10 minutes
         'schedule': _ONE_MINUTE * 10
     },
 
@@ -45,6 +45,12 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'store_active_taxis',
         'schedule': _ONE_DAY,
         'args': (10080,)
+    },
+
+    # Every 5 minutes, compute stations taxis are waiting at
+    'compute-waiting-taxis-stations': {
+        'task': 'compute_waiting_taxis_stations',
+        'schedule': _ONE_MINUTE * 1  # 5,
     },
 }
 

@@ -18,6 +18,18 @@ class _Taxi:
     device: str  # usually "phone" or "mobile", unused
     version: int  # should be "2", unused
 
+    @classmethod
+    def from_redis(cls, res):
+        timestamp, lat, lon, status, device, version = res.decode('utf8').split()
+        return cls(
+            timestamp=int(timestamp),
+            lat=float(lat),
+            lon=float(lon),
+            status=status,
+            device=device,
+            version=int(version)
+        )
+
 
 def get_taxi(taxi_id, operator_name):
     """geotaxi-python receives taxi positions and store them into redis. This
@@ -29,15 +41,7 @@ def get_taxi(taxi_id, operator_name):
     if not res:
         return None
 
-    timestamp, lat, lon, status, device, version = res.decode('utf8').split()
-    return _Taxi(
-        timestamp=int(timestamp),
-        lat=float(lat),
-        lon=float(lon),
-        status=status,
-        device=device,
-        version=int(version)
-    )
+    return _Taxi.from_redis(res)
 
 
 @dataclass
