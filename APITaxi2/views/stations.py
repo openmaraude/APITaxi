@@ -1,7 +1,6 @@
 import collections
 import csv
 import datetime
-import functools
 import io
 import json
 import operator
@@ -11,7 +10,7 @@ from flask import Blueprint, current_app, Response
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
-from APITaxi2 import schemas
+from APITaxi2 import auth, schemas
 from APITaxi_models2 import db, Station
 
 
@@ -139,3 +138,31 @@ def stations_geojson():
         'Expires': then.strftime("%a, %d %b %Y %H:%M:%S GMT"),
         'Cache-Control': 'public,max-age=%d' % (then - now).total_seconds(),
     }
+
+
+# TODO roles, and limit to stations in the same zone
+@blueprint.route('/stations/live/', methods=['GET'])
+@auth.login_required(role=['admin'])
+def stations_live():
+    """
+    Return the associative array between a station ID and the number of free taxis found
+    waiting around this station.
+
+    The "join" must be made with either the CSV or GeoJSON export above.
+    """
+    now = int(time.time())
+    min_ = now - 2 * 60  # two minutes lifetime
+    station_count = collections.Counter()
+    for station_taxi in current_app.redis.zrangebyscore('stations_live', min_, now):
+        station_id, _taxi_id = station_taxi.split(b':')
+        station_id = station_id.decode()
+        station_count[station_id] += 1
+
+    end = time.time()
+    current_app.logger.debug('generated station count in %f', (end - now))
+
+    return {
+        'timestamp': now,
+        'stations': station_count,
+        'total': sum(station_count.values())  # debug to remove
+    }, 200

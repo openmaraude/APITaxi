@@ -32,6 +32,7 @@ DEPENDENCIES = [
     # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
     # Check for a transparent shapely integration
     'psycopg2>=2.9.9,<3',
+    'pyproj',
     'pyshp',
     'pytz>=2023.3',
     'redis>=5.0.0,<6',

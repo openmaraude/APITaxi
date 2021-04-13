@@ -4,7 +4,6 @@ from apispec import exceptions
 from apispec.core import APISpec
 from apispec.utils import build_reference
 from flask import abort, current_app
-from flask_security import roles_accepted
 import prance
 
 from APITaxi2.security import auth, current_user

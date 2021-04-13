@@ -6,6 +6,10 @@ from . import db
 from .mixins import HistoryMixin
 
 
+# Taxis halting under this distance from a station are considered parked at this station
+WITHIN_STATION_RADIUS = 50
+
+
 class Station(HistoryMixin, db.Model):
     """A taxi station is where taxi drivers halt waiting for clients.
 
@@ -31,3 +35,23 @@ class Station(HistoryMixin, db.Model):
     info = db.Column(db.String, nullable=False)
 
     town = db.relationship('Town', lazy='raise')
+
+    @classmethod
+    def find(cls, taxi_location):
+        """Find the station the taxi is located at.
+        A taxi is considered at a station within a radius around this station,
+        as the driver is supposed to take clients only when waiting at this station.
+
+        Parameters:
+            taxi_location: shapely.geometry.Point or str in WKT format
+        Returns:
+            Station instance or None if not found
+        """
+        if isinstance(taxi_location, Point):
+            taxi_location = taxi_location.wkb
+        return db.session.query(cls).filter(
+            # Consider the taxi is a circle of the given radius
+            func.ST_DWithin(taxi_location, cls.location, WITHIN_STATION_RADIUS)
+        ).order_by(
+            func.ST_Distance(taxi_location, cls.location)
+        ).first()
