@@ -211,6 +211,8 @@ def taxis_details(taxi_id):
         VehicleDescription.vehicle_id == Taxi.vehicle_id
     ).filter(
         Taxi.id == taxi_id,
+        # For taxis registered with several operators, filter on the description,
+        # not the Taxi.added_by
         VehicleDescription.added_by == current_user
     )
 
@@ -388,7 +390,9 @@ def taxis_search():
     # Users that are only operateur can't see but their own taxis
     # Users that are both operateur and moteur can see all as expected
     if not current_user.has_role('moteur') and not current_user.has_role('admin'):
-        query = query.filter(Taxi.added_by == current_user)
+        # For taxis registered with several operators, filter on the description,
+        # not the Taxi.added_by
+        query = query.filter(VehicleDescription.added_by == current_user)
 
     # Create data as a dictionary such as:
     #
@@ -491,6 +495,8 @@ def taxis_list():
         Vehicle.id == Taxi.vehicle_id,
         VehicleDescription.vehicle_id == Taxi.vehicle_id
     ).filter(
+        # For taxis registered with several operators, filter on the description,
+        # not the Taxi.added_by
         VehicleDescription.added_by == current_user
     )
 
