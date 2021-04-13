@@ -504,25 +504,36 @@ class TestTaxiSearch:
 
     def test_ok_operateur(self, app, operateur):
         ZUPCFactory()  # Paris
-        my_taxi = TaxiFactory(added_by=operateur.user)
         TaxiFactory()  # Competitor
 
         lon = 2.35
         lat = 48.86
 
-        for taxi in Taxi.query.options(lazyload('*')):
-            for description in VehicleDescription.query.options(
-                lazyload('*')
-            ).filter_by(
-                vehicle=taxi.vehicle
-            ):
-                self._post_geotaxi(app, lon, lat, taxi, description)
+        now = datetime.now()
+        vehicle = VehicleFactory(descriptions=[])
+
+        # VehicleDescription related to an operator for which there is no
+        # location update.
+        VehicleDescriptionFactory(
+            vehicle=vehicle,
+            last_update_at=now - timedelta(days=15),
+        )
+        # VehicleDescription related to an operator with location update.
+        vehicle_description = VehicleDescriptionFactory(
+            vehicle=vehicle,
+            last_update_at=now,
+            added_by=operateur.user,
+        )
+
+        my_taxi = TaxiFactory(vehicle=vehicle)
+        self._post_geotaxi(app, lon, lat, my_taxi, vehicle_description)
 
         # Operators can now see their own taxis, but only theirs obviously
         resp = operateur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == my_taxi.id
+        assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
 
 
 class TestTaxiList:
