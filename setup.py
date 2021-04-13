@@ -14,6 +14,7 @@ DEPENDENCIES = [
     'dataclasses',  # for Python3.6
     'email-validator',
     'Flask',
+    'Flask-CacheControl',
     'Flask-Cors',
     'flask-influxdb',
     'Flask-Login',
@@ -29,6 +30,7 @@ DEPENDENCIES = [
     'parse',
     'prettytable',
     'psycopg2',
+    'pyproj',
     'pyshp',
     'redis',
     'sentry-sdk[flask]',
