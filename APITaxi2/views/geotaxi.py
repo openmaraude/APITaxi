@@ -125,7 +125,7 @@ def geotaxi_batch():
         # For taxis registered with several operators, filter on the description,
         # not the Taxi.added_by
         VehicleDescription.added_by == current_user
-    )
+    ).all()
 
     # Check all taxis are declared to us and belong to this operator
     unknown_taxi_ids = set(requested_taxi_ids) - set(taxi.id for taxi in valid_taxis)
