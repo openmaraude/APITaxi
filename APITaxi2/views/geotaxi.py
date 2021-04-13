@@ -4,8 +4,9 @@ import time
 from flask import Blueprint, current_app, request
 from flask_security import current_user, login_required, roles_accepted
 import redis
+from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import db, Taxi
+from APITaxi_models2 import db, Taxi, Vehicle, VehicleDescription
 
 from .. import schemas
 from ..validators import (
@@ -117,13 +118,17 @@ def geotaxi_batch():
     positions = data['positions']
     requested_taxi_ids = dict((position['taxi_id'], position) for position in positions)
 
-    valid_taxi_ids = set(id_ for id_, in db.session.query(Taxi.id).filter(
+    valid_taxis = db.session.query(Taxi).options(
+        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by)
+    ).filter(
         Taxi.id.in_(requested_taxi_ids),
-        Taxi.added_by == current_user
-    ))
+        # For taxis registered with several operators, filter on the description,
+        # not the Taxi.added_by
+        VehicleDescription.added_by == current_user
+    )
 
     # Check all taxis are declared to us and belong to this operator
-    unknown_taxi_ids = set(requested_taxi_ids) - valid_taxi_ids
+    unknown_taxi_ids = set(requested_taxi_ids) - set(taxi.id for taxi in valid_taxis)
     if unknown_taxi_ids:
         validation_errors = {}
         for i, position in enumerate(positions):
@@ -134,8 +139,8 @@ def geotaxi_batch():
 
     # Record the new position
     pipe = current_app.redis.pipeline()
-    for taxi_id in valid_taxi_ids:
-        position = requested_taxi_ids[taxi_id]
+    for taxi in valid_taxis:
+        position = requested_taxi_ids[taxi.id]
         _update_redis(pipe, position, current_user)
     pipe.execute()
 
