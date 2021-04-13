@@ -27,14 +27,17 @@ class TestPostPositions:
         redis_taxi = redis_backend.get_taxi(taxi.id, taxi.added_by.email)
         assert redis_taxi is None
 
-    def test_ok(self, operateur, app):
+    def test_ok(self, operateur, app, QueriesTracker):
         taxi = factories.TaxiFactory(added_by=operateur.user)
-        response = operateur.client.post('/geotaxi', json={
-            'data': [{
-                'positions': [{'taxi_id': taxi.id, 'lon': 2.35, 'lat': 48.86}]
-            }]
-        })
-        assert response.status_code == 200
+        with QueriesTracker() as qtracker:
+            response = operateur.client.post('/geotaxi', json={
+                'data': [{
+                    'positions': [{'taxi_id': taxi.id, 'lon': 2.35, 'lat': 48.86}]
+                }]
+            })
+            assert response.status_code == 200
+            # SELECT permissions, SELECT taxi
+            assert qtracker.count == 2
 
         # There should be five keys stored (after the IP index was dropped)
         taxi_key = taxi.id.encode()
@@ -133,3 +136,28 @@ class TestPostPositions:
         })
         assert response.status_code == 400
         assert 'positions' in response.json['errors']['data']['0']
+
+    def test_ok_taxi_two_operators(self, app, operateur, QueriesTracker):
+        """Taxi is registered with two operators, but reports its location with
+        only one.
+        """
+        vehicle = factories.VehicleFactory(descriptions=[])
+        factories.VehicleDescriptionFactory(
+            vehicle=vehicle,
+            added_by=operateur.user,
+        )
+        # VehicleDescription related to another operator
+        factories.VehicleDescriptionFactory(
+            vehicle=vehicle,
+        )
+        taxi = factories.TaxiFactory(vehicle=vehicle)
+
+        with QueriesTracker() as qtracker:
+            response = operateur.client.post('/geotaxi', json={
+                'data': [{
+                    'positions': [{'taxi_id': taxi.id, 'lon': 2.35, 'lat': 48.86}]
+                }]
+            })
+            assert response.status_code == 200
+            # SELECT permissions, SELECT taxi
+            assert qtracker.count == 2
