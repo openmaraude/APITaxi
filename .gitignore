@@ -4,3 +4,4 @@ dev_settings.py
 *.egg-info
 .tox
 build
+.vscode
