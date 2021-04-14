@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from flask_security import current_user, login_required
+from flask_security import login_required
 from sqlalchemy import func, or_
 
 from APITaxi_models2 import Town, ZUPC
@@ -22,7 +22,7 @@ def zupc_list():
     This endpoint is only used by the console and is not part of the public API.
     ---
     get:
-      description: Get data about ZUPC or cities.
+      description: Get data about ZUPC.
       parameters:
         - in: query
           schema: ListZUPCQueryStringSchema
@@ -59,17 +59,15 @@ def zupc_list():
     # expose towns as their own ZUPC (they are ZPC anyway)
     if not zupcs:
         ret = schema.dump({
-            'data': [
-                (town, influx_backend.get_nb_active_taxis(insee_code=town.insee))
-                for town in towns
-            ]
+            'data': [(town, {
+                'total': influx_backend.get_nb_active_taxis(insee_code=town.insee),
+            }) for town in towns]
         })
         return ret
 
     ret = schema.dump({
-        'data': [
-            (zupc, influx_backend.get_nb_active_taxis(zupc_id=zupc.zupc_id))
-            for zupc in zupcs
-        ]
+        'data': [(zupc, {
+            'total': influx_backend.get_nb_active_taxis(zupc_id=zupc.zupc_id),
+        }) for zupc in zupcs]
     })
     return ret

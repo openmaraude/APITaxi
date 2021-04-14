@@ -249,11 +249,12 @@ class ListTaxisQueryStringSchema(PositionMixin, Schema):
 class ZUPCSchema(Schema):
     """Response schema to list ZUPCs on the map"""
     zupc_id = fields.String()
+    insee = fields.String()
     name = fields.String()
     type = fields.String()
 
     def dump(self, obj, *args, **kwargs):
-        model, nb_active_taxis = obj
+        model, stats = obj
         ret = super().dump(model, *args, **kwargs)
 
         if isinstance(model, ZUPC):
@@ -261,8 +262,12 @@ class ZUPCSchema(Schema):
         elif isinstance(model, Town):
             ret['type'] = 'city'
 
-        if nb_active_taxis is not None:
-            ret['nb_active'] = nb_active_taxis
+        ret['stats'] = {
+            key: value
+            for key, value in stats.items()
+            if value is not None
+        }
+
         return ret
 
 
