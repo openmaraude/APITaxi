@@ -15,7 +15,7 @@ class TestZUPCList:
         resp = anonymous.client.get('/zupc?lon=2.35&lat=48.86')
         assert resp.status_code == 401
 
-    def test_ok(self, moteur, QueriesTracker):
+    def test_ok(self, operateur, moteur, QueriesTracker):
         TownFactory()
 
         # lon=2.35&lat=48.86 = location in middle of Paris. No ZUPC is created
@@ -47,5 +47,19 @@ class TestZUPCList:
             'zupc_id': zupc.zupc_id,
             'stats': {
                 'total': 0,
+            },
+        }]
+
+        resp = operateur.client.get('zupc?lon=2.35&lat=48.86')
+        assert resp.status_code == 200
+        assert resp.json['data'] == [{
+            'type': 'ZUPC',
+            'name': zupc.nom,
+            'zupc_id': zupc.zupc_id,
+            'stats': {
+                'total': 0,
+                'operators': {
+                    operateur.user.email: 0,
+                }
             },
         }]

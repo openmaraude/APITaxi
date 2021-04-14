@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from flask_security import login_required
+from flask_security import current_user, login_required
 from sqlalchemy import func, or_
 
 from APITaxi_models2 import Town, ZUPC
@@ -13,6 +13,27 @@ from ..validators import (
 
 
 blueprint = Blueprint('zupc', __name__)
+
+
+def _get_zupc_stats(filter_name, filter_value, include_operators):
+    """`filter_name` is either "insee_code" or "zupc_id", which are parameters
+    expected by influx_backend.get_nb_active_taxis.
+
+    This function returns the total number of taxis within the INSEE code or
+    ZUPC. If include_operators is True, it also returns the numer of taxis of
+    the current user.
+    """
+    stats = {
+        'total': influx_backend.get_nb_active_taxis(**{filter_name: filter_value})
+    }
+    if include_operators:
+        stats['operators'] = {
+            current_user.email: influx_backend.get_nb_active_taxis(
+                **{filter_name: filter_value},
+                operator=current_user.email
+            )
+        }
+    return stats
 
 
 @blueprint.route('/zupc', methods=['GET'])
@@ -55,17 +76,21 @@ def zupc_list():
         ZUPC.id
     ).all()
 
+    is_operator = current_user.has_role('operateur')
+
     if not zupcs:
         ret = schema.dump({
-            'data': [(town, {
-                'total': influx_backend.get_nb_active_taxis(insee_code=town.insee),
-            }) for town in towns]
+            'data': [
+                (town, _get_zupc_stats('insee_code', town.insee, is_operator))
+                for town in towns
+            ]
         })
         return ret
 
     ret = schema.dump({
-        'data': [(zupc, {
-            'total': influx_backend.get_nb_active_taxis(zupc_id=zupc.zupc_id),
-        }) for zupc in zupcs]
+        'data': [
+            (zupc, _get_zupc_stats('zupc_id', zupc.zupc_id, is_operator))
+            for zupc in zupcs
+        ]
     })
     return ret
