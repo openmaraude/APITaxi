@@ -55,8 +55,6 @@ def zupc_list():
         ZUPC.id
     ).all()
 
-    # For backwards compatibility until the map is rewritten,
-    # expose towns as their own ZUPC (they are ZPC anyway)
     if not zupcs:
         ret = schema.dump({
             'data': [(town, {
