@@ -3,7 +3,7 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.orm import aliased
 
-from flask_security import login_required, roles_accepted
+from flask_security import current_user, login_required, roles_accepted
 
 from APITaxi_models2 import db, Hail, User
 
@@ -19,7 +19,7 @@ blueprint = Blueprint('sessions', __name__)
 
 @blueprint.route('/sessions')
 @login_required
-@roles_accepted('admin')
+@roles_accepted('admin', 'moteur')
 def hails_sessions():
     querystring_schema = schemas.ListHailsBySessionQuerystringSchema()
     querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))
@@ -83,6 +83,9 @@ def hails_sessions():
     ).order_by(
         func.MIN(Hail.added_at).desc()
     )
+
+    if not current_user.has_role('admin'):
+        query = query.filter(Hail.added_by == current_user)
 
     hails = query.paginate(
         page=querystring.get('p', [1])[0],

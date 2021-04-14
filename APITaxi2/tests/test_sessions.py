@@ -3,6 +3,7 @@ import dateutil
 from APITaxi_models2.unittest.factories import (
     CustomerFactory,
     HailFactory,
+    UserFactory,
 )
 
 
@@ -10,9 +11,6 @@ class TestSession:
     def test_invalid(self, anonymous, moteur, operateur, admin):
         resp = anonymous.client.get('/sessions')
         assert resp.status_code == 401
-
-        resp = moteur.client.get('/sessions')
-        assert resp.status_code == 403
 
         resp = operateur.client.get('/sessions')
         assert resp.status_code == 403
@@ -22,8 +20,15 @@ class TestSession:
         assert resp.status_code == 400
         assert 'x' in resp.json['errors']
 
+        resp = moteur.client.get('/sessions?x=y')
+        assert resp.status_code == 400
+        assert 'x' in resp.json['errors']
+
     def test_ok(self, admin, moteur, QueriesTracker):
         customer = CustomerFactory(added_by=moteur.user)
+
+        other_user = UserFactory()
+        other_customer = CustomerFactory(added_by=other_user)
 
         # Hail 1
         hail_1 = HailFactory(
@@ -42,8 +47,8 @@ class TestSession:
 
         # Hail 3, different session id
         hail_3 = HailFactory(
-            customer=customer,
-            added_by=moteur.user,
+            customer=other_customer,
+            added_by=other_user,
             status='failure'
         )
 
@@ -65,3 +70,8 @@ class TestSession:
         assert dateutil.parser.parse(resp.json['data'][1]['added_at']) == hail_1.added_at
         assert dateutil.parser.parse(resp.json['data'][1]['hails'][0]['added_at']) == hail_1.added_at
         assert dateutil.parser.parse(resp.json['data'][1]['hails'][1]['added_at']) == hail_2.added_at
+
+        # Moteurs can only view sessions they created.
+        resp = moteur.client.get('/sessions')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
