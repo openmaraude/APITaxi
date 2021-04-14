@@ -1,6 +1,6 @@
 from flask import Blueprint, request
-from flask_security import login_required
-from sqlalchemy import func
+from flask_security import current_user, login_required
+from sqlalchemy import func, or_
 
 from APITaxi_models2 import Town, ZUPC
 
@@ -19,10 +19,10 @@ blueprint = Blueprint('zupc', __name__)
 @login_required
 def zupc_list():
     """
-    This endpoint is only used by the online and is not part of the public API.
+    This endpoint is only used by the console and is not part of the public API.
     ---
     get:
-      description: Get data about ZUPC.
+      description: Get data about ZUPC or cities.
       parameters:
         - in: query
           schema: ListZUPCQueryStringSchema
@@ -42,15 +42,15 @@ def zupc_list():
 
     schema = schemas.DataZUPCSchema()
 
-    town = Town.query.filter(
+    towns = Town.query.filter(
         func.ST_Intersects(Town.shape, 'Point({} {})'.format(args['lon'], args['lat'])),
-    ).one_or_none()
+    ).all()
 
-    if not town:
+    if not towns:
         return schema.dump({'data': []})
 
     zupcs = ZUPC.query.filter(
-        ZUPC.allowed.contains(town)
+        or_(ZUPC.allowed.contains(town) for town in towns)
     ).order_by(
         ZUPC.id
     ).all()
@@ -60,21 +60,15 @@ def zupc_list():
     if not zupcs:
         ret = schema.dump({
             'data': [
-                [
-                    ZUPC(zupc_id=town.insee, nom=town.name),
-                    influx_backend.get_nb_active_taxis(insee_code=town.insee)
-                ]
+                (town, influx_backend.get_nb_active_taxis(insee_code=town.insee))
+                for town in towns
             ]
         })
         return ret
 
     ret = schema.dump({
         'data': [
-            [
-                zupc,
-                # Count the total of active taxis allowed in this ZUPC
-                influx_backend.get_nb_active_taxis(zupc_id=zupc.zupc_id)
-            ]
+            (zupc, influx_backend.get_nb_active_taxis(zupc_id=zupc.zupc_id))
             for zupc in zupcs
         ]
     })

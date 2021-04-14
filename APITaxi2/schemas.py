@@ -11,7 +11,11 @@ from marshmallow.schema import SchemaMeta
 
 from geopy.distance import geodesic
 
-from APITaxi_models2 import Hail
+from APITaxi_models2 import (
+    Hail,
+    Town,
+    ZUPC,
+)
 from APITaxi_models2.hail import (
     INCIDENT_CUSTOMER_REASONS,
     INCIDENT_TAXI_REASONS,
@@ -245,11 +249,18 @@ class ListTaxisQueryStringSchema(PositionMixin, Schema):
 class ZUPCSchema(Schema):
     """Response schema to list ZUPCs on the map"""
     zupc_id = fields.String()
-    nom = fields.String()
+    name = fields.String()
+    type = fields.String()
 
     def dump(self, obj, *args, **kwargs):
-        zupc, nb_active_taxis = obj
-        ret = super().dump(zupc, *args, **kwargs)
+        model, nb_active_taxis = obj
+        ret = super().dump(model, *args, **kwargs)
+
+        if isinstance(model, ZUPC):
+            ret['type'] = 'ZUPC'
+        elif isinstance(model, Town):
+            ret['type'] = 'city'
+
         if nb_active_taxis is not None:
             ret['nb_active'] = nb_active_taxis
         return ret

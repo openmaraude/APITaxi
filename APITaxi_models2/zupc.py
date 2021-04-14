@@ -1,5 +1,6 @@
 from geoalchemy2 import Geography
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import synonym
 
 from . import db
 
@@ -43,7 +44,9 @@ class ZUPC(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # The UUID comes from the ZUPC repo
     zupc_id = db.Column(postgresql.UUID, nullable=False, unique=True)
+
     nom = db.Column(db.String(255), nullable=False)
+    name = synonym('nom')
 
     # Taxis from these towns are allowed to accept customer hails in this zone
     allowed = db.relationship('Town', secondary=town_zupc)
