@@ -24,9 +24,12 @@ class TestZUPCList:
         assert resp.status_code == 200
         # A ZUPC is simulated at the town level
         assert resp.json == {'data': [{
-            'zupc_id': '75056',
-            'nom': "Paris",
-            'nb_active': 0,
+            'type': 'city',
+            'name': 'Paris',
+            'insee': '75056',
+            'stats': {
+                'total': 0
+            },
         }]}
 
         zupc = ZUPCFactory()
@@ -39,7 +42,10 @@ class TestZUPCList:
 
         assert resp.status_code == 200
         assert resp.json['data'] == [{
+            'type': 'ZUPC',
+            'name': zupc.nom,
             'zupc_id': zupc.zupc_id,
-            'nom': zupc.nom,
-            'nb_active': 0
+            'stats': {
+                'total': 0,
+            },
         }]

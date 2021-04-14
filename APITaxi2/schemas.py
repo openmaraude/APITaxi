@@ -262,11 +262,7 @@ class ZUPCSchema(Schema):
         elif isinstance(model, Town):
             ret['type'] = 'city'
 
-        ret['stats'] = {
-            key: value
-            for key, value in stats.items()
-            if value is not None
-        }
+        ret['stats'] = stats
 
         return ret
 
