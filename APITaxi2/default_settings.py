@@ -15,7 +15,7 @@ _SEVEN_DAYS = _ONE_DAY * 7
 CELERY_BEAT_SCHEDULE = {
     'clean-geoindex-timestamps': {
         'task': 'clean_geoindex_timestamps',
-        # Every 10 miuntes
+        # Every 10 minutes
         'schedule': _ONE_MINUTE * 10
     },
 
