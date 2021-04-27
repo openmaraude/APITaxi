@@ -152,12 +152,16 @@ def export_zupc():
     }
 
     for zupc in ZUPC.query.order_by('id'):
+        # This query looks convoluted because Union and Multi only accept geometries
+        # but convert back to geography for GeoJSON
         query = db.session.query(
-            func.st_AsGeoJSON(
-                func.Geography(
-                    func.st_Multi(
-                        func.ST_Union(
-                            func.Geometry(Town.shape)
+            func.ST_AsGeoJSON(
+                func.Geography(  # Geography out
+                    func.ST_Multi(  # Convert to Multipolygon if not already
+                        func.ST_Union(  # Aggregate function
+                            func.Geometry(  # Geometry in
+                                Town.shape
+                            )
                         )
                     )
                 )
