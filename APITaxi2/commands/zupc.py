@@ -157,11 +157,9 @@ def export_zupc():
         query = db.session.query(
             func.ST_AsGeoJSON(
                 func.Geography(  # Geography out
-                    func.ST_Multi(  # Convert to Multipolygon if not already
-                        func.ST_Union(  # Aggregate function
-                            func.Geometry(  # Geometry in
-                                Town.shape
-                            )
+                    func.ST_Union(  # Aggregate function
+                        func.Geometry(  # Geometry in
+                            Town.shape
                         )
                     )
                 )
