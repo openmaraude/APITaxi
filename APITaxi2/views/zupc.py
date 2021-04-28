@@ -1,8 +1,13 @@
+import json
+
 from flask import Blueprint, request
 from flask_security import current_user, login_required
-from sqlalchemy import func, or_
+from sqlalchemy import cast, func, or_
 
-from APITaxi_models2 import Town, ZUPC
+from geoalchemy2 import Geometry
+
+from APITaxi_models2 import db, Town, ZUPC
+from APITaxi_models2.zupc import town_zupc
 
 from .. import influx_backend
 from .. import schemas
@@ -94,3 +99,39 @@ def zupc_list():
         ]
     })
     return ret
+
+
+@blueprint.route('/zupc/live', methods=['GET'])
+@login_required
+def zupc_live():
+    """List all ZUPCs, and number of taxis connected.
+    """
+    query = db.session.query(
+        ZUPC.zupc_id,
+        ZUPC.nom,
+        func.ST_ASGEOJSON(
+            func.ST_UNION(
+                cast(Town.shape, Geometry(srid=4326))
+            )
+        ).label('geojson')
+    ).join(
+        town_zupc, town_zupc.c.zupc_id == ZUPC.id
+    ).join(
+        Town
+    ).group_by(
+        ZUPC.id,
+        ZUPC.nom
+    )
+
+    zupcs = query.all()
+    is_operator = current_user.has_role('operateur')
+
+    schema = schemas.DataZUPCGeomSchema()
+    return schema.dump({
+        'data': [{
+            'id': zupc.zupc_id,
+            'nom': zupc.nom,
+            'geojson': json.loads(zupc.geojson),
+            'stats': _get_zupc_stats('zupc_id', zupc.zupc_id, is_operator),
+        } for zupc in zupcs]
+    })

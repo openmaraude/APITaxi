@@ -63,3 +63,29 @@ class TestZUPCList:
                 }
             },
         }]
+
+
+class TestZUPCLive:
+    def test_invalid(self, anonymous):
+        resp = anonymous.client.get('/zupc/live')
+        assert resp.status_code == 401
+
+    def test_ok(self, operateur, QueriesTracker):
+        zupc = ZUPCFactory()
+        zupc2 = ZUPCFactory(bordeaux=True)
+
+        with QueriesTracker() as qtracker:
+            resp = operateur.client.get('/zupc/live')
+            # List permissions, SELECT zupc
+            assert qtracker.count == 2
+
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+        assert resp.json['data'][0]['id'] in (zupc.zupc_id, zupc2.zupc_id)
+        assert resp.json['data'][0]['nom'] in (zupc.nom, zupc2.nom)
+        assert resp.json['data'][0]['stats'] == {
+            'total': 0,
+            'operators': {
+                operateur.user.email: 0
+            }
+        }

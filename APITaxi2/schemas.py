@@ -267,6 +267,14 @@ class ZUPCSchema(Schema):
         return ret
 
 
+class ZUPCGeomSchema(Schema):
+    """Represents a ZUPC and it's shape."""
+    id = fields.String()
+    nom = fields.String()
+    geojson = fields.Raw()
+    stats = fields.Raw()
+
+
 class TaxiSchema(Schema):
     """Schema to list, create, read or update taxis"""
     id = fields.String()
@@ -675,4 +683,5 @@ DataUserSchema = data_schema_wrapper(UserSchema())
 DataUserListSchema = data_schema_wrapper(UserSchema(), with_pagination=True)
 DataVehicleSchema = data_schema_wrapper(VehicleSchema())
 DataZUPCSchema = data_schema_wrapper(ZUPCSchema())
+DataZUPCGeomSchema = data_schema_wrapper(ZUPCGeomSchema())
 DataGeotaxiSchema = data_schema_wrapper(GeotaxiSchema())
