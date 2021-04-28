@@ -50,7 +50,7 @@ def check_orphans(Model, query, remove=False):
     if not count:
         return
 
-    print(f'{count} {Model.__name__} entries are orphan.{ "Remove them." if remove else ""}')
+    print(f'{count} {Model.__name__} entries are orphan.{" Remove them." if remove else ""}')
 
     # Only for models with an added_by column
     if issubclass(Model, mixins.HistoryMixin):
