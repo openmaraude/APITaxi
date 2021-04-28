@@ -3,7 +3,7 @@ from flask import Blueprint
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 
-from APITaxi_models2 import db, ADS, Driver, Taxi, User, Vehicle, VehicleDescription
+from APITaxi_models2 import db, mixins, ADS, Driver, Taxi, User, Vehicle, VehicleDescription
 
 
 blueprint = Blueprint('commands_clean', __name__, cli_group=None)
@@ -52,18 +52,16 @@ def check_orphans(Model, query, remove=False):
 
     print(f'{count} {Model.__name__} entries are orphan.{ "Remove them." if remove else ""}')
 
-    # Vehicles don't have added_by
-    if Model != Vehicle:
-        print()
-        print(f'{"operator":>30} | count')
-        print("-" * 30, "|", "-" * 5)
-        print("\n".join(
-            f'{email:>30} | {count:5}'
-            for email, count in query.from_self(User.email, func.count(Model.id))
-            .join(User)
+    # Only for models with an added_by column
+    if issubclass(Model, mixins.HistoryMixin):
+        report = (
+            query.with_entities(func.count(Model.id), User.email)
+            .join(Model.added_by)
             .group_by(User.email)
             .order_by(func.count(Model.id).desc())
-        ))
+        )
+        print()
+        print("\n".join(f'{count:5} | {email}' for count, email in report))
         print()
 
     if not remove:
