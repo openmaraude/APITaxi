@@ -9,6 +9,7 @@ from shapely.geometry import shape, MultiPolygon
 from shapely.ops import cascaded_union
 from sqlalchemy import func
 from APITaxi_models2 import db, Town, ZUPC
+from APITaxi_models2.zupc import town_zupc
 
 
 blueprint = Blueprint('commands_zupc', __name__, cli_group=None)
@@ -151,25 +152,30 @@ def export_zupc():
         'features': []
     }
 
-    for zupc in ZUPC.query.order_by('id'):
-        # This query looks convoluted because Union and Multi only accept geometries
-        # but convert back to geography for GeoJSON
-        query = db.session.query(
-            func.ST_AsGeoJSON(
-                func.Geography(  # Geography out
-                    func.ST_Union(  # Aggregate function
-                        func.Geometry(  # Geometry in
-                            Town.shape
-                        )
-                    )
+    query = db.session.query(
+        ZUPC,
+        func.ST_AsGeoJSON(
+            func.ST_Union(  # Aggregate function
+                func.Geometry(  # Geometry type needed
+                    Town.shape
                 )
-            ),
-            func.json_agg(Town.insee),
-        ).filter(Town.allowed.contains(zupc))
-        shape, insee_codes = query.one()
+            )
+        ),
+        func.json_agg(Town.insee),
+    ).join(
+        town_zupc, town_zupc.c.zupc_id == ZUPC.id
+    ).join(
+        Town
+    ).group_by(
+        ZUPC.id
+    ).order_by(
+        ZUPC.id  # Consistent order across exports
+    )
+
+    for zupc, zupc_shape, insee_codes in query:
         output['features'].append({
             'type': "Feature",
-            'geometry': json.loads(shape),
+            'geometry': json.loads(zupc_shape),
             'properties': {
                 'zupc_id': zupc.zupc_id,
                 'name': zupc.nom,
