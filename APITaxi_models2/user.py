@@ -48,10 +48,10 @@ class User(db.Model, UserMixin):
     operator_header_name = Column(db.String)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined')
+    roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined', viewonly=True)
 
     # Manager of this User
     manager = db.relationship('User', remote_side=[id], lazy='raise')
 
     # List of User managed by this User
-    managed = db.relationship('User', lazy='raise')
+    managed = db.relationship('User', lazy='raise', viewonly=True)

@@ -29,7 +29,7 @@ class Town(db.Model):
     # 4326, also known as WGS84 is the standard also used in the GPS
     shape = db.Column(Geography(geometry_type='MULTIPOLYGON', srid=4326), nullable=False)
 
-    allowed = db.relationship('ZUPC', secondary=town_zupc)
+    allowed = db.relationship('ZUPC', secondary=town_zupc, viewonly=True)
 
 
 class ZUPC(db.Model):

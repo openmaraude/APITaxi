@@ -118,9 +118,7 @@ def geotaxi_batch():
     positions = data['positions']
     requested_taxi_ids = dict((position['taxi_id'], position) for position in positions)
 
-    valid_taxis = db.session.query(Taxi).options(
-        joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by)
-    ).filter(
+    valid_taxis = db.session.query(Taxi).join(Vehicle).join(VehicleDescription).filter(
         Taxi.id.in_(requested_taxi_ids),
         # For taxis registered with several operators, filter on the description,
         # not the Taxi.added_by

@@ -175,7 +175,7 @@ class SQLAlchemyQueriesTracker:
     def __exit__(self, type, value, traceback):
         sqlalchemy.event.remove(self.conn, 'after_execute', self._add_query)
 
-    def _add_query(self, conn, clause_element, multiparams, params, result):
+    def _add_query(self, conn, clause_element, multiparams, params, execution_options, result):
         self.queries.append({
             'clause': clause_element,
             'params': params,

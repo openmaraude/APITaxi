@@ -28,7 +28,7 @@ class Vehicle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     licence_plate = db.Column(db.String(80), nullable=False, unique=True)
 
-    descriptions = db.relationship('VehicleDescription', lazy='raise')
+    descriptions = db.relationship('VehicleDescription', lazy='raise', viewonly=True)
 
 
 class VehicleDescription(HistoryMixin, db.Model):
