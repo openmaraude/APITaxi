@@ -216,11 +216,14 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         hail.taxi_phone_number = data['data'][0]['taxi_phone_number']
 
     processes.change_status(hail, 'received_by_operator')
+
+    vehicle_description_added_by_id = vehicle_description.added_by_id
+
     db.session.commit()
 
     # If hail is still "received_by_operator" and not "received_by_taxi" after 10 seconds, timeout.
     handle_hail_timeout.apply_async(
-        args=(hail.id, vehicle_description.added_by_id),
+        args=(hail.id, vehicle_description_added_by_id),
         kwargs={
             'initial_hail_status': 'received_by_operator',
             'new_hail_status': 'failure',

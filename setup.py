@@ -10,12 +10,7 @@ DEPENDENCIES = [
     'apispec[validation]',
     'apispec-webframeworks',
     'bcrypt',
-    # Celery 5 has been recently released, but celery-flower is not yet
-    # compatible with the latest version.
-    # We should upgrade to 5 when flower is ok.
-    # To check if flower is compatible with celery 5, simply start it. Now
-    # (2020/10/15) an error as startup from starting.
-    'celery==4.4.7',
+    'celery',
     'dataclasses',  # for Python3.6
     'email-validator',
     'Flask',
@@ -39,9 +34,7 @@ DEPENDENCIES = [
     'sentry-sdk[flask]',
     'Shapely',
     'shortuuid',
-    # sqlalchemy 1.4.0 breaks everything. Need to investigate to remove the
-    # pinned dependency.
-    'SQLAlchemy<1.4.0',
+    'SQLAlchemy',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
 ]

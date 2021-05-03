@@ -405,6 +405,9 @@ def hails_details(hail_id):
             _ban_customer(hail.customer)
 
     ret = schema.dump({'data': [(hail, taxi_position)]})
+
+    vehicle_description_added_by_id = vehicle_description.added_by_id
+
     db.session.commit()
 
     # If the PUT request changed any field of the object, log the request. Do
@@ -426,7 +429,7 @@ def hails_details(hail_id):
         # refuse the hail until timeout.
         if hail.status == 'received_by_taxi':
             tasks.operators.handle_hail_timeout.apply_async(
-                args=(hail.id, vehicle_description.added_by_id),
+                args=(hail.id, vehicle_description_added_by_id),
                 kwargs={
                     'initial_hail_status': 'received_by_taxi',
                     'new_hail_status': 'timeout_taxi',
@@ -439,7 +442,7 @@ def hails_details(hail_id):
         # is free again.
         elif hail.status == 'accepted_by_taxi':
             tasks.operators.handle_hail_timeout.apply_async(
-                args=(hail.id, vehicle_description.added_by_id),
+                args=(hail.id, vehicle_description_added_by_id),
                 kwargs={
                     'initial_hail_status': 'accepted_by_taxi',
                     'new_hail_status': 'timeout_customer',
@@ -451,7 +454,7 @@ def hails_details(hail_id):
         # customer and change status to customer_on_board.
         elif hail.status == 'accepted_by_customer':
             tasks.operators.handle_hail_timeout.apply_async(
-                args=(hail.id, vehicle_description.added_by_id),
+                args=(hail.id, vehicle_description_added_by_id),
                 kwargs={
                     'initial_hail_status': 'accepted_by_customer',
                     'new_hail_status': 'timeout_accepted_by_customer',
@@ -462,7 +465,7 @@ def hails_details(hail_id):
         # Call timeout if customer is still on board after 2 hours.
         elif hail.status == 'customer_on_board':
             tasks.operators.handle_hail_timeout.apply_async(
-                args=(hail.id, vehicle_description.added_by_id),
+                args=(hail.id, vehicle_description_added_by_id),
                 kwargs={
                     'initial_hail_status': 'customer_on_board',
                     'new_hail_status': 'timeout_taxi',
