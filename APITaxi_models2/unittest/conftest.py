@@ -145,10 +145,11 @@ def postgresql_empty():
     clean state after running a unittest."""
     def clean_db():
         APITaxi_models2.db.session.execute('SET CONSTRAINTS ALL DEFERRED')
+        inspector = sqlalchemy.inspect(APITaxi_models2.db.engine)
         for table in reversed(APITaxi_models2.db.metadata.sorted_tables):
             # Ignore tables declared as SQLALchemy models but not present in
             # alembic migrations.
-            if not table.exists(bind=APITaxi_models2.db.engine):
+            if not inspector.has_table(table.name):
                 continue
             APITaxi_models2.db.session.execute(table.delete())
         APITaxi_models2.db.session.commit()
