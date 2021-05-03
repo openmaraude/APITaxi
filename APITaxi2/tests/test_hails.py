@@ -342,7 +342,7 @@ class TestGetHailList:
         assert 'status' in resp.json['errors']
 
     def test_ok(self, admin, moteur, operateur, QueriesTracker):
-        HailFactory(operateur=operateur.user, status='received')
+        hail1 = HailFactory(operateur=operateur.user, status='received')
         HailFactory(operateur=operateur.user, status='finished')
         HailFactory(added_by=moteur.user, status='finished')
 
@@ -401,6 +401,11 @@ class TestGetHailList:
         resp = admin.client.get('/hails/?taxi_id=no')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
+
+        # Filter on customer_id
+        resp = admin.client.get('/hails/?customer_id=%s' % hail1.customer_id)
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
 
 
 class TestCreateHail:

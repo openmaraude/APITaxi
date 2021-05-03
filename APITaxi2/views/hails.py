@@ -530,6 +530,7 @@ def hails_list():
         ('operateur', operateur_table.email),
         ('moteur', moteur_table.email),
         ('taxi_id', Hail.taxi_id),
+        ('customer_id', Hail.customer_id),
     ):
         if qname not in querystring:
             continue

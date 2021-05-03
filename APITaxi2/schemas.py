@@ -528,6 +528,7 @@ class ListHailsQuerystringSchema(Schema, PageQueryStringMixin):
     moteur = fields.List(fields.String)
     taxi_id = fields.List(fields.String)
     date = fields.List(fields.Date('%Y/%m/%d'))
+    customer_id = fields.List(fields.String)
 
 
 class HailListSchema(Schema):
@@ -538,6 +539,7 @@ class HailListSchema(Schema):
     status = fields.String()
     creation_datetime = fields.DateTime()
     taxi_id = fields.String()
+    customer_id = fields.String()
 
 
 class HailBySessionUserSchema(Schema):
