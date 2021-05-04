@@ -486,6 +486,8 @@ class HailSchema(Schema):
     creation_datetime = fields.DateTime()
     customer_id = fields.String(required=True)
 
+    transitions = fields.Raw(attribute='transition_log')
+
     def dump(self, obj, *args, **kwargs):
         hail, taxi_position = obj
         ret = super().dump(hail, *args, **kwargs)
