@@ -9,8 +9,8 @@ class RolesUsers(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
 
-    user = db.relationship('User')
-    role = db.relationship('Role')
+    user = db.relationship('User', viewonly=True)
+    role = db.relationship('Role', viewonly=True)
 
 
 class Role(db.Model, RoleMixin):
@@ -48,7 +48,7 @@ class User(db.Model, UserMixin):
     operator_header_name = Column(db.String)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined', viewonly=True)
+    roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined')
 
     # Manager of this User
     manager = db.relationship('User', remote_side=[id], lazy='raise')
