@@ -9,8 +9,8 @@ class RolesUsers(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
 
-    user = db.relationship('User')
-    role = db.relationship('Role')
+    user = db.relationship('User', overlaps='roles')
+    role = db.relationship('Role', overlaps='roles')
 
 
 class Role(db.Model, RoleMixin):
