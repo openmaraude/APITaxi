@@ -54,11 +54,13 @@ def check_orphans(Model, query, remove=False):
 
     # Only for models with an added_by column
     if issubclass(Model, mixins.HistoryMixin):
+        subquery = query.subquery()
         report = (
-            query.with_entities(func.count(Model.id), User.email)
-            .join(Model.added_by)
+            db.session.query(func.count(), User.email)
+            .select_from(subquery)
+            .join(User, User.id == subquery.c.added_by)
             .group_by(User.email)
-            .order_by(func.count(Model.id).desc())
+            .order_by(func.count().desc())
         )
         print()
         print("\n".join(f'{count:5} | {email}' for count, email in report))
