@@ -12,7 +12,7 @@ from APITaxi2.validators import (
 )
 
 
-blueprint = Blueprint('internal.auth', __name__)
+blueprint = Blueprint('internal_auth', __name__)
 
 
 class AuthSchema(Schema):
