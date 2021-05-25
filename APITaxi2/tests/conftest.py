@@ -34,6 +34,7 @@ def app(tmp_path, postgresql, postgresql_empty, redis_server, influx_server):
     settings_file = tmp_path / 'settings.py'
     settings_file.write_text('''
 SQLALCHEMY_DATABASE_URI = '%(database)s'
+SECRET_KEY = 's3cr3t'
 REDIS_URL = '%(redis)s'
 INFLUXDB_DATABASE = '%(influx_database)s'
 INFLUXDB_PORT = %(influx_port)s
