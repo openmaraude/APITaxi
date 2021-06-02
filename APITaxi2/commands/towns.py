@@ -18,7 +18,7 @@ blueprint = Blueprint('commands_towns', __name__, cli_group=None)
 
 
 # Archive downloaded and extracted to CONTOURS_DIR
-CONTOURS_DEFAULT_URL = "http://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20210101-shp.zip"
+CONTOURS_DEFAULT_URL = "https://www.data.gouv.fr/fr/datasets/r/17062524-991f-4e13-9bf0-b410cc2216fd"
 
 # Temporary path where CONTOURS_URL is downloaded
 CONTOURS_DEFAULT_TMPDIR = '/tmp/temp_contours'
