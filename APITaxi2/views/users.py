@@ -63,7 +63,11 @@ def users_details(user_id):
     ):
         model_name, arg_name = field
         if arg_name in args:
-            setattr(user, model_name.name, args[arg_name])
+            value = args[arg_name]
+            # All of these fields are strings
+            if value is None:
+                value = ''
+            setattr(user, model_name.name, value)
 
     if args.get('password'):
         user.password = hash_password(args['password'])
