@@ -83,6 +83,27 @@ class TestUsersPut:
         assert operateur.user.email != 'xxx'
         assert operateur.user.apikey != 'yyy'
 
+        # Null values accepted for strings but not stored as is
+        resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
+            'name': None,
+            'email_customer': None,
+            'email_technical': None,
+            'operator_api_key': None,
+            'operator_header_name': None,
+            'phone_number_customer': None,
+            'phone_number_technical': None,
+            'hail_endpoint_production': None,
+        }]})
+        assert resp.status_code == 200
+        assert operateur.user.commercial_name == ''
+        assert operateur.user.email_customer == ''
+        assert operateur.user.email_technical == ''
+        assert operateur.user.operator_api_key == ''
+        assert operateur.user.operator_header_name == ''
+        assert operateur.user.phone_number_customer == ''
+        assert operateur.user.phone_number_technical == ''
+        assert operateur.user.hail_endpoint_production == ''
+
         # Other fields can be updated.
         resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
             'name': 'New commercial name',
