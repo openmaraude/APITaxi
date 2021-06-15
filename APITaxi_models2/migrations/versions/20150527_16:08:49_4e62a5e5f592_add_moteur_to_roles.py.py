@@ -18,13 +18,14 @@ from sqlalchemy import String, Integer
 
 role_table = table('role',
         column('id', Integer),
-        column('name', String)
+        column('name', String),
+        column('description', String),
         )
 
 
 
 def upgrade():
-    op.bulk_insert(role_table, [{"name": "moteur"}])
+    op.bulk_insert(role_table, [{"name": "moteur", "description": ""}])
 
 
 

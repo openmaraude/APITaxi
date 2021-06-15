@@ -41,11 +41,11 @@ def upgrade():
 
     op.bulk_insert(role,
             [
-                {"name": "admin"},
-                {"name": "operateur"},
-                {"name": "departement"},
-                {"name": "mairie"},
-                {"name": "prefecture"}
+                {"name": "admin", "description": ""},
+                {"name": "operateur", "description": ""},
+                {"name": "departement", "description": ""},
+                {"name": "mairie", "description": ""},
+                {"name": "prefecture", "description": ""}
                 ])
     ### end Alembic commands ###
 

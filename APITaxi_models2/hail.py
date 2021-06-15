@@ -75,7 +75,7 @@ class Hail(HistoryMixin, db.Model):
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
     customer_address = db.Column(db.String, nullable=False)
     customer_phone_number = db.Column(db.String, nullable=False)
-    taxi_phone_number = db.Column(db.String)
+    taxi_phone_number = db.Column(db.String, server_default='', nullable=False)
     reporting_customer = db.Column(db.Boolean)
     reporting_customer_reason = db.Column(db.Enum(*REPORTING_CUSTOMER_REASONS, name='reporting_customer_reason_enum'))
     incident_customer_reason = db.Column(db.Enum(*INCIDENT_CUSTOMER_REASONS, name='incident_customer_reason_enum'))

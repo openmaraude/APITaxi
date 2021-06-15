@@ -164,7 +164,12 @@ class TestTaxiPost:
                 },
                 'vehicle': {
                     'licence_plate': 'cccc',
-                    'nb_seats': 4
+                    'nb_seats': 4,
+                    # Specifically test accepting null for strings
+                    'color': None,
+                    'engine': None,
+                    'horodateur': None,
+                    'taximetre': None,
                 },
                 'driver': {
                     'professional_licence': 'ddd',
