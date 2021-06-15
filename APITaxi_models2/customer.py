@@ -11,7 +11,7 @@ class Customer(HistoryMixin, db.Model):
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'), primary_key=True)
     ban_begin = db.Column(db.DateTime)
     ban_end = db.Column(db.DateTime)
-    phone_number = db.Column(db.String)
+    phone_number = db.Column(db.String, nullable=False)
     reprieve_begin = db.Column(db.DateTime)
     reprieve_end = db.Column(db.DateTime)
 
