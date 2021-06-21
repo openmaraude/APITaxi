@@ -247,7 +247,7 @@ def taxis_details(taxi_id):
 
     args = request.json.get('data', [{}])[0]
 
-    # For now it is only possible to update the taxi's status.
+    # For now it is only possible to update the taxi's status...
     if 'status' in args and args['status'] != vehicle_description.status:
         taxi.last_update_at = func.now()
         db.session.flush()
@@ -267,6 +267,10 @@ def taxis_details(taxi_id):
             taxi_id,
             args['status']
         )
+    # ... and the radius where the taxi is visible
+    if 'radius' in args and args['radius'] != vehicle_description.radius:
+        vehicle_description.radius = args['radius']
+        db.session.flush()
 
     output = schema.dump({'data': [(taxi, vehicle_description, location)]})
 
@@ -345,11 +349,6 @@ def taxis_search():
     # Now we know the taxis allowed at this position are the ones from this town
     # plus the potential other taxis from the ZUPC
     allowed_insee_codes = {town.insee, *(town.insee for zupc in zupcs for town in zupc.allowed)}
-    # This variable used to be in configuration file, but I don't think it
-    # makes much sense to have it configurable globally. Configuration should
-    # ideally be fine grained, depending on day, time, location, and be even
-    # configurable by the taxi.
-    default_max_distance = 500
 
     # Locations is a dict containing taxis close from the location given as
     # param. Each taxi can report its location from several operators.
@@ -362,7 +361,7 @@ def taxis_search():
     # }
     #
     locations = redis_backend.taxis_locations_by_operator(
-        params['lon'], params['lat'], default_max_distance
+        params['lon'], params['lat'], schemas.TAXI_MAX_RADIUS
     )
     debug_ctx.log_admin(
         f'List of taxis around lon={params["lon"]} lat={params["lat"]}',
@@ -449,6 +448,8 @@ def taxis_search():
     data = [
         (taxi, vehicle_description, redis_location)
         for taxi, (vehicle_description, redis_location) in data.items()
+        # Filter out of reach taxis based on each driver's preference
+        if redis_location.distance <= (vehicle_description.radius or schemas.TAXI_MAX_RADIUS)
     ]
 
     # Sort entries by distance.

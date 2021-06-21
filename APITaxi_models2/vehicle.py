@@ -77,8 +77,11 @@ class VehicleDescription(HistoryMixin, db.Model):
     color = db.Column(db.String(255), server_default='', nullable=False)
     vehicle_id = db.Column(db.Integer, db.ForeignKey(Vehicle.id))
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
-    status = db.Column(db.Enum(*VEHICLE_STATUS, name='status_vehicle_enum'))
     nb_seats = db.Column(db.Integer)
+
+    # Live data
+    status = db.Column(db.Enum(*VEHICLE_STATUS, name='status_vehicle_enum'))
+    radius = db.Column(db.Integer, nullable=True)
 
     added_by = db.relationship('User', lazy='raise')
     vehicle = db.relationship(Vehicle, lazy='raise')
