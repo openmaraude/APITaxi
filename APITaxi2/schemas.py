@@ -28,6 +28,11 @@ from APITaxi_models2.vehicle import (
 )
 
 
+# Range to adjust the visibility of taxis to clients
+TAXI_MIN_RADIUS = 150
+TAXI_MAX_RADIUS = 500
+
+
 class PageQueryStringMixin:
     """Used to accept a querystring param ?p, and make sure it is specified
     only once.
@@ -296,6 +301,11 @@ class TaxiSchema(Schema):
         required=False, allow_none=False,
         validate=validate.OneOf(UPDATABLE_VEHICLE_STATUS)
     )
+    # Adjustable visibility radius (if null, fallback to max radius)
+    radius = fields.Integer(
+        required=False, allow_none=True,
+        validate=validate.Range(min=TAXI_MIN_RADIUS, max=TAXI_MAX_RADIUS)
+    )
 
     last_update = fields.Constant(None, required=False, allow_none=False)
 
@@ -325,6 +335,7 @@ class TaxiSchema(Schema):
         ret.update({
             'operator': vehicle_description.added_by.email,
             'status': vehicle_description.status,
+            'radius': vehicle_description.radius,
             # last_update is the last time location has been updated by
             # geotaxi.
             'last_update': int(redis_location.update_date.timestamp()) if redis_location else None,

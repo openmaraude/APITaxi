@@ -143,6 +143,15 @@ class TestTaxiPut:
         taxi, resp = _set_taxi_status('free', initial_status='free')
         assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 0
 
+        # Set the radius only
+        for radius, expected_code in [(150, 200), (149, 400), (500, 200), (501, 400), (None, 200)]:
+            resp = operateur.client.put('/taxis/%s' % taxi.id, json={
+                'data': [{
+                    'radius': radius
+                }]
+            })
+            assert resp.status_code == expected_code, radius
+
 
 class TestTaxiPost:
     def test_invalid(self, operateur):
@@ -539,6 +548,53 @@ class TestTaxiSearch:
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == my_taxi.id
         assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
+
+    def test_radius(self, app, moteur):
+        ZUPCFactory()
+        now = datetime.now()
+        TaxiFactory(
+            vehicle__descriptions__radius=100, vehicle__descriptions__last_update_at=now
+        )
+        taxi_2 = TaxiFactory(
+            vehicle__descriptions__radius=500, vehicle__descriptions__last_update_at=now
+        )
+
+        lon = tmp_lon = 2.35
+        lat = tmp_lat = 48.86
+
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert resp.json['data'] == []
+
+        # Insert locations for each operator.
+        for taxi in Taxi.query.options(lazyload('*')):
+            for description in VehicleDescription.query.options(
+                lazyload('*')
+            ).filter_by(
+                vehicle=taxi.vehicle
+            ).order_by(
+                VehicleDescription.id
+            ):
+                # Move taxi a little bit further
+                tmp_lon += 0.0001
+                tmp_lat += 0.0001
+                self._post_geotaxi(app, tmp_lon, tmp_lat, taxi, description)
+
+        # The client is under 100 meters (~ 15.7 m)
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+
+        # The client is between 100 and 500 meters (~ 157 m)
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.001, lat + 0.001))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['id'] == taxi_2.id
+
+        # The client is above 500 meters (~ 1.57 km)
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.01, lat + 0.01))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
 
 
 class TestTaxiList:
