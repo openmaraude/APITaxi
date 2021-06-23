@@ -1,3 +1,4 @@
+import collections
 from datetime import datetime, timedelta
 from functools import reduce
 
@@ -404,41 +405,30 @@ def taxis_search():
     # }
     #
     # VehicleDescription holds the link between the taxi object and an operator.
-    data = {}
+    data = collections.defaultdict(dict)
+    now = datetime.now()
     for taxi, vehicle_description in query.all():
-        if taxi not in data:
-            data[taxi] = {}
-
-        # If a taxi has two VehicleDescription but only reports it's location
+        # If a taxi has two VehicleDescription but only reports its location
         # with one operator, the query above will return 2 rows.
         # Skip the VehicleDescription if we don't have location for it.
         if vehicle_description.added_by.email not in locations[taxi.id]:
             continue
 
-        data[taxi][vehicle_description] = locations[taxi.id][vehicle_description.added_by.email]
+        # Only keep if the taxi is available
+        if vehicle_description.status != 'free':
+            continue
 
-    # For each location reported, only keep if the location has been reported
-    # less than 120 seconds ago, and if the taxi is available.
-    now = datetime.now()
-    data = {
-        taxi: {
-            description: location
-            for description, location in data[taxi].items()
-            if description.status == 'free'
-            and location.update_date
-            and location.update_date + timedelta(seconds=120) >= now
-        }
-        for taxi in data
-    }
+        # For each location reported, only keep if the location has been reported
+        # less than 120 seconds ago
+        location = locations[taxi.id][vehicle_description.added_by.email]
+        if not location.update_date:
+            continue
+        if location.update_date + timedelta(seconds=120) < now:
+            continue
 
-    # Remove empty entries, ie. taxis off or with an old update date.
-    data = {
-        taxi: data[taxi]
-        for taxi in data
-        if data[taxi]
-    }
+        data[taxi][vehicle_description] = location
 
-    # For each taxi taxi, only keep the VehicleDescription with the latest
+    # For each taxi, only keep the VehicleDescription with the latest
     # update date.
     # If a taxi reports its location from 2 different operators, we will always
     # return the data from the same operator.
