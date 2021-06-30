@@ -56,7 +56,7 @@ class CustomerFactory(BaseFactory):
         model = Customer
 
     id = factory.Sequence(lambda n: 'CUSTOMER_%d' % n)
-    added_at = factory.LazyAttribute(lambda o: datetime.datetime.now())
+    added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
@@ -157,7 +157,7 @@ class VehicleDescriptionFactory(BaseFactory):
     vehicle = factory.SubFactory(__name__ + '.VehicleFactory')
     constructor = 'Citroën'
     model = 'C4 PICASSO'
-    added_at = factory.LazyAttribute(lambda o: datetime.datetime.now())
+    added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
@@ -185,7 +185,7 @@ class TaxiFactory(BaseFactory):
     id = factory.Sequence(lambda n: 'TAXI_%d' % n)
     vehicle = factory.SubFactory(VehicleFactory, descriptions__added_by=factory.SelfAttribute('...added_by'))
     ads = factory.SubFactory(ADSFactory)
-    added_at = factory.LazyAttribute(lambda o: datetime.datetime.now())
+    added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
     driver = factory.SubFactory(DriverFactory)
     added_via = 'api'
@@ -206,7 +206,7 @@ class HailFactory(BaseFactory):
     operateur = factory.SubFactory(UserFactory)
     customer_address = '20 Avenue de Ségur, 75007 Paris'
     customer_phone_number = '0799100222'
-    added_at = factory.LazyAttribute(lambda o: datetime.datetime.now())
+    added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
