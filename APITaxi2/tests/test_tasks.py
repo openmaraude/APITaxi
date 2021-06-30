@@ -7,8 +7,10 @@ from unittest import mock
 from APITaxi_models2 import Hail, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     HailFactory,
+    StationFactory,
     TaxiFactory,
     TownFactory,
+    UserFactory,
     VehicleFactory,
     VehicleDescriptionFactory,
     ZUPCFactory,
@@ -16,6 +18,7 @@ from APITaxi_models2.unittest.factories import (
 
 from .. import tasks
 from .. import influx_backend
+from .. import views
 
 
 class TestCleanGeoindexTimestamps:
@@ -341,6 +344,7 @@ class TestSendRequestOperator:
 
 
 class TestStoreActiveTaxis:
+
     @staticmethod
     def _add_taxi(app, insee, lon, lat, operator):
         vehicle = VehicleFactory(descriptions=[])
@@ -391,3 +395,50 @@ class TestStoreActiveTaxis:
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='Beta Taxis') == 1
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator="Cab'ernet") == 2
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator='Beta Taxis') == 1
+
+
+class TestComputeWaitingTaxisStations:
+
+    def test_compute_waiting_taxis_at_station(self, app):
+        town = TownFactory()
+        ZUPCFactory(allowed=[town])
+        station = StationFactory(town=town)
+        operator = UserFactory()
+
+        vehicle = VehicleFactory(descriptions=[])
+        VehicleDescriptionFactory(vehicle=vehicle, added_by=operator, status='free')
+        taxi = TaxiFactory(ads__insee=town.insee, vehicle=vehicle)
+
+        # We really need to call the real thing
+        views.geotaxi._update_position([{
+            'taxi_id': taxi.id,
+            'lon': 2.3501,  # ~15.7 meters
+            'lat': 48.8601,  # ~15.7 meters
+        }], operator)
+
+        with mock.patch.object(tasks.stations.current_app.logger, 'info') as mocked_logger:
+            tasks.compute_waiting_taxis_stations()
+            assert mocked_logger.call_count == 2
+
+        # First time, the taxis are just spotted but not considered parked
+        station_data = app.redis.hgetall(f'station:{taxi.id}')
+        assert station_data[b'old_lat'] == b'48.8601'
+        assert station_data[b'old_lon'] == b'2.3501'
+        assert station_data[b'station_id'] == b''
+
+        # Next telemetry push, taxis are still around the station
+        views.geotaxi._update_position([{
+            'taxi_id': taxi.id,
+            'lon': 2.3501,  # ~15.7 meters
+            'lat': 48.8601,  # ~15.7 meters
+        }], operator)
+
+        with mock.patch.object(tasks.stations.current_app.logger, 'info') as mocked_logger:
+            tasks.compute_waiting_taxis_stations()
+            assert mocked_logger.call_count == 2
+
+        # Now taxis are considered parked
+        station_data = app.redis.hgetall(f'station:{taxi.id}')
+        assert station_data[b'old_lat'] == b'48.8601'
+        assert station_data[b'old_lon'] == b'2.3501'
+        assert station_data[b'station_id'] == bytes(station.name, 'utf8')

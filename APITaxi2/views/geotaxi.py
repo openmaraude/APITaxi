@@ -4,7 +4,6 @@ import time
 from flask import Blueprint, current_app, request
 from flask_security import current_user, login_required, roles_accepted
 import redis
-from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import db, Taxi, Vehicle, VehicleDescription
 
@@ -91,6 +90,22 @@ def _update_redis(pipe, data, user):
     )
 
 
+def _update_position(geotaxi_packets, operator):
+    """Mass-update positions from the given list of geotaxi packets.
+
+    Args:
+        geotaxi_packets: list of geotaxi data packets, see below
+        operator: User object owning the taxis
+
+    A geotaxi packet is a dict made of {'taxi_id': <id>, 'lon': <lon>, 'lat': <lat>}
+    as validated by the GeotaxiPositionSchema.
+    """
+    pipe = current_app.redis.pipeline()
+    for packet in geotaxi_packets:
+        _update_redis(pipe, packet, operator)
+    pipe.execute()
+
+
 @blueprint.route('/geotaxi/', methods=['POST'])
 @login_required
 @roles_accepted('admin', 'operateur')
@@ -137,9 +152,6 @@ def geotaxi_batch():
 
     # Record the new position
     # (we rejected the query on the slightest error, so the dict only contains valid data)
-    pipe = current_app.redis.pipeline()
-    for position in requested_taxi_ids.values():
-        _update_redis(pipe, position, current_user)
-    pipe.execute()
+    _update_position(requested_taxi_ids.values(), current_user)
 
     return '', 200

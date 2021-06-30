@@ -52,26 +52,28 @@ def compute_waiting_taxis_stations():
         pipeline.hgetall(f'station:{taxi_id}')
 
     # Process to compare the current position with the last one recorded
-    for taxi_id, station_data in zip(telemetry_data, pipeline.execute()):
-        current_app.logger.debug('Taxi %s station_data %s', taxi_id, station_data)
+    for taxi_id, previous_data in zip(telemetry_data, pipeline.execute()):
+        current_app.logger.debug('Taxi %s previous_data %s', taxi_id, previous_data)
         telemetry = telemetry_data[taxi_id]
         station_id = ''  # Null value not accepted by Redis
-        if station_data:
-            if now - int(station_data[b'timestamp']) <= TELEMETRY_TIMEOUT:
+        if previous_data:
+            if now - int(previous_data[b'timestamp']) <= TELEMETRY_TIMEOUT:
                 # Fast path if the position hasn't changed (should it happen in real life)
-                if station_data[b'station_id'] and telemetry[b'lat'] == station_data[b'old_lat'] and telemetry[b'lon'] == station_data[b'old_lon']:
-                    current_app.logger.debug("Taxi %s hasn't moved from the station %s", taxi_id, station_data[b'station_id'])
-                    station_id = station_data[b'station_id']
+                if previous_data[b'station_id'] and telemetry[b'lat'] == previous_data[b'old_lat'] and telemetry[b'lon'] == previous_data[b'old_lon']:
+                    current_app.logger.debug("Taxi %s hasn't moved from the station %s", taxi_id, previous_data[b'station_id'])
+                    station_id = previous_data[b'station_id']
                 else:
                     distance = geodesic(  # Or even great_circle if substantially faster?
                         (telemetry[b'lat'], telemetry[b'lon']),
-                        (station_data[b'old_lat'], station_data[b'old_lon']),
+                        (previous_data[b'old_lat'], previous_data[b'old_lon']),
                     )
+                    print("distance", distance)
                     if distance.meters <= 50:
                         # TODO with a significant amount of taxis,
                         # test with preloading the stations in memory
                         wkt = b'POINT(%s %s)' % (telemetry[b'lon'], telemetry[b'lat'])
                         station = Station.find(wkt.decode())
+                        print("station", station)
                         if station:
                             station_id = station.id
                             current_app.logger.debug('Taxi %s was found at station %s', taxi_id, station.id)
@@ -80,6 +82,7 @@ def compute_waiting_taxis_stations():
         else:
             # The first time, just store a new taxi
             current_app.logger.debug('Taxi %s has no previous station data', taxi_id)
+        # Insert or update taxi data for the next time the task runs
         current_app.redis.hset(f'station:{taxi_id}', mapping={
             'timestamp': now,
             'old_lat': telemetry[b'lat'],
