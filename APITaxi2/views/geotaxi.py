@@ -118,15 +118,15 @@ def geotaxi_batch():
     positions = data['positions']
     requested_taxi_ids = dict((position['taxi_id'], position) for position in positions)
 
-    valid_taxis = db.session.query(Taxi).join(Vehicle).join(VehicleDescription).filter(
+    valid_taxi_ids = {id_ for id_, in db.session.query(Taxi.id).join(Vehicle).join(VehicleDescription).filter(
         Taxi.id.in_(requested_taxi_ids),
         # For taxis registered with several operators, filter on the description,
         # not the Taxi.added_by
         VehicleDescription.added_by == current_user
-    ).all()
+    ).all()}
 
     # Check all taxis are declared to us and belong to this operator
-    unknown_taxi_ids = set(requested_taxi_ids) - set(taxi.id for taxi in valid_taxis)
+    unknown_taxi_ids = set(requested_taxi_ids) - valid_taxi_ids
     if unknown_taxi_ids:
         validation_errors = {}
         for i, position in enumerate(positions):
@@ -136,9 +136,9 @@ def geotaxi_batch():
         return make_error_json_response({'data': {0: {'positions': validation_errors}}})
 
     # Record the new position
+    # (we rejected the query on the slightest error, so the dict only contains valid data)
     pipe = current_app.redis.pipeline()
-    for taxi in valid_taxis:
-        position = requested_taxi_ids[taxi.id]
+    for position in requested_taxi_ids.values():
         _update_redis(pipe, position, current_user)
     pipe.execute()
 
