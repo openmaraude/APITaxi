@@ -165,12 +165,19 @@ class VehicleSchema(Schema):
     constructor = fields.String(required=False, allow_none=True)
 
     def load(self, fields, *args, **kwargs):
-        # For backward compatibility, "model" and "constructor" can be provided
-        # as None but they are internally stored as empty strings
-        if 'model' in fields and fields['model'] is None:
-            fields['model'] = ''
-        if 'constructor' in fields and fields['constructor'] is None:
-            fields['constructor'] = ''
+        """For backward compatibility, string fields can be provided as "None"
+        but they are internally stored as NOT NULL strings.
+        """
+        for field_name in (
+            'model',
+            'constructor',
+            'engine',
+            'horodateur',
+            'taximetre',
+            'color',
+        ):
+            if field_name in fields and fields[field_name] is None:
+                fields[field_name] = ''
 
         return super().load(fields, *args, **kwargs)
 

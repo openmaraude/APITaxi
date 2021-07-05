@@ -1,6 +1,7 @@
 from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import Vehicle, VehicleDescription
+from APITaxi_models2.unittest.factories import VehicleFactory
 
 
 class TestVehiclePost:
@@ -153,3 +154,16 @@ class TestVehiclePost:
         assert vehicle.descriptions
         assert not vehicle.descriptions[0].model
         assert not vehicle.descriptions[0].constructor
+
+        # For backward compatibility, we allow the NOT NULL string fields
+        # engine, horodateur, taximetre and color to be null.
+        existing_vehicle = VehicleFactory(descriptions__added_by=operateur.user)
+        resp = operateur.client.post('/vehicles', json={
+            'data': [{
+                'licence_plate': existing_vehicle.licence_plate,
+                'engine': None,
+                'horodateur': None,
+                'taximetre': None,
+                'color': None,
+            }]
+        })
