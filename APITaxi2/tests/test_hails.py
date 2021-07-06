@@ -48,26 +48,33 @@ class TestGetHailDetails:
         resp = operateur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
 
-        # Position exists in redis and hail is in progress: location is returned
-        hail = HailFactory(status='customer_on_board', added_by=moteur.user, operateur=operateur.user)
-        app.redis.hset(
-            'taxi:%s' % hail.taxi.id,
-            hail.operateur.email,
-            '1589567716 48.84 2.35 free phone 2'
-        )
-        with QueriesTracker() as qtracker:
+        # From hail creation until it's end, it is possible to get the taxi
+        # location.
+        for status in (
+            'emitted',
+            'received',
+            'sent_to_operator',
+            'received_by_operator',
+            'received_by_taxi',
+            'customer_on_board',
+        ):
+            hail = HailFactory(status=status, added_by=moteur.user, operateur=operateur.user)
+            app.redis.hset(
+                'taxi:%s' % hail.taxi.id,
+                hail.operateur.email,
+                '1589567716 48.84 2.35 free phone 2'
+            )
             resp = moteur.client.get('/hails/%s' % hail.id)
-            # SELECT permissions, SELECT hail
-            assert qtracker.count == 2
-        assert resp.status_code == 200
-        assert resp.json['data'][0]['taxi']['crowfly_distance']
-        assert resp.json['data'][0]['taxi']['last_update']
-        assert resp.json['data'][0]['taxi']['position']['lon']
-        assert resp.json['data'][0]['taxi']['position']['lat']
-        # For backward compatibility, taxi_id is not returned from GET
-        # /hails/:id, but the field is required to create a taxi with POST
-        # /hails/:id
-        assert 'taxi_id' not in resp.json['data'][0]
+            assert resp.status_code == 200
+            assert resp.json['data'][0]['taxi']['crowfly_distance']
+            assert resp.json['data'][0]['taxi']['last_update']
+            assert resp.json['data'][0]['taxi']['position']['lon']
+            assert resp.json['data'][0]['taxi']['position']['lat']
+
+            # For backward compatibility, taxi_id is not returned from GET
+            # /hails/:id, but the field is required to create a taxi with POST
+            # /hails/:id
+            assert 'taxi_id' not in resp.json['data'][0]
 
         # Position exists in redis and hail is finished: location is not returned
         hail = HailFactory(status='finished', added_by=moteur.user, operateur=operateur.user)

@@ -501,8 +501,11 @@ class HailSchema(Schema):
 
         # Taxi location should only be returned if the hail is in progress.
         if taxi_position and hail.status in (
-            # Taxi accepted the request, customer can see the location while
-            # taxi is coming or while the hail is ongoing.
+            'emitted',
+            'received',
+            'sent_to_operator',
+            'received_by_operator',
+            'received_by_taxi',
             'accepted_by_taxi',
             'accepted_by_customer',
             'customer_on_board',
