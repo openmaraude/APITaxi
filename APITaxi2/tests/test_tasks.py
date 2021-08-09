@@ -4,7 +4,9 @@ import requests
 import time
 from unittest import mock
 
-from APITaxi_models2 import Hail, VehicleDescription
+from sqlalchemy.orm import joinedload
+
+from APITaxi_models2 import Hail, User, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     HailFactory,
     TaxiFactory,
@@ -371,6 +373,19 @@ class TestStoreActiveTaxis:
         self._add_taxi(app, Bordeaux.insee, -0.5795, 44.776, "Cab'ernet")
         # Also cover the case of a national operator
         self._add_taxi(app, Bordeaux.insee, -0.5795, 44.776, 'Beta Taxis')
+
+        # One driver is working for two of the operators above with the same vehicle
+        vehicle_description = VehicleDescription.query.filter(
+            User.email == 'H8'
+        ).join(
+            User
+        ).options(
+            joinedload(VehicleDescription.vehicle),
+        )[0]
+        VehicleDescriptionFactory(
+            vehicle=vehicle_description.vehicle,
+            added_by__email='Beta Taxis'
+        )
 
         # Log to the real Influx backend
         with mock.patch.object(tasks.operators.current_app.logger, 'info') as mocked_logger:
