@@ -138,31 +138,24 @@ def store_active_taxis(last_update):
         updates = redis_backend.get_timestamps_entries_between(start_time, end_time)
     else:
         updates = redis_backend.list_taxis(start_time, end_time)
+    taxi_ids = {update.taxi_id: update.operator for update in updates}
 
     to_log = collections.defaultdict(list)
-    for update in updates:
-        query = db.session.query(Taxi, VehicleDescription).join(
-            User,
-            VehicleDescription.added_by_id == User.id
-        ).options(
-            joinedload(Taxi.ads),
-            joinedload(VehicleDescription.added_by)
-        ).filter(
-            Taxi.vehicle_id == VehicleDescription.vehicle_id
-        ).filter(
-            User.email == update.operator,
-            Taxi.id == update.taxi_id
-        )
-
-        res = query.one_or_none()
-        if not res:
-            current_app.logger.warning(
-                'Taxi %s with operator %s exists in redis but not in postgresql. Skip it.',
-                update.taxi_id, update.operator
-            )
+    for taxi, vehicle_description in db.session.query(Taxi, VehicleDescription).join(
+        User,
+        VehicleDescription.added_by_id == User.id
+    ).options(
+        joinedload(Taxi.ads),
+        joinedload(VehicleDescription.added_by)
+    ).filter(
+        Taxi.vehicle_id == VehicleDescription.vehicle_id
+    ).filter(
+        Taxi.id.in_(taxi_ids.keys()),
+        User.email.in_(taxi_ids.values()),
+    ):
+        operator = taxi_ids[taxi.id]
+        if vehicle_description.added_by.email != operator:
             continue
-
-        taxi, vehicle_description = res
         to_log[taxi].append(vehicle_description)
 
     _log_active_taxis(last_update, to_log)
