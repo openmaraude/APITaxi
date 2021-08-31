@@ -1,4 +1,4 @@
-"""New revision
+"""Make strings not nullable (2)
 
 Revision ID: 5b8d8ca36aeb
 Revises: 5d164bbb4813
