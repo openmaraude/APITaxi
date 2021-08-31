@@ -122,19 +122,6 @@ class ZUPCFactory(BaseFactory):
         )
 
 
-class ADSFactory(BaseFactory):
-    class Meta:
-        model = ADS
-
-    numero = factory.Sequence(lambda n: 'ads_number_%d' % n)
-    insee = '75056'
-    owner_type = 'individual'
-    owner_name = 'Owner ADS'
-    category = ''
-    added_via = 'api'
-    source = 'added_by'
-
-
 class DriverFactory(BaseFactory):
     class Meta:
         model = Driver
@@ -178,13 +165,33 @@ class VehicleFactory(BaseFactory):
         return [VehicleDescriptionFactory(vehicle=self, **kwargs)]
 
 
+class ADSFactory(BaseFactory):
+    class Meta:
+        model = ADS
+
+    numero = factory.Sequence(lambda n: 'ads_number_%d' % n)
+    added_at = factory.LazyFunction(datetime.datetime.now)
+    added_by = factory.SubFactory(UserFactory)
+    insee = '75056'
+    vehicle = factory.SubFactory(VehicleFactory, descriptions__added_by=factory.SelfAttribute('...added_by'))
+    owner_type = 'individual'
+    owner_name = 'Owner ADS'
+    category = ''
+    added_via = 'api'
+    source = 'added_by'
+
+
 class TaxiFactory(BaseFactory):
     class Meta:
         model = Taxi
 
     id = factory.Sequence(lambda n: 'TAXI_%d' % n)
     vehicle = factory.SubFactory(VehicleFactory, descriptions__added_by=factory.SelfAttribute('...added_by'))
-    ads = factory.SubFactory(ADSFactory)
+    ads = factory.SubFactory(
+        ADSFactory,
+        added_by=factory.SelfAttribute('..added_by'),
+        vehicle=factory.SelfAttribute('..vehicle'),
+    )
     added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
     driver = factory.SubFactory(DriverFactory)
