@@ -24,7 +24,7 @@ class Town(db.Model):
         return f'<Town {self.id} - {self.insee} ({self.name})>'
 
     id = db.Column(db.Integer, primary_key=True)
-    insee = db.Column(db.String, unique=True, nullable=False)
+    insee = db.Column(db.String(5), unique=True, nullable=False)
     name = db.Column(db.String(255), nullable=False)
     # 4326, also known as WGS84 is the standard also used in the GPS
     shape = db.Column(Geography(geometry_type='MULTIPOLYGON', srid=4326), nullable=False)
