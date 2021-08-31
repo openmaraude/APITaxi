@@ -31,6 +31,7 @@ def test_get_timestamps_entries_between(app):
 
     res = redis_backend.get_timestamps_entries_between(now - 100, now + 100)
     assert len(res) == 3
+    assert {r.taxi_id for r in res} == {'taxi', 'taxi2', 'taxi3'}
 
 
 def test_list_taxis(app):
@@ -43,6 +44,7 @@ def test_list_taxis(app):
 
     res = redis_backend.list_taxis(now - 100, now + 100)
     assert len(res) == 3
+    assert {r.taxi_id for r in res} == {'taxi1', 'taxi2', 'taxi3'}
 
 
 def test_set_taxi_availability(app):

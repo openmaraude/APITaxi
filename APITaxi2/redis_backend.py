@@ -68,7 +68,7 @@ def list_taxis(start_timestamp, end_timestamp):
 
     This function:
 
-    - calls KEYS taxi:* to list all taxis
+    - SCAN taxi:* to list all taxis
     - for each entry, calls HGETALL taxi:*
     - if the update date is between start_timestamp and end_timestamp, return
       the result.
@@ -76,7 +76,7 @@ def list_taxis(start_timestamp, end_timestamp):
     This is to keep backward compatibility, but statistics need to be
     reworked completely. There are several problems here:
 
-    - executing KEYS taxi:* then HGETALL on each entry takes a lot of time, and
+    - executing SCAN taxi:* then HGETALL on each entry takes a lot of time, and
       will not scale with thousands of entries.
     - if we receive a location update for a non-existing taxi, geotaxi creates
       an entry in redis.
@@ -85,12 +85,13 @@ def list_taxis(start_timestamp, end_timestamp):
     """
     pipeline = current_app.redis.pipeline()
     taxi_ids = []
+    PREFIX = len(b'taxi:')
 
-    # Call KEYS taxi:*. For each entry, call HGETALL taxi:<id> in the pipeline.
+    # Iterate on keys taxi:*. For each entry, call HGETALL taxi:<id> in the pipeline.
     # We use a pipeline to improve speed because listing all taxis may return many results.
-    for row in current_app.redis.keys('taxi:*'):
-        taxi_id = row.decode('utf8')[len('taxi:'):]
-        pipeline.hgetall('taxi:%s' % taxi_id)
+    for row in current_app.redis.scan_iter('taxi:*'):
+        taxi_id = row[PREFIX:].decode('utf8')
+        pipeline.hgetall(row)
         taxi_ids.append(taxi_id)
 
     ret = []
