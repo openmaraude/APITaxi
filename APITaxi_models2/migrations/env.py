@@ -45,7 +45,7 @@ def load_config():
         for line in handle:
             match = re.match(r'SQLALCHEMY_DATABASE_URI\s*=\s*[\'"]([^\'"]*)', line)
             if match:
-                url = match.groups()[0]
+                url = match.group(1)
                 config.set_main_option('sqlalchemy.url', url)
                 return
     sys.stderr.write('Unable to find SQLALCHEMY_DATABASE_URI conf '
