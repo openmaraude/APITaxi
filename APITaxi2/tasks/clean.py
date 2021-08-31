@@ -17,7 +17,7 @@ def clean_geoindex_timestamps():
     The taxi hash set (taxi:<taxi_id>) is not affected.
     """
     max_time = int(time.time() - 120)
-    current_app.logger.info('Run task clean_geoindex_timestamps for tasks older than %s', max_time)
+    current_app.logger.info('Run task clean_geoindex_timestamps for data older than %s', max_time)
 
     current_app.redis.zremrangebyscore('timestamps', 0, max_time)
     # Remove members of geoindex_2 not found in timestamps (just removed)
