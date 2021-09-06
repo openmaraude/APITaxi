@@ -27,9 +27,7 @@ class TestZUPCList:
             'type': 'city',
             'name': 'Paris',
             'insee': '75056',
-            'stats': {
-                'total': 0
-            },
+            'stats': {},
         }]}
 
         zupc = ZUPCFactory()
@@ -45,9 +43,7 @@ class TestZUPCList:
             'type': 'ZUPC',
             'name': zupc.nom,
             'zupc_id': zupc.zupc_id,
-            'stats': {
-                'total': 0,
-            },
+            'stats': {},
         }]
 
         resp = operateur.client.get('zupc?lon=2.35&lat=48.86')
@@ -57,7 +53,6 @@ class TestZUPCList:
             'name': zupc.nom,
             'zupc_id': zupc.zupc_id,
             'stats': {
-                'total': 0,
                 'operators': {
                     operateur.user.email: 0,
                 }
@@ -84,7 +79,6 @@ class TestZUPCLive:
         assert resp.json['data'][0]['id'] in (zupc.zupc_id, zupc2.zupc_id)
         assert resp.json['data'][0]['nom'] in (zupc.nom, zupc2.nom)
         assert resp.json['data'][0]['stats'] == {
-            'total': 0,
             'operators': {
                 operateur.user.email: 0
             }

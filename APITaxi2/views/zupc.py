@@ -20,17 +20,18 @@ from ..validators import (
 blueprint = Blueprint('zupc', __name__)
 
 
-def _get_zupc_stats(filter_name, filter_value, include_operators):
+def _get_zupc_stats(filter_name, filter_value, include_total, include_operators):
     """`filter_name` is either "insee_code" or "zupc_id", which are parameters
     expected by influx_backend.get_nb_active_taxis.
 
-    This function returns the total number of taxis within the INSEE code or
-    ZUPC. If include_operators is True, it also returns the numer of taxis of
+    If include_admin is True, this function returns the total number of taxis
+    within the INSEE code or ZUPC.
+    If include_operators is True, it also returns the number of taxis of
     the current user.
     """
-    stats = {
-        'total': influx_backend.get_nb_active_taxis(**{filter_name: filter_value})
-    }
+    stats = {}
+    if include_total:
+        stats['total'] = influx_backend.get_nb_active_taxis(**{filter_name: filter_value})
     if include_operators:
         stats['operators'] = {
             current_user.email: influx_backend.get_nb_active_taxis(
@@ -81,12 +82,13 @@ def zupc_list():
         ZUPC.id
     ).all()
 
+    is_admin = current_user.has_role('admin')
     is_operator = current_user.has_role('operateur')
 
     if not zupcs:
         ret = schema.dump({
             'data': [
-                (town, _get_zupc_stats('insee_code', town.insee, is_operator))
+                (town, _get_zupc_stats('insee_code', town.insee, is_admin, is_operator))
                 for town in towns
             ]
         })
@@ -94,7 +96,7 @@ def zupc_list():
 
     ret = schema.dump({
         'data': [
-            (zupc, _get_zupc_stats('zupc_id', zupc.zupc_id, is_operator))
+            (zupc, _get_zupc_stats('zupc_id', zupc.zupc_id, is_admin, is_operator))
             for zupc in zupcs
         ]
     })
@@ -124,6 +126,7 @@ def zupc_live():
     )
 
     zupcs = query.all()
+    is_admin = current_user.has_role('admin')
     is_operator = current_user.has_role('operateur')
 
     schema = schemas.DataZUPCGeomSchema()
@@ -132,6 +135,6 @@ def zupc_live():
             'id': zupc.zupc_id,
             'nom': zupc.nom,
             'geojson': json.loads(zupc.geojson),
-            'stats': _get_zupc_stats('zupc_id', zupc.zupc_id, is_operator),
+            'stats': _get_zupc_stats('zupc_id', zupc.zupc_id, is_admin, is_operator),
         } for zupc in zupcs]
     })
