@@ -45,7 +45,8 @@ def _update_redis(pipe, data, user):
     operator = user.email
     # Hardcoded for backwards compatibility with the geotaxi worker
     timestamp = now
-    status = 'free'
+    # These fields are unused, fill them with whatever is expected
+    status = 'free'  # light status, the actual status is read from VehicleDescription
     device = 'phone'
     version = 2
 

@@ -13,9 +13,10 @@ class _Taxi:
     timestamp: int
     lat: float
     lon: float
-    status: str
-    device: str
-    version: int
+    # The following fields are deprecated
+    status: str  # light status, unused
+    device: str  # usually "phone" or "mobile", unused
+    version: int  # should be "2", unused
 
 
 def get_taxi(taxi_id, operator_name):
