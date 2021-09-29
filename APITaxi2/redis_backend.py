@@ -118,7 +118,7 @@ def set_taxi_availability(taxi_id, taxi_operator, available):
     if available:
         current_app.redis.zrem(redis_key, key)
     else:
-        current_app.redis.zadd('not_available', {key: 0})
+        current_app.redis.zadd(redis_key, {key: 0})
 
 
 def log_taxi_status(taxi_id, status):
