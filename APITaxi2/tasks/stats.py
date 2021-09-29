@@ -153,6 +153,7 @@ def store_active_taxis(last_update):
         Taxi.id.in_(taxi_ids.keys()),
         User.email.in_(taxi_ids.values()),
     ):
+        # As we ask a broader combination of taxis and their operators, filter out now
         operator = taxi_ids[taxi.id]
         if vehicle_description.added_by.email != operator:
             continue
