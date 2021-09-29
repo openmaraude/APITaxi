@@ -4,7 +4,6 @@ import time
 from flask import Blueprint, current_app, request
 from flask_security import current_user, login_required, roles_accepted
 import redis
-from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import db, Taxi, Vehicle, VehicleDescription
 
