@@ -125,6 +125,20 @@ class TestUsersPut:
         assert operateur.user.operator_api_key == 'new operator api key'
         assert operateur.user.operator_header_name == 'new operator header name'
 
+    def test_endpoint(self, operateur, app):
+        app.debug = False  # Reproduce production conditions, tested to be local to this test
+        for endpoint, expected in [
+            ('foobar', 400),
+            ('http://example.com', 200),
+            ('http://localhost', 400),
+            ('http://127.0.0.1', 400),
+            ('', 200)
+        ]:
+            resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
+                'hail_endpoint_production': endpoint
+            }]})
+            assert resp.status_code == expected, endpoint
+
 
 class TestUsersList:
     def test_invalid(self, anonymous, operateur, moteur):

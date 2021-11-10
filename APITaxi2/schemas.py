@@ -1,3 +1,9 @@
+import ipaddress
+import socket
+import urllib.parse
+
+from flask import current_app
+
 from marshmallow import (
     EXCLUDE,
     fields,
@@ -432,6 +438,19 @@ class UserSchema(Schema):
         """Minimum is 8 chars if set, but empty values are also accepted."""
         if password:
             return validate.Length(min=8)(password)
+
+    @validates('hail_endpoint_production')
+    def check_endpoint(self, endpoint):
+        """Reject internal and private addresses"""
+        # Validate URL, except in development
+        if endpoint and not current_app.debug:
+            url = urllib.parse.urlparse(endpoint)
+            if not url.hostname or url.scheme not in ('http', 'https'):
+                raise ValidationError("This endpoint is invalid.")
+            # Reject private IPs
+            ip_address = ipaddress.ip_address(socket.gethostbyname(url.hostname))
+            if ip_address.is_private:
+                raise ValidationError("This endpoint is invalid.")
 
 
 class CustomerSchema(Schema):
