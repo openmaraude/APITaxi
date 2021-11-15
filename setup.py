@@ -30,7 +30,7 @@ DEPENDENCIES = [
     'prettytable',
     'psycopg2',
     'pyshp',
-    'redis',
+    'redis<4',
     'sentry-sdk[flask]',
     'Shapely',
     'shortuuid',
