@@ -62,18 +62,14 @@ def _update_redis(pipe, data, user):
         pipe,
         'GEOADD',
         'geoindex',
-        data['lon'],
-        data['lat'],
-        taxi_id,
+        [data['lon'], data['lat'], taxi_id],
     )
     # GEOADD geoindex_2
     _run_redis_action(
         pipe,
         'GEOADD',
         'geoindex_2',
-        data['lon'],
-        data['lat'],
-        f"{taxi_id}:{operator}",
+        [data['lon'], data['lat'], f"{taxi_id}:{operator}"],
     )
     # ZADD timestamps
     _run_redis_action(
