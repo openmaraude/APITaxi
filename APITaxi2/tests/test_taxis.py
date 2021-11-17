@@ -345,9 +345,11 @@ class TestTaxiSearch:
     def _post_geotaxi(app, lon, lat, taxi, vehicle_description):
         app.redis.geoadd(
             'geoindex_2',
-            lon,
-            lat,
-            '%s:%s' % (taxi.id, vehicle_description.added_by.email)
+            [
+                lon,
+                lat,
+                '%s:%s' % (taxi.id, vehicle_description.added_by.email)
+            ]
         )
         app.redis.zadd(
             'timestamps', {

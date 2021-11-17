@@ -68,17 +68,17 @@ def test_log_taxi_status(app):
 
 def test_taxis_locations_by_operator(app):
     now = int(time.time())
-    app.redis.geoadd('geoindex_2', 2.35000, 48.86000, 'taxi1:operator1')
+    app.redis.geoadd('geoindex_2', [2.35000, 48.86000, 'taxi1:operator1'])
     app.redis.zadd('timestamps', {'taxi1:operator1': now})
 
-    app.redis.geoadd('geoindex_2', 2.35001, 48.86001, 'taxi1:operator2')
+    app.redis.geoadd('geoindex_2', [2.35001, 48.86001, 'taxi1:operator2'])
     app.redis.zadd('timestamps', {'taxi1:operator2': now})
 
-    app.redis.geoadd('geoindex_2', 2.35002, 48.86002, 'taxi2:operator3')
+    app.redis.geoadd('geoindex_2', [2.35002, 48.86002, 'taxi2:operator3'])
     app.redis.zadd('timestamps', {'taxi2:operator3': now})
 
     # Outside of range
-    app.redis.geoadd('geoindex_2', 2.3, 47, 'taxi3:operator4')
+    app.redis.geoadd('geoindex_2', [2.3, 47, 'taxi3:operator4'])
     app.redis.zadd('timestamps', {'taxi3:operator4': now})
 
     res = redis_backend.taxis_locations_by_operator(2.35, 48.86, 500)
