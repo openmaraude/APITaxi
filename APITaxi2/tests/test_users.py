@@ -115,7 +115,7 @@ class TestUsersPut:
             'operator_api_key': 'new operator api key',
             'operator_header_name': 'new operator header name',
         }]})
-        assert resp.status_code == 200
+        assert resp.status_code == 200, resp.json
         assert operateur.user.commercial_name == 'New commercial name'
         assert operateur.user.email_customer == 'new email customer'
         assert operateur.user.email_technical == 'new email technical'
