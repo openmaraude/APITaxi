@@ -108,6 +108,7 @@ PATH = PathlibPath()
     help='Directory where https://github.com/openmaraude/ZUPC has been cloned, default=%s' % ZUPC_DEFAULT_DIRECTORY
 )
 def import_zupc(zupc_repo):
+    """Import the ZUPC repo into the database"""
     # Ensure zupc_repo has been cloned
     if not zupc_repo.exists():
         raise ValueError('Please clone https://github.com/openmaraude/ZUPC to %s or set --zupc-dir option to the '
@@ -159,3 +160,30 @@ def export_zupc():
 
     json.dump(output, sys.stdout, indent=2)
     sys.stdout.flush()
+
+
+@blueprint.cli.group()
+def zupc():
+    """Manage existing ZUPC"""
+
+
+@zupc.command()
+@click.argument("zupc_dir", type=PATH)
+def add(zupc_dir):
+    """Add or update a single ZUPC from a directory containing the descriptive zone.yaml"""
+    fill_zupc_union(zupc_dir)
+    db.session.commit()
+
+
+@zupc.command()
+@click.argument("zupc_id")
+def remove(zupc_id):
+    """Remove ZUPC"""
+    zupc = db.session.query(ZUPC).filter(ZUPC.zupc_id == zupc_id).join(town_zupc).join(Town).one()
+
+    click.echo(f"ZUPC ID {zupc.zupc_id}")
+    click.echo(f"Name: {zupc.name}")
+    click.echo(f"Towns: {', '.join(t.name for t in zupc.allowed)}")
+    if click.confirm("Delete?"):
+        db.session.delete(zupc)
+        db.session.commit()
