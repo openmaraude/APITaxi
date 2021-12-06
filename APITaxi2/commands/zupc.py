@@ -5,8 +5,6 @@ import yaml
 
 import click
 from flask import Blueprint, current_app
-from shapely.geometry import shape, MultiPolygon
-from shapely.ops import cascaded_union
 from sqlalchemy import func
 from APITaxi_models2 import db, Town, ZUPC
 from APITaxi_models2.zupc import town_zupc
@@ -17,30 +15,6 @@ blueprint = Blueprint('commands_zupc', __name__, cli_group=None)
 
 # Directory where https://github.com/openmaraude/ZUPC has been cloned
 ZUPC_DEFAULT_DIRECTORY = '/tmp/ZUPC'
-
-
-def to_multipolygon(shape_obj):
-    """The contours dump is now using both polygons and multipolygons."""
-    if not isinstance(shape_obj, MultiPolygon):
-        shape_obj = MultiPolygon([shape_obj])
-    return shape_obj
-
-
-def load_json_shape(filename):
-    with open(filename) as handle:
-        data = json.load(handle)
-
-    if data['type'] not in ('Feature', 'FeatureCollection'):
-        raise ValueError('Unable to handle geojson type %s in %s' % (data['type'], filename))
-
-    all_shapes = []
-    if data['type'] == 'Feature':  # only one shape
-        all_shapes = [shape(data['geometry'])]
-    else:  # FeatureCollection: list of shapes
-        all_shapes = [shape(part['geometry']) for part in data['features']]
-
-    # new_shape = covering all polygons of all_shapes
-    return to_multipolygon(cascaded_union(all_shapes))
 
 
 def fill_zupc_union(zupc_dir):
