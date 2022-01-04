@@ -154,7 +154,7 @@ def configure_celery(flask_app):
     * create a task context so tasks can access flask.current_app
 
     Doing so is recommended by flask documentation:
-    https://flask.palletsprojects.com/en/1.1.x/patterns/celery/
+    https://flask.palletsprojects.com/en/2.0.x/patterns/celery/
     """
     # Settings list:
     # https://docs.celeryproject.org/en/stable/userguide/configuration.html
