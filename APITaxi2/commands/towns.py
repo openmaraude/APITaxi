@@ -18,7 +18,9 @@ blueprint = Blueprint('commands_towns', __name__, cli_group=None)
 
 
 # Archive downloaded and extracted to CONTOURS_DIR
-CONTOURS_DEFAULT_URL = "https://www.data.gouv.fr/fr/datasets/r/17062524-991f-4e13-9bf0-b410cc2216fd"
+# https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/ (updated every year)
+# Alternative download: https://osm13.openstreetmap.fr/~cquest/openfla/export/?C=M;O=D
+CONTOURS_DEFAULT_URL = "https://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20220101-shp.zip"
 
 # Temporary path where CONTOURS_URL is downloaded
 CONTOURS_DEFAULT_TMPDIR = '/tmp/temp_contours'
@@ -70,6 +72,9 @@ def update_ads_new_insee_codes(zupc_repo):
     for fusion_filename in sorted((zupc_repo / 'fusion_communes').iterdir()):
         with open(fusion_filename) as handle:
             data = yaml.safe_load(handle)
+
+        if not data['mapping']:
+            continue
 
         for old_insee, new_insee in data['mapping'].items():
             for ads in db.session.query(ADS).filter(ADS.insee == old_insee):

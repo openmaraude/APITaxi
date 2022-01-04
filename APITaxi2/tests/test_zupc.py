@@ -83,3 +83,26 @@ class TestZUPCLive:
                 operateur.user.email: 0
             }
         }
+
+
+class TestTownList:
+    def test_anonymous(self, anonymous):
+        resp = anonymous.client.get('/towns')
+        assert resp.status_code == 401
+
+    def test_ok(self, operateur, moteur, QueriesTracker):
+        ZUPCFactory()
+        ZUPCFactory(bordeaux=True)
+
+        with QueriesTracker() as qtracker:
+            resp = operateur.client.get('/towns')
+            # List permissions, SELECT towns
+            assert qtracker.count == 2
+
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 3
+        assert resp.json['data'][0]['insee'] == '33063'
+        assert resp.json['data'][0]['name'] == 'Bordeaux'
+
+        # This endpoint is not restricted to operateurs, quickly check moteurs
+        assert moteur.client.get('/towns').status_code == 200

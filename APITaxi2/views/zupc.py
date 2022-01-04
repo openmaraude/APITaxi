@@ -138,3 +138,34 @@ def zupc_live():
             'stats': _get_zupc_stats('zupc_id', zupc.zupc_id, is_admin, is_operator),
         } for zupc in zupcs]
     })
+
+
+@blueprint.route('/towns', methods=['GET'])
+@login_required
+def town_list():
+    """
+    This endpoint is not part of the public API but can be convenient to integrate le.taxi.
+    ---
+    get:
+      description: List of towns accepted by le.taxi to register taxis. Should be updated every year.
+      parameters:
+        - in: query
+          schema: ListTownQueryStringSchema
+      security:
+        - ApiKeyAuth: []
+      responses:
+        200:
+          description: List of pairs of (INSEE, name).
+          content:
+            application/json:
+              schema: DataTownSchema
+    """
+    querystring_schema = schemas.ListTownQueryStringSchema()
+    args, errors = validate_schema(querystring_schema, request.args)
+    if errors:
+        return make_error_json_response(errors)
+
+    schema = schemas.DataTownSchema()
+
+    towns = db.session.query(Town.insee, Town.name).order_by(Town.insee)
+    return schema.dump({'data': towns})

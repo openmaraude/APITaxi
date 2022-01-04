@@ -293,6 +293,11 @@ class ZUPCGeomSchema(Schema):
     stats = fields.Raw()
 
 
+class TownSchema(Schema):
+    insee = fields.String()
+    name = fields.String()
+
+
 class TaxiSchema(Schema):
     """Schema to list, create, read or update taxis"""
     id = fields.String()
@@ -632,6 +637,10 @@ class ListZUPCQueryStringSchema(PositionMixin, Schema):
     pass
 
 
+class ListTownQueryStringSchema(Schema):
+    pass
+
+
 class GeotaxiPositionSchema(PositionMixin, Schema):
     """Schema for a single unit of taxi coordinates."""
     taxi_id = fields.String(required=True)
@@ -729,3 +738,4 @@ DataVehicleSchema = data_schema_wrapper(VehicleSchema())
 DataZUPCSchema = data_schema_wrapper(ZUPCSchema())
 DataZUPCGeomSchema = data_schema_wrapper(ZUPCGeomSchema())
 DataGeotaxiSchema = data_schema_wrapper(GeotaxiSchema())
+DataTownSchema = data_schema_wrapper(TownSchema())
