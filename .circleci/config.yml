@@ -26,7 +26,7 @@ jobs:
           name: Build docker images
           command: |
             docker build --target devenv -t openmaraude/api_taxi-devenv:${CIRCLE_TAG} .
-            docker tag openmaraude/api_taxi:${CIRCLE_TAG}-devenv openmaraude/api_taxi-devenv:latest
+            docker tag openmaraude/api_taxi-devenv:${CIRCLE_TAG} openmaraude/api_taxi-devenv:latest
 
             docker build -t openmaraude/api_taxi:${CIRCLE_TAG} .
             docker tag openmaraude/api_taxi:${CIRCLE_TAG} openmaraude/api_taxi:latest
