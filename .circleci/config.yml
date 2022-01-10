@@ -23,14 +23,21 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: Build docker image
+          name: Build docker images
           command: |
+            docker build --target devenv -t openmaraude/api_taxi-devenv:${CIRCLE_TAG} .
+            docker tag openmaraude/api_taxi:${CIRCLE_TAG}-devenv openmaraude/api_taxi-devenv:latest
+
             docker build -t openmaraude/api_taxi:${CIRCLE_TAG} .
             docker tag openmaraude/api_taxi:${CIRCLE_TAG} openmaraude/api_taxi:latest
       - run:
-          name: Publish docker Image to hub.docker.com
+          name: Publish docker images to hub.docker.com
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+            docker push openmaraude/api_taxi-devenv:${CIRCLE_TAG}
+            docker push openmaraude/api_taxi-devenv:latest
+
             docker push openmaraude/api_taxi:${CIRCLE_TAG}
             docker push openmaraude/api_taxi:latest
 
