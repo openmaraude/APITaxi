@@ -31,6 +31,9 @@ jobs:
             docker build --target worker-devenv -t openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG} .
             docker tag openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG} openmaraude/api_taxi-worker-devenv:latest
 
+            docker build --target worker-beat-devenv -t openmaraude/api_taxi-worker-beat-devenv:${CIRCLE_TAG} .
+            docker tag openmaraude/api_taxi-worker-beat-devenv:${CIRCLE_TAG} openmaraude/api_taxi-worker-beat-devenv:latest
+
             docker build -t openmaraude/api_taxi:${CIRCLE_TAG} .
             docker tag openmaraude/api_taxi:${CIRCLE_TAG} openmaraude/api_taxi:latest
       - run:
@@ -43,6 +46,9 @@ jobs:
 
             docker push openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG}
             docker push openmaraude/api_taxi-worker-devenv:latest
+
+            docker push openmaraude/api_taxi-worker-beat-devenv:${CIRCLE_TAG}
+            docker push openmaraude/api_taxi-worker-beat-devenv:latest
 
             docker push openmaraude/api_taxi:${CIRCLE_TAG}
             docker push openmaraude/api_taxi:latest

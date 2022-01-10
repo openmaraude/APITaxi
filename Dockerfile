@@ -58,6 +58,13 @@ ENV APITAXI_CONFIG_FILE=/settings.py
 CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery worker -E -c 1
 
 
+##### DEV WORKER BEAT IMAGE #####
+
+FROM worker-devenv AS worker-beat-devenv
+
+CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery beat -s /tmp/celerybeat-schedule --pidfile /tmp/celerybeat.pid
+
+
 ##### PROD IMAGE #####
 
 # Example of uwsgi.ini to mount in /uwsgi.ini:
