@@ -25,6 +25,8 @@ def drivers_create():
     post:
       description: |
         Create a new driver.
+        If the same user posts an existing tuple of (departement, professional_licence),
+        this driver is updated instead, and the API returns 200.
       requestBody:
         content:
           application/json:
@@ -33,12 +35,12 @@ def drivers_create():
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return the existing ressource.
+          description: Return the updated driver.
           content:
             application/json:
               schema: DataDriverSchema
         201:
-          description: Return a new ressource.
+          description: Return the created driver.
     """
     schema = schemas.DataDriverSchema()
     params, errors = validate_schema(schema, request.json)

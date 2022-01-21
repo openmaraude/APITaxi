@@ -26,6 +26,8 @@ def ads_create():
     post:
       description: |
         Create a new ADS.
+        If the same user posts an existing tuple of (numero, insee),
+        this ADS is updated instead, and the API returns 200.
       requestBody:
         content:
           application/json:
@@ -34,12 +36,12 @@ def ads_create():
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return the already existing ADS.
+          description: Return the updated ADS.
           content:
             application/json:
               schema: DataADSSchema
         201:
-          description: Create a new ADS.
+          description: Return the created ADS.
     """
     schema = schemas.DataADSSchema()
     params, errors = validate_schema(schema, request.json)

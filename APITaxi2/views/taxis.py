@@ -42,9 +42,10 @@ def taxis_create():
     ---
     post:
       description: |
-        Create a new taxi. Taxi is the combination of an ADS, a Vehicle and a
-        Driver. If the resource already exists, the existing resource is
-        returned.
+        Create a new taxi.
+        A taxi is the combination of an ADS, a Vehicle and a Driver.
+        If the same user posts the same combination, no new taxi is created,
+        and the API returns 200 instead.
       requestBody:
         content:
           application/json:
@@ -53,12 +54,12 @@ def taxis_create():
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return the existing ressource.
+          description: Return the existing taxi.
           content:
             application/json:
               schema: DataTaxiSchema
         201:
-          description: Return a new ressource.
+          description: Return the new taxi.
     """
     schema = schemas.DataTaxiSchema()
 
