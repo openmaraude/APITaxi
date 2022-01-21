@@ -28,6 +28,9 @@ def vehicle_create():
     post:
       description: |
         Create a new vehicle.
+
+        If the same user posts the same licence plate again,
+        this vehicle is updated instead, and the API return 200.
       requestBody:
         content:
           application/json:
@@ -36,12 +39,12 @@ def vehicle_create():
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return and update the existing ressource.
+          description: Return the updated vehicle.
           content:
             application/json:
               schema: DataVehicleSchema
         201:
-          description: Return a new ressource.
+          description: Return the created vehicle.
     """
     schema = schemas.DataVehicleSchema()
     params, errors = validate_schema(schema, request.json)
