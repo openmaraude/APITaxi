@@ -25,8 +25,11 @@ def drivers_create():
     post:
       description: |
         Create a new driver.
+
         If the same user posts an existing tuple of (departement, professional_licence),
         this driver is updated instead, and the API returns 200.
+
+        The departement can be specified by name or number, we encourage users to use the number only.
       requestBody:
         content:
           application/json:

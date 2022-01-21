@@ -43,9 +43,12 @@ def taxis_create():
     post:
       description: |
         Create a new taxi.
+
         A taxi is the combination of an ADS, a Vehicle and a Driver.
         If the same user posts the same combination, no new taxi is created,
         and the API returns 200 instead.
+
+        The driver departement is the departement number.
       requestBody:
         content:
           application/json:
