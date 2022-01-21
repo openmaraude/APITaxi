@@ -20,7 +20,7 @@ blueprint = Blueprint('commands_towns', __name__, cli_group=None)
 # Archive downloaded and extracted to CONTOURS_DIR
 # https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/ (updated every year)
 # Alternative download: https://osm13.openstreetmap.fr/~cquest/openfla/export/?C=M;O=D
-CONTOURS_DEFAULT_URL = "https://osm13.openstreetmap.fr/~cquest/openfla/export/communes-20220101-shp.zip"
+CONTOURS_DEFAULT_URL = "https://www.data.gouv.fr/fr/datasets/r/0e117c06-248f-45e5-8945-0e79d9136165"
 
 # Temporary path where CONTOURS_URL is downloaded
 CONTOURS_DEFAULT_TMPDIR = '/tmp/temp_contours'
