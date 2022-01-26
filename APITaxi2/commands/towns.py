@@ -70,6 +70,8 @@ def update_ads_new_insee_codes(zupc_repo):
     print("Reassigning INSEE codes of old towns...")
 
     for fusion_filename in sorted((zupc_repo / 'fusion_communes').iterdir()):
+        if not fusion_filename.endswith('.yaml'):
+            continue
         with open(fusion_filename) as handle:
             data = yaml.safe_load(handle)
 
