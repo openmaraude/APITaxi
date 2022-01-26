@@ -98,7 +98,7 @@ def geotaxi_batch():
         requestBody:
             content:
                 application/json:
-                    schema: GeotaxiSchema
+                    schema: DataGeotaxiSchema
         security:
             - ApiKeyAuth: []
         responses:
