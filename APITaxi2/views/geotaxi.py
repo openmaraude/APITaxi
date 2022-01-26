@@ -94,7 +94,12 @@ def geotaxi_batch():
     """
     ---
     post:
-        description: Update the position of many taxis
+        description: |
+            Update the position of many taxis at once (up to 50).
+
+            All data must be valid or the whole request will be rejected.
+
+            Positions are in the WGS 84 or EPSG:3857 standard (the same as GPS).
         requestBody:
             content:
                 application/json:
