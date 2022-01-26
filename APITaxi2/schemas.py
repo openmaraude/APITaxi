@@ -60,7 +60,9 @@ class PageQueryStringMixin:
 class PositionMixin:
     """Used where a position is required."""
     lon = fields.Float(required=True, validate=validate.Range(min=-180, max=180))
-    lat = fields.Float(required=True, validate=validate.Range(min=-90, max=90))
+    # The WGS84/EPSG:3857 spec says [-85.06,+85.06] but Redis only accepts
+    # [-85.05112878, 85.05112878], so keep it
+    lat = fields.Float(required=True, validate=validate.Range(min=-85.05112878, max=85.05112878))
 
 
 class DepartementSchema(Schema):
