@@ -64,6 +64,7 @@ class PositionMixin:
 
 
 class DepartementSchema(Schema):
+    """Departement where the professional licence was issued."""
     nom = fields.String()
     numero = fields.String()
 
