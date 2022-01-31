@@ -1,3 +1,4 @@
+import functools
 import json
 
 from flask import Blueprint, request
@@ -133,6 +134,7 @@ def zupc_live():
 @blueprint.route('/towns', methods=['GET'])
 @login_required
 @roles_accepted('admin', 'moteur', 'operateur')
+@functools.lru_cache()  # Store in memory (~100k VIRT ~32k RES ~5k SHR), reset on deploying an update
 def town_list():
     """
     This endpoint is not part of the public API but can be convenient to integrate le.taxi.
