@@ -194,7 +194,7 @@ def taxis_details(taxi_id):
       requestBody:
         content:
           application/json:
-            schema: TaxiPUTSchema
+            schema: DataTaxiPUTSchema
       security:
         - ApiKeyAuth: []
       responses:
