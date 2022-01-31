@@ -379,14 +379,18 @@ class ListTaxisAllQuerystringSchema(Schema, PageQueryStringMixin):
 
 
 class TaxiPUTSchema(Schema):
-    """PUT /taxis/:id accepts any field from TaxiSchema, but only the status is
-    updated.
+    """PUT /taxis/:id accepts any field from TaxiSchema, but only the status
+    and radius are updated.
 
     This class is only used by apispec to render swagger documentation.
     """
     status = fields.String(
         required=False, allow_none=False,
         validate=validate.OneOf(UPDATABLE_VEHICLE_STATUS)
+    )
+    radius = fields.Integer(
+        required=False, allow_none=True,
+        validate=validate.Range(min=TAXI_MIN_RADIUS, max=TAXI_MAX_RADIUS)
     )
 
 

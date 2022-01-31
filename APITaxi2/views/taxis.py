@@ -164,10 +164,12 @@ def taxis_details(taxi_id):
     """Get or update a taxi.
 
     Taxi update is possible with PUT /taxis/:id. To keep backward
-    compatibility, it is only possible to change the field `status`.
+    compatibility, it is only possible to change the field `status`,
+    and now the radius too.
     ---
     get:
-      description: Get taxi details.
+      description: |
+        Get taxi details, including the current status and visibility radius.
       parameters:
         - name: taxi_id
           in: path
@@ -184,7 +186,11 @@ def taxis_details(taxi_id):
               schema: DataTaxiSchema
 
     put:
-      description: Edit taxi status. Only the field `status` can be changed.
+      description: |
+        Edit taxi status and visibility radius. Only these fields can be changed.
+
+        The radius can be any integer between 150 and 500,
+        or send `null` to reset to the default value (500).
       parameters:
         - name: taxi_id
           in: path
@@ -195,11 +201,20 @@ def taxis_details(taxi_id):
         content:
           application/json:
             schema: DataTaxiPUTSchema
+            example:
+                {
+                    data: [
+                        {
+                            status: free,
+                            radius: 360
+                        }
+                    ]
+                }
       security:
         - ApiKeyAuth: []
       responses:
         200:
-          description: Edit taxi status.
+          description: Updated taxi details.
           content:
             application/json:
               schema: DataTaxiSchema
