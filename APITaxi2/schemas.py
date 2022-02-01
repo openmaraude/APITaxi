@@ -490,6 +490,20 @@ class HailTaxiSchema(Schema):
     crowfly_distance = fields.Float()
 
 
+class HailPOSTSchema(Schema):
+    """Schema with only the required fields to create hails
+
+    This class is only used by apispec to render swagger documentation.
+    """
+    customer_lon = fields.Float(required=True)
+    customer_lat = fields.Float(required=True)
+    customer_address = fields.String(required=True)
+    customer_phone_number = fields.String(required=True)
+    customer_id = fields.String(required=True)
+    taxi_id = fields.String(required=True)
+    operateur = fields.String(required=True)
+
+
 class HailSchema(Schema):
     """Schema to create read and update hails"""
     id = fields.String()
@@ -736,7 +750,6 @@ DataCustomerSchema = data_schema_wrapper(CustomerSchema())
 DataDriverSchema = data_schema_wrapper(DriverSchema())
 DataTaxiSchema = data_schema_wrapper(TaxiSchema())
 DataTaxiListSchema = data_schema_wrapper(TaxiSchema(), with_pagination=True)
-DataTaxiPUTSchema = data_schema_wrapper(TaxiPUTSchema())
 DataHailSchema = data_schema_wrapper(HailSchema())
 DataHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
 DataHailBySessionListSchema = data_schema_wrapper(HailBySessionListSchema(), with_pagination=True)
@@ -747,3 +760,7 @@ DataZUPCSchema = data_schema_wrapper(ZUPCSchema())
 DataZUPCGeomSchema = data_schema_wrapper(ZUPCGeomSchema())
 DataGeotaxiSchema = data_schema_wrapper(GeotaxiSchema())
 DataTownSchema = data_schema_wrapper(TownSchema())
+
+# These schemas are only used to simplify the output of Swagger
+DataTaxiPUTSchema = data_schema_wrapper(TaxiPUTSchema())
+DataHailPOSTSchema = data_schema_wrapper(HailPOSTSchema())
