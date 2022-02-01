@@ -23,9 +23,8 @@ def drivers_create():
     """
     ---
     post:
+      summary: Create a new driver.
       description: |
-        Create a new driver.
-
         If the same user posts an existing tuple of (departement, professional_licence),
         this driver is updated instead, and the API returns 200.
 

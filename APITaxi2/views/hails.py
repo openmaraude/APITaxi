@@ -265,7 +265,7 @@ def hails_details(hail_id):
     """
     ---
     get:
-      description: Get hail details.
+      summary: Get hail details.
       parameters:
         - name: hail_id
           in: path
@@ -276,13 +276,31 @@ def hails_details(hail_id):
         - ApiKeyAuth: []
       responses:
         200:
-          description: Get hail details.
+          description: Return hail details.
           content:
             application/json:
               schema: DataHailSchema
 
     put:
-      description: Edit hail details.
+      summary: Edit hail details.
+      description: |
+        Mostly the status for the time of the fare.
+
+        Besides, operators can append the reason a hail ended up with `incident_taxi`
+        when submitting the field `incident_taxi_reason` with one of the accepted values
+        in the schema.
+
+        The customer with inappropriate behavior on this hail can be reported
+        by sending `reporting_customer` with a true value, and one of the accepted
+        `reporting_customer_reason` in the schema. This will prevent them from hailing
+        for the next 24 hours. The ban can be cancelled with a false value.
+
+        As for client apps, they can update the customer's position, address and phone
+        number. They can also append the reason a hail ended up with `incident_customer`
+        when submitting the field `incident_customer_reason` with one of the accepted
+        values in the schema.
+
+        (Note: the rating system is not used in practice and must be considered deprecated.)
       parameters:
         - name: hail_id
           in: path
@@ -297,7 +315,7 @@ def hails_details(hail_id):
         - ApiKeyAuth: []
       responses:
         200:
-          description: Update hail details.
+          description: Return updated hail.
           content:
             application/json:
               schema: DataHailSchema
@@ -488,7 +506,7 @@ def hails_list():
     Pagination is returned in the "meta" field.
     ---
     get:
-      description: List hails.
+      summary: List hails.
       parameters:
         - in: query
           schema: ListHailsQuerystringSchema
@@ -578,8 +596,7 @@ def hails_create():
     """
     ---
     post:
-      description: |
-        Create a hail request.
+      summary: Create a hail request.
       requestBody:
         content:
           application/json:
@@ -602,7 +619,7 @@ def hails_create():
         - ApiKeyAuth: []
       responses:
         201:
-          description: Return a new ressource.
+          description: Return the created hail.
           content:
             application/json:
               schema: DataHailSchema

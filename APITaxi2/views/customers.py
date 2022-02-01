@@ -20,7 +20,9 @@ def customers_edit(customer_id):
     """
     ---
     put:
-      description: Update customer data.
+      summary: Update customer ban period.
+      description: |
+        Banned customers can't hail a taxi until the end of the period.
       parameters:
         - name: customer_id
           in: path

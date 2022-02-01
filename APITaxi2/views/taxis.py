@@ -41,9 +41,8 @@ def taxis_create():
 
     ---
     post:
+      summary: Create a new taxi.
       description: |
-        Create a new taxi.
-
         A taxi is the combination of an ADS, a Vehicle and a Driver.
         If the same user posts the same combination, no new taxi is created,
         and the API returns 200 instead.
@@ -168,8 +167,9 @@ def taxis_details(taxi_id):
     and now the radius too.
     ---
     get:
+      summary: Get taxi details.
       description: |
-        Get taxi details, including the current status and visibility radius.
+        Including the current status and visibility radius.
       parameters:
         - name: taxi_id
           in: path
@@ -180,14 +180,15 @@ def taxis_details(taxi_id):
         - ApiKeyAuth: []
       responses:
         200:
-          description: Taxi details.
+          description: Return taxi details.
           content:
             application/json:
               schema: DataTaxiSchema
 
     put:
+      summary: Edit taxi status or/and visibility radius.
       description: |
-        Edit taxi status and visibility radius. Only these fields can be changed.
+        Only these fields can be changed. Either one or both can be submitted.
 
         The radius can be any integer between 150 and 500,
         or send `null` to reset to the default value (500).
@@ -201,20 +202,43 @@ def taxis_details(taxi_id):
         content:
           application/json:
             schema: DataTaxiPUTSchema
-            example:
-                {
-                    data: [
+            examples:
+                status:
+                    summary: Status only
+                    value:
                         {
-                            status: free,
-                            radius: 360
+                            data: [
+                                {
+                                    status: free
+                                }
+                            ]
                         }
-                    ]
-                }
+                radius:
+                    summary: Radius only
+                    value:
+                        {
+                            data: [
+                                {
+                                    radius: 360
+                                }
+                            ]
+                        }
+                both:
+                    summary: Both status and radius
+                    value:
+                        {
+                            data: [
+                                {
+                                    status: free,
+                                    radius: 360
+                                }
+                            ]
+                        }
       security:
         - ApiKeyAuth: []
       responses:
         200:
-          description: Updated taxi details.
+          description: Return updated taxi details.
           content:
             application/json:
               schema: DataTaxiSchema
@@ -304,7 +328,7 @@ def taxis_details(taxi_id):
 def taxis_search():
     """Get the taxis around a location.
 
-    * Most of locations should belong to zero or one ZUPC, but some might
+    * Most locations should belong to zero or one ZUPC, but some might
       belong to several, for example at borders.
 
     * geotaxi stores data into Redis.
@@ -320,7 +344,12 @@ def taxis_search():
     "<taxi_id:operator_id>" is appended to the set not_available.
     ---
     get:
-      description: List available taxis around a location.
+      summary: List available taxis around a location.
+      description: |
+        Only taxis ready to accept hails will be listed:
+            - available (status free)
+            - recent telemetry (< 2 min)
+            - in a zone where they can accept clients
       parameters:
         - in: query
           schema: ListTaxisQueryStringSchema
@@ -328,7 +357,7 @@ def taxis_search():
         - ApiKeyAuth: []
       responses:
         200:
-          description: List available taxis around a location.
+          description: List of available taxis around a location.
           content:
             application/json:
               schema: DataTaxiSchema

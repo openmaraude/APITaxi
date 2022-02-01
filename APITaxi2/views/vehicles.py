@@ -26,9 +26,8 @@ def vehicle_create():
     """
     ---
     post:
+      summary: Create a new vehicle.
       description: |
-        Create a new vehicle.
-
         If the same user posts the same licence plate again,
         this vehicle is updated instead, and the API return 200.
       requestBody:

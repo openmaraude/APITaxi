@@ -46,21 +46,9 @@ def _get_zupc_stats(filter_name, filter_value, include_total, include_operators)
 @login_required
 def zupc_list():
     """
+    Get the list of ZUPC known and used by the API.
+
     This endpoint is only used by the console and is not part of the public API.
-    ---
-    get:
-      description: Get data about ZUPC.
-      parameters:
-        - in: query
-          schema: ListZUPCQueryStringSchema
-      security:
-        - ApiKeyAuth: []
-      responses:
-        200:
-          description: List of ZUPC.
-          content:
-            application/json:
-              schema: DataZUPCSchema
     """
     querystring_schema = schemas.ListZUPCQueryStringSchema()
     args, errors = validate_schema(querystring_schema, request.args)
@@ -107,6 +95,8 @@ def zupc_list():
 @login_required
 def zupc_live():
     """List all ZUPCs, and number of taxis connected.
+
+    This endpoint is only used by the console and is not part of the public API.
     """
     query = db.session.query(
         ZUPC.zupc_id,
@@ -147,7 +137,12 @@ def town_list():
     This endpoint is not part of the public API but can be convenient to integrate le.taxi.
     ---
     get:
-      description: List of towns accepted by le.taxi to register taxis. Should be updated every year.
+      summary: List of towns accepted by le.taxi to register taxis.
+      description: |
+        Should be updated every year.
+
+        This does not include the geographical data. You can find them on
+        https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/
       parameters:
         - in: query
           schema: ListTownQueryStringSchema
@@ -155,7 +150,7 @@ def town_list():
         - ApiKeyAuth: []
       responses:
         200:
-          description: List of pairs of (INSEE, name).
+          description: Return a list of pairs of (INSEE, name).
           content:
             application/json:
               schema: DataTownSchema
