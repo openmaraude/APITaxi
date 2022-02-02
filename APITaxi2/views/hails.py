@@ -605,13 +605,13 @@ def hails_create():
                 {
                     "data": [
                         {
-                        "customer_id": "abc123",
-                        "customer_lon": 2.35,
-                        "customer_lat": 48.86,
-                        "customer_address": "25 rue Quincampoix 75004 Paris",
-                        "customer_phone_number": "0678901234",
-                        "taxi_id": "GEzgkJIO",
-                        "operateur": "neotaxi"
+                            "customer_id": "abc123",
+                            "customer_lon": 2.35,
+                            "customer_lat": 48.86,
+                            "customer_address": "25 rue Quincampoix 75004 Paris",
+                            "customer_phone_number": "0678901234",
+                            "taxi_id": "GEzgkJIO",
+                            "operateur": "neotaxi"
                         }
                     ]
                 }

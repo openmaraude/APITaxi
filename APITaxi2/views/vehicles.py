@@ -34,6 +34,20 @@ def vehicle_create():
         content:
           application/json:
             schema: DataVehicleSchema
+            examples:
+              minimal:
+                summary: |
+                  This minimal example doesn't illustrate all the fields used to describe
+                  a vehicle, and customers could find convenient.
+                value:
+                  {
+                    data: [
+                      {
+                        licence_plate: "AB-123-CD",
+                        nb_seats: 4,
+                      }
+                    ]
+                  }
       security:
         - ApiKeyAuth: []
       responses:

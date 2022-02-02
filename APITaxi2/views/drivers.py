@@ -34,6 +34,20 @@ def drivers_create():
         content:
           application/json:
             schema: DataDriverSchema
+            example:
+                {
+                    "data": [
+                        {
+                            "first_name": "Francette",
+                            "last_name": "Moulin",
+                            "birth_date": "1970-12-05",
+                            "professional_licence": "foobar-994468249464",
+                            "departement": {
+                                "numero": "76"
+                            }
+                        }
+                    ]
+                }
       security:
         - ApiKeyAuth: []
       responses:

@@ -99,10 +99,30 @@ def geotaxi_batch():
             All data must be valid or the whole request will be rejected.
 
             Positions are in the WGS 84 or EPSG:3857 standard (the same as GPS).
+            Beware not to invert latitude (Y) and longitude (X)!
         requestBody:
             content:
                 application/json:
                     schema: DataGeotaxiSchema
+                    example:
+                        {
+                            "data": [
+                                {
+                                    "positions": [
+                                        {
+                                            "taxi_id": "cZQHY5q",
+                                            "lat": 48.85998,
+                                            "lon": 2.34998
+                                        },
+                                        {
+                                            "taxi_id": "kF9XkQ2",
+                                            "lat": 49.4396,
+                                            "lon": 1.0945
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
         security:
             - ApiKeyAuth: []
         responses:

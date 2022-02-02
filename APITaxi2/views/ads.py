@@ -32,6 +32,16 @@ def ads_create():
         content:
           application/json:
             schema: DataADSSchema
+            example:
+                {
+                    "data": [
+                        {
+                            "numero": "123",
+                            "insee": "75056",
+                            "owner_type": "individual"
+                        }
+                    ]
+                }
       security:
         - ApiKeyAuth: []
       responses:

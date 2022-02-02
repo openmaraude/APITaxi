@@ -20,9 +20,11 @@ def customers_edit(customer_id):
     """
     ---
     put:
-      summary: Update customer ban period.
+      summary: Update one of your customer's ban period.
       description: |
-        Banned customers can't hail a taxi until the end of the period.
+        Banned customers can't hail a taxi until the end of the period, from any company.
+
+        (Note: reprieve is deprecated and must be ignored.)
       parameters:
         - name: customer_id
           in: path
@@ -33,11 +35,35 @@ def customers_edit(customer_id):
         content:
           application/json:
             schema: DataCustomerSchema
+            examples:
+              ban:
+                summary: Ban a customer for a month
+                value:
+                  {
+                    "data": [
+                      {
+                        "ban_begin": "2022-02-01T16:42:58.248Z",
+                        "ban_end": "2022-03-01T16:42:58.248Z"
+                      }
+                    ]
+                  }
+              unban:
+                summary: Unban a customer
+                value:
+                  {
+                    "data": [
+                      {
+                        "ban_begin": null,
+                        "ban_end": null
+                      }
+                    ]
+                  }
+
       security:
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return the updated resource.
+          description: Return the updated customer data.
           content:
             application/json:
               schema: DataCustomerSchema

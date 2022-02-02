@@ -139,7 +139,7 @@ def town_list():
     get:
       summary: List of towns accepted by le.taxi to register taxis.
       description: |
-        Should be updated every year.
+        Should be updated at the beginning of every year.
 
         This does not include the geographical data. You can find them on
         https://www.data.gouv.fr/fr/datasets/decoupage-administratif-communal-francais-issu-d-openstreetmap/

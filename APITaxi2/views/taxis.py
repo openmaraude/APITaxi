@@ -43,6 +43,8 @@ def taxis_create():
     post:
       summary: Create a new taxi.
       description: |
+        This is the last step after creating the driver, the vehicle, and the ADS.
+
         A taxi is the combination of an ADS, a Vehicle and a Driver.
         If the same user posts the same combination, no new taxi is created,
         and the API returns 200 instead.
@@ -52,6 +54,23 @@ def taxis_create():
         content:
           application/json:
             schema: DataTaxiSchema
+            example: {
+                data: [
+                    {
+                        driver: {
+                            professional_licence: "foobar-994468249464",
+                            departement: "76",
+                        },
+                        vehicle: {
+                            licence_plate: "AB-123-CD",
+                        },
+                        ads: {
+                            numero: "123",
+                            insee: "75056",
+                        }
+                    }
+                ]
+            }
       security:
         - ApiKeyAuth: []
       responses:
@@ -347,9 +366,10 @@ def taxis_search():
       summary: List available taxis around a location.
       description: |
         Only taxis ready to accept hails will be listed:
-            - available (status free)
-            - recent telemetry (< 2 min)
-            - in a zone where they can accept clients
+
+        - available (status free)
+        - recent telemetry (< 2 min)
+        - in a zone where they can accept clients
       parameters:
         - in: query
           schema: ListTaxisQueryStringSchema
