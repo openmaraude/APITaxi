@@ -20,6 +20,8 @@ def customers_edit(customer_id):
     """
     ---
     put:
+      tags:
+       - client
       summary: Update one of your customer's ban period.
       description: |
         Banned customers can't hail a taxi until the end of the period, from any company.

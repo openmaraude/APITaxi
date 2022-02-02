@@ -26,6 +26,8 @@ def vehicle_create():
     """
     ---
     post:
+      tags:
+        - operator
       summary: Create a new vehicle.
       description: |
         If the same user posts the same licence plate again,

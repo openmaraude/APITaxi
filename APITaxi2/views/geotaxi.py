@@ -94,6 +94,8 @@ def geotaxi_batch():
     """
     ---
     post:
+        tags:
+            - operator
         summary: Update the position of many taxis at once (up to 50).
         description: |
             All data must be valid or the whole request will be rejected.

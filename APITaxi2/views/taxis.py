@@ -41,6 +41,8 @@ def taxis_create():
 
     ---
     post:
+      tags:
+        - operator
       summary: Create a new taxi.
       description: |
         This is the last step after creating the driver, the vehicle, and the ADS.
@@ -186,6 +188,8 @@ def taxis_details(taxi_id):
     and now the radius too.
     ---
     get:
+      tags:
+        - operator
       summary: Get taxi details.
       description: |
         Including the current status and visibility radius.
@@ -205,6 +209,8 @@ def taxis_details(taxi_id):
               schema: DataTaxiSchema
 
     put:
+      tags:
+        - operator
       summary: Edit taxi status or/and visibility radius.
       description: |
         Only these fields can be changed. Either one or both can be submitted.
@@ -363,6 +369,8 @@ def taxis_search():
     "<taxi_id:operator_id>" is appended to the set not_available.
     ---
     get:
+      tags:
+        - both
       summary: List available taxis around a location.
       description: |
         Only taxis ready to accept hails will be listed:
@@ -370,6 +378,8 @@ def taxis_search():
         - available (status free)
         - recent telemetry (< 2 min)
         - in a zone where they can accept clients
+
+        Operators can only see their own taxis, unless they also manage a mobility app.
       parameters:
         - in: query
           schema: ListTaxisQueryStringSchema

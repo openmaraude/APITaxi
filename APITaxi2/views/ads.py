@@ -24,6 +24,8 @@ def ads_create():
     """
     ---
     post:
+      tags:
+        - operator
       summary: Create a new ADS.
       description: |
         If the same user posts an existing tuple of (numero, insee),

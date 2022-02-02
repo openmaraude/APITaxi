@@ -265,6 +265,8 @@ def hails_details(hail_id):
     """
     ---
     get:
+      tags:
+        - both
       summary: Get hail details.
       parameters:
         - name: hail_id
@@ -282,6 +284,8 @@ def hails_details(hail_id):
               schema: DataHailSchema
 
     put:
+      tags:
+        - both
       summary: Edit hail details.
       description: |
         Mostly the status for the time of the fare.
@@ -506,6 +510,8 @@ def hails_list():
     Pagination is returned in the "meta" field.
     ---
     get:
+      tags:
+        - both
       summary: List hails.
       parameters:
         - in: query
@@ -596,6 +602,8 @@ def hails_create():
     """
     ---
     post:
+      tags:
+        - client
       summary: Create a hail request.
       requestBody:
         content:

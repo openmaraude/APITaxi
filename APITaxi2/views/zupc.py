@@ -1,7 +1,7 @@
 import json
 
 from flask import Blueprint, request
-from flask_security import current_user, login_required
+from flask_security import current_user, login_required, roles_accepted
 from sqlalchemy import cast, func, or_
 
 from geoalchemy2 import Geometry
@@ -132,11 +132,14 @@ def zupc_live():
 
 @blueprint.route('/towns', methods=['GET'])
 @login_required
+@roles_accepted('admin', 'moteur', 'operateur')
 def town_list():
     """
     This endpoint is not part of the public API but can be convenient to integrate le.taxi.
     ---
     get:
+      tags:
+        - both
       summary: List of towns accepted by le.taxi to register taxis.
       description: |
         Should be updated at the beginning of every year.

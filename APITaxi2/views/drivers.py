@@ -23,6 +23,8 @@ def drivers_create():
     """
     ---
     post:
+      tags:
+        - operator
       summary: Create a new driver.
       description: |
         If the same user posts an existing tuple of (departement, professional_licence),
