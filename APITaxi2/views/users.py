@@ -99,12 +99,12 @@ def users_list():
 
     if 'email' in querystring:
         query = query.filter(or_(*[
-            func.lower(User.email).startswith(value.lower())
+            func.lower(User.email).contains(value.lower())
             for value in querystring['email']
         ]))
     if 'name' in querystring:
         query = query.filter(or_(*[
-            func.lower(User.commercial_name).startswith(value.lower())
+            func.lower(User.commercial_name).contains(value.lower())
             for value in querystring['name']
         ]))
 
