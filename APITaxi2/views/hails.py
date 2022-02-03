@@ -315,6 +315,38 @@ def hails_details(hail_id):
         content:
           application/json:
             schema: DataHailSchema
+            examples:
+                status:
+                    summary: Change status
+                    value:
+                        {
+                            "data": [
+                                {
+                                    "status": "customer_on_board"
+                                }
+                            ]
+                        }
+                report_customer:
+                    summary: Report customer
+                    value:
+                        {
+                            "data": [
+                                {
+                                    "reporting_customer": true,
+                                    "reporting_customer_reason": "no_show"
+                                }
+                            ]
+                        }
+                incident_taxi:
+                    summary: Reason for status "incident_taxi"
+                    value:
+                        {
+                            "data": [
+                                {
+                                    "incident_taxi_reason": "no_show",
+                                }
+                            ]
+                        }
       security:
         - ApiKeyAuth: []
       responses:
