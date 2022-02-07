@@ -44,6 +44,7 @@ class User(db.Model, UserMixin):
     hail_endpoint_production = Column(db.String, server_default='', nullable=False)
     phone_number_customer = Column(db.String, server_default='', nullable=False)
     phone_number_technical = Column(db.String, server_default='', nullable=False)
+    # Should be named operator_header_value
     operator_api_key = Column(db.String, server_default='', nullable=False)
     operator_header_name = Column(db.String, server_default='', nullable=False)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
