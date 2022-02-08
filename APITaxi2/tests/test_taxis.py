@@ -338,6 +338,30 @@ class TestTaxiPost:
         resp = operateur.client.post('/taxis', json=payload)
         assert resp.status_code == 200
 
+    def test_empty_licence_plate(self, operateur):
+        """Given but empty licence plate used to be accepted, prevent it from now"""
+        ads = ADSFactory(added_by=operateur.user)
+        driver = DriverFactory(added_by=operateur.user)
+
+        payload = {
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero,
+                },
+                'vehicle': {
+                    'licence_plate': "",
+                },
+                'driver': {
+                    'professional_licence': driver.professional_licence,
+                    'departement': driver.departement.numero
+                }
+            }]
+        }
+        resp = operateur.client.post('/taxis', json=payload)
+        assert resp.status_code == 400
+        assert list(resp.json['errors']['data']['0']['vehicle']) == ['licence_plate']
+
 
 class TestTaxiSearch:
 

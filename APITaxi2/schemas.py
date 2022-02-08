@@ -138,7 +138,8 @@ class VehicleSchema(Schema):
     """Schema to create a vehicle"""
     id = fields.Integer(dump_only=True, required=False, allow_none=False)
 
-    licence_plate = fields.String(required=True, allow_none=False)
+    # required is not the same as not empty!
+    licence_plate = fields.String(required=True, allow_none=False, validate=validate.Length(min=1))
 
     model_year = fields.Integer(required=False, allow_none=True)
     engine = fields.String(required=False, allow_none=True)
@@ -242,7 +243,8 @@ class RefVehicleSchema(Schema):
         """Allow and discard unknown fields."""
         unknown = EXCLUDE
 
-    licence_plate = fields.String(required=True, allow_none=False)
+    # required is not the same as not empty!
+    licence_plate = fields.String(required=True, allow_none=False, validate=validate.Length(min=1))
     constructor = fields.String(required=False, allow_none=True)
     color = fields.String(required=False, allow_none=True)
     nb_seats = fields.Int(required=False, allow_none=True)

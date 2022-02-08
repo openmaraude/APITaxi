@@ -18,6 +18,13 @@ class TestVehiclePost:
         # The only required key is "licence_plate"
         assert list(resp.json['errors']['data']['0'].keys()) == ['licence_plate']
 
+        # but it must not be empty either way
+        resp = operateur.client.post('/vehicles', json={'data': [{
+            'licence_plate': ""
+        }]})
+        assert resp.status_code == 400
+        assert list(resp.json['errors']['data']['0']) == ['licence_plate']
+
     def test_ok(self, operateur, admin, QueriesTracker):
         with QueriesTracker() as qtracker:
             resp = operateur.client.post('/vehicles', json={
