@@ -139,7 +139,11 @@ class VehicleSchema(Schema):
     id = fields.Integer(dump_only=True, required=False, allow_none=False)
 
     # required is not the same as not empty!
-    licence_plate = fields.String(required=True, allow_none=False, validate=validate.Length(min=1))
+    # considering both the old and the new system, the bare minimum without any dash
+    # or separator is 7, and the maximum with all the formatting is 10
+    licence_plate = fields.String(
+        required=True, allow_none=False, validate=validate.Length(min=7, max=10)
+    )
 
     model_year = fields.Integer(required=False, allow_none=True)
     engine = fields.String(required=False, allow_none=True)
@@ -244,7 +248,9 @@ class RefVehicleSchema(Schema):
         unknown = EXCLUDE
 
     # required is not the same as not empty!
-    licence_plate = fields.String(required=True, allow_none=False, validate=validate.Length(min=1))
+    licence_plate = fields.String(
+        required=True, allow_none=False, validate=validate.Length(min=7, max=10)
+    )
     constructor = fields.String(required=False, allow_none=True)
     color = fields.String(required=False, allow_none=True)
     nb_seats = fields.Int(required=False, allow_none=True)
