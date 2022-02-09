@@ -172,7 +172,7 @@ class TestTaxiPost:
                     'numero': 'bbb'
                 },
                 'vehicle': {
-                    'licence_plate': 'cccc',
+                    'licence_plate': 'AB-123-CD',
                     'nb_seats': 4,
                     # Specifically test accepting null for strings
                     'color': None,

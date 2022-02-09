@@ -155,7 +155,7 @@ class VehicleFactory(BaseFactory):
     class Meta:
         model = Vehicle
 
-    licence_plate = factory.Sequence(lambda n: "Licence plate %d" % n)
+    licence_plate = factory.Sequence(lambda n: "AB-%03d-CD" % n)
 
     @factory.post_generation
     def descriptions(self, create, extracted, **kwargs):
