@@ -17,14 +17,21 @@ class ADS(HistoryMixin, db.Model):
         return '<ADS %s (numéro %s)>' % (self.id, self.numero)
 
     id = db.Column(db.Integer, primary_key=True)
+    # numéro attribué à l'ADS par l'autorité de délivrance
     numero = db.Column(db.String, nullable=False)
+    # double sortie journalière autorisée
     doublage = db.Column(db.Boolean, nullable=True)
-    added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
+    # code INSEE de la collectivité locale d'attribution
     insee = db.Column(db.String, nullable=False)
-    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
+    # ADS avant 01/09/2014 ou après
     category = db.Column(db.String, nullable=False)
+    # nom du titulaire de l'ADS
     owner_name = db.Column(db.String, nullable=False)
+    # société/personne physique/ NR
     owner_type = db.Column(db.Enum(*OWNER_TYPES, name='owner_type_enum'), nullable=True)
+
+    added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
 
     added_by = db.relationship('User', lazy='raise')
     vehicle = db.relationship('Vehicle', lazy='raise')

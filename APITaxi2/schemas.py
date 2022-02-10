@@ -81,13 +81,21 @@ class DepartementSchema(Schema):
 
 class DriverSchema(Schema):
     """Schema to create a driver"""
-    first_name = fields.String(required=True)
-    last_name = fields.String(required=True)
-    birth_date = fields.Date(allow_none=True)
+    first_name = fields.String(required=True, metadata={
+        'description': "prénom du conducteur",
+    })
+    last_name = fields.String(required=True, metadata={
+        'description': "nom du conducteur",
+    })
+    birth_date = fields.Date(allow_none=True, metadata={
+        'description': "date de naissance du conducteur",
+    })
     professional_licence = fields.String(
-        required=True, allow_none=False, validate=validate.Length(min=1),
+        required=True, allow_none=False, validate=validate.Length(min=1), metadata={
+            'description': "n° carte professionnelle",
+        }
     )
-    departement = fields.Nested(DepartementSchema, required=True)
+    departement = fields.Nested(DepartementSchema, required=True, metadata={'deprecated': True})
 
 
 class RefTownSchema(Schema):
@@ -96,9 +104,9 @@ class RefTownSchema(Schema):
 
 
 class RefADSSchema(Schema):
-    """When we make a reference to an existing ADS, only the fields numero and
-    insee are required.
+    """Representation of an ADS attached to a taxi.
 
+    When the taxi is created, only the fields numero and insee are required.
     Other fields can be provided, but they are ignored.
     """
     numero = fields.String(
@@ -106,7 +114,6 @@ class RefADSSchema(Schema):
     )
     insee = fields.String(required=True, allow_none=False)
 
-    category = fields.String(required=False)
     vehicle_id = fields.Int(required=False)
     owner_name = fields.String(required=False)
     owner_type = fields.String(
@@ -114,21 +121,41 @@ class RefADSSchema(Schema):
         validate=validate.OneOf(['individual', 'company'])
     )
     doublage = fields.Bool(required=False)
-    # Optional field translating the INSEE code to a town name
+    # Subfield translating the INSEE code to a town name on a taxi GET
     town = fields.Nested(RefTownSchema, required=False, dump_only=True)
 
+    # Obsolete but kept for backwards compatibility
+    category = fields.Constant("", required=False, metadata={'deprecated': True})
 
-class ADSSchema(RefADSSchema):
+
+class ADSSchema(Schema):
     """ADS creation require to provide all these fields."""
-    category = fields.String(required=False)
-    vehicle_id = fields.Int(allow_none=True)
-    owner_name = fields.String(required=False)
-    owner_type = fields.String(
-        required=False,
-        validate=validate.OneOf(['individual', 'company']),
-        allow_none=True
+    numero = fields.String(
+        required=True, allow_none=False, validate=validate.Length(min=1), metadata={
+            'description': "numéro attribué à l'ADS par l'autorité de délivrance",
+        }
     )
-    doublage = fields.Bool(required=False, allow_none=True)
+    insee = fields.String(required=True, allow_none=False, metadata={
+        'description': "code INSEE de la collectivité locale d'attribution",
+    })
+    vehicle_id = fields.Int(allow_none=True, metadata={
+        'description': "identifiant du véhicule dans la DB",
+    })
+    owner_name = fields.String(required=False, metadata={
+        'description': "nom ou raison sociale du titulaire de l'ADS",
+    })
+    owner_type = fields.String(
+        required=False, validate=validate.OneOf(['individual', 'company']),
+        allow_none=True, metadata={
+            'description': "personne morale / personne physique/ NR"
+        },
+    )
+    doublage = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "double sortie journalière autorisée",
+    })
+
+    # Obsolete but kept for backwards compatibility
+    category = fields.String(required=False, metadata={'deprecated': True})
 
 
 class RefDriverSchema(Schema):
@@ -138,59 +165,91 @@ class RefDriverSchema(Schema):
     )
     departement = fields.String(
         attribute='departement.numero', required=True, validate=validate.Length(min=2, max=3),
+        metadata={'deprecated': True},
     )
     first_name = fields.String(required=False)
     last_name = fields.String(required=False)
 
 
 class VehicleSchema(Schema):
-    """Schema to create a vehicle"""
+    """Schema to read, create or update a vehicle"""
     id = fields.Integer(dump_only=True, required=False, allow_none=False)
 
     # required is not the same as not empty!
     # considering both the old and the new system, the bare minimum without any dash
     # or separator is 7, and the maximum with all the formatting is 10
     licence_plate = fields.String(
-        required=True, allow_none=False, validate=validate.Length(min=7, max=10)
+        required=True, allow_none=False, validate=validate.Length(min=7, max=10),
+        metadata={'description': "numéro d'immatriculation du véhicule"},
     )
 
-    model_year = fields.Integer(required=False, allow_none=True)
-    engine = fields.String(required=False, allow_none=True)
-    horse_power = fields.Float(required=False, allow_none=True)
-    relais = fields.Bool(required=False, allow_none=True)
-    horodateur = fields.String(required=False, allow_none=True)
-    taximetre = fields.String(required=False, allow_none=True)
-    date_dernier_ct = fields.Date(required=False, allow_none=True)
-    date_validite_ct = fields.Date(required=False, allow_none=True)
-    special_need_vehicle = fields.Bool(required=False, allow_none=True)
+    # The vehicle itself
+    model = fields.String(required=False, allow_none=True, metadata={
+        'description': "modèle du véhicule",
+    })
+    constructor = fields.String(required=False, allow_none=True, metadata={
+        'description': "constructeur du véhicule",
+    })
+    engine = fields.String(required=False, allow_none=True, metadata={
+        'description': "motorisation (diesel, électrique...)",
+    })
+    color = fields.String(required=False, allow_none=True, metadata={
+        'description': "couleur du véhicule",
+    })
+    nb_seats = fields.Int(required=False, allow_none=True, metadata={
+        'description': "nombre de places",
+    })
+    relais = fields.Bool(
+        required=False, allow_none=True, metadata={
+            'description': "véhicule relais au sens de l'article R.3121-2 du code des transports",
+        }
+    )
+
+    # Characteristics
+    bank_check_accepted = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "chèques bancaires français acceptés",
+    })
+    baby_seat = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "siège bébé disponible",
+    })
+    bike_accepted = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "vélo accepté",
+    })
+    pet_accepted = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "animaux de compagnie acceptés",
+    })
+    amex_accepted = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "équipé American Express",
+    })
+    wifi = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "Wi-Fi à bord",
+    })
+
+    # Obsolete but kept for backwards compatibility
+    air_con = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    horodateur = fields.String(required=False, allow_none=True, metadata={'deprecated': True})
+    date_dernier_ct = fields.Date(required=False, allow_none=True, metadata={'deprecated': True})
+    date_validite_ct = fields.Date(required=False, allow_none=True, metadata={'deprecated': True})
+    credit_card_accepted = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    electronic_toll = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    fresh_drink = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    tablet = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    dvd_player = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    taximetre = fields.String(required=False, allow_none=True, metadata={'deprecated': True})
+    every_destination = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    nfc_cc_accepted = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    special_need_vehicle = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    gps = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    luxury = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    horse_power = fields.Float(required=False, allow_none=True, metadata={'deprecated': True})
+    model_year = fields.Integer(required=False, allow_none=True, metadata={'deprecated': True})
     type_ = fields.String(
         required=False, allow_none=True,
         validate=validate.OneOf(
             VehicleDescription.type.property.columns[0].type.enums
-        )
+        ), metadata={'deprecated': True}
     )
-    luxury = fields.Bool(required=False, allow_none=True)
-    credit_card_accepted = fields.Bool(required=False, allow_none=True)
-    nfc_cc_accepted = fields.Bool(required=False, allow_none=True)
-    amex_accepted = fields.Bool(required=False, allow_none=True)
-    bank_check_accepted = fields.Bool(required=False, allow_none=True)
-    fresh_drink = fields.Bool(required=False, allow_none=True)
-    dvd_player = fields.Bool(required=False, allow_none=True)
-    tablet = fields.Bool(required=False, allow_none=True)
-    wifi = fields.Bool(required=False, allow_none=True)
-    baby_seat = fields.Bool(required=False, allow_none=True)
-    bike_accepted = fields.Bool(required=False, allow_none=True)
-    pet_accepted = fields.Bool(required=False, allow_none=True)
-    air_con = fields.Bool(required=False, allow_none=True)
-    electronic_toll = fields.Bool(required=False, allow_none=True)
-    gps = fields.Bool(required=False, allow_none=True)
-    cpam_conventionne = fields.Bool(required=False, allow_none=True)
-    every_destination = fields.Bool(required=False, allow_none=True)
-
-    color = fields.String(required=False, allow_none=True)
-    nb_seats = fields.Int(required=False, allow_none=True)
-    model = fields.String(required=False, allow_none=True)
-    constructor = fields.String(required=False, allow_none=True)
+    cpam_conventionne = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
 
     def load(self, fields, *args, **kwargs):
         """For backward compatibility, string fields can be provided as "None"
@@ -213,38 +272,20 @@ class VehicleSchema(Schema):
         vehicle, vehicle_description = obj
         ret = super().dump(vehicle, *args, **kwargs)
         ret.update({
-            'model_year': vehicle_description.model_year,
-            'engine': vehicle_description.engine,
-            'horse_power': vehicle_description.horse_power,
-            'relais': vehicle_description.relais,
-            'horodateur': vehicle_description.horodateur,
-            'taximetre': vehicle_description.taximetre,
-            'date_dernier_ct': vehicle_description.date_dernier_ct,
-            'date_validite_ct': vehicle_description.date_validite_ct,
-            'special_need_vehicle': vehicle_description.special_need_vehicle,
-            'type_': vehicle_description.type,
-            'luxury': vehicle_description.luxury,
-            'credit_card_accepted': vehicle_description.credit_card_accepted,
-            'nfc_cc_accepted': vehicle_description.nfc_cc_accepted,
-            'amex_accepted': vehicle_description.amex_accepted,
-            'bank_check_accepted': vehicle_description.bank_check_accepted,
-            'fresh_drink': vehicle_description.fresh_drink,
-            'dvd_player': vehicle_description.dvd_player,
-            'tablet': vehicle_description.tablet,
-            'wifi': vehicle_description.wifi,
-            'baby_seat': vehicle_description.baby_seat,
-            'bike_accepted': vehicle_description.bike_accepted,
-            'pet_accepted': vehicle_description.pet_accepted,
-            'air_con': vehicle_description.air_con,
-            'electronic_toll': vehicle_description.electronic_toll,
-            'gps': vehicle_description.gps,
-            'cpam_conventionne': vehicle_description.cpam_conventionne,
-            'every_destination': vehicle_description.every_destination,
-            'color': vehicle_description.color,
-            'nb_seats': vehicle_description.nb_seats,
             # Empty model or constructors are exposed as null fields.
             'model': vehicle_description.model or None,
             'constructor': vehicle_description.constructor or None,
+            'engine': vehicle_description.engine,
+            'color': vehicle_description.color,
+            'nb_seats': vehicle_description.nb_seats,
+            'relais': vehicle_description.relais,
+            # Characteristics
+            'bank_check_accepted': vehicle_description.bank_check_accepted,
+            'baby_seat': vehicle_description.baby_seat,
+            'bike_accepted': vehicle_description.bike_accepted,
+            'pet_accepted': vehicle_description.pet_accepted,
+            'amex_accepted': vehicle_description.amex_accepted,
+            'wifi': vehicle_description.wifi,
         })
         return ret
 
@@ -264,9 +305,11 @@ class RefVehicleSchema(Schema):
     color = fields.String(required=False, allow_none=True)
     nb_seats = fields.Int(required=False, allow_none=True)
     characteristics = fields.List(fields.String, required=False, allow_none=False)
-    type = fields.String(required=False, allow_none=True)
-    cpam_conventionne = fields.Bool(required=False, allow_none=True)
     engine = fields.String(required=False, allow_none=True)
+
+    # Obsolete but kept for backwards compatibility
+    type = fields.String(required=False, allow_none=True, metadata={'deprecated': True})
+    cpam_conventionne = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
 
 
 class PositionSchema(Schema):
@@ -325,7 +368,9 @@ class TaxiSchema(Schema):
     vehicle = fields.Nested(RefVehicleSchema, required=True)
     ads = fields.Nested(RefADSSchema, required=True)
     driver = fields.Nested(RefDriverSchema, required=True)
-    rating = fields.Float(required=False, allow_none=False)
+
+    # Obsolete but kept for backwards compatibility
+    rating = fields.Float(required=False, allow_none=False, metadata={'deprecated': True})
 
     status = fields.String(
         required=False, allow_none=False,
@@ -337,22 +382,22 @@ class TaxiSchema(Schema):
         validate=validate.Range(min=TAXI_MIN_RADIUS, max=TAXI_MAX_RADIUS)
     )
 
+    # Provided by Redis
     last_update = fields.Constant(None, required=False, allow_none=False)
-
     position = fields.Nested(PositionSchema, required=False, allow_none=False)
-
     crowfly_distance = fields.Constant(None, required=False, allow_none=True)
 
     def dump(self, obj, *args, **kwargs):
-        """This function should be called with a list of tuples of two or three
-        elements:
+        """This function should be called with a list of tuples of two (create)
+        or three (read, update) elements:
 
         * The taxi object to dump
         * Since a taxi can have several VehicleDescription (one for each
           operator), the second element should be the description to dump
         * Optionally, a `redis_backend.Location` object to display the taxi
-          location and the crowlfy distance between the API caller and the
-          taxi."""
+          location and the crowfly distance between the API caller and the
+          taxi.
+        """
         try:
             taxi, vehicle_description, redis_location = obj
         except ValueError:
@@ -384,6 +429,98 @@ class TaxiSchema(Schema):
             'type': vehicle_description.type,
             'cpam_conventionne': vehicle_description.cpam_conventionne,
             'engine': vehicle_description.engine,
+        })
+        return ret
+
+
+class SearchVehicleSchema(Schema):
+    """Describe a vehicle when searching at taxi"""
+
+    model = fields.String()
+    constructor = fields.String()
+    color = fields.String()
+    nb_seats = fields.Int()
+    engine = fields.String()
+    characteristics = fields.List(fields.String)
+
+    # Obsolete but kept for backwards compatibility
+    licence_plate = fields.Constant("", metadata={'deprecated': True})
+    type = fields.Constant("normal", metadata={'deprecated': True})
+    cpam_conventionne = fields.Constant(None, metadata={'deprecated': True})
+
+
+class SearchTaxiSchema(Schema):
+    """Fork of the full taxi schema with only the parts required for client apps."""
+    id = fields.String()
+    operator = fields.String()  # Kept as needed to POST a hail request
+    crowfly_distance = fields.Float()  # Kept, already computed anyway
+    position = fields.Nested(PositionSchema)
+    vehicle = fields.Nested(SearchVehicleSchema)
+
+    # Obsolete but kept for backwards compatibility
+    rating = fields.Constant(0, metadata={'deprecated': True})
+    status = fields.Constant("free", metadata={'deprecated': True})
+    radius = fields.Constant(0, metadata={'deprecated': True})
+    last_update = fields.Constant(None, metadata={'deprecated': True})
+    added_at = fields.Constant("1970-01-01T00:00:00", metadata={'deprecated': True})
+
+    def dump(self, obj, *args, **kwargs):
+        """This function should be called with a list of tuples of three
+        elements:
+
+        * the taxi object to dump
+        * since a taxi can have several VehicleDescription (one for each
+          operator), the second element should be the description to dump
+        * a `redis_backend.Location` object to display the taxi
+          location and the crowfly distance between the API caller and the
+          taxi.
+        """
+        try:
+            taxi, vehicle_description, redis_location = obj
+        except ValueError:
+            taxi, vehicle_description = obj
+            redis_location = None
+
+        ret = super().dump(taxi, *args, **kwargs)
+
+        # Add fields for backwards compatibility, but to remove ASAP
+        ret.update({
+            "ads": {
+                "vehicle_id": 0,
+                "insee": "",
+                "owner_type": "",
+                "doublage": None,
+                "town": {
+                    "name": ""
+                },
+                "owner_name": "",
+                "category": "",
+                "numero": "",
+            },
+            "driver": {
+                "professional_licence": "",
+                "first_name": "",
+                "last_name": "",
+                "departement": ""
+            },
+        })
+
+        # Add fields from vehicle_description and redis_location
+        ret.update({
+            'operator': vehicle_description.added_by.email,
+            'position': {
+                'lon': redis_location.lon if redis_location else None,
+                'lat': redis_location.lat if redis_location else None,
+            },
+            'crowfly_distance': redis_location.distance if redis_location else None
+        })
+        ret['vehicle'].update({
+            'model': vehicle_description.model or None,
+            'constructor': vehicle_description.constructor or None,
+            'color': vehicle_description.color,
+            'nb_seats': vehicle_description.nb_seats,
+            'engine': vehicle_description.engine,
+            'characteristics': vehicle_description.characteristics,
         })
         return ret
 
@@ -517,7 +654,7 @@ class CustomerSchema(Schema):
 
 class HailTaxiRelationSchema(Schema):
     """Taxi rating is part of a "relation" subentry"""
-    rating = fields.Float()
+    rating = fields.Float(metadata={'deprecated': True})
 
 
 class HailTaxiSchema(Schema):
@@ -798,6 +935,7 @@ DataCustomerSchema = data_schema_wrapper(CustomerSchema())
 DataDriverSchema = data_schema_wrapper(DriverSchema())
 DataTaxiSchema = data_schema_wrapper(TaxiSchema())
 DataTaxiListSchema = data_schema_wrapper(TaxiSchema(), with_pagination=True)
+DataSearchTaxiSchema = data_schema_wrapper(SearchTaxiSchema())
 DataHailSchema = data_schema_wrapper(HailSchema())
 DataHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
 DataHailBySessionListSchema = data_schema_wrapper(HailBySessionListSchema(), with_pagination=True)

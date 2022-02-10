@@ -375,6 +375,8 @@ def taxis_search():
         - in a zone where they can accept clients
 
         Operators can only see their own taxis, unless they also manage a mobility app.
+
+        Deprecated fields are still returned for now but show empty or default values.
       parameters:
         - in: query
           schema: ListTaxisQueryStringSchema
@@ -385,7 +387,7 @@ def taxis_search():
           description: List of available taxis around a location.
           content:
             application/json:
-              schema: DataTaxiSchema
+              schema: DataSearchTaxiSchema
     """
     debug_ctx = debug.DebugContext()
 
@@ -394,7 +396,7 @@ def taxis_search():
     if errors:
         return make_error_json_response(errors)
 
-    schema = schemas.DataTaxiSchema()
+    schema = schemas.DataSearchTaxiSchema()
 
     # First ask in what town the customer is
     towns = Town.query.filter(
@@ -445,8 +447,6 @@ def taxis_search():
     query = db.session.query(Taxi, VehicleDescription).join(
         ADS
     ).options(
-        joinedload(Taxi.ads).joinedload(ADS.town),
-        joinedload(Taxi.driver).joinedload(Driver.departement),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
         joinedload(Taxi.current_hail)
