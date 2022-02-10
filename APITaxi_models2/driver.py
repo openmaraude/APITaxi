@@ -15,11 +15,16 @@ class Driver(HistoryMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
+    # département d'exercice du conducteur
     departement_id = db.Column(db.Integer, db.ForeignKey('departement.id'), nullable=False)
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
+    # date de naissance du conducteur
     birth_date = db.Column(db.Date)
+    # prénom du conducteur
     first_name = db.Column(db.String(255), nullable=False)
+    # nom du conducteur
     last_name = db.Column(db.String(255), nullable=False)
+    # n° carte professionnelle
     professional_licence = db.Column(db.String, nullable=False)
 
     added_by = db.relationship('User', lazy='raise')

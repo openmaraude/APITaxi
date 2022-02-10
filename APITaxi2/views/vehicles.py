@@ -32,6 +32,9 @@ def vehicle_create():
       description: |
         If the same user posts the same licence plate again,
         this vehicle is updated instead, and the API return 200.
+
+        Deprecated fields are still accepted for now but will be removed at a later date.
+        Their value is already not returned in search results, but a stub value instead.
       requestBody:
         content:
           application/json:

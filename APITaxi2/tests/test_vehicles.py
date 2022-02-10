@@ -63,6 +63,7 @@ class TestVehiclePost:
                     'constructor': 'myconstructor',
                 }]
             })
+            assert resp.status_code == 201, resp.json
             # SELECT permissions
             # SELECT vehicle
             # INSERT vehicle
@@ -76,37 +77,18 @@ class TestVehiclePost:
         vehicle = Vehicle.query.one()
         assert resp.json == {'data': [{
             'id': vehicle.id,
-            'air_con': True,
             'amex_accepted': True,
             'baby_seat': True,
             'bank_check_accepted': True,
             'bike_accepted': True,
             'color': 'blue',
             'constructor': 'myconstructor',
-            'cpam_conventionne': True,
-            'credit_card_accepted': True,
-            'date_dernier_ct': 'Fri, 21 Dec 2012 00:00:00 GMT',
-            'date_validite_ct': 'Sat, 21 Dec 2013 00:00:00 GMT',
-            'dvd_player': True,
-            'electronic_toll': True,
             'engine': 'v12',
-            'every_destination': True,
-            'fresh_drink': True,
-            'gps': True,
-            'horodateur': 'horodateur',
-            'horse_power': 42.2,
             'licence_plate': 'licence1',
-            'luxury': True,
             'model': 'mymodel',
-            'model_year': 1938,
             'nb_seats': 18,
-            'nfc_cc_accepted': True,
             'pet_accepted': True,
             'relais': False,
-            'special_need_vehicle': True,
-            'tablet': True,
-            'taximetre': 'taximetre',
-            'type_': 'normal',
             'wifi': True
         }]}
 
