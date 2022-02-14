@@ -234,11 +234,11 @@ class TestTaxiPost:
                 },
                 'driver': {
                     'professional_licence': driver.professional_licence,
-                    'departement': 'xxxx'
+                    'departement': 'xxx'
                 }
             }]
         })
-        assert resp.status_code == 404
+        assert resp.status_code == 404, resp.json
         assert resp.json['errors']['data']['0']['driver']['departement'] == ['Departement not found']
 
     def test_departement_ok_driver_invalid(self, operateur):

@@ -83,7 +83,9 @@ class DriverSchema(Schema):
     first_name = fields.String(required=True)
     last_name = fields.String(required=True)
     birth_date = fields.Date(allow_none=True)
-    professional_licence = fields.String(required=True, allow_none=False)
+    professional_licence = fields.String(
+        required=True, allow_none=False, validate=validate.Length(min=1),
+    )
     departement = fields.Nested(DepartementSchema, required=True)
 
 
@@ -98,7 +100,9 @@ class RefADSSchema(Schema):
 
     Other fields can be provided, but they are ignored.
     """
-    numero = fields.String(required=True, allow_none=False)
+    numero = fields.String(
+        required=True, allow_none=False, validate=validate.Length(min=1),
+    )
     insee = fields.String(required=True, allow_none=False)
 
     category = fields.String(required=False)
@@ -128,8 +132,12 @@ class ADSSchema(RefADSSchema):
 
 class RefDriverSchema(Schema):
     """Reference to an existing driver"""
-    professional_licence = fields.String(required=True, allow_none=False)
-    departement = fields.String(attribute='departement.numero', required=True)
+    professional_licence = fields.String(
+        required=True, allow_none=False, validate=validate.Length(min=1),
+    )
+    departement = fields.String(
+        attribute='departement.numero', required=True, validate=validate.Length(min=2, max=3),
+    )
     first_name = fields.String(required=False)
     last_name = fields.String(required=False)
 
