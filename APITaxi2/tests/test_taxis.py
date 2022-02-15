@@ -126,8 +126,6 @@ class TestTaxiPut:
             'not_available',
             '%s:%s' % (taxi.id, operateur.user.email)
         ) is not None
-        # Check log entry
-        assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 1
 
         taxi, resp = _set_taxi_status('free', initial_status='off')
         assert resp.status_code == 200
@@ -136,12 +134,6 @@ class TestTaxiPut:
             'not_available',
             '%s:%s' % (taxi.id, operateur.user.email)
         ) is None
-        # Check log entry
-        assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 1
-
-        # If the status is the same, nothing is logged.
-        taxi, resp = _set_taxi_status('free', initial_status='free')
-        assert len(app.redis.zrange('taxi_status:%s' % taxi.id, 0, -1)) == 0
 
         # Set the radius only
         for radius, expected_code in [(150, 200), (149, 400), (500, 200), (501, 400), (None, 200)]:

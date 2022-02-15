@@ -330,11 +330,6 @@ def taxis_details(taxi_id):
             vehicle_description.status == 'free'
         )
 
-        # Store history
-        redis_backend.log_taxi_status(
-            taxi_id,
-            args['status']
-        )
     # ... and the radius where the taxi is visible
     if 'radius' in args and args['radius'] != vehicle_description.radius:
         vehicle_description.radius = args['radius']

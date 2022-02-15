@@ -57,15 +57,6 @@ def test_set_taxi_availability(app):
     assert len(app.redis.zrange('not_available', 0, -1)) == 0
 
 
-def test_log_taxi_status(app):
-    redis_backend.log_taxi_status('taxi_id', 'free')
-    redis_backend.log_taxi_status('taxi_id', 'occupied')
-    redis_backend.log_taxi_status('taxi_id', 'off')
-    redis_backend.log_taxi_status('taxi_id', 'free')
-
-    assert len(app.redis.zrange('taxi_status:taxi_id', 0, -1)) == 4
-
-
 def test_taxis_locations_by_operator(app):
     now = int(time.time())
     app.redis.geoadd('geoindex_2', [2.35000, 48.86000, 'taxi1:operator1'])
