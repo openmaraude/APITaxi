@@ -382,7 +382,7 @@ def taxis_search():
         Operators can only see their own taxis, unless they also manage a mobility app.
       parameters:
         - in: query
-          schema: ListTaxisQueryStringSchema
+          schema: SearchTaxisQueryStringSchema
       security:
         - ApiKeyAuth: []
       responses:
@@ -394,7 +394,7 @@ def taxis_search():
     """
     debug_ctx = debug.DebugContext()
 
-    schema = schemas.ListTaxisQueryStringSchema()
+    schema = schemas.SearchTaxisQueryStringSchema()
     params, errors = validate_schema(schema, request.args)
     if errors:
         return make_error_json_response(errors)

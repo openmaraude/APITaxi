@@ -274,13 +274,9 @@ class PositionSchema(Schema):
     lat = fields.Float(required=True, validate=validate.Range(min=-90, max=90), allow_none=True)
 
 
-class ListTaxisQueryStringSchema(PositionMixin, Schema):
-    """Schema for querystring arguments of GET /taxis."""
-    class Meta:
-        """Allow and discard unknown fields."""
-        # TODO left for backwards compatibility with the map still using favorite_operator and count
-        # finish to remove it when the map is merged into the console, search engines don't know about them
-        unknown = EXCLUDE
+class SearchTaxisQueryStringSchema(PositionMixin, Schema):
+    """Querystring arguments for GET /taxi."""
+    pass
 
 
 class ZUPCSchema(Schema):
