@@ -61,7 +61,7 @@ class PositionMixin:
     """Used where a position is required."""
     lon = fields.Float(required=True, validate=validate.Range(min=-180, max=180))
     # The WGS84/EPSG:3857 spec says [-85.06,+85.06] but Redis only accepts
-    # [-85.05112878, 85.05112878], so keep it
+    # [-85.05112878, 85.05112878], so keep it, doesn't affect France bounding box
     lat = fields.Float(required=True, validate=validate.Range(min=-85.05112878, max=85.05112878))
 
 
@@ -507,8 +507,13 @@ class HailPOSTSchema(Schema):
 
     This class is only used by apispec to render swagger documentation.
     """
-    customer_lon = fields.Float(required=True)
-    customer_lat = fields.Float(required=True)
+    customer_lon = fields.Float(
+        required=True, validate=validate.Range(min=-180, max=180)
+    )
+    customer_lat = fields.Float(
+        # See PositionMixin comment
+        required=True, validate=validate.Range(min=-85.05112878, max=85.05112878)
+    )
     customer_address = fields.String(required=True)
     customer_phone_number = fields.String(required=True)
     customer_id = fields.String(required=True)
@@ -524,8 +529,13 @@ class HailSchema(Schema):
     )
     taxi_phone_number = fields.String()
 
-    customer_lon = fields.Float(required=True)
-    customer_lat = fields.Float(required=True)
+    customer_lon = fields.Float(
+        required=True, validate=validate.Range(min=-180, max=180)
+    )
+    customer_lat = fields.Float(
+        # See PositionMixin comment
+        required=True, validate=validate.Range(min=-85.05112878, max=85.05112878)
+    )
     customer_address = fields.String(required=True)
     customer_phone_number = fields.String(required=True)
     last_status_change = fields.DateTime()
