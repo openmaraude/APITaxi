@@ -1,4 +1,8 @@
-from APITaxi_models2 import ADS
+from unittest import mock
+
+import psycopg2.errors
+
+from APITaxi_models2 import db, ADS
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
     VehicleFactory,
@@ -103,3 +107,23 @@ class TestADSCreate:
         assert resp.json['data'][0]['vehicle_id'] == vehicle.id
 
         assert ADS.query.count() == 1
+
+    def test_unique_violation(self, operateur):
+        vehicle = VehicleFactory(descriptions=[])
+        VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user)
+        ZUPCFactory()
+        insee = '75056'
+
+        with mock.patch.object(db.session, 'flush') as patched:
+            patched.side_effect = psycopg2.errors.UniqueViolation()
+            resp = operateur.client.post('/ads', json={'data': [{
+                'numero': '1337',
+                'insee': insee,
+                'doublage': True,
+                'owner_type': 'individual',
+                'owner_name': 'Roger Federer',
+                'category': 'category',
+                'vehicle_id': vehicle.id
+            }]})
+
+            assert resp.status_code == 409, resp.json

@@ -1,8 +1,8 @@
-from sqlalchemy import func, or_
-from sqlalchemy.orm import joinedload
-
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
+import psycopg2.errors
+from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import Departement, Driver, db
 
@@ -132,7 +132,13 @@ def drivers_create():
     driver.birth_date = args.get('birth_date')
 
     db.session.add(driver)
-    db.session.flush()
+    # It may happen users raise the unique contrainst despite filtering above
+    # smells like a race condition if they submit twice and fast enough
+    try:
+        db.session.flush()
+    except psycopg2.errors.UniqueViolation:
+        db.session.rollback()
+        return make_error_json_response({'data': {'0': {}}}, status_code=409)  # 409 Conflict
 
     ret = schema.dump({'data': [driver]})
 

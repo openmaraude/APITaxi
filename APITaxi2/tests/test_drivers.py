@@ -1,4 +1,8 @@
-from APITaxi_models2 import Driver
+from unittest import mock
+
+import psycopg2.errors
+
+from APITaxi_models2 import db, Driver
 from APITaxi_models2.unittest.factories import DepartementFactory, DriverFactory
 
 
@@ -141,3 +145,19 @@ class TestDriversCreate:
         assert resp.status_code == 409  # HTTP/409 Conflict
         assert 'nom' in resp.json['errors']['data']['0']['departement']
         assert 'numero' in resp.json['errors']['data']['0']['departement']
+
+    def test_unique_violation(self, operateur):
+        departement = DepartementFactory()
+
+        with mock.patch.object(db.session, 'flush') as patched:
+            patched.side_effect = psycopg2.errors.UniqueViolation()
+            resp = operateur.client.post('/drivers', json={'data': [{
+                'first_name': 'Manny',
+                'last_name': 'Pacquiao',
+                'professional_licence': 'xxx',
+                'departement': {
+                    'numero': departement.numero,
+                }
+            }]})
+
+            assert resp.status_code == 409, resp.json
