@@ -26,14 +26,17 @@ class TestUsersDetails:
         resp = admin.client.get('/users/999')
         assert resp.status_code == 404
 
-    def test_ok(self, admin, QueriesTracker):
-        user = UserFactory(commercial_name='Bob Dylan')
-
+    def test_ok(self, operateur, QueriesTracker):
         with QueriesTracker() as qtrack:
-            resp = admin.client.get('/users/%d' % user.id)
+            resp = operateur.client.get('/users/%d' % operateur.user.id)
             # SELECT for permissions, SELECT users
             assert qtrack.count == 2
 
+        assert resp.status_code == 200
+
+    def test_admin(self, admin):
+        user = UserFactory(commercial_name='Bob Dylan')
+        resp = admin.client.get('/users/%d' % user.id)
         assert resp.status_code == 200
         assert resp.json['data'][0]['name'] == 'Bob Dylan'
 
@@ -139,9 +142,28 @@ class TestUsersPut:
             }]})
             assert resp.status_code == expected, endpoint
 
+    def test_invalid_header(self, operateur):
+        resp = operateur.client.put(f'/users/{operateur.user.id}', json={'data': [{
+            'operator_header_name': "X-API-KEY: AB-12-CD-34",
+        }]})
+        assert resp.status_code == 400, resp.json
+        assert list(resp.json['errors']['data']['0']) == ['operator_header_name']
+
+        resp = operateur.client.put(f'/users/{operateur.user.id}', json={'data': [{
+            'operator_api_key': "\nthis\tis\rvery\nwrong",
+        }]})
+        assert resp.status_code == 400, resp.json
+        assert list(resp.json['errors']['data']['0']) == ['operator_api_key']
+
+        resp = operateur.client.put(f'/users/{operateur.user.id}', json={'data': [{
+            'operator_header_name': "Düsseldorf",
+        }]})
+        assert resp.status_code == 400, resp.json
+        assert list(resp.json['errors']['data']['0']) == ['operator_header_name']
+
 
 class TestUsersList:
-    def test_invalid(self, anonymous, operateur, moteur):
+    def test_invalid(self, anonymous):
         # Authentication required
         resp = anonymous.client.get('/users')
         assert resp.status_code == 401

@@ -1,3 +1,4 @@
+import http.client
 import ipaddress
 import socket
 import urllib.parse
@@ -431,6 +432,24 @@ class ManagerSchema(Schema):
     email = fields.String()
 
 
+def validate_header_name(value):
+    try:
+        if not http.client._is_legal_header_name(value.encode('ascii')):
+            raise ValidationError('Invalid header name')
+    except UnicodeEncodeError:
+        raise ValidationError('Invalid header name')
+    return value
+
+
+def validate_header_value(value):
+    try:
+        if http.client._is_illegal_header_value(value.encode('ascii')):
+            raise ValidationError('Invalid header value')
+    except UnicodeEncodeError:
+        raise ValidationError('Invalid header value')
+    return value
+
+
 class UserSchema(Schema):
     """Display restricted informations about users. Should only be exposed to
     owners and administrators."""
@@ -444,8 +463,12 @@ class UserSchema(Schema):
     hail_endpoint_production = fields.String(allow_none=True)
     phone_number_customer = fields.String(allow_none=True)
     phone_number_technical = fields.String(allow_none=True)
-    operator_api_key = fields.String(allow_none=True)
-    operator_header_name = fields.String(allow_none=True)
+    operator_api_key = fields.String(  # operator header value
+        allow_none=True, validate=validate_header_value,
+    )
+    operator_header_name = fields.String(
+        allow_none=True, validate=validate_header_name,
+    )
     manager = fields.Nested(ManagerSchema, allow_none=True)
 
     managed = fields.Nested(
