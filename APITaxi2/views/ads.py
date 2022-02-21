@@ -83,7 +83,7 @@ def ads_create():
         return make_error_json_response({
             'data': {
                 '0': {
-                    'insee': ['Unable to find ZUPC for INSEE code %s.' % args['insee']]
+                    'insee': ['Unable to find town for INSEE code %s.' % args['insee']]
                 }
             }
         }, status_code=404)
