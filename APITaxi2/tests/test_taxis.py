@@ -436,10 +436,23 @@ class TestTaxiSearch:
         assert resp.json['data'][1]['position']['lon']
         assert resp.json['data'][1]['position']['lat']
 
+        # TODO remove If favorite_operator is set, ignore it.
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s&favorite_operator=%s' % (
+            lon, lat, taxi_2_vehicle_descriptions_2.added_by.email
+        ))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
+        assert resp.json['data'][1]['operator'] == taxi_2_vehicle_descriptions_1.added_by.email
+
         # Search for a location still in the ZUPC, but too far to reach taxis.
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.02, lat + 0.01))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
+
+        # TODO remove Ignore obsolete ?count
+        resp = moteur.client.get('/taxis?lon=%s&lat=%s&count=1' % (lon, lat))
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 2
 
         # taxi_2 reports location with two operators. The default is "off", but
         # the non-default one returns a valid location.
