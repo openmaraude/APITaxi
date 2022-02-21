@@ -279,8 +279,7 @@ class ListTaxisQueryStringSchema(PositionMixin, Schema):
     """Schema for querystring arguments of GET /taxis."""
     class Meta:
         """Allow and discard unknown fields."""
-        # TODO left for backwards compatibility with the map still using favorite_operator and count
-        # finish to remove it when the map is merged into the console, search engines don't know about them
+        # TODO left for backwards compatibility with partners who still use them
         unknown = EXCLUDE
 
 
