@@ -652,8 +652,8 @@ class UserSchema(Schema):
 
 class CustomerSchema(Schema):
     """Schema to update customer"""
-    reprieve_begin = fields.DateTime(allow_none=True)
-    reprieve_end = fields.DateTime(allow_none=True)
+    reprieve_begin = fields.DateTime(allow_none=True, metadata={'deprecated': True})
+    reprieve_end = fields.DateTime(allow_none=True, metadata={'deprecated': True})
     ban_begin = fields.DateTime(allow_none=True)
     ban_end = fields.DateTime(allow_none=True)
 
