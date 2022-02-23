@@ -116,18 +116,15 @@ class RefADSSchema(Schema):
     )
     insee = fields.String(required=True, allow_none=False)
 
-    vehicle_id = fields.Int(required=False)
-    owner_name = fields.String(required=False)
-    owner_type = fields.String(
-        required=False,
-        validate=validate.OneOf(['individual', 'company'])
-    )
-    doublage = fields.Bool(required=False)
+    vehicle_id = fields.Int(dump_only=True)
+    owner_name = fields.String(dump_only=True)
+    owner_type = fields.String(dump_only=True)
+    doublage = fields.Bool(dump_only=True)
     # Subfield translating the INSEE code to a town name on a taxi GET
-    town = fields.Nested(RefTownSchema, required=False, dump_only=True)
+    town = fields.Nested(RefTownSchema, dump_only=True)
 
     # Obsolete but kept for backwards compatibility
-    category = fields.Constant("", required=False, metadata={'deprecated': True})
+    category = fields.Constant("", dump_only=True, metadata={'deprecated': True})
 
 
 class ADSSchema(Schema):
@@ -168,8 +165,8 @@ class RefDriverSchema(Schema):
     departement = fields.String(
         attribute='departement.numero', required=True, validate=validate.Length(min=2, max=3),
     )
-    first_name = fields.String(required=False)
-    last_name = fields.String(required=False)
+    first_name = fields.String(dump_only=True)
+    last_name = fields.String(dump_only=True)
 
 
 class VehicleSchema(Schema):
@@ -292,7 +289,7 @@ class VehicleSchema(Schema):
 
 
 class RefVehicleSchema(Schema):
-    """Reference to an existing vehicle"""
+    """Representation of a vehicle attached to a taxi."""
 
     class Meta:
         """Allow and discard unknown fields."""
@@ -302,15 +299,17 @@ class RefVehicleSchema(Schema):
     licence_plate = fields.String(
         required=True, allow_none=False, validate=validate.Length(min=7, max=10)
     )
-    constructor = fields.String(required=False, allow_none=True)
-    color = fields.String(required=False, allow_none=True)
-    nb_seats = fields.Int(required=False, allow_none=True)
-    characteristics = fields.List(fields.String, required=False, allow_none=False)
-    engine = fields.String(required=False, allow_none=True)
+
+    # Only exposed on a GET
+    constructor = fields.String(dump_only=True)
+    color = fields.String(dump_only=True)
+    nb_seats = fields.Int(dump_only=True)
+    characteristics = fields.List(fields.String, dump_only=True)
+    engine = fields.String(dump_only=True)
 
     # Obsolete but kept for backwards compatibility
-    type = fields.String(required=False, allow_none=True, metadata={'deprecated': True})
-    cpam_conventionne = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
+    type = fields.String(dump_only=True, metadata={'deprecated': True})
+    cpam_conventionne = fields.Bool(dump_only=True, metadata={'deprecated': True})
 
 
 class PositionSchema(Schema):
