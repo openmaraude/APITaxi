@@ -95,7 +95,9 @@ class DriverSchema(Schema):
             'description': "n° carte professionnelle",
         }
     )
-    departement = fields.Nested(DepartementSchema, required=True, metadata={'deprecated': True})
+    departement = fields.Nested(DepartementSchema, required=True, metadata={
+        'description': "département d'exercice du conducteur",
+    })
 
 
 class RefTownSchema(Schema):
@@ -165,7 +167,6 @@ class RefDriverSchema(Schema):
     )
     departement = fields.String(
         attribute='departement.numero', required=True, validate=validate.Length(min=2, max=3),
-        metadata={'deprecated': True},
     )
     first_name = fields.String(required=False)
     last_name = fields.String(required=False)
