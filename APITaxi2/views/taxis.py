@@ -52,6 +52,9 @@ def taxis_create():
         and the API returns 200 instead.
 
         The driver departement is the departement number.
+
+        (I can't hide the status and radius, they are obviously not required to create a taxi,
+        and make sense on GET and PUT only.)
       requestBody:
         content:
           application/json:
