@@ -312,10 +312,10 @@ class RefVehicleSchema(Schema):
     cpam_conventionne = fields.Bool(dump_only=True, metadata={'deprecated': True})
 
 
-class PositionSchema(Schema):
-    # PositionMixin is not used as the position can be null
-    lon = fields.Float(required=True, validate=validate.Range(min=-180, max=180), allow_none=True)
-    lat = fields.Float(required=True, validate=validate.Range(min=-90, max=90), allow_none=True)
+class TaxiPositionSchema(Schema):
+    """Representation of taxi position from Redis, so read only."""
+    lon = fields.Float(allow_none=True, dump_only=True)
+    lat = fields.Float(allow_none=True, dump_only=True)
 
 
 class ListTaxisQueryStringSchema(PositionMixin, Schema):
@@ -383,9 +383,9 @@ class TaxiSchema(Schema):
     )
 
     # Provided by Redis
-    last_update = fields.Constant(None, dump_only=True)
-    position = fields.Nested(PositionSchema, dump_only=True)
-    crowfly_distance = fields.Constant(None, dump_only=True)
+    last_update = fields.Int(allow_none=True, dump_only=True)
+    position = fields.Nested(TaxiPositionSchema, dump_only=True)
+    crowfly_distance = fields.Float(allow_none=True, dump_only=True)
 
     def dump(self, obj, *args, **kwargs):
         """This function should be called with a list of tuples of two (create)
@@ -454,7 +454,7 @@ class SearchTaxiSchema(Schema):
     id = fields.String()
     operator = fields.String()  # Kept as needed to POST a hail request
     crowfly_distance = fields.Float()  # Kept, already computed anyway
-    position = fields.Nested(PositionSchema)
+    position = fields.Nested(TaxiPositionSchema)
     vehicle = fields.Nested(SearchVehicleSchema)
 
     # Obsolete but kept for backwards compatibility
@@ -669,17 +669,14 @@ class HailTaxiRelationSchema(Schema):
 
 class HailTaxiSchema(Schema):
     """Reference to a taxi in a hail"""
-    last_update = fields.Int()
-    id = fields.String()
-    position = fields.Nested(PositionSchema)
-    crowfly_distance = fields.Float()
+    last_update = fields.Int(dump_only=True)
+    id = fields.String(dump_only=True)
+    position = fields.Nested(TaxiPositionSchema, dump_only=True)
+    crowfly_distance = fields.Float(dump_only=True)
 
 
-class HailPOSTSchema(Schema):
-    """Schema with only the required fields to create hails
-
-    This class is only used by apispec to render swagger documentation.
-    """
+class CreateHailSchema(Schema):
+    """Schema with only the required fields to create hails."""
     customer_lon = fields.Float(
         required=True, validate=validate.Range(min=-180, max=180)
     )
@@ -690,37 +687,33 @@ class HailPOSTSchema(Schema):
     customer_address = fields.String(required=True)
     customer_phone_number = fields.String(required=True)
     customer_id = fields.String(required=True)
+
+    # Both required to identify which taxi was picked
     taxi_id = fields.String(required=True)
-    operateur = fields.String(required=True)
+    operateur = fields.String(required=True, attribute='operateur.email')
+
+    # Optional session ID when multiple hails are made
+    session_id = fields.UUID(required=False, allow_none=True)
 
 
 class HailSchema(Schema):
-    """Schema to create read and update hails"""
-    id = fields.String()
+    """Schema to read and update hails."""
+    id = fields.String(dump_only=True)
+    session_id = fields.UUID(dump_only=True)
+    operateur = fields.String(dump_only=True, attribute='operateur.email')
+    taxi = fields.Nested(HailTaxiSchema, dump_only=True)
+    customer_id = fields.String(dump_only=True)
+    creation_datetime = fields.DateTime(dump_only=True)
+    last_status_change = fields.DateTime(dump_only=True)
+    transitions = fields.Raw(attribute='transition_log', dump_only=True)
+
+    # Can be changed by both parties
     status = fields.String(
         validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
     )
-    taxi_phone_number = fields.String()
 
-    customer_lon = fields.Float(
-        required=True, validate=validate.Range(min=-180, max=180)
-    )
-    customer_lat = fields.Float(
-        # See PositionMixin comment
-        required=True, validate=validate.Range(min=-85.05112878, max=85.05112878)
-    )
-    customer_address = fields.String(required=True)
-    customer_phone_number = fields.String(required=True)
-    last_status_change = fields.DateTime()
-    rating_ride = fields.Int(allow_none=True)
-    rating_ride_reason = fields.String(
-        validate=validate.OneOf(RATING_RIDE_REASONS),
-        allow_none=True
-    )
-    incident_customer_reason = fields.String(
-        validate=validate.OneOf(INCIDENT_CUSTOMER_REASONS),
-        allow_none=True
-    )
+    # Can be changed by the operateur
+    taxi_phone_number = fields.String()
     incident_taxi_reason = fields.String(
         validate=validate.OneOf(INCIDENT_TAXI_REASONS),
         allow_none=True
@@ -730,21 +723,24 @@ class HailSchema(Schema):
         validate=validate.OneOf(REPORTING_CUSTOMER_REASONS),
         allow_none=True
     )
-    session_id = fields.UUID(required=False, allow_none=True)
-    operateur = fields.String(required=True, attribute='operateur.email')
 
-    taxi_relation = fields.Nested(HailTaxiRelationSchema)
-    taxi = fields.Nested(HailTaxiSchema)
-
-    # For backward compatibility, taxi_id is not returned from GET
-    # /hails/:id, but the field is required to create a taxi with POST
-    # /hails/:id
-    taxi_id = fields.String(required=True, load_only=True)
-
-    creation_datetime = fields.DateTime()
-    customer_id = fields.String(required=True)
-
-    transitions = fields.Raw(attribute='transition_log')
+    # Can be changed by the moteur
+    customer_lon = fields.Float(validate=validate.Range(min=-180, max=180))
+    # See PositionMixin comment
+    customer_lat = fields.Float(validate=validate.Range(min=-85.05112878, max=85.05112878))
+    customer_address = fields.String()
+    customer_phone_number = fields.String()
+    incident_customer_reason = fields.String(
+        validate=validate.OneOf(INCIDENT_CUSTOMER_REASONS),
+        allow_none=True
+    )
+    # Obsolete but kept for backwards compatibility
+    taxi_relation = fields.Nested(HailTaxiRelationSchema, dump_only=True, metadata={'deprecated': True})
+    rating_ride = fields.Int(allow_none=True, metadata={'deprecated': True})
+    rating_ride_reason = fields.String(
+        validate=validate.OneOf(RATING_RIDE_REASONS),
+        allow_none=True, metadata={'deprecated': True},
+    )
 
     def dump(self, obj, *args, **kwargs):
         hail, taxi_position = obj
@@ -946,6 +942,7 @@ DataDriverSchema = data_schema_wrapper(DriverSchema())
 DataTaxiSchema = data_schema_wrapper(TaxiSchema())
 DataTaxiListSchema = data_schema_wrapper(TaxiSchema(), with_pagination=True)
 DataSearchTaxiSchema = data_schema_wrapper(SearchTaxiSchema())
+DataCreateHailSchema = data_schema_wrapper(CreateHailSchema())
 DataHailSchema = data_schema_wrapper(HailSchema())
 DataHailListSchema = data_schema_wrapper(HailListSchema(), with_pagination=True)
 DataHailBySessionListSchema = data_schema_wrapper(HailBySessionListSchema(), with_pagination=True)
@@ -960,4 +957,3 @@ DataTownSchema = data_schema_wrapper(TownSchema())
 # These schemas are only used to simplify the output of Swagger
 DataTaxiPOSTSchema = data_schema_wrapper(TaxiPOSTSchema())
 DataTaxiPUTSchema = data_schema_wrapper(TaxiPUTSchema())
-DataHailPOSTSchema = data_schema_wrapper(HailPOSTSchema())

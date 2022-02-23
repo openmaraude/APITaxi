@@ -640,7 +640,7 @@ def hails_create():
       requestBody:
         content:
           application/json:
-            schema: DataHailPOSTSchema
+            schema: DataCreateHailSchema
             example:
                 {
                     "data": [
@@ -664,7 +664,7 @@ def hails_create():
             application/json:
               schema: DataHailSchema
     """
-    schema = schemas.DataHailSchema()
+    schema = schemas.DataCreateHailSchema()
     params, errors = validate_schema(schema, request.json)
     if errors:
         return make_error_json_response(errors)
@@ -795,7 +795,9 @@ def hails_create():
     taxi.current_hail = hail
     vehicle_description.status = 'answering'
 
-    ret = schema.dump({'data': [(hail, taxi_position)]})
+    # A dedicated schema was used to create
+    full_schema = schemas.DataHailSchema()
+    ret = full_schema.dump({'data': [(hail, taxi_position)]})
 
     hail_endpoint_production = hail.operateur.hail_endpoint_production
     operator_header_name = hail.operateur.operator_header_name
