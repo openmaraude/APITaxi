@@ -35,8 +35,11 @@ class TestGetHailDetails:
         # Hail exists, user is not the moteur nor the operateur but he has the
         # admin role.
         hail = HailFactory()
-        resp = admin.client.get('/hails/%s' % hail.id)
+        with QueriesTracker() as qtracker:
+            resp = admin.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        # user authentication and everything about the hail in a single request
+        assert qtracker.count == 2
 
         # Hail exists and user is the moteur
         hail = HailFactory(added_by=moteur.user)
@@ -56,9 +59,14 @@ class TestGetHailDetails:
             'sent_to_operator',
             'received_by_operator',
             'received_by_taxi',
+            'accepted_by_taxi',
+            'accepted_by_customer',
             'customer_on_board',
         ):
-            hail = HailFactory(status=status, added_by=moteur.user, operateur=operateur.user)
+            hail = HailFactory(
+                status=status, added_by=moteur.user, operateur=operateur.user,
+                taxi__vehicle__descriptions__color="blue",
+            )
             app.redis.hset(
                 'taxi:%s' % hail.taxi.id,
                 hail.operateur.email,
@@ -76,6 +84,12 @@ class TestGetHailDetails:
             # /hails/:id
             assert 'taxi_id' not in resp.json['data'][0]
 
+            # Vehicle details are only accessible when the hail is accepted
+            accepted = status in ('accepted_by_taxi', 'accepted_by_customer', 'customer_on_board')
+            assert bool(resp.json['data'][0]['taxi']['vehicle']['licence_plate']) == accepted
+            assert bool(resp.json['data'][0]['taxi']['vehicle']['color']) == accepted
+            assert bool(resp.json['data'][0]['taxi']['driver']['last_name']) == accepted
+
         # Position exists in redis and hail is finished: location is not returned
         hail = HailFactory(status='finished', added_by=moteur.user, operateur=operateur.user)
         app.redis.hset(
@@ -89,6 +103,9 @@ class TestGetHailDetails:
         assert not resp.json['data'][0]['taxi']['last_update']
         assert not resp.json['data'][0]['taxi']['position']['lon']
         assert not resp.json['data'][0]['taxi']['position']['lat']
+        assert not resp.json['data'][0]['taxi']['vehicle']['licence_plate']
+        assert not resp.json['data'][0]['taxi']['vehicle']['color']
+        assert not resp.json['data'][0]['taxi']['driver']['last_name']
 
     def test_ok_two_operators(self, app, operateur):
         """Get hail details of a taxi with two VehicleDescription entries."""
