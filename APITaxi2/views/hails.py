@@ -304,7 +304,7 @@ def hails_details(hail_id):
         when submitting the field `incident_customer_reason` with one of the accepted
         values in the schema.
 
-        (Note: the rating system is not used in practice and must be considered deprecated.)
+        Fields editable by operators or client apps, or both, are tagged in the schema.
       parameters:
         - name: hail_id
           in: path

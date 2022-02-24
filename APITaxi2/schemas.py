@@ -733,29 +733,34 @@ class HailSchema(Schema):
     # Can be changed by both parties
     status = fields.String(
         validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
+        metadata={'description': "operator, client"},
     )
 
     # Can be changed by the operateur
-    taxi_phone_number = fields.String()
+    taxi_phone_number = fields.String(metadata={'description': "operator"})
     incident_taxi_reason = fields.String(
         validate=validate.OneOf(INCIDENT_TAXI_REASONS),
-        allow_none=True
+        allow_none=True, metadata={'description': "operator"},
     )
-    reporting_customer = fields.Bool(allow_none=True)
+    reporting_customer = fields.Bool(allow_none=True, metadata={'description': "operator"})
     reporting_customer_reason = fields.String(
         validate=validate.OneOf(REPORTING_CUSTOMER_REASONS),
-        allow_none=True
+        allow_none=True, metadata={'description': "operator"},
     )
 
     # Can be changed by the moteur
-    customer_lon = fields.Float(validate=validate.Range(min=-180, max=180))
-    # See PositionMixin comment
-    customer_lat = fields.Float(validate=validate.Range(min=-85.05112878, max=85.05112878))
-    customer_address = fields.String()
-    customer_phone_number = fields.String()
+    customer_lon = fields.Float(
+        validate=validate.Range(min=-180, max=180), metadata={'description': "client"},
+    )
+    customer_lat = fields.Float(
+        # See PositionMixin comment
+        validate=validate.Range(min=-85.05112878, max=85.05112878), metadata={'description': "client"},
+    )
+    customer_address = fields.String(metadata={'description': "client"})
+    customer_phone_number = fields.String(metadata={'description': "client"})
     incident_customer_reason = fields.String(
         validate=validate.OneOf(INCIDENT_CUSTOMER_REASONS),
-        allow_none=True
+        allow_none=True, metadata={'description': "client"},
     )
     # Obsolete but kept for backwards compatibility
     taxi_relation = fields.Nested(HailTaxiRelationSchema, dump_only=True, metadata={'deprecated': True})
