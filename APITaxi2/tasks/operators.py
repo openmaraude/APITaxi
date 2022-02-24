@@ -113,10 +113,11 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
         return False
 
     schema = schemas.DataHailSchema()
-    # The second parameter of dump is None because we do not want to provide
-    # the taxi's location to user now. Location can be retrieved later with GET
-    # /hails/:id after taxi accepts the request.
-    payload = schema.dump({'data': [(hail, None)]})
+    # The other parameters of dump are None because we do not want to provide
+    # the taxi's location or vehicle details to user now.
+    # Location and vehicle details can be retrieved later with GET /hails/:id
+    # after taxi accepts the request.
+    payload = schema.dump({'data': [(hail, None, None)]})
 
     # Custom headers to send to operator's API.
     headers = {}

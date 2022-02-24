@@ -359,7 +359,8 @@ def hails_details(hail_id):
     query = db.session.query(
         Hail, VehicleDescription
     ).options(
-        joinedload(Hail.taxi),
+        joinedload(Hail.taxi).joinedload(Taxi.vehicle),
+        joinedload(Hail.taxi).joinedload(Taxi.driver),
         joinedload(Hail.added_by),
         joinedload(Hail.operateur),
         joinedload(Hail.customer)
@@ -390,7 +391,7 @@ def hails_details(hail_id):
     taxi_position = redis_backend.get_taxi(hail.taxi_id, hail.operateur.email)
 
     if request.method == 'GET':
-        return schema.dump({'data': [(hail, taxi_position)]})
+        return schema.dump({'data': [(hail, taxi_position, vehicle_description)]})
 
     params, errors = validate_schema(schema, request.json, partial=True)
     if errors:
@@ -458,7 +459,7 @@ def hails_details(hail_id):
         else:
             _ban_customer(hail.customer)
 
-    ret = schema.dump({'data': [(hail, taxi_position)]})
+    ret = schema.dump({'data': [(hail, taxi_position, vehicle_description)]})
 
     vehicle_description_added_by_id = vehicle_description.added_by_id
 
@@ -797,7 +798,7 @@ def hails_create():
 
     # A dedicated schema was used to create
     full_schema = schemas.DataHailSchema()
-    ret = full_schema.dump({'data': [(hail, taxi_position)]})
+    ret = full_schema.dump({'data': [(hail, taxi_position, None)]})
 
     hail_endpoint_production = hail.operateur.hail_endpoint_production
     operator_header_name = hail.operateur.operator_header_name

@@ -438,13 +438,15 @@ class SearchVehicleSchema(Schema):
 
     model = fields.String()
     constructor = fields.String()
-    color = fields.String()
     nb_seats = fields.Int()
     engine = fields.String()
     characteristics = fields.List(fields.String)
 
-    # Obsolete but kept for backwards compatibility
+    # Only shared after the hail was accepted (see HailVehicleSchema)
     licence_plate = fields.Constant("", metadata={'deprecated': True})
+    color = fields.String(metadata={'deprecated': True})
+
+    # Obsolete but kept for backwards compatibility
     type = fields.Constant("normal", metadata={'deprecated': True})
     cpam_conventionne = fields.Constant(None, metadata={'deprecated': True})
 
@@ -517,10 +519,11 @@ class SearchTaxiSchema(Schema):
         ret['vehicle'].update({
             'model': vehicle_description.model or None,
             'constructor': vehicle_description.constructor or None,
-            'color': vehicle_description.color,
             'nb_seats': vehicle_description.nb_seats,
             'engine': vehicle_description.engine,
             'characteristics': vehicle_description.characteristics,
+            # Moved to HailVehicleSchema
+            'color': "",
         })
         return ret
 
@@ -667,14 +670,6 @@ class HailTaxiRelationSchema(Schema):
     rating = fields.Float(metadata={'deprecated': True})
 
 
-class HailTaxiSchema(Schema):
-    """Reference to a taxi in a hail"""
-    last_update = fields.Int(dump_only=True)
-    id = fields.String(dump_only=True)
-    position = fields.Nested(TaxiPositionSchema, dump_only=True)
-    crowfly_distance = fields.Float(dump_only=True)
-
-
 class CreateHailSchema(Schema):
     """Schema with only the required fields to create hails."""
     customer_lon = fields.Float(
@@ -694,6 +689,34 @@ class CreateHailSchema(Schema):
 
     # Optional session ID when multiple hails are made
     session_id = fields.UUID(required=False, allow_none=True)
+
+
+class HailVehicleSchema(Schema):
+    """Reference to a vehicle in a hail.
+
+    Added to share more information for the customer to identify the vehicle incoming.
+    """
+    licence_plate = fields.String(dump_only=True)
+    color = fields.String(dump_only=True)
+
+
+class HailDriverSchema(Schema):
+    """Reference to a driver in a hail.
+
+    Added to share more information for the customer to identify the vehicle incoming.
+    """
+    first_name = fields.String(dump_only=True)
+    last_name = fields.String(dump_only=True)
+
+
+class HailTaxiSchema(Schema):
+    """Reference to a taxi in a hail"""
+    last_update = fields.Int(dump_only=True)
+    id = fields.String(dump_only=True)
+    position = fields.Nested(TaxiPositionSchema, dump_only=True)
+    crowfly_distance = fields.Float(dump_only=True)
+    vehicle = fields.Nested(HailVehicleSchema, dump_only=True)
+    driver = fields.Nested(HailDriverSchema, dump_only=True)
 
 
 class HailSchema(Schema):
@@ -743,7 +766,7 @@ class HailSchema(Schema):
     )
 
     def dump(self, obj, *args, **kwargs):
-        hail, taxi_position = obj
+        hail, taxi_position, vehicle_description = obj
         ret = super().dump(hail, *args, **kwargs)
 
         # Taxi location should only be returned if the hail is in progress.
@@ -774,6 +797,19 @@ class HailSchema(Schema):
             }
             ret['taxi']['crowfly_distance'] = None
             ret['taxi']['last_update'] = None
+
+        if vehicle_description and hail.status in (
+            'accepted_by_taxi',
+            'accepted_by_customer',
+            'customer_on_board',
+        ):
+            ret['taxi']['vehicle']['color'] = vehicle_description.color
+        else:
+            ret['taxi']['vehicle']['licence_plate'] = ""
+            ret['taxi']['vehicle']['color'] = ""
+            ret['taxi']['driver']['first_name'] = ""
+            ret['taxi']['driver']['last_name'] = ""
+
         return ret
 
 
