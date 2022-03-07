@@ -678,6 +678,8 @@ def hails_create():
         VehicleDescription
     ).options(
         joinedload(Taxi.ads),
+        joinedload(Taxi.vehicle),
+        joinedload(Taxi.driver),
         joinedload(VehicleDescription.added_by)
     ).join(
         User,
