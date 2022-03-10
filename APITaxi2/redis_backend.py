@@ -51,7 +51,7 @@ def get_timestamps_entries_between(start_timestamp, end_timestamp):
     """Geotaxi stores taxis updates in the zset "timestamps". This function
     returns all updates between two timestamps.
 
-    The asynchronous task clean_geotaxi_timestamps removes taxis with a
+    The asynchronous task clean_geoindex_timestamps removes taxis with a
     location older than 2 minutes, so any older entry is not guaranteed to be
     returned."""
     ret = []
@@ -61,6 +61,14 @@ def get_timestamps_entries_between(start_timestamp, end_timestamp):
         taxi_id, operator = taxi_operator.decode('utf8').split(':')
         ret.append(_TaxiLocationUpdate(taxi_id=taxi_id, operator=operator, timestamp=int(timestamp)))
     return ret
+
+
+def list_taxi_ids():
+    """Simply list all the taxi IDs known to Redis."""
+    PREFIX = len(b'taxi:')
+
+    for index in current_app.redis.scan_iter('taxi:*'):
+        yield index[PREFIX:].decode('utf8')
 
 
 def list_taxis(start_timestamp, end_timestamp):
@@ -90,9 +98,9 @@ def list_taxis(start_timestamp, end_timestamp):
 
     # Iterate on keys taxi:*. For each entry, call HGETALL taxi:<id> in the pipeline.
     # We use a pipeline to improve speed because listing all taxis may return many results.
-    for row in current_app.redis.scan_iter('taxi:*'):
-        taxi_id = row[PREFIX:].decode('utf8')
-        pipeline.hgetall(row)
+    for index in current_app.redis.scan_iter('taxi:*'):
+        taxi_id = index[PREFIX:].decode('utf8')
+        pipeline.hgetall(index)
         taxi_ids.append(taxi_id)
 
     ret = []

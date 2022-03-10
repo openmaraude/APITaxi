@@ -3,6 +3,7 @@ from flask import Blueprint
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 
+from APITaxi2 import clean_db
 from APITaxi_models2 import db, mixins, ADS, Driver, Taxi, User, Vehicle, VehicleDescription
 
 
@@ -69,15 +70,16 @@ def check_orphans(Model, query, remove=False):
     if not remove:
         return
 
+    # Can't call Query.delete() when outerjoin() has been called
     db.session.query(Model).filter(Model.id.in_(obj.id for obj in query)).delete(
         synchronize_session=False
     )
     db.session.commit()
 
 
-@ blueprint.cli.command('clean_db', help='Check the database is clean')
-@ click.option('--remove-orphans', is_flag=True, help='Only remove orphans if asked so')
-def clean_db(remove_orphans):
+@blueprint.cli.command(help='Check the database is clean')
+@click.option('--remove-orphans', is_flag=True, help='Only remove orphans if asked so')
+def check_db(remove_orphans):
     check_sharing_ads()
     check_sharing_driver()
 
@@ -118,3 +120,40 @@ def clean_db(remove_orphans):
         ),
         remove=remove_orphans,
     )
+
+
+@blueprint.cli.group(help="Clean database from obsolete data")
+def clean():
+    pass
+
+
+@clean.command(help='Blur taxi locations after two months')
+def blur_geotaxi():
+    count = clean_db.blur_geotaxi()
+    print(f"{count} geotaxi blurred")
+
+
+@clean.command(help='Blur hail locations after two months')
+def blur_hails():
+    count = clean_db.blur_hails()
+    print(f"{count} hails blurred")
+
+
+@clean.command(help='Archive hails after a year')
+def archive_hails():
+    count = clean_db.archive_hails()
+    print(f"{count} hails archived")
+
+
+@clean.command(help='Delete taxis after a year of inactivity')
+def delete_old_taxis():
+    count = clean_db.delete_old_taxis()
+    print(f"{count} old taxis deleted")
+
+
+@clean.command(help='Delete orphan resources after a year of inactivity')
+def delete_old_orphans():
+    driver_count, ads_count, vehicle_count = clean_db.delete_old_orphans()
+    print(f"{driver_count} old drivers deleted")
+    print(f"{ads_count} old ADS deleted")
+    print(f"{vehicle_count} old vehicle descriptions deleted")

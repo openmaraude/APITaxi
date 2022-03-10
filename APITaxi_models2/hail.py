@@ -92,8 +92,26 @@ class Hail(HistoryMixin, db.Model):
     # Record status changes (manually)
     transition_log = db.Column(MutableList.as_mutable(postgresql.JSON()), nullable=False, server_default="[]")
 
+    # Blurring hail personal data, first step before archiving
+    blurred = db.Column(db.Boolean, nullable=True, server_default='false')
+
     # Relationships
     added_by = db.relationship('User', foreign_keys=[added_by_id], lazy='raise')
     customer = db.relationship('Customer', foreign_keys=[customer_id], lazy='raise')
     operateur = db.relationship('User', foreign_keys=[operateur_id], lazy='raise')
     taxi = db.relationship('Taxi', foreign_keys=[taxi_id], lazy='raise')
+
+
+class ArchivedHail(HistoryMixin, db.Model):
+    """Hail stripped down of personal information, for statistical purposes"""
+    id = db.Column(db.String, primary_key=True)
+    status = db.Column(db.String, nullable=False)
+    moteur = db.Column(db.String, nullable=False)
+    operateur = db.Column(db.String, nullable=False)
+    incident_customer_reason = db.Column(db.String)
+    incident_taxi_reason = db.Column(db.String)
+    session_id = db.Column(postgresql.UUID(as_uuid=True), nullable=False)
+    insee = db.Column(db.String, nullable=True)  # In case not found
+
+    # Relationships
+    town = db.relationship('Town', primaryjoin='foreign(ArchivedHail.insee) == remote(Town.insee)', lazy='raise')

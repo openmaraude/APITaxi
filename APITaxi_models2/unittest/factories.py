@@ -73,6 +73,18 @@ class DepartementFactory(BaseFactory):
 
 
 class TownFactory(BaseFactory):
+    """Given how SQLAlchemy works, it's better not to access the built object directly,
+    because it will contain the raw WKT string below, not the WKB object returned by
+    PostgreSQL and expected by our code. Simply put, don't do:
+
+        paris = TownFactory()
+
+    but do:
+
+        TownFactory()
+
+    And do a query if you need the object in your test. I guess it's a matter of reference counting.
+    """
     class Meta:
         model = Town
         sqlalchemy_get_or_create = ['insee']
@@ -93,6 +105,7 @@ class TownFactory(BaseFactory):
     shape = 'MULTIPOLYGON(((2.24332732355285 48.9066360266329,2.42460173761535 48.9066360266329,2.42460173761535 48.8122203058303,2.24332732355285 48.8122203058303,2.24332732355285 48.9066360266329)))'
 
     class Params:
+        paris = factory.Trait()
         bordeaux = factory.Trait(
             name='Bordeaux',
             insee='33063',
