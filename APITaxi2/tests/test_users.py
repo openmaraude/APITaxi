@@ -161,6 +161,13 @@ class TestUsersPut:
         assert resp.status_code == 400, resp.json
         assert list(resp.json['errors']['data']['0']) == ['operator_header_name']
 
+        # Empty string not validated
+        resp = operateur.client.put(f'/users/{operateur.user.id}', json={'data': [{
+            'operator_header_name': "",
+            'operator_api_key': "",
+        }]})
+        assert resp.status_code == 200, resp.json
+
 
 class TestUsersList:
     def test_invalid(self, anonymous):

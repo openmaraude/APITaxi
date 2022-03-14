@@ -586,6 +586,8 @@ class ManagerSchema(Schema):
 
 
 def validate_header_name(value):
+    if not value:
+        return
     try:
         if not http.client._is_legal_header_name(value.encode('ascii')):
             raise ValidationError('Invalid header name')
