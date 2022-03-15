@@ -362,12 +362,9 @@ class TownSchema(Schema):
 
 class TaxiSchema(Schema):
     """Schema to list, create, read or update taxis"""
-    # Should be dump_only=True but breaking BC for our historical partners
-    id = fields.String()
-    added_at = fields.DateTime()
-    operator = fields.String(allow_none=False)
-    # End dump_only=True
-
+    id = fields.String(dump_only=True)
+    added_at = fields.DateTime(dump_only=True)
+    operator = fields.String(dump_only=True)
     vehicle = fields.Nested(RefVehicleSchema, required=True)
     ads = fields.Nested(RefADSSchema, required=True)
     driver = fields.Nested(RefDriverSchema, required=True)
@@ -385,10 +382,10 @@ class TaxiSchema(Schema):
         validate=validate.Range(min=TAXI_MIN_RADIUS, max=TAXI_MAX_RADIUS)
     )
 
-    # Provided by Redis (should be dump_only=True but breaking BC)
-    last_update = fields.Constant(None, allow_none=False)
-    position = fields.Nested(TaxiPositionSchema, allow_none=False)
-    crowfly_distance = fields.Constant(None, allow_none=True)
+    # Provided by Redis
+    last_update = fields.Int(allow_none=True, dump_only=True)
+    position = fields.Nested(TaxiPositionSchema, dump_only=True)
+    crowfly_distance = fields.Float(allow_none=True, dump_only=True)
 
     def dump(self, obj, *args, **kwargs):
         """This function should be called with a list of tuples of two (create)
