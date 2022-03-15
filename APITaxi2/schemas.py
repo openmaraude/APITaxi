@@ -558,7 +558,7 @@ class ListTaxisAllQuerystringSchema(Schema, PageQueryStringMixin):
     licence_plate = fields.List(fields.String)
 
 
-class TaxiPOSTSchema(Schema):
+class CreateTaxiSchema(Schema):
     """POST /taxis only accepts references to vehicle, ADS, driver to bind them together.
 
     This class is only used by apispec to render swagger documentation.
@@ -568,7 +568,7 @@ class TaxiPOSTSchema(Schema):
     driver = fields.Nested(RefDriverSchema, required=True)
 
 
-class TaxiPUTSchema(Schema):
+class TaxiDetailsSchema(Schema):
     """PUT /taxis/:id accepts any field from TaxiSchema, but only the status
     and radius are updated.
 
@@ -1022,5 +1022,5 @@ DataGeotaxiSchema = data_schema_wrapper(GeotaxiSchema())
 DataTownSchema = data_schema_wrapper(TownSchema())
 
 # These schemas are only used to simplify the output of Swagger
-DataTaxiPOSTSchema = data_schema_wrapper(TaxiPOSTSchema())
-DataTaxiPUTSchema = data_schema_wrapper(TaxiPUTSchema())
+DataCreateTaxiSchema = data_schema_wrapper(CreateTaxiSchema())
+DataTaxiDetailsSchema = data_schema_wrapper(TaxiDetailsSchema())

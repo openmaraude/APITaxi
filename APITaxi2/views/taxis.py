@@ -55,7 +55,7 @@ def taxis_create():
       requestBody:
         content:
           application/json:
-            schema: DataTaxiPOSTSchema
+            schema: DataCreateTaxiSchema
             example: {
                 data: [
                     {
@@ -226,7 +226,7 @@ def taxis_details(taxi_id):
       requestBody:
         content:
           application/json:
-            schema: DataTaxiPUTSchema
+            schema: DataTaxiDetailsSchema
             examples:
                 status:
                     summary: Status only
