@@ -354,6 +354,36 @@ class TestTaxiPost:
         assert resp.status_code == 400
         assert list(resp.json['errors']['data']['0']['vehicle']) == ['licence_plate']
 
+    def test_historical_ok(self, operateur, QueriesTracker):
+        """Historical partners took bad habits from our awful docs. Until we can erase
+        this technical debt, continue to accept these habits.
+        """
+        ads = ADSFactory(added_by=operateur.user)
+        driver = DriverFactory(added_by=operateur.user)
+        vehicle_description = VehicleDescriptionFactory(added_by=operateur.user)
+
+        payload = {
+            'data': [{
+                'ads': {
+                    'insee': ads.insee,
+                    'numero': ads.numero,
+                    'doublage': True,
+                    'owner_name': "John Doe",
+                    'owner_type': "individual",
+                },
+                'vehicle': {
+                    'licence_plate': vehicle_description.vehicle.licence_plate
+                },
+                'driver': {
+                    'professional_licence': driver.professional_licence,
+                    'departement': driver.departement.numero
+                }
+            }]
+        }
+
+        resp = operateur.client.post('/taxis', json=payload)
+        assert resp.status_code == 201, resp.json
+
 
 class TestTaxiSearch:
 

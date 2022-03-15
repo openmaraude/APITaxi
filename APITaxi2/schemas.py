@@ -111,15 +111,23 @@ class RefADSSchema(Schema):
     When the taxi is created, only the fields numero and insee are required.
     Other fields can be provided, but they are ignored.
     """
+
+    class Meta:
+        """Allow and discard unknown fields, short path to preserve BC."""
+        unknown = EXCLUDE
+
+    # Required to create a taxi
     numero = fields.String(
         required=True, allow_none=False, validate=validate.Length(min=1),
     )
     insee = fields.String(required=True, allow_none=False)
 
+    # Exposed on reading a taxi
     vehicle_id = fields.Int(dump_only=True)
     owner_name = fields.String(dump_only=True)
     owner_type = fields.String(dump_only=True)
     doublage = fields.Bool(dump_only=True)
+
     # Subfield translating the INSEE code to a town name on a taxi GET
     town = fields.Nested(RefTownSchema, dump_only=True)
 
@@ -159,12 +167,20 @@ class ADSSchema(Schema):
 
 class RefDriverSchema(Schema):
     """Reference to an existing driver"""
+
+    class Meta:
+        """Allow and discard unknown fields, short path to preserve BC."""
+        unknown = EXCLUDE
+
+    # Required to create a taxi
     professional_licence = fields.String(
         required=True, allow_none=False, validate=validate.Length(min=1),
     )
     departement = fields.String(
         attribute='departement.numero', required=True, validate=validate.Length(min=2, max=3),
     )
+
+    # Exposed on reading a taxi
     first_name = fields.String(dump_only=True)
     last_name = fields.String(dump_only=True)
 
@@ -292,15 +308,15 @@ class RefVehicleSchema(Schema):
     """Representation of a vehicle attached to a taxi."""
 
     class Meta:
-        """Allow and discard unknown fields."""
+        """Allow and discard unknown fields, short path to preserve BC."""
         unknown = EXCLUDE
 
-    # required is not the same as not empty!
+    # Required to create a taxi, and not empty!
     licence_plate = fields.String(
         required=True, allow_none=False, validate=validate.Length(min=7, max=10)
     )
 
-    # Only exposed on a GET
+    # Exposed on reading a taxi
     constructor = fields.String(dump_only=True)
     color = fields.String(dump_only=True)
     nb_seats = fields.Int(dump_only=True)
@@ -362,12 +378,20 @@ class TownSchema(Schema):
 
 class TaxiSchema(Schema):
     """Schema to list, create, read or update taxis"""
-    id = fields.String(dump_only=True)
-    added_at = fields.DateTime(dump_only=True)
-    operator = fields.String(dump_only=True)
+
+    class Meta:
+        """Allow and discard unknown fields, short path to preserve BC."""
+        unknown = EXCLUDE
+
+    # Required to create a taxi
     vehicle = fields.Nested(RefVehicleSchema, required=True)
     ads = fields.Nested(RefADSSchema, required=True)
     driver = fields.Nested(RefDriverSchema, required=True)
+
+    # Exposed on reading a taxi
+    id = fields.String(dump_only=True)
+    added_at = fields.DateTime(dump_only=True)
+    operator = fields.String(dump_only=True)
 
     # Obsolete but kept for backwards compatibility
     rating = fields.Float(required=False, allow_none=False, metadata={'deprecated': True})

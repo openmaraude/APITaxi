@@ -69,7 +69,7 @@ class DepartementFactory(BaseFactory):
         sqlalchemy_get_or_create = ['numero']
 
     nom = factory.Sequence(lambda n: 'DEPARTEMENT_%d' % n)
-    numero = factory.Sequence(lambda n: '%d' % n)
+    numero = factory.Sequence(lambda n: '%02d' % n)
 
 
 class TownFactory(BaseFactory):
