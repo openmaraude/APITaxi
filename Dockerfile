@@ -56,7 +56,7 @@ ENV APITAXI_CONFIG_FILE=/settings.py
 # If we use the square bracket CMD style, process doesn't auto-reload on code change.
 # The simple CMD format is used on purpose, until we understand why CMD [...] doesn't work.
 #
-# --debug-force-polling is required for mac M1, see https://giters.com/gorakhargosh/watchdog/issues/838
+# --debug-force-polling is required for mac M1, see https://github.com/gorakhargosh/watchdog/issues/838
 CMD watchmedo auto-restart --debug-force-polling true --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery worker -E -c 1
 
 
