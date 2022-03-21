@@ -57,6 +57,7 @@ def blur_geotaxi():
     """
     threshold = datetime.datetime.now() - datetime.timedelta(days=60)
     pipeline = current_app.redis.pipeline()
+    count = 0
 
     for count, update in enumerate(redis_backend.list_taxis(0, threshold.timestamp()), 1):
         # Same structure and data as geotaxi, just zeroing the location
@@ -78,6 +79,7 @@ def blur_hails():
     """
     threshold = datetime.datetime.now() - datetime.timedelta(days=60)
     town_helper = TownHelper()
+    count = 0
 
     for count, hail in enumerate(db.session.query(Hail).filter(
         Hail.creation_datetime < threshold,
@@ -109,6 +111,7 @@ def archive_hails():
     """
     threshold = datetime.datetime.now() - datetime.timedelta(days=365)
     town_helper = TownHelper()
+    count = 0
 
     hail_ids = [
         hail_id for hail_id, in db.session.query(Hail.id).filter(
