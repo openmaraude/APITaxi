@@ -95,6 +95,8 @@ def blur_hails():
             insee = town_helper.find_town(hail.initial_taxi_lon, hail.initial_taxi_lat)
             blurred = town_helper.geometric_center(insee)
             hail.initial_taxi_lon, hail.initial_taxi_lat = blurred.x, blurred.y
+        # Blur text-plain address
+        hail.customer_address = "[REDACTED]"
         # Blur phone numbers
         hail.customer_phone_number = "[REDACTED]"
         hail.taxi_phone_number = "[REDACTED]"

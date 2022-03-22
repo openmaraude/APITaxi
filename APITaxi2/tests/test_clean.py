@@ -83,6 +83,7 @@ class TestBlurHails:
         # Representative point of the factory bbox
         assert (old_hail.customer_lon, old_hail.customer_lat) == (2.3339645305841, 48.8594281662316)
         assert (old_hail.initial_taxi_lon, old_hail.initial_taxi_lat) == (2.3339645305841, 48.8594281662316)
+        assert old_hail.customer_address == old_hail.customer_phone_number == old_hail.taxi_phone_number == "[REDACTED]"
         assert old_hail.blurred is True
         # Factory original value
         assert (recent_hail.customer_lon, recent_hail.customer_lat) == (-0.57847, 44.8434)
