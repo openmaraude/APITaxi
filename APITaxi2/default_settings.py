@@ -47,3 +47,7 @@ CELERY_BEAT_SCHEDULE = {
         'args': (10080,)
     },
 }
+
+SQLALCHEMY_ENGINE_OPTIONS = {
+    'pool_pre_ping': True
+}
