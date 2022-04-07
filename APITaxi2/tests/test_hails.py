@@ -348,6 +348,18 @@ class TestEditHail:
                 countdown=60 * 60 * 2
             )
 
+    def test_ok_skip_received_by_operator(self, operateur):
+        """What happens if the operator declares the hail was received by the taxi
+        even before we had time to set the hail as received by the operator.
+        """
+        hail = HailFactory(status='received', operateur=operateur.user)
+
+        resp = operateur.client.put(f'/hails/{hail.id}', json={'data': [{
+            'status': 'received_by_taxi'
+        }]})
+        assert resp.status_code == 400, resp.json
+        assert len(resp.json['errors']['data']['0']['status']) == 1
+
 
 class TestGetHailList:
     def test_invalid(self, anonymous, moteur):
