@@ -167,6 +167,7 @@ class VehicleDescriptionFactory(BaseFactory):
 class VehicleFactory(BaseFactory):
     class Meta:
         model = Vehicle
+        sqlalchemy_get_or_create = ['licence_plate']
 
     licence_plate = factory.Sequence(lambda n: "AB-%03d-CD" % n)
 

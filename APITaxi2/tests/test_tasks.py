@@ -6,7 +6,7 @@ from unittest import mock
 
 from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import Hail, User, VehicleDescription
+from APITaxi_models2 import Hail, Taxi, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     HailFactory,
     TaxiFactory,
@@ -365,6 +365,7 @@ class TestStoreActiveTaxis:
         zupc_bordeaux = ZUPCFactory(bordeaux=True)
 
         self._add_taxi(app, Paris.insee, 2.367895, 48.86789, 'H8')
+        taxi = Taxi.query.options(joinedload('*')).one()
         self._add_taxi(app, Paris.insee, 2.367895, 48.86789, 'H8')
         self._add_taxi(app, Paris.insee, 2.367895, 48.86789, 'Beta Taxis')
         self._add_taxi(app, Bordeaux.insee, -0.5795, 44.776, "Cab'ernet")
@@ -373,16 +374,14 @@ class TestStoreActiveTaxis:
         self._add_taxi(app, Bordeaux.insee, -0.5795, 44.776, 'Beta Taxis')
 
         # One driver is working for two of the operators above with the same vehicle
-        vehicle_description = VehicleDescription.query.filter(
-            User.email == 'H8'
-        ).join(
-            User
-        ).options(
-            joinedload(VehicleDescription.vehicle),
-        )[0]
-        VehicleDescriptionFactory(
-            vehicle=vehicle_description.vehicle,
-            added_by__email='Beta Taxis'
+        # but only one taxi account is active (the one above)
+        TaxiFactory(
+            vehicle__licence_plate=taxi.vehicle.licence_plate,
+            driver__professional_licence=taxi.driver.professional_licence,
+            driver__departement=taxi.driver.departement,
+            ads__numero=taxi.ads.numero,
+            ads__insee=taxi.ads.insee,
+            added_by__email='Beta Taxis',
         )
 
         # Log to the real Influx backend
@@ -399,6 +398,9 @@ class TestStoreActiveTaxis:
         assert influx_backend.get_nb_active_taxis('75056', operator='Beta Taxis') == 1
         assert influx_backend.get_nb_active_taxis('33063', operator="Beta Taxis") == 1
         # Number of taxis per town and operator
+        assert influx_backend.get_nb_active_taxis(operator='H8') == 2
+        assert influx_backend.get_nb_active_taxis(operator="Beta Taxis") == 2
+        assert influx_backend.get_nb_active_taxis(operator="Cab'ernet") == 2
         # Number of taxis per ZUPC and operator
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='H8') == 2
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='Beta Taxis') == 1
