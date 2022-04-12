@@ -206,7 +206,10 @@ def create_app():
 
     db.init_app(app)
     app.influx = InfluxDB(app)
-    app.redis = FlaskRedis(app)
+    redis_kwargs = {}
+    if not app.config.get('REDIS_URL').startswith('unix://'):  # Redis listens on a unix socket in tests, no keepalive
+        redis_kwargs['socket_keepalive'] = True
+    app.redis = FlaskRedis(app, **redis_kwargs)
     configure_celery(app)
 
     # Setup flask-security
