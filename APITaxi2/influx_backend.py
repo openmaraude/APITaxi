@@ -4,45 +4,46 @@ import datetime
 
 from flask import current_app
 
+from APITaxi_models2 import db, nb_taxis_every
 
-def get_nb_active_taxis(insee_code='', zupc_id='', operator=''):
+
+def get_nb_active_taxis(insee_code=None, zupc_id=None, operator=None):
     """Returns the number of active taxis stored by the celery cron
     `store_active_taxis`."""
-    query = '''
-        SELECT "value"
-        FROM "nb_taxis_every_1"
-        WHERE "insee" = $insee_code
-        AND "zupc" = $zupc_id
-        AND "operator" = $operator
-        AND time > NOW() - 1m FILL(null) LIMIT 1;
-    '''
-    bind_params = {'insee_code': insee_code, 'zupc_id': zupc_id, 'operator': operator}
-    try:
-        resp = current_app.influx.query(query, bind_params=bind_params)
-    except Exception as exc:
-        current_app.logger.warning('Unable to query influxdb: %s', exc)
-        return None
+    query = db.session.query(nb_taxis_every.value).filter(
+        nb_taxis_every.measurement == 1,
+        nb_taxis_every.time > datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
+    )
+    if insee_code:
+        query = query.filter(nb_taxis_every.insee == insee_code)
+    if zupc_id:
+        query = query.filter(nb_taxis_every.zupc == zupc_id)
+    if operator:
+        query = query.filter(nb_taxis_every.operator == operator)
+    resp = query.limit(1).scalar()
 
-    points = list(resp.get_points())
-    # InfluxDB is available, but there is no active taxi reported.
-    if not points:
+    # No active taxi reported.
+    if not resp:
         return 0
 
-    ret = points[0].get('value')
-    return ret
+    return resp
 
 
 def log_value(measurement, tags, value=1):
-    try:
-        current_app.influx.write_points([{
-            'measurement': measurement,
-            'tags': tags,
-            'time': datetime.datetime.utcnow().strftime('%Y%m%dT%H:%M:%SZ'),
-            'fields': {
-                'value': value
-            }
-        }])
-        return True
-    except Exception as exc:
-        current_app.logger.warning('Unable to query influxdb: %s', exc)
-        return False
+    with db.session.begin_nested() as nested:
+        try:
+            db.session.add(nb_taxis_every(
+                measurement=measurement,
+                time=datetime.datetime.utcnow(),
+                value=value,
+                insee=tags.get('insee'),
+                zupc=tags.get('zupc'),
+                operator=tags.get('operator'),
+            ))
+            db.session.flush()
+            return True
+        except Exception as exc:
+            nested.rollback()
+            current_app.logger.warning('Unable to query influxdb: %s', exc)
+            return False
+    # The caller must commit() in the end!

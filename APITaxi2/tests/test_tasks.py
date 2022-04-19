@@ -6,7 +6,7 @@ from unittest import mock
 
 from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import Hail, Taxi, VehicleDescription
+from APITaxi_models2 import Hail, Taxi, VehicleDescription, ZUPC
 from APITaxi_models2.unittest.factories import (
     HailFactory,
     TaxiFactory,
@@ -388,6 +388,10 @@ class TestStoreActiveTaxis:
         with mock.patch.object(tasks.operators.current_app.logger, 'info') as mocked_logger:
             tasks.store_active_taxis(1)  # One minute
             assert mocked_logger.call_count == 1
+
+        # Since the session was committed, we have to fetch objects again
+        zupc_paris = ZUPC.query.filter_by(name='Paris').one()
+        zupc_bordeaux = ZUPC.query.filter_by(name='Bordeaux').one()
 
         # Fetch the timed series written
         assert influx_backend.get_nb_active_taxis() == 6

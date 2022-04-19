@@ -71,8 +71,8 @@ class TestZUPCLive:
 
         with QueriesTracker() as qtracker:
             resp = operateur.client.get('/zupc/live')
-            # List permissions, SELECT zupc
-            assert qtracker.count == 2
+            # List permissions, SELECT zupc, total active taxis, operator's active taxis
+            assert qtracker.count == 4
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2

@@ -16,17 +16,21 @@ from .. import redis_backend
 
 def _log_active_taxis(last_update, data):
     """Given a dictionary where keys are Taxi objects, and values list of
-    VehicleDescription, log data in influx.
+    VehicleDescription, log data in postgres.
 
-    The following entries are written into influx:
+    The following entries are written into the nb_taxis_every table:
 
-    - measurement=nb_taxis_every_<last_update>
-    - measurement=nb_taxis_every_<last_update> grouped by zupc
-    - measurement=nb_taxis_every_<last_update> grouped by operator
-    - measurement=nb_taxis_every_<last_update> grouped by zupc and operator
+    - measurement={last_update}, value={count total}
+    - measurement={last_update}, value={count grouped by insee}
+    - measurement={last_update}, value={count grouped by zupc}
+    - measurement={last_update}, value={count grouped by operator}
+    - measurement={last_update}, value={count grouped by insee and operator}
+    - measurement={last_update}, value={count grouped by zupc and operator}
+
+    with the appropriate tags (which insee, zupc, and/or operator...)
     """
     influx_backend.log_value(
-        'nb_taxis_every_%s' % last_update,
+        last_update,
         {},
         value=len(data)
     )
@@ -37,7 +41,7 @@ def _log_active_taxis(last_update, data):
     # Group data by insee code
     for insee in sorted(taxis_by_insee):
         influx_backend.log_value(
-            'nb_taxis_every_%s' % last_update,
+            last_update,
             {
                 'insee': insee  # Insee code used as the key
             },
@@ -53,7 +57,7 @@ def _log_active_taxis(last_update, data):
     for zupc in covered_zupc:
         nb_taxis = sum(taxis_by_insee[town.insee] for town in zupc.allowed)
         influx_backend.log_value(
-            'nb_taxis_every_%s' % last_update,
+            last_update,
             {
                 'zupc': zupc.zupc_id
             },
@@ -67,7 +71,7 @@ def _log_active_taxis(last_update, data):
 
     for operator, num_active in operators.items():
         influx_backend.log_value(
-            'nb_taxis_every_%s' % last_update,
+            last_update,
             {
                 'operator': operator
             },
@@ -83,7 +87,7 @@ def _log_active_taxis(last_update, data):
 
     for (insee, operator), num_active in town_operators.items():
         influx_backend.log_value(
-            'nb_taxis_every_%s' % last_update,
+            last_update,
             {
                 'operator': operator,
                 'insee': insee
@@ -103,7 +107,7 @@ def _log_active_taxis(last_update, data):
 
     for (zupc_id, operator), num_active in zupc_operators.items():
         influx_backend.log_value(
-            'nb_taxis_every_%s' % last_update,
+            last_update,
             {
                 'operator': operator,
                 'zupc': zupc_id
@@ -160,3 +164,4 @@ def store_active_taxis(last_update):
         to_log[taxi].append(vehicle_description)
 
     _log_active_taxis(last_update, to_log)
+    db.session.commit()
