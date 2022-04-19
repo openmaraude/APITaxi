@@ -54,7 +54,6 @@ class TestGetHailDetails:
         # From hail creation until it's end, it is possible to get the taxi
         # location.
         for status in (
-            'emitted',
             'received',
             'sent_to_operator',
             'received_by_operator',

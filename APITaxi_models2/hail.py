@@ -16,15 +16,11 @@ HAIL_TERMINAL_STATUS = (
     'declined_by_customer',
     'timeout_customer',
     'timeout_accepted_by_customer',
-    'outdated_customer',
-    'outdated_taxi',
-    'customer_banned',
     'finished',
 )
 
 # All possible hail status
 HAIL_STATUS = (
-    'emitted',
     'received',
     'sent_to_operator',
     'received_by_operator',
