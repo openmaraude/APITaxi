@@ -26,7 +26,7 @@ CELERY_BEAT_SCHEDULE = {
         'args': (1,),
     },
 
-    # Every hour, store the list of taxis available the last minute.
+    # Every hour, store the list of taxis available the last hour.
     'store-active-taxis-last-hour': {
         'task': 'store_active_taxis',
         'schedule': _ONE_HOUR,
