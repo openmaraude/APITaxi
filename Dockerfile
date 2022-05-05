@@ -57,14 +57,14 @@ ENV APITAXI_CONFIG_FILE=/settings.py
 # The simple CMD format is used on purpose, until we understand why CMD [...] doesn't work.
 #
 # --debug-force-polling is required for mac M1, see https://github.com/gorakhargosh/watchdog/issues/838
-CMD watchmedo auto-restart --debug-force-polling true --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery worker -E -c 1
+CMD watchmedo auto-restart --debug-force-polling true --interval 2 --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery worker -E -c 1
 
 
 ##### DEV WORKER BEAT IMAGE #####
 
 FROM worker-devenv AS worker-beat-devenv
 
-CMD watchmedo auto-restart --debug-force-polling true --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery beat -s /tmp/celerybeat-schedule --pidfile /tmp/celerybeat.pid
+CMD watchmedo auto-restart --debug-force-polling true --interval 2 --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery beat -s /tmp/celerybeat-schedule --pidfile /tmp/celerybeat.pid
 
 
 ##### PROD IMAGE #####
