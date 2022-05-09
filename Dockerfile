@@ -5,6 +5,7 @@ FROM ubuntu:impish AS devenv
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
+RUN apt-get install -y gpgv
 RUN apt-get update && apt-get install -y \
   git \
   less \
@@ -16,8 +17,7 @@ RUN apt-get update && apt-get install -y \
   redis-server \
   influxdb \
   sudo \
-  vim \
-  gpgv
+  vim
 
 RUN pip3 install virtualenv
 
