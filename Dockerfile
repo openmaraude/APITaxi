@@ -1,6 +1,6 @@
 ##### DEV API IMAGE #####
 
-FROM ubuntu:impish AS devenv
+FROM ubuntu AS devenv
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
@@ -80,7 +80,7 @@ CMD watchmedo auto-restart --debug-force-polling true --interval 2 --directory=/
 # module = APITaxi:create_app()
 # socket = 0.0.0.0:5000
 # stats = 0.0.0.0:5007 --stats-http
-FROM ubuntu:impish
+FROM ubuntu
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
