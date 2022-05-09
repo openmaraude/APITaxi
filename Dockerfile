@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
   redis-server \
   influxdb \
   sudo \
-  vim
+  vim \
+  gpgv
 
 RUN pip3 install virtualenv
 
