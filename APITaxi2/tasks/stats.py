@@ -1,4 +1,4 @@
-"""Store statistics into influxdb."""
+"""Store statistics into time series tables."""
 
 import collections
 from datetime import datetime
@@ -18,20 +18,17 @@ def _log_active_taxis(last_update, data):
     """Given a dictionary where keys are Taxi objects, and values list of
     VehicleDescription, log data in postgres.
 
-    The following entries are written into the nb_taxis_every table:
+    The following entries are written into the stats_xxx tables:
 
-    - measurement={last_update}, value={count total}
-    - measurement={last_update}, value={count grouped by insee}
-    - measurement={last_update}, value={count grouped by zupc}
-    - measurement={last_update}, value={count grouped by operator}
-    - measurement={last_update}, value={count grouped by insee and operator}
-    - measurement={last_update}, value={count grouped by zupc and operator}
-
-    with the appropriate tags (which insee, zupc, and/or operator...)
+    - value total
+    - value grouped by insee
+    - value grouped by zupc
+    - value grouped by operator
+    - value grouped by insee and operator
+    - value grouped by zupc and operator
     """
     influx_backend.log_value(
         last_update,
-        {},
         value=len(data)
     )
 
@@ -42,7 +39,7 @@ def _log_active_taxis(last_update, data):
     for insee in sorted(taxis_by_insee):
         influx_backend.log_value(
             last_update,
-            {
+            **{
                 'insee': insee  # Insee code used as the key
             },
             value=taxis_by_insee[insee]
@@ -58,7 +55,7 @@ def _log_active_taxis(last_update, data):
         nb_taxis = sum(taxis_by_insee[town.insee] for town in zupc.allowed)
         influx_backend.log_value(
             last_update,
-            {
+            **{
                 'zupc': zupc.zupc_id
             },
             value=nb_taxis
@@ -72,7 +69,7 @@ def _log_active_taxis(last_update, data):
     for operator, num_active in operators.items():
         influx_backend.log_value(
             last_update,
-            {
+            **{
                 'operator': operator
             },
             value=num_active
@@ -88,7 +85,7 @@ def _log_active_taxis(last_update, data):
     for (insee, operator), num_active in town_operators.items():
         influx_backend.log_value(
             last_update,
-            {
+            **{
                 'operator': operator,
                 'insee': insee
             },
@@ -108,7 +105,7 @@ def _log_active_taxis(last_update, data):
     for (zupc_id, operator), num_active in zupc_operators.items():
         influx_backend.log_value(
             last_update,
-            {
+            **{
                 'operator': operator,
                 'zupc': zupc_id
             },
@@ -118,7 +115,7 @@ def _log_active_taxis(last_update, data):
 
 @celery.task(name='store_active_taxis')
 def store_active_taxis(last_update):
-    """Store statistics into influxdb of taxis with a location update
+    """Store statistics into time series tables of taxis with a location update
     made since `last_update` minutes ago.
 
     This function is a readable rewrite from the old API, but it generates a
