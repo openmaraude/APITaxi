@@ -1,3 +1,6 @@
+import os
+
+
 # SQLALCHEMY_ECHO = True
 
 # Warning is displayed when SQLALCHEMY_TRACK_MODIFICATIONS is the default.
@@ -51,3 +54,56 @@ CELERY_BEAT_SCHEDULE = {
 SQLALCHEMY_ENGINE_OPTIONS = {
     'pool_pre_ping': True
 }
+
+
+def parse_env_bool(value):
+    """Convert the string value to a boolean."""
+    if value is None:
+        return None
+    elif value.lower() in ('yes', 'true', '1', 't'):
+        return True
+    elif value.lower() in ('no', 'false', '0', 'f', ''):
+        return False
+    raise ValueError(f'Invalid boolean value "{value}" in environment')
+
+
+# The following code reads environment to create settings.
+#
+# The first entry of the list is the name of the setting to create, and also
+# the name of the environment variable to get the value from.
+#
+# The second entry is an optional alternative name. It is used to deploy on
+# clevercloud, where it is not possible to rename variables exposed by addons.
+#
+# The "algorithm" works as follow, for example for SQLALCHEMY_DATABASE_URI:
+# - if the environment variable SQLALCHEMY_DATABASE_URI is set, create a global
+#   variable named SQLALCHEMY_DATABASE_URI with it's value.
+# - otherwise, create a global variable SQLALCHEMY_DATABASE_URI with the value of
+#   the environment variable POSTGRESQL_ADDON_URI.
+for _env_var, _alt_name, _env_type in (
+    ('DEBUG', None, parse_env_bool),
+    ('SERVER_NAME', None, str),
+    ('INTEGRATION_ENABLED', None, parse_env_bool),
+    ('INTEGRATION_ACCOUNT_EMAIL', None, str),
+    ('GEOTAXI_HOST', None, str),
+    ('GEOTAXI_PORT', None, int),
+    ('SECRET_KEY', None, str),
+    ('SQLALCHEMY_DATABASE_URI', 'POSTGRESQL_ADDON_URI', str),
+    ('REDIS_URL', None, str),
+    ('SECURITY_PASSWORD_SALT', None, str),
+    ('CELERY_BROKER_URL', 'REDIS_URL', str),
+    ('CELERY_RESULT_BACKEND', 'REDIS_URL', str),
+    ('INFLUXDB_HOST', [], None),
+    ('INFLUXDB_PORT', None, int),
+    ('INFLUXDB_USER', None, str),
+    ('INFLUXDB_PASSWORD', None, str),
+    ('INFLUXDB_DATABASE', None, str),
+    ('INFLUXDB_USE_UDP', None, parse_env_bool),
+    ('INFLUXDB_UDP_PORT', None, int),
+    ('SENTRY_DSN', None, str),
+):
+    _val = os.getenv(_env_var) or (_alt_name and os.getenv(_alt_name))
+    if not _val:
+        continue
+
+    globals()[_env_var] = _env_type(_val)

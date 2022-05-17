@@ -186,12 +186,8 @@ def create_app():
     app.config.from_object('APITaxi2.default_settings')
 
     # Override default conf with environment variable APITAXI_CONFIG_FILE
-    if 'APITAXI_CONFIG_FILE' not in os.environ:
-        raise RuntimeError('APITAXI_CONFIG_FILE environment variable required')
-    try:
+    if os.getenv('APITAXI_CONFIG_FILE'):
         app.config.from_envvar('APITAXI_CONFIG_FILE')
-    except FileNotFoundError:
-        app.logger.warning('File %s does not exist, skip loading' % os.getenv('APITAXI_CONFIG_FILE'))
 
     sentry_dsn = app.config.get('SENTRY_DSN')
     if sentry_dsn:
@@ -207,7 +203,8 @@ def create_app():
     db.init_app(app)
     app.influx = InfluxDB(app)
     redis_kwargs = {}
-    if not app.config.get('REDIS_URL').startswith('unix://'):  # Redis listens on a unix socket in tests, no keepalive
+    # Redis listens on a unix socket in tests, no keepalive
+    if not app.config.get('REDIS_URL', '').startswith('unix://'):
         redis_kwargs['socket_keepalive'] = True
     app.redis = FlaskRedis(app, **redis_kwargs)
     configure_celery(app)

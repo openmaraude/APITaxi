@@ -69,18 +69,7 @@ CMD watchmedo auto-restart --debug-force-polling true --interval 2 --directory=/
 
 
 ##### PROD IMAGE #####
-
-# Example of uwsgi.ini to mount in /uwsgi.ini:
-#
-# [uwsgi]
-#
-# master = true
-# processes = 24
-# plugin = python3
-# module = APITaxi:create_app()
-# socket = 0.0.0.0:5000
-# stats = 0.0.0.0:5007 --stats-http
-FROM ubuntu:20.04
+FROM ubuntu
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
@@ -89,7 +78,9 @@ RUN apt-get update && apt-get install -y \
   libpq-dev \
   python3-pip \
   uwsgi \
-  uwsgi-plugin-python3
+  uwsgi-plugin-python3 \
+  libgeos-dev \
+  supervisor
 
 RUN useradd api
 
@@ -105,11 +96,20 @@ ENV FLASK_APP=APITaxi
 RUN mkdir -p /var/run/api-taxi
 RUN chown api:api /var/run/api-taxi
 
-COPY . /app
+# COPY setup.py first before running `pip3 install .` to use Docker cache if
+# dependencies did not change. APITaxi/__init__.py is read by setup.py, so it
+# is also required.
+COPY setup.py /app/
+COPY APITaxi/__init__.py /app/APITaxi/
 WORKDIR /app
 
 RUN pip3 install .
 
-USER api
+# Supervisor and services configuration
+COPY deploy/supervisor/* /etc/supervisor/conf.d/
+COPY deploy/conf/* /etc/api-taxi/
 
-CMD ["uwsgi", "/uwsgi.ini"]
+# Application source code
+COPY . /app
+
+CMD ["/usr/bin/supervisord", "--nodaemon"]
