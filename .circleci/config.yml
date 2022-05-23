@@ -17,43 +17,6 @@ jobs:
           command: |
             tox
 
-  build:
-    docker:
-      - image: circleci/buildpack-deps:stretch
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build docker images
-          command: |
-            docker build --target devenv -t openmaraude/api_taxi-devenv:${CIRCLE_TAG} .
-            docker tag openmaraude/api_taxi-devenv:${CIRCLE_TAG} openmaraude/api_taxi-devenv:latest
-
-            docker build --target worker-devenv -t openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG} .
-            docker tag openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG} openmaraude/api_taxi-worker-devenv:latest
-
-            docker build --target worker-beat-devenv -t openmaraude/api_taxi-worker-beat-devenv:${CIRCLE_TAG} .
-            docker tag openmaraude/api_taxi-worker-beat-devenv:${CIRCLE_TAG} openmaraude/api_taxi-worker-beat-devenv:latest
-
-            docker build -t openmaraude/api_taxi:${CIRCLE_TAG} .
-            docker tag openmaraude/api_taxi:${CIRCLE_TAG} openmaraude/api_taxi:latest
-      - run:
-          name: Publish docker images to hub.docker.com
-          command: |
-            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-            docker push openmaraude/api_taxi-devenv:${CIRCLE_TAG}
-            docker push openmaraude/api_taxi-devenv:latest
-
-            docker push openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG}
-            docker push openmaraude/api_taxi-worker-devenv:latest
-
-            docker push openmaraude/api_taxi-worker-beat-devenv:${CIRCLE_TAG}
-            docker push openmaraude/api_taxi-worker-beat-devenv:latest
-
-            docker push openmaraude/api_taxi:${CIRCLE_TAG}
-            docker push openmaraude/api_taxi:latest
-
 workflows:
   version: 2
 
@@ -69,12 +32,5 @@ workflows:
           filters:
             branches:
               ignore: /.*/
-            tags:
-              only: /.*/
-
-      - build:
-          requires:
-            - test
-          filters:
             tags:
               only: /.*/
