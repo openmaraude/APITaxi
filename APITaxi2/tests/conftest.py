@@ -40,6 +40,7 @@ INFLUXDB_DATABASE = '%(influx_database)s'
 INFLUXDB_PORT = %(influx_port)s
 SECURITY_PASSWORD_HASH = 'plaintext'
 DEBUG = True
+CONSOLE_URL = 'http://console'
 ''' % {
         'database': postgresql.url(),
         'redis': 'unix://%s' % redis_server,

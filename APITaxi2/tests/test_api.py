@@ -117,30 +117,30 @@ def test_logas(app, admin, operateur):
     """User can set X-Logas with the email of the account to login. User needs
     to be administrator or the manager of the logas account."""
 
-    @app.route('/', methods=['GET'])
+    @app.route('/current_user', methods=['GET'])
     @login_required
     def root():
         return {'user': current_user.email}
 
-    resp = admin.client.get('/')
+    resp = admin.client.get('/current_user')
     assert resp.status_code == 200
     assert resp.json['user'] == admin.user.email
 
-    resp = operateur.client.get('/')
+    resp = operateur.client.get('/current_user')
     assert resp.status_code == 200
     assert resp.json['user'] == operateur.user.email
 
-    resp = admin.client.get('/', headers={'X-Logas': operateur.user.email})
+    resp = admin.client.get('/current_user', headers={'X-Logas': operateur.user.email})
     assert resp.status_code == 200
     assert resp.json['user'] == operateur.user.email
 
-    resp = operateur.client.get('/', headers={'X-Logas': admin.user.email})
+    resp = operateur.client.get('/current_user', headers={'X-Logas': admin.user.email})
     assert resp.status_code == 401
     assert resp.json['errors'][''][0] == 'Header X-Api-Key and/or X-Logas not valid.'
 
     new_user = UserFactory(manager=operateur.user)
 
-    resp = operateur.client.get('/', headers={'X-Logas': new_user.email})
+    resp = operateur.client.get('/current_user', headers={'X-Logas': new_user.email})
     assert resp.status_code == 200
 
 
