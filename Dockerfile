@@ -69,7 +69,7 @@ CMD watchmedo auto-restart --debug-force-polling --interval=2 --directory=/git/ 
 
 
 ##### PROD IMAGE #####
-FROM ubuntu
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
