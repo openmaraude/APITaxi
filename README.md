@@ -68,3 +68,25 @@ $> cd APITaxi_models2
 $> alembic current
 $> alembic upgrade head
 ```
+
+## Production
+
+To deploy to production, setup the following remote and push on the master branches.
+
+```
+git remote add clever-dev git+ssh://git@push-n2-par-clevercloud-customers.services.clever-cloud.com/app_89d4b1b8-08db-4e3c-9bb6-07fd2e48ff71.git
+git remote add clever-prod git+ssh://git@push-n2-par-clevercloud-customers.services.clever-cloud.com/app_75718459-4a50-4386-a57a-a4e6a841e962.git
+```
+
+To connect to containers, install [CleverCloud CLI](https://www.clever-cloud.com/doc/reference/clever-tools/getting_started/) and run the following commands:
+
+```
+clever link app_75718459-4a50-4386-a57a-a4e6a841e962
+clever link app_89d4b1b8-08db-4e3c-9bb6-07fd2e48ff71
+
+# Outputs "dev-api" and "prod-api"
+clever applications
+
+clever ssh -a dev-api
+clever ssh -a prod-api
+```
