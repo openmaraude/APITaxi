@@ -37,6 +37,13 @@ def load_config():
     """
     conf_file = os.getenv('APITAXI_CONFIG_FILE')
     if not conf_file:
+        url = os.getenv('SQLALCHEMY_DATABASE_URI') or os.getenv('POSTGRESQL_ADDON_URI')
+        if url:
+            sys.stderr.write('APITAXI_CONFIG_FILE not defined. Fallback to '
+                            'environment variables\n')
+            config.set_main_option('sqlalchemy.url', url)
+            return
+
         sys.stderr.write('APITAXI_CONFIG_FILE not defined. Fallback to '
                          'PostgreSQL configuration from alembic.ini\n')
         return
