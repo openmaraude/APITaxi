@@ -9,7 +9,7 @@ from . import db
 
 class BaseStats(db.Model):
     __abstract__ = True
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     time = db.Column(db.DateTime, primary_key=True)
     value = db.Column(db.Integer, nullable=False)
 
