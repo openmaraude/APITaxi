@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from APITaxi_models2 import db, Taxi, Town, User, VehicleDescription, ZUPC
 
 from . import celery
-from .. import influx_backend
+from .. import stats_backend
 from .. import redis_backend
 
 
@@ -27,7 +27,7 @@ def _log_active_taxis(last_update, data):
     - value grouped by insee and operator
     - value grouped by zupc and operator
     """
-    influx_backend.log_value(
+    stats_backend.log_value(
         last_update,
         value=len(data)
     )
@@ -37,7 +37,7 @@ def _log_active_taxis(last_update, data):
 
     # Group data by insee code
     for insee in sorted(taxis_by_insee):
-        influx_backend.log_value(
+        stats_backend.log_value(
             last_update,
             **{
                 'insee': insee  # Insee code used as the key
@@ -53,7 +53,7 @@ def _log_active_taxis(last_update, data):
     ).all()
     for zupc in covered_zupc:
         nb_taxis = sum(taxis_by_insee[town.insee] for town in zupc.allowed)
-        influx_backend.log_value(
+        stats_backend.log_value(
             last_update,
             **{
                 'zupc': zupc.zupc_id
@@ -67,7 +67,7 @@ def _log_active_taxis(last_update, data):
     )
 
     for operator, num_active in operators.items():
-        influx_backend.log_value(
+        stats_backend.log_value(
             last_update,
             **{
                 'operator': operator
@@ -83,7 +83,7 @@ def _log_active_taxis(last_update, data):
                 town_operators[(taxi.ads.insee, description.added_by.email)] += 1
 
     for (insee, operator), num_active in town_operators.items():
-        influx_backend.log_value(
+        stats_backend.log_value(
             last_update,
             **{
                 'operator': operator,
@@ -103,7 +103,7 @@ def _log_active_taxis(last_update, data):
                     zupc_operators[(zupc.zupc_id, description.added_by.email)] += 1
 
     for (zupc_id, operator), num_active in zupc_operators.items():
-        influx_backend.log_value(
+        stats_backend.log_value(
             last_update,
             **{
                 'operator': operator,

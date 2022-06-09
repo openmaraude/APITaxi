@@ -1,5 +1,5 @@
 """
-Quick'n dirty InfluxDB replacement
+Quick'n dirty TimeScaleDB stats
 """
 
 from sqlalchemy import event, DDL

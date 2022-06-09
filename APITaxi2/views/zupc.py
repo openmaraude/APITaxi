@@ -10,7 +10,7 @@ from geoalchemy2 import Geometry
 from APITaxi_models2 import db, Town, ZUPC
 from APITaxi_models2.zupc import town_zupc
 
-from .. import influx_backend
+from .. import stats_backend
 from .. import schemas
 from ..validators import (
     make_error_json_response,
@@ -32,10 +32,10 @@ def _get_zupc_stats(filter_name, filter_value, include_total, include_operators)
     """
     stats = {}
     if include_total:
-        stats['total'] = influx_backend.get_nb_active_taxis(**{filter_name: filter_value})
+        stats['total'] = stats_backend.get_nb_active_taxis(**{filter_name: filter_value})
     if include_operators:
         stats['operators'] = {
-            current_user.email: influx_backend.get_nb_active_taxis(
+            current_user.email: stats_backend.get_nb_active_taxis(
                 **{filter_name: filter_value},
                 operator=current_user.email
             )
