@@ -1,4 +1,4 @@
-import dateutil
+import dateutil.parser
 
 from APITaxi_models2.unittest.factories import (
     CustomerFactory,

@@ -157,3 +157,8 @@ def delete_old_orphans():
     print(f"{driver_count} old drivers deleted")
     print(f"{ads_count} old ADS deleted")
     print(f"{vehicle_count} old vehicle descriptions deleted")
+
+
+@clean.command(help='Delete minute-wise stats after a reasonable period')
+def delete_old_stats_minute():
+    clean_db.delete_old_stats_minute()

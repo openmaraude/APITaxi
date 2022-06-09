@@ -7,9 +7,6 @@ import os
 # Future SQLAlchemy version will set this value to False by default anyway.
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-INFLUXDB_DATABASE = 'taxis'
-INFLUXDB_CREATE_DATABASE = False
-
 _ONE_MINUTE = 60
 _ONE_HOUR = _ONE_MINUTE * 60
 _ONE_DAY = _ONE_HOUR * 24

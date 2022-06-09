@@ -8,8 +8,8 @@ from shapely.strtree import STRtree
 from sqlalchemy.orm import joinedload
 
 from APITaxi2 import redis_backend
-from APITaxi_models2 import db, ADS, Driver, Taxi, VehicleDescription, Hail, Town
-from APITaxi_models2 import ArchivedHail
+from APITaxi_models2 import db, ADS, ArchivedHail, Driver, Taxi, VehicleDescription, Hail, Town
+from APITaxi_models2.stats import *
 
 
 class TownHelper:
@@ -241,3 +241,17 @@ def delete_old_orphans():
     # Vehicles have no "added_at"
 
     return driver_count, ads_count, vehicle_count
+
+def delete_old_stats_minute():
+    """Keep one week worth of stats"""
+    threshold = datetime.datetime.now() - datetime.timedelta(days=7)
+    for model in (
+        stats_minute,
+        stats_minute_insee,
+        stats_minute_zupc,
+        stats_minute_operator,
+        stats_minute_operator_insee,
+        stats_minute_operator_zupc,
+    ):
+        model.query.filter(model.time<threshold).delete()
+    db.session.commit()

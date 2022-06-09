@@ -11,11 +11,9 @@ DEPENDENCIES = [
     'apispec-webframeworks',
     'bcrypt',
     'celery',
-    'dataclasses',  # for Python3.6
     'email-validator',
     'Flask',
     'Flask-Cors',
-    'flask-influxdb',
     'Flask-Login',
     'Flask-Migrate',
     'Flask-Principal',

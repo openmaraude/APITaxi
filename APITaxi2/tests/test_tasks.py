@@ -384,7 +384,7 @@ class TestStoreActiveTaxis:
             added_by__email='Beta Taxis',
         )
 
-        # Log to the real Influx backend
+        # Log to the real stats backend
         with mock.patch.object(tasks.operators.current_app.logger, 'info') as mocked_logger:
             tasks.store_active_taxis(1)  # One minute
             assert mocked_logger.call_count == 1
@@ -406,10 +406,13 @@ class TestStoreActiveTaxis:
         assert influx_backend.get_nb_active_taxis(operator="Beta Taxis") == 2
         assert influx_backend.get_nb_active_taxis(operator="Cab'ernet") == 2
         # Number of taxis per town and operator
+        assert influx_backend.get_nb_active_taxis('75056', operator='H8') == 2
         assert influx_backend.get_nb_active_taxis('75056', operator='Beta Taxis') == 1
         assert influx_backend.get_nb_active_taxis('33063', operator="Beta Taxis") == 1
+        assert influx_backend.get_nb_active_taxis('33063', operator="Cab'ernet") == 2
         # Number of taxis per ZUPC and operator
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='H8') == 2
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='Beta Taxis') == 1
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator="Cab'ernet") == 2
         assert influx_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator='Beta Taxis') == 1
+    

@@ -1,6 +1,7 @@
 import datetime
 
-from APITaxi_models2 import Hail, ArchivedHail, Taxi, Driver, ADS, VehicleDescription
+from APITaxi_models2 import db, Hail, ArchivedHail, Taxi, Driver, ADS, VehicleDescription
+from APITaxi_models2.stats import *
 from APITaxi_models2.unittest import factories
 
 from APITaxi2 import clean_db, redis_backend
@@ -210,3 +211,17 @@ class TestDeleteOldOrphans:
         assert Driver.query.count() == 3  # The two taxis still existing
         assert ADS.query.count() == 3     # plus the too recent to be deleted orphans
         assert VehicleDescription().query.count() == 3
+
+
+class TestDeleteOldStats:
+    def test_ok(self, app):
+        now = datetime.datetime.now()
+        old = now - datetime.timedelta(days=8)
+        recent = now - datetime.timedelta(days=6)
+
+        db.session.add(stats_minute(time=old, value=10))
+        db.session.add(stats_minute(time=recent, value=20))
+
+        assert stats_minute.query.count() == 2
+        clean_db.delete_old_stats_minute()
+        assert stats_minute.query.count() == 1

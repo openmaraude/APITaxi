@@ -10,7 +10,6 @@ This project has several dependencies:
 * celery for asynchronous tasks
 * redis as celery backend
 * redis as database where taxis' locations are stored
-* InfluxDB to store statistics
 
 To setup the API locally, use [APITaxi_devel](https://github.com/openmaraude/APITaxi_devel).
 

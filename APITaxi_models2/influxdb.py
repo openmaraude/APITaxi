@@ -1,5 +1,7 @@
 """
 Quick'n dirty InfluxDB replacement
+
+TODO remove
 """
 
 from . import db

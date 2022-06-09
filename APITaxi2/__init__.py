@@ -9,7 +9,6 @@ from apispec.ext.marshmallow import MarshmallowPlugin
 from apispec_webframeworks.flask import FlaskPlugin
 from flask import current_app, Flask, jsonify, request
 from flask_cors import CORS
-from flask_influxdb import InfluxDB
 from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
 
@@ -201,7 +200,6 @@ def create_app():
         )
 
     db.init_app(app)
-    app.influx = InfluxDB(app)
     redis_kwargs = {}
     # Redis listens on a unix socket in tests, no keepalive
     if not app.config.get('REDIS_URL', '').startswith('unix://'):
