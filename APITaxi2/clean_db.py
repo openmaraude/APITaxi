@@ -9,18 +9,19 @@ from sqlalchemy.orm import joinedload
 
 from APITaxi2 import redis_backend
 from APITaxi_models2 import db, ADS, ArchivedHail, Driver, Taxi, VehicleDescription, Hail, Town
+from APITaxi_models2.zupc import town_zupc
 from APITaxi_models2.stats import *
 
 
 class TownHelper:
 
-    def __init__(self):
+    def __init__(self, insee_codes):
         self._shape_to_insee = {}
         self._insee_to_shape = {}
-        self._preload_towns()
+        self._preload_towns(insee_codes)
 
-    def _preload_towns(self):
-        for town in db.session.query(Town):
+    def _preload_towns(self, insee_codes):
+        for town in db.session.query(Town).filter(Town.insee.in_(insee_codes)):
             shape = to_shape(town.shape)
             self._shape_to_insee[id(shape)] = town.insee  # MultiPolygon unhashable
             self._insee_to_shape[town.insee] = shape
@@ -75,10 +76,16 @@ def blur_hails():
     """
     After two months, location is blurred to only point to the geographical center of the town.
 
-    Blurred hails are tagged, so we know the location is approximative.
+    Blurred hails are tagged, so we know the location is approximated.
     """
     threshold = datetime.datetime.now() - datetime.timedelta(days=60)
-    town_helper = TownHelper()
+
+    # First preload the subset of towns we'll work with. We can't tell which towns we'll need in advance
+    # but we can already limit to towns where taxis are registered.
+    ads_insee = {insee for insee, in db.session.query(ADS.insee)}
+    zupc_insee = {insee for insee, in db.session.query(Town.insee).join(town_zupc)}
+    town_helper = TownHelper(ads_insee | zupc_insee)
+
     count = 0
 
     for count, hail in enumerate(db.session.query(Hail).filter(
@@ -112,7 +119,13 @@ def archive_hails():
     After a year, blurred hails aren't deleted but moved to a stripped down version in another table.
     """
     threshold = datetime.datetime.now() - datetime.timedelta(days=365)
-    town_helper = TownHelper()
+
+    # First preload the subset of towns we'll work with. We can't tell which towns we'll need in advance
+    # but we can already limit to towns where taxis are registered.
+    ads_insee = {insee for insee, in db.session.query(ADS.insee)}
+    zupc_insee = {insee for insee, in db.session.query(Town.insee).join(town_zupc)}
+    town_helper = TownHelper(ads_insee | zupc_insee)
+
     count = 0
 
     hail_ids = [
