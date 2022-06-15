@@ -77,7 +77,8 @@ RUN apt-get update && apt-get install -y \
   libpq-dev \
   python3-pip \
   libgeos-dev \
-  supervisor
+  supervisor \
+  less
 
 RUN useradd api
 
