@@ -76,8 +76,6 @@ ENV DEBCONF_NONINTERACTIVE_SEEN=true
 RUN apt-get update && apt-get install -y \
   libpq-dev \
   python3-pip \
-  uwsgi \
-  uwsgi-plugin-python3 \
   libgeos-dev \
   supervisor
 
@@ -87,7 +85,7 @@ RUN useradd api
 ENV LC_ALL=C.UTF-8
 
 # Install admin interface
-RUN pip3 install flower
+RUN pip3 install uwsgi flower
 
 # `flask shell` and flask commands like `flask create_user` need FLASK_APP to be set.
 ENV FLASK_APP=APITaxi
