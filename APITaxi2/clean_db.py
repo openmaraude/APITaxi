@@ -53,8 +53,8 @@ def blur_geotaxi():
     There is a celery task already deleting geolocation after two minutes, except for the
     main index, used for statistics.
 
-    We need to expire this index after two months, but we also need it to detect inactive
-    taxis. Instead, replace the locations with null data.
+    We need to expire this index after two months, but we also need it for later detecting inactive
+    taxis (delete_old_taxis). Instead, replace the locations with null data.
     """
     threshold = datetime.datetime.now() - datetime.timedelta(days=60)
     pipeline = current_app.redis.pipeline()
