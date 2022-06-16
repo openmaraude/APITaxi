@@ -41,6 +41,11 @@ def task_delete_old_orphans():
     print(f"{vehicle_count} old vehicle descriptions deleted")
 
 
+@celery.task(name='delete_old_stats_minute')
+def task_delete_old_stats_minute():
+    clean_db.delete_old_stats_minute()
+
+
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(crontab(hour=4, minute=0), task_blur_geotaxi.s())
@@ -48,3 +53,4 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(crontab(hour=4, minute=4), task_archive_hails.s())
     sender.add_periodic_task(crontab(hour=4, minute=6), task_delete_old_taxis.s())
     sender.add_periodic_task(crontab(hour=4, minute=8), task_delete_old_orphans.s())
+    sender.add_periodic_task(crontab(hour=4, minute=10), task_delete_old_stats_minute.s())
