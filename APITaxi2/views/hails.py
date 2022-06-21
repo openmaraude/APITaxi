@@ -6,7 +6,6 @@ import uuid
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
 
-import sqlalchemy
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased, joinedload
 
@@ -186,7 +185,7 @@ def _ban_is_ongoing(customer):
     if not customer.ban_end:
         return False
 
-    res = db.session.query(customer.ban_end >= sqlalchemy.func.NOW()).scalar()
+    res = db.session.query(customer.ban_end >= func.NOW()).scalar()
     return res
 
 
@@ -203,16 +202,16 @@ def _ban_customer(customer):
     if customer.ban_begin and customer.ban_end:
         # 1. a)
         if not _ban_is_ongoing(customer):
-            customer.ban_begin = sqlalchemy.func.NOW()
-            customer.ban_end = sqlalchemy.func.NOW() + timedelta(hours=+24)
+            customer.ban_begin = func.NOW()
+            customer.ban_end = func.NOW() + timedelta(hours=+24)
         # 1. b)
         else:
             ban_duration = customer.ban_end - customer.ban_begin
             customer.ban_end = customer.ban_end + ban_duration
     # Case 2
     else:
-        customer.ban_begin = sqlalchemy.func.NOW()
-        customer.ban_end = sqlalchemy.func.NOW() + timedelta(hours=+24)
+        customer.ban_begin = func.NOW()
+        customer.ban_end = func.NOW() + timedelta(hours=+24)
 
 
 def _check_session_id(operator, customer, session_id):
@@ -430,6 +429,8 @@ def hails_details(hail_id):
         args,
         hail.operateur == current_user or current_user.has_role('admin')
     )
+    if operateur_changes:
+        hail.last_update_at = func.NOW()
     if error:
         return error
 
@@ -448,6 +449,8 @@ def hails_details(hail_id):
         args,
         hail.added_by == current_user or current_user.has_role('admin')
     )
+    if moteur_changes:
+        hail.last_update_at = func.NOW()
     if error:
         return error
 
@@ -789,7 +792,8 @@ def hails_create():
         added_by=current_user,
         added_via='api',
         added_at=func.NOW(),
-        source='added_by'
+        source='added_by',
+        last_update_at=func.NOW(),
     )
     processes.change_status(hail, 'received', user=current_user)
     db.session.add(hail)
