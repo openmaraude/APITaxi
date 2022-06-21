@@ -6,7 +6,7 @@ sudo -E find /venv/ -maxdepth 0 -empty -exec virtualenv /venv \;
 
 . /venv/bin/activate
 
-sudo -E /venv/bin/pip install flower tox watchdog[watchmedo] pytest flake8 pylint
+sudo -E /venv/bin/pip install flower tox "watchdog[watchmedo]>=2.1.9" pytest flake8 pylint
 
 test -d "/git/APITaxi" && sudo -E /venv/bin/pip install -e "/git/APITaxi"
 
