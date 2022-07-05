@@ -840,6 +840,10 @@ class HailSchema(Schema):
             ret['taxi']['driver']['first_name'] = ""
             ret['taxi']['driver']['last_name'] = ""
 
+        # The phone number is only needed when the two parties reach other
+        if hail.status != 'accepted_by_customer':
+            ret['customer_phone_number'] = ""
+
         return ret
 
 
