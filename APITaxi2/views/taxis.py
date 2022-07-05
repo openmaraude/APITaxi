@@ -104,7 +104,9 @@ def taxis_create():
             'insee': ['ADS not found with this INSEE/numero'],
             'numero': ['ADS not found with this INSEE/numero']
         }
-    vehicle = Vehicle.query.options(joinedload('*')).filter_by(
+    vehicle = Vehicle.query.options(
+        joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by)
+    ).filter_by(
         licence_plate=args['vehicle']['licence_plate']
     ).one_or_none()
     if not vehicle:
@@ -128,7 +130,9 @@ def taxis_create():
             'departement': ['Departement not found']
         }
 
-    driver = Driver.query.options(joinedload('*')).filter_by(
+    driver = Driver.query.options(
+        joinedload(Driver.added_by), joinedload(Driver.departement)
+    ).filter_by(
         professional_licence=args['driver']['professional_licence'],
         departement=departement,
         added_by=current_user
@@ -146,7 +150,12 @@ def taxis_create():
         }, status_code=404)
 
     # Try to get existing Taxi, or create it.
-    taxi = Taxi.query.options(joinedload('*')).filter_by(
+    taxi = Taxi.query.options(
+        joinedload(Taxi.ads),
+        joinedload(Taxi.driver),
+        joinedload(Taxi.vehicle),
+        joinedload(Taxi.added_by),
+    ).filter_by(
         ads=ads,
         driver=driver,
         vehicle=vehicle,
