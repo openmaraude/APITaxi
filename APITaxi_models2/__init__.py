@@ -34,6 +34,7 @@ from .customer import Customer  # noqa
 from .departement import Departement  # noqa
 from .driver import Driver  # noqa
 from .hail import Hail, ArchivedHail  # noqa
+from .station import Station  # noqa
 from .stats import *  # noqa
 from .taxi import Taxi  # noqa
 from .user import Role, RolesUsers, User  # noqa
