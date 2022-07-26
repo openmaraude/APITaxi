@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from APITaxi_models2.zupc import Exclusion
 
 import factory
 from geoalchemy2 import WKTElement
@@ -73,6 +74,16 @@ class DepartementFactory(BaseFactory):
     numero = factory.Sequence(lambda n: '%02d' % n)
 
 
+class ExclusionFactory(BaseFactory):
+    class Meta:
+        model = Exclusion
+
+    id = "way/231093392"  # OSM ID
+    name = "EuroAirport Bâle-Mulhouse-Fribourg"
+    # The bounding box of the actual shape
+    shape = 'MULTIPOLYGON(((7.5038832 47.5812375,7.5038832 47.6251226,7.5462173 47.6251226,7.5462173 47.5812375,7.5038832 47.5812375)))'
+
+
 class TownFactory(BaseFactory):
     """Given how SQLAlchemy works, it's better not to access the built object directly,
     because it will contain the raw WKT string below, not the WKB object returned by
@@ -116,6 +127,11 @@ class TownFactory(BaseFactory):
             name='Charenton-le-Pont',
             insee='94018',
             shape='MULTIPOLYGON(((2.40222930908203 48.8296390842375,2.41973876953125 48.8241580560601,2.41939544677734 48.8177721847637,2.40119934082031 48.8211630141963,2.39235877990723 48.8267008756382,2.40222930908203 48.8296390842375)))',
+        )
+        mulhouse = factory.Trait(
+            name='Mulhouse',
+            insee='68224',
+            shape='MULTIPOLYGON(((7.282494 47.7218791000031,7.282494 47.7833720999888,7.3686272 47.7833720999888,7.3686272 47.7218791000031,7.282494 47.7218791000031)))',
         )
 
 

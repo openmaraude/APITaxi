@@ -3,11 +3,14 @@ import time
 
 from sqlalchemy.orm import lazyload
 
+from APITaxi2.exclusions import ExclusionHelper
 from APITaxi_models2 import Taxi, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
+    ExclusionFactory,
     DriverFactory,
     TaxiFactory,
+    TownFactory,
     VehicleFactory,
     VehicleDescriptionFactory,
     ZUPCFactory,
@@ -667,6 +670,34 @@ class TestTaxiSearch:
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.01, lat + 0.01))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
+
+    def test_exclusion(self, app, moteur, QueriesTracker):
+        TownFactory(mulhouse=True)
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(vehicle=vehicle)
+        taxi = TaxiFactory(ads__insee='68224', vehicle=vehicle)
+        ExclusionFactory()
+
+        # Prefetch the exclusions
+        helper = ExclusionHelper()
+        helper.reset()
+
+        # EuroAirport Bâle-Mulhouse-Fribourg
+        lon = 7.52637979704597
+        lat = 47.5973205076925
+
+        # Taxi is at the airport
+        self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
+
+        # Client is at the airport too
+        with QueriesTracker() as qtracker:
+            resp = moteur.client.get(f'/taxis?lon={lon}&lat={lat}')
+            # SELECT permissions
+            assert qtracker.count == 1
+
+        assert resp.status_code == 404, resp.json
+        # No taxi should be returned.
+        assert 'url' in resp.json['errors'], resp.json
 
 
 class TestTaxiList:

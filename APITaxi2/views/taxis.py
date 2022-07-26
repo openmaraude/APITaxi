@@ -21,6 +21,7 @@ from APITaxi_models2 import (
 )
 
 from .. import debug, redis_backend, schemas
+from ..exclusions import ExclusionHelper
 from ..utils import get_short_uuid
 from ..validators import (
     make_error_json_response,
@@ -406,6 +407,16 @@ def taxis_search():
         return make_error_json_response(errors)
 
     schema = schemas.DataSearchTaxiSchema()
+
+    # Prior to searching taxis, is the client in a zone where cruising is allowed?
+    exclusion_helper = ExclusionHelper()
+    if exclusion_helper.is_at_excluded_zone(params['lon'], params['lat']):
+        debug_ctx.log(f'Client at lon={params["lon"]} lat={params["lat"]} is located at an excluded zone.')
+        # we can't return an appropriate message without breaking backwards compatibility
+        # just pretend there is no taxi to be seen
+        return make_error_json_response({
+            'url': ['No cruising allowed in this area'],
+        }, status_code=404)
 
     # First ask in what town the customer is
     towns = Town.query.filter(
