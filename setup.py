@@ -14,7 +14,7 @@ DEPENDENCIES = [
     'email-validator',
     'Flask',
     'Flask-Cors',
-    'Flask-Login',
+    'Flask-Login==0.6.1',  # 0.6.2 breaks because of Flask<2.2 ?
     'Flask-Migrate',
     'Flask-Principal',
     'Flask-Redis',
@@ -36,6 +36,7 @@ DEPENDENCIES = [
     'SQLAlchemy',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
+    'Werkzeug<2.2',
 ]
 
 TEST_DEPENDENCIES = [
