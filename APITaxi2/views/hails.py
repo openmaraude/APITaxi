@@ -337,6 +337,16 @@ def hails_details(hail_id):
                             ]
                         }
                 incident_taxi:
+                    summary: Declare an incident (reason is optional, see next example)
+                    value:
+                        {
+                            "data": [
+                                {
+                                    "status": "incident_taxi"
+                                }
+                            ]
+                        }
+                incident_taxi_reason:
                     summary: Reason for status "incident_taxi"
                     value:
                         {
