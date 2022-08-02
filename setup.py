@@ -12,7 +12,7 @@ DEPENDENCIES = [
     'bcrypt',
     'celery',
     'email-validator',
-    'Flask',
+    'Flask<2.2',
     'Flask-Cors',
     'Flask-Login==0.6.1',  # 0.6.2 breaks because of Flask<2.2 ?
     'Flask-Migrate',
