@@ -277,7 +277,11 @@ def hails_details(hail_id):
         - ApiKeyAuth: []
       responses:
         200:
-          description: Return hail details.
+          description: |
+            Return hail details.
+
+            Note: the value of the field customer_phone_number is only shown when the customer has accepted their hail request,
+            until they are declared on board.
           content:
             application/json:
               schema: DataHailSchema
@@ -673,7 +677,11 @@ def hails_create():
         - ApiKeyAuth: []
       responses:
         201:
-          description: Return the created hail.
+          description: |
+            Return the created hail.
+
+            Note: the value of the field customer_phone_number is only shown when the customer has accepted their hail request,
+            until they are declared on board.
           content:
             application/json:
               schema: DataHailSchema
