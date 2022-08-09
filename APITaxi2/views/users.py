@@ -3,7 +3,7 @@ from flask_security import current_user, login_required
 from flask_security.utils import hash_password
 
 from sqlalchemy import func, or_
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
 
 from APITaxi_models2 import db, User
 
@@ -94,7 +94,14 @@ def users_list():
     ).order_by(User.id)
 
     # Administrators can list all users. Regular users only the accounts they manage.
-    if not current_user.has_role('admin'):
+    if current_user.has_role('admin'):
+        if 'manager' in querystring:
+            Manager = aliased(User)
+            query = query.outerjoin(Manager, User.manager_id == Manager.id).filter(or_(*[
+                func.lower(Manager.email).contains(value.lower())
+                for value in querystring['manager']
+            ]))
+    else:
         query = query.filter_by(manager=current_user)
 
     if 'email' in querystring:
