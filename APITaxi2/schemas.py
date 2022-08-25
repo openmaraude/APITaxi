@@ -677,9 +677,13 @@ class UserSchema(Schema):
             if not url.hostname or url.scheme not in ('http', 'https'):
                 raise ValidationError("This endpoint is invalid.")
             # Reject private IPs
-            ip_address = ipaddress.ip_address(socket.gethostbyname(url.hostname))
-            if ip_address.is_private:
-                raise ValidationError("This endpoint is invalid.")
+            try:
+                ip_address = ipaddress.ip_address(socket.gethostbyname(url.hostname))
+            except OSError:
+                raise ValidationError("This URL could not be resolved.")
+            else:
+                if ip_address.is_private:
+                    raise ValidationError("This endpoint is invalid.")
 
 
 class CustomerSchema(Schema):

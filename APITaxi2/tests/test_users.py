@@ -135,6 +135,7 @@ class TestUsersPut:
             ('http://example.com', 200),
             ('http://localhost', 400),
             ('http://127.0.0.1', 400),
+            ('http://doesnotexist.api.taxi', 400),
             ('', 200)
         ]:
             resp = operateur.client.put('/users/%s' % operateur.user.id, json={'data': [{
