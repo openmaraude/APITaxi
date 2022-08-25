@@ -32,24 +32,23 @@ class TestGetHailDetails:
         assert resp.status_code == 403
 
     def test_ok(self, app, admin, operateur, moteur, QueriesTracker):
-        # Hail exists, user is not the moteur nor the operateur but he has the
-        # admin role.
-        hail = HailFactory()
+        hail = HailFactory(operateur=operateur.user, added_by=moteur.user)
         with QueriesTracker() as qtracker:
             resp = admin.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
         # user authentication and everything about the hail in a single request
         assert qtracker.count == 2
 
-        # Hail exists and user is the moteur
-        hail = HailFactory(added_by=moteur.user)
+        # The user is the moteur
         resp = moteur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
 
-        # Hail exists and user is the operateur
-        hail = HailFactory(operateur=operateur.user)
+        # The user is the operateur
         resp = operateur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
 
         # From hail creation until it's end, it is possible to get the taxi
         # location.
@@ -73,6 +72,7 @@ class TestGetHailDetails:
             )
             resp = moteur.client.get('/hails/%s' % hail.id)
             assert resp.status_code == 200
+            assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
             assert resp.json['data'][0]['taxi']['crowfly_distance']
             assert resp.json['data'][0]['taxi']['last_update']
             assert resp.json['data'][0]['taxi']['position']['lon']
@@ -98,6 +98,7 @@ class TestGetHailDetails:
         )
         resp = moteur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
         assert not resp.json['data'][0]['taxi']['crowfly_distance']
         assert not resp.json['data'][0]['taxi']['last_update']
         assert not resp.json['data'][0]['taxi']['position']['lon']
@@ -113,6 +114,7 @@ class TestGetHailDetails:
 
         resp = operateur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
 
 
 class TestEditHail:
@@ -390,16 +392,20 @@ class TestGetHailList:
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 3
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
 
         # Operateur gets only its hails
         resp = operateur.client.get('/hails/')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
+        assert resp.json['data'][1]['operateur'] == operateur.user.email
 
         # Moteur gets only its hails
         resp = moteur.client.get('/hails/')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
 
         # Pagination information is returned
         resp = admin.client.get('/hails/')
@@ -477,7 +483,7 @@ class TestCreateHail:
                     'customer_lat': 48.851,
                     'customer_phone_number': '+336868686',
                     'taxi_id': taxi.id,
-                    'operateur': operateur.user.email
+                    'operateur': 'chauffeur professionnel',
                 }]
             })
             return resp

@@ -208,7 +208,7 @@ class TaxiFactory(BaseFactory):
     )
     added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
-    driver = factory.SubFactory(DriverFactory)
+    driver = factory.SubFactory(DriverFactory, added_by=factory.SelfAttribute('..added_by'))
     added_via = 'api'
     source = 'added_by'
 
