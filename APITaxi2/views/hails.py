@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import json
 import time
 import uuid
@@ -387,7 +387,13 @@ def hails_details(hail_id):
         VehicleDescription.vehicle_id == Vehicle.id,
         VehicleDescription.added_by_id == Hail.operateur_id,
         Hail.id == hail_id
-    ).one_or_none()
+    )   
+    # Hails can't be accessed after two months
+    if not current_user.has_role('admin'):
+        query = query.filter(
+            Hail.creation_datetime >= (datetime.now() - timedelta(days=60))
+        )
+    query = query.one_or_none()
     if not query:
         return make_error_json_response({
             'url': ['Hail not found']
@@ -627,6 +633,12 @@ def hails_list():
         query = query.filter(or_(*[
             field == value for value in querystring[qname]
         ]))
+
+    # Hails can't be accessed after two months
+    if not current_user.has_role('admin'):
+        query = query.filter(
+            Hail.creation_datetime >= (datetime.now() - timedelta(days=60))
+        )
 
     # Order by date
     query = query.order_by(Hail.creation_datetime.desc())

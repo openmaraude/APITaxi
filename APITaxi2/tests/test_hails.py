@@ -116,6 +116,23 @@ class TestGetHailDetails:
         assert resp.status_code == 200
         assert resp.json['data'][0]['operateur'] == operateur.user.email
 
+    def test_old_hail(self, admin, moteur, operateur):
+        hail = HailFactory(
+            operateur=operateur.user,
+            added_by=moteur.user,
+            creation_datetime=datetime.now() - timedelta(60)
+        )
+
+        resp = moteur.client.get(f'/hails/{hail.id}')
+        assert resp.status_code == 404
+
+        resp = operateur.client.get(f'/hails/{hail.id}')
+        assert resp.status_code == 404
+
+        resp = admin.client.get(f'/hails/{hail.id}')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
 
 class TestEditHail:
     def test_invalid(self, anonymous, operateur, moteur):
@@ -445,6 +462,25 @@ class TestGetHailList:
 
         # Filter on customer_id
         resp = admin.client.get('/hails/?customer_id=%s' % hail1.customer_id)
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+    def test_old_hail(self, admin, moteur, operateur):
+        HailFactory(
+            operateur=operateur.user,
+            added_by=moteur.user,
+            creation_datetime=datetime.now() - timedelta(60)
+        )
+
+        resp = moteur.client.get('/hails')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
+
+        resp = operateur.client.get('/hails')
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
+
+        resp = admin.client.get('/hails')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
 
