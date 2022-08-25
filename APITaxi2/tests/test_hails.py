@@ -466,9 +466,7 @@ class TestCreateHail:
             ban_begin=sqlalchemy.func.NOW(),
             ban_end=sqlalchemy.func.NOW() + timedelta(hours=+24),
         )
-        vehicle = VehicleFactory()
-        VehicleDescriptionFactory(vehicle=vehicle, added_by=operateur.user, status='off')
-        taxi = TaxiFactory(added_by=operateur.user, vehicle=vehicle)
+        taxi = TaxiFactory(added_by=operateur.user, vehicle__descriptions__status='off')
 
         def _create_hail(customer_id='customer_ok'):
             resp = moteur.client.post('/hails', json={
