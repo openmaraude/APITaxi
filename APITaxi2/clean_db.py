@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload
 
 from APITaxi2 import redis_backend
 from APITaxi_models2 import db, ADS, ArchivedHail, Driver, Taxi, VehicleDescription, Hail, Town
+from APITaxi_models2 import Customer
 from APITaxi_models2.zupc import town_zupc
 from APITaxi_models2.stats import *
 
@@ -253,7 +254,15 @@ def delete_old_orphans():
 
     # Vehicles have no "added_at"
 
-    return driver_count, ads_count, vehicle_count
+    customer_count = _delete_old_orphans(
+        Customer,
+        db.session.query(Customer.id).outerjoin(Hail).filter(
+            Hail.id.is_(None), Customer.added_at < threshold,
+        )
+    )
+
+    return driver_count, ads_count, vehicle_count, customer_count
+
 
 def delete_old_stats_minute():
     """Keep one week worth of stats"""

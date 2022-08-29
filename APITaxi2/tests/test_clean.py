@@ -1,6 +1,7 @@
 import datetime
 
 from APITaxi_models2 import db, Hail, ArchivedHail, Taxi, Driver, ADS, VehicleDescription
+from APITaxi_models2 import Customer
 from APITaxi_models2.stats import *
 from APITaxi_models2.unittest import factories
 
@@ -211,13 +212,42 @@ class TestDeleteOldOrphans:
         factories.ADSFactory(added_at=over_two_months)
         factories.VehicleDescription(added_at=over_two_months)
 
-        assert clean_db.delete_old_orphans() == (1, 1, 1)
+        assert clean_db.delete_old_orphans() == (1, 1, 1, 0)
 
         # Taxis are still complete (foreign keys would prevent deleting their relations)
         assert {t.id for t in Taxi.query.all()} == {'old_taxi', 'recent_taxi'}
         assert Driver.query.count() == 3  # The two taxis still existing
         assert ADS.query.count() == 3     # plus the too recent to be deleted orphans
         assert VehicleDescription().query.count() == 3
+
+    def test_delete_old_customers(self, app):
+        now = datetime.datetime.now()
+        over_two_months = now - datetime.timedelta(days=60)
+        over_a_year = now - datetime.timedelta(days=366)  # don't fail on leap years
+
+        factories.CustomerFactory(
+            id='now',
+            added_at=now,
+        )
+        factories.CustomerFactory(
+            id='over_two_months',
+            added_at=over_two_months,
+        )
+        factories.CustomerFactory(
+            id='over_a_year',
+            added_at=over_a_year,
+        )
+
+        # Old account but still referenced
+        factories.HailFactory(
+            customer__id='over_a_year_still_referenced',
+            customer__added_at=over_a_year,
+        )
+
+        assert clean_db.delete_old_orphans() == (0, 0, 0, 1)
+        assert {c.id for c in Customer.query.all()} == {
+            'now', 'over_two_months', 'over_a_year_still_referenced'
+        }
 
 
 class TestDeleteOldStats:

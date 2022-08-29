@@ -221,12 +221,16 @@ class HailFactory(BaseFactory):
     creation_datetime = factory.SelfAttribute('added_at')
     taxi = factory.SubFactory(TaxiFactory, added_by=factory.SelfAttribute('..operateur'))
     status = 'received'
-    customer = factory.SubFactory(CustomerFactory, added_by=factory.SelfAttribute('..added_by'))
+    customer = factory.SubFactory(
+        CustomerFactory,
+        added_by=factory.SelfAttribute('..added_by'),
+        phone_number=factory.SelfAttribute('..customer_phone_number')
+    )
     customer_lat = 48.850690
     customer_lon = 2.308620
     operateur = factory.SubFactory(UserFactory)
     customer_address = '20 Avenue de Ségur, 75007 Paris'
-    customer_phone_number = '0799100222'
+    customer_phone_number = factory.Sequence(lambda n: '+336%09d' % n)
     added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
