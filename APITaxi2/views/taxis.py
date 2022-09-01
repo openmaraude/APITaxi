@@ -568,8 +568,10 @@ def taxis_list():
         Vehicle.id == Taxi.vehicle_id,
         VehicleDescription.vehicle_id == Taxi.vehicle_id
     ).filter(
+        # We always create a new Taxi object for the operator registering an existing ADS/Driver/Vehicle
+        # so we must filter on the taxi as well
+        Taxi.added_by == current_user,
         # For taxis registered with several operators, filter on the description,
-        # not the Taxi.added_by
         VehicleDescription.added_by == current_user
     )
 
