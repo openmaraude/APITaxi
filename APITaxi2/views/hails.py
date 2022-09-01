@@ -617,8 +617,6 @@ def hails_list():
     ):
         if qname not in querystring:
             continue
-        if qname == 'operateur' and not (current_user.has_role('admin') or current_user.has_role('operateur')):
-            continue
         query = query.filter(or_(*[
             func.lower(field).startswith(value.lower()) for value in querystring[qname]
         ]))
@@ -722,14 +720,12 @@ def hails_create():
     ).filter(
         VehicleDescription.vehicle_id == Taxi.vehicle_id,
         Taxi.id == args['taxi_id'],
-        # No longer used, taxis are all considered on a neutral basis, the taxi ID is unique enough by itself
-        # User.email == args['operateur']['email']
+        User.email == args['operateur']['email']
     ).one_or_none()
     if not res:
         return make_error_json_response({
             'data': {
                 '0': {
-                    # Don't change it just in case it breaks anything
                     'operateur': ['Unable to find taxi for this operateur.']
                 }
             }

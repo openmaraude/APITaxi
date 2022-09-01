@@ -61,22 +61,21 @@ class TestTaxiGet:
         assert data['position']['lon'] is None
         assert data['position']['lat'] is None
         assert data['vehicle']['licence_plate'] == taxi.vehicle.licence_plate
-        assert data['operator'] == operateur.user.email  # Can see the real operator
 
     def test_multiple_operators(self, admin, operateur):
-        """Taxi has several operators. Make sure the info returned are the
+        """Taxi has several operators. Make sure the infor returned are the
         correct ones."""
         taxi = TaxiFactory(added_by=operateur.user)
-        # Add a description for this taxi for another operator
+        # Add a desription for this taxi for another operator
         VehicleDescriptionFactory(vehicle=taxi.vehicle, added_by=admin.user)
 
         resp = operateur.client.get('/taxis/%s' % taxi.id)
         assert resp.status_code == 200
-        assert resp.json['data'][0]['operator'] == operateur.user.email  # Can see the real operator
+        assert resp.json['data'][0]['operator'] == operateur.user.email
 
         resp = admin.client.get('/taxis/%s' % taxi.id)
         assert resp.status_code == 200
-        assert resp.json['data'][0]['operator'] == admin.user.email  # Can see the real operator
+        assert resp.json['data'][0]['operator'] == admin.user.email
 
     def test_ok(self, app, operateur, QueriesTracker):
         taxi = TaxiFactory(added_by=operateur.user)
@@ -97,7 +96,6 @@ class TestTaxiGet:
         assert resp.json['data'][0]['last_update'] == 1589567716
         assert resp.json['data'][0]['position']['lat'] == 48.84
         assert resp.json['data'][0]['position']['lon'] == 2.35
-        assert resp.json['data'][0]['operator'] == operateur.user.email  # Can see the real operator
 
 
 class TestTaxiPut:
@@ -461,11 +459,10 @@ class TestTaxiSearch:
         assert len(resp.json['data']) == 2
         # First is closer
         assert resp.json['data'][0]['crowfly_distance'] < resp.json['data'][1]['crowfly_distance']
-        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'
         assert resp.json['data'][0]['position']['lon']
         assert resp.json['data'][0]['position']['lat']
 
-        assert resp.json['data'][1]['operator'] == 'chauffeur professionnel'
+        assert resp.json['data'][1]['operator'] == taxi_2_vehicle_descriptions_1.added_by.email
         assert resp.json['data'][1]['position']['lon']
         assert resp.json['data'][1]['position']['lat']
 
@@ -475,8 +472,7 @@ class TestTaxiSearch:
         ))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2
-        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'
-        assert resp.json['data'][1]['operator'] == 'chauffeur professionnel'
+        assert resp.json['data'][1]['operator'] == taxi_2_vehicle_descriptions_1.added_by.email
 
         # Search for a location still in the ZUPC, but too far to reach taxis.
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.02, lat + 0.01))
@@ -542,7 +538,7 @@ class TestTaxiSearch:
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
-        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'
+        assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
         assert resp.json['data'][0]['position']['lon']
         assert resp.json['data'][0]['position']['lat']
 
@@ -599,26 +595,6 @@ class TestTaxiSearch:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == my_taxi.id
-        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'  # No exception
-
-    def test_ok_admin(self, app, admin):
-        ZUPCFactory()  # Paris
-        vehicle = VehicleFactory(descriptions=[])
-        vehicle_description = VehicleDescriptionFactory(
-            vehicle=vehicle,
-            last_update_at=datetime.now(),
-        )
-        taxi = TaxiFactory(vehicle=vehicle, added_by=vehicle_description.added_by)
-
-        lon = 2.35
-        lat = 48.86
-        self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
-
-        # Admins can see the real operateur
-        resp = admin.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
-        assert resp.status_code == 200
-        assert len(resp.json['data']) == 1
-        assert resp.json['data'][0]['id'] == taxi.id
         assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
 
     def test_radius(self, app, moteur):

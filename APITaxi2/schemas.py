@@ -4,7 +4,6 @@ import socket
 import urllib.parse
 
 from flask import current_app
-from flask_security import current_user
 
 from marshmallow import (
     EXCLUDE,
@@ -39,10 +38,6 @@ from APITaxi_models2.vehicle import (
 # Range to adjust the visibility of taxis to clients
 TAXI_MIN_RADIUS = 150
 TAXI_MAX_RADIUS = 500
-
-
-# Consider taxis on a neutral basis for clients
-NEUTRAL_OPERATOR = "chauffeur professionnel"
 
 
 class PageQueryStringMixin:
@@ -483,9 +478,7 @@ class SearchVehicleSchema(Schema):
 class SearchTaxiSchema(Schema):
     """Fork of the full taxi schema with only the parts required for client apps."""
     id = fields.String()
-    operator = fields.Constant(NEUTRAL_OPERATOR, metadata={
-        'description': f'Retourne toujours "${NEUTRAL_OPERATOR}"',
-    })  # Kept as needed to POST a hail request
+    operator = fields.String()  # Kept as needed to POST a hail request
     crowfly_distance = fields.Float()  # Kept, already computed anyway
     position = fields.Nested(TaxiPositionSchema)
     vehicle = fields.Nested(SearchVehicleSchema)
@@ -556,13 +549,6 @@ class SearchTaxiSchema(Schema):
             # Moved to HailVehicleSchema
             'color': "",
         })
-
-        # Consider taxis on a neutral basis for clients,
-        # including when the partner is both moteur and operateur
-        # but keep the information for the admin console
-        if not current_user or not current_user.has_role('admin'):
-            ret['operator'] = NEUTRAL_OPERATOR
-
         return ret
 
 
@@ -732,7 +718,7 @@ class CreateHailSchema(Schema):
 
     # Both required to identify which taxi was picked
     taxi_id = fields.String(required=True)
-    operateur = fields.String(required=False, attribute='operateur.email')
+    operateur = fields.String(required=True, attribute='operateur.email')
 
     # Optional session ID when multiple hails are made
     session_id = fields.UUID(required=False, allow_none=True)
@@ -865,11 +851,6 @@ class HailSchema(Schema):
         if hail.status != 'accepted_by_customer':
             ret['customer_phone_number'] = ""
 
-        # Consider taxis on a neutral basis for clients
-        # but keep the information for the admins and the operator itself
-        if not current_user or not (current_user.has_role('admin') or current_user.has_role('operateur')):
-            ret['operateur'] = NEUTRAL_OPERATOR
-
         return ret
 
 
@@ -895,16 +876,6 @@ class HailListSchema(Schema):
     creation_datetime = fields.DateTime()
     taxi_id = fields.String()
     customer_id = fields.String()
-
-    def dump(self, obj, *args, **kwargs):
-        ret = super().dump(obj, *args, **kwargs)
-
-        # Consider taxis on a neutral basis for clients
-        # but keep the information for the admins and the operator itself
-        if not current_user or not (current_user.has_role('admin') or current_user.has_role('operateur')):
-            ret['operateur'] = NEUTRAL_OPERATOR
-
-        return ret
 
 
 class HailBySessionUserSchema(Schema):
@@ -943,16 +914,6 @@ class HailBySessionListSchema(Schema):
     added_by_id = fields.String()
     added_at = fields.DateTime()
     hails = fields.List(fields.Nested(HailBySessionSchema))
-
-    def dump(self, obj, *args, **kwargs):
-        ret = super().dump(obj, *args, **kwargs)
-
-        # Consider taxis on a neutral basis for clients
-        # but keep the information for the admins and the operator itself
-        if not current_user or not (current_user.has_role('admin') or current_user.has_role('operateur')):
-            ret['operateur'] = NEUTRAL_OPERATOR
-
-        return ret
 
 
 class ListHailsBySessionQuerystringSchema(Schema, PageQueryStringMixin):
