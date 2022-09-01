@@ -396,7 +396,6 @@ class TestGetHailList:
         assert 'status' in resp.json['errors']
 
     def test_ok(self, admin, moteur, operateur, QueriesTracker):
-        print("operateur", operateur.user.email)
         hail1 = HailFactory(operateur=operateur.user, status='received')
         HailFactory(operateur=operateur.user, status='finished')
         HailFactory(added_by=moteur.user, status='finished')
