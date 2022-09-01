@@ -75,3 +75,4 @@ class TestSession:
         resp = moteur.client.get('/sessions')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['hails'][0]['operateur']['email'] == 'chauffeur professionnel'

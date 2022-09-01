@@ -93,6 +93,7 @@ for _env_var, _alt_name, _env_type in (
     ('SENTRY_DSN', None, str),
     ('CONSOLE_URL', None, str),
     ('SWAGGER_URL', None, str),
+    ('NEUTRAL_OPERATOR', None, parse_env_bool),
 ):
     _val = os.getenv(_env_var) or (_alt_name and os.getenv(_alt_name))
     if not _val:

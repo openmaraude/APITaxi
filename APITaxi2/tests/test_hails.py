@@ -32,24 +32,23 @@ class TestGetHailDetails:
         assert resp.status_code == 403
 
     def test_ok(self, app, admin, operateur, moteur, QueriesTracker):
-        # Hail exists, user is not the moteur nor the operateur but he has the
-        # admin role.
-        hail = HailFactory()
+        hail = HailFactory(operateur=operateur.user, added_by=moteur.user)
         with QueriesTracker() as qtracker:
             resp = admin.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
         # user authentication and everything about the hail in a single request
         assert qtracker.count == 2
 
-        # Hail exists and user is the moteur
-        hail = HailFactory(added_by=moteur.user)
+        # The user is the moteur
         resp = moteur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
 
-        # Hail exists and user is the operateur
-        hail = HailFactory(operateur=operateur.user)
+        # The user is the operateur
         resp = operateur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
 
         # From hail creation until it's end, it is possible to get the taxi
         # location.
@@ -73,6 +72,7 @@ class TestGetHailDetails:
             )
             resp = moteur.client.get('/hails/%s' % hail.id)
             assert resp.status_code == 200
+            assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
             assert resp.json['data'][0]['taxi']['crowfly_distance']
             assert resp.json['data'][0]['taxi']['last_update']
             assert resp.json['data'][0]['taxi']['position']['lon']
@@ -98,6 +98,7 @@ class TestGetHailDetails:
         )
         resp = moteur.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
+        assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
         assert not resp.json['data'][0]['taxi']['crowfly_distance']
         assert not resp.json['data'][0]['taxi']['last_update']
         assert not resp.json['data'][0]['taxi']['position']['lon']
@@ -131,7 +132,7 @@ class TestGetHailDetails:
         resp = admin.client.get(f'/hails/{hail.id}')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
- 
+
 
 class TestEditHail:
     def test_invalid(self, anonymous, operateur, moteur):
@@ -413,11 +414,14 @@ class TestGetHailList:
         resp = operateur.client.get('/hails/')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2
+        assert resp.json['data'][0]['operateur'] == operateur.user.email
+        assert resp.json['data'][1]['operateur'] == operateur.user.email
 
         # Moteur gets only its hails
         resp = moteur.client.get('/hails/')
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['operateur'] == 'chauffeur professionnel'
         assert resp.json['data'][0]['added_by'] == moteur.user.email
 
         # Pagination information is returned
@@ -515,7 +519,7 @@ class TestCreateHail:
                     'customer_lat': 48.851,
                     'customer_phone_number': '+336868686',
                     'taxi_id': taxi.id,
-                    'operateur': operateur.user.email
+                    'operateur': 'chauffeur professionnel',
                 }]
             })
             return resp
@@ -572,7 +576,7 @@ class TestCreateHail:
                     'customer_lat': 48.851,
                     'customer_phone_number': '+336868686',
                     'taxi_id': taxi.id,
-                    'operateur': operateur.user.email
+                    'operateur': "chauffeur professionnel",
                 }]
             })
             assert mocked.call_count == 1
@@ -588,6 +592,7 @@ class TestCreateHail:
 
         # Check transition log
         hail = Hail.query.one()
+        assert hail.operateur_id == operateur.user.id
         assert hail.transition_log[-1]['from_status'] is None
         assert hail.transition_log[-1]['to_status'] == 'received'
         assert hail.transition_log[-1]['user'] == moteur.user.id
@@ -612,7 +617,7 @@ class TestCreateHail:
                         'customer_lat': 48.851,
                         'customer_phone_number': '+336868686',
                         'taxi_id': taxi.id,
-                        'operateur': operateur.user.email,
+                        'operateur': "chauffeur professionnel",
                         'session_id': session_id,
                     }]
                 })
@@ -658,7 +663,7 @@ class TestCreateHail:
                 'customer_lat': 48.851,
                 'customer_phone_number': '+336868686',
                 'taxi_id': taxi.id,
-                'operateur': operateur.user.email,
+                'operateur': "chauffeur professionnel",
                 'session_id': uuid.uuid4(),
             }]
         })
@@ -690,7 +695,7 @@ class TestCreateHail:
                 'customer_lat': 48.851,
                 'customer_phone_number': '+336868686',
                 'taxi_id': taxi.id,
-                'operateur': operateur.user.email,
+                'operateur': "chauffeur professionnel",
                 'session_id': hail.session_id,  # Reuse someone's session ID
             }]
         })
@@ -725,7 +730,7 @@ class TestCreateHail:
                     'customer_lat': 48.851,
                     'customer_phone_number': '+336868686',
                     'taxi_id': taxi.id,
-                    'operateur': operateur.user.email,
+                    'operateur': "chauffeur professionnel",
                     'session_id': hail.session_id,  # Reuse this customer's session ID
                 }]
             })
@@ -760,7 +765,7 @@ class TestCreateHail:
                     'customer_lat': 48.851,
                     'customer_phone_number': '+336868686',
                     'taxi_id': taxi.id,
-                    'operateur': operateur.user.email,
+                    'operateur': "chauffeur professionnel",
                     # no session_id
                 }]
             })

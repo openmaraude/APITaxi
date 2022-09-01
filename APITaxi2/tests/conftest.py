@@ -36,6 +36,7 @@ REDIS_URL = '%(redis)s'
 SECURITY_PASSWORD_HASH = 'plaintext'
 DEBUG = True
 CONSOLE_URL = 'http://console'
+NEUTRAL_OPERATOR = True
 ''' % {
         'database': postgresql.url(),
         'redis': 'unix://%s' % redis_server,
