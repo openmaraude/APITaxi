@@ -256,7 +256,9 @@ def delete_old_orphans():
 
     customer_count = _delete_old_orphans(
         Customer,
-        db.session.query(Customer.id).outerjoin(Hail).filter(
+        db.session.query(Customer.id).outerjoin(
+            Hail, Customer.id == Hail.customer_id
+        ).filter(
             Hail.id.is_(None), Customer.added_at < threshold,
         )
     )
