@@ -849,7 +849,7 @@ class HailSchema(Schema):
 
         # The phone number is only needed when the two parties reach other
         if hail.status != 'accepted_by_customer':
-            ret['customer_phone_number'] = ""
+            ret['customer_phone_number'] = "0600000000"
 
         return ret
 
