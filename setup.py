@@ -9,6 +9,7 @@ DEPENDENCIES = [
     'aniso8601',
     'apispec[validation]',
     'apispec-webframeworks',
+    'openapi-spec-validator<0.5.0',  # prance needs a release
     'bcrypt',
     'celery',
     'email-validator',
