@@ -60,7 +60,6 @@ class CustomerFactory(BaseFactory):
     added_by = factory.SubFactory(UserFactory)
     added_via = 'api'
     source = 'added_by'
-    phone_number = factory.Sequence(lambda n: '+336%09d' % n)
 
 
 class DepartementFactory(BaseFactory):
@@ -224,7 +223,6 @@ class HailFactory(BaseFactory):
     customer = factory.SubFactory(
         CustomerFactory,
         added_by=factory.SelfAttribute('..added_by'),
-        phone_number=factory.SelfAttribute('..customer_phone_number')
     )
     customer_lat = 48.850690
     customer_lon = 2.308620

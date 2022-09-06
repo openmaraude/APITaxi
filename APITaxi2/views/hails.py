@@ -738,7 +738,6 @@ def hails_create():
     if not customer:
         customer = Customer(
             id=args['customer_id'],
-            phone_number=args['customer_phone_number'],
 
             added_by=current_user,
             added_via='api',
