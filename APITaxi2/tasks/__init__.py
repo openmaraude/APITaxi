@@ -35,10 +35,11 @@ def task_delete_old_taxis():
 
 @celery.task(name='delete_old_orphans')
 def task_delete_old_orphans():
-    driver_count, ads_count, vehicle_count = clean_db.delete_old_orphans()
+    driver_count, ads_count, vehicle_count, customer_count = clean_db.delete_old_orphans()
     print(f"{driver_count} old drivers deleted")
     print(f"{ads_count} old ADS deleted")
     print(f"{vehicle_count} old vehicle descriptions deleted")
+    print(f"{customer_count} old customer accounts deleted")
 
 
 @celery.task(name='delete_old_stats_minute')
