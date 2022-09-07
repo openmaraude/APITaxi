@@ -32,7 +32,7 @@ DEPENDENCIES = [
     'redis',
     'hiredis',
     'sentry-sdk[flask]',
-    'Shapely',
+    'Shapely<2',
     'shortuuid',
     'SQLAlchemy',
     'SQLAlchemy-Defaults',
