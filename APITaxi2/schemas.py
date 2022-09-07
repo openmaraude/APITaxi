@@ -68,7 +68,7 @@ class PositionMixin:
 
 class DepartementSchema(Schema):
     """Departement where the professional licence was issued."""
-    nom = fields.String()
+    nom = fields.String(metadata={'deprecated': True})
     numero = fields.String()
 
     @validates_schema
@@ -96,7 +96,7 @@ class DriverSchema(Schema):
         }
     )
     departement = fields.Nested(DepartementSchema, required=True, metadata={
-        'description': "département d'exercice du conducteur",
+        'description': "département de délivrance de la carte professionnelle",
     })
 
 

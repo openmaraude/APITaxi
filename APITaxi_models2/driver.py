@@ -15,7 +15,7 @@ class Driver(HistoryMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # département d'exercice du conducteur
+    # département de délivrance de la carte professionnelle
     departement_id = db.Column(db.Integer, db.ForeignKey('departement.id'), nullable=False)
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
     # date de naissance du conducteur
