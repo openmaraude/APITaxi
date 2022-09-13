@@ -560,7 +560,7 @@ class SearchTaxiSchema(Schema):
         # Consider taxis on a neutral basis for clients, including when the partner is both moteur and operateur
         # but keep the information for the admin console
         if current_app.config.get('NEUTRAL_OPERATOR'):
-            if not current_user or not current_user.has_role('admin'):
+            if current_user and not current_user.has_role('admin') and current_user.email != ret['operator']:
                 ret['operator'] = NEUTRAL_OPERATOR
 
         return ret
