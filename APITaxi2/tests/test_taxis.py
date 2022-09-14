@@ -599,7 +599,7 @@ class TestTaxiSearch:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == my_taxi.id
-        assert resp.json['data'][0]['operator'] == operateur.user.email
+        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'  # No exception
 
     def test_ok_admin(self, app, admin):
         ZUPCFactory()  # Paris
