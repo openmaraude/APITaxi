@@ -196,7 +196,7 @@ def create_app():
             integrations=[
                 RedisIntegration(),
             ],
-            traces_sample_rate=0.01
+            traces_sample_rate=0.008
         )
 
     db.init_app(app)
