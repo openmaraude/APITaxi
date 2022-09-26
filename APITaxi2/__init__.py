@@ -196,7 +196,7 @@ def create_app():
             integrations=[
                 RedisIntegration(),
             ],
-            traces_sample_rate=0.008
+            traces_sample_rate=float(app.config.get('SENTRY_SAMPLE_RATE', 0.005))
         )
 
     db.init_app(app)
