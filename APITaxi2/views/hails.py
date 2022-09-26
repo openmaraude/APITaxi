@@ -721,9 +721,11 @@ def hails_create():
         VehicleDescription.added_by_id == User.id
     ).filter(
         VehicleDescription.vehicle_id == Taxi.vehicle_id,
+        # Instead of asking which operateur is using the given taxi ID, we can deduce it ourselves
+        # taxi IDs are already unique, but vehicle descriptions are not for a given vehicle ID
+        # This is all caused by our insanely complex vehicle model
+        VehicleDescription.added_by_id == Taxi.added_by_id,
         Taxi.id == args['taxi_id'],
-        # No longer used, taxis are all considered on a neutral basis, the taxi ID is unique enough by itself
-        # User.email == args['operateur']['email']
     ).one_or_none()
     if not res:
         return make_error_json_response({
