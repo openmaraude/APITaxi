@@ -248,17 +248,3 @@ class TestDeleteOldOrphans:
         assert {c.id for c in Customer.query.all()} == {
             'now', 'over_two_months', 'over_a_year_still_referenced'
         }
-
-
-class TestDeleteOldStats:
-    def test_ok(self, app):
-        now = datetime.datetime.now()
-        old = now - datetime.timedelta(days=8)
-        recent = now - datetime.timedelta(days=6)
-
-        db.session.add(stats_minute(time=old, value=10))
-        db.session.add(stats_minute(time=recent, value=20))
-
-        assert stats_minute.query.count() == 2
-        clean_db.delete_old_stats_minute()
-        assert stats_minute.query.count() == 1

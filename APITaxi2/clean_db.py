@@ -264,18 +264,3 @@ def delete_old_orphans():
     )
 
     return driver_count, ads_count, vehicle_count, customer_count
-
-
-def delete_old_stats_minute():
-    """Keep one week worth of stats"""
-    threshold = datetime.datetime.now() - datetime.timedelta(days=2)
-    for model in (
-        stats_minute,
-        stats_minute_insee,
-        stats_minute_zupc,
-        stats_minute_operator,
-        stats_minute_operator_insee,
-        stats_minute_operator_zupc,
-    ):
-        model.query.filter(model.time<threshold).delete()
-        db.session.commit()
