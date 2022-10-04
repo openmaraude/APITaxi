@@ -6,6 +6,10 @@ from . import db
 
 
 class RolesUsers(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'role_id', name='unique_roles'),
+    )
+
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), primary_key=True)
 
