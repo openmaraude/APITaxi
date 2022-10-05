@@ -53,6 +53,8 @@ class User(db.Model, UserMixin):
     operator_header_name = Column(db.String, server_default='', nullable=False)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+    fleet_size = db.Column(db.Integer)
+
     roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined')
 
     # Manager of this User
