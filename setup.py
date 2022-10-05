@@ -20,7 +20,7 @@ DEPENDENCIES = [
     'Flask-Principal',
     'Flask-Redis',
     'Flask-Security',
-    'Flask-SQLAlchemy',
+    'Flask-SQLAlchemy<3.0',  # requires Flask>=2.2
     'GeoAlchemy2',
     'Geohash2',
     'geopy',
