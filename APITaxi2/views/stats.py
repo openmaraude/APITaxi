@@ -3,7 +3,7 @@ import json
 
 from flask import Blueprint, request
 from flask_security import current_user, login_required, roles_accepted
-from sqlalchemy import func, Text, DateTime, Float
+from sqlalchemy import func, Text, DateTime, Numeric
 from sqlalchemy.dialects.postgresql import JSONB
 
 from APITaxi_models2 import db, ArchivedHail, Hail, Role, Taxi, User, VehicleDescription
@@ -70,15 +70,11 @@ def get_average_radius():
 
 
 def get_average_radius_change():
-    total = db.session.query(
-        func.Count().label('total')
-    ).select_from(VehicleDescription).subquery()
-    changed = db.session.query(
-        func.Count().label('changed')
-    ).select_from(VehicleDescription).filter(VehicleDescription.radius.isnot(None)).subquery()
     query = db.session.query(
-        changed.c.changed.cast(Float()) / total.c.total
-    ).select_from(total, changed)
+        func.Count(VehicleDescription.radius).cast(Numeric()) / func.Count()
+    )
+    from flask import current_app
+    current_app.logger.debug('query=%s', query)
     return query.scalar()
 
 
