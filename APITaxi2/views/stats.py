@@ -73,8 +73,6 @@ def get_average_radius_change():
     query = db.session.query(
         func.Count(VehicleDescription.radius).cast(Numeric()) / func.Count()
     )
-    from flask import current_app
-    current_app.logger.debug('query=%s', query)
     return query.scalar()
 
 
@@ -99,21 +97,12 @@ def get_hail_average(interval, since=None, status=None):
 
 
 def get_average_transition_time(from_status, to_status):
-    """
-    select avg(interval)
-    from (
-        select accepted::timestamp - received::timestamp interval
-        from (
-            select
-                jsonb_path_query(transition_log::jsonb, '$[*] ? (@.from_status == $status).timestamp', '{"status": "accepted_by_taxi"}')::text accepted,
-                jsonb_path_query(transition_log::jsonb, '$[*] ? (@.from_status == $status).timestamp', '{"status": "received"}')::text received
-            from hail
-        ) transition_log where accepted is not null
-    ) intervals;
-    """
     from_status = json.dumps({"status": from_status})
     to_status = json.dumps({"status": to_status})
     transition_log = db.session.query(
+        # Having to cast transition_log to JSBON, json_path_query doesn't exist (should we convert transition_log to begin with?)
+        # then having to cast to Text because Postgres can't cast from JSONB to TIMESTAMP
+        # There is a datetime() function for path queries, but it doesn't recognize our ISO format, where the regular timestamp does
         func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', to_status).cast(Text()).label('to_status'),
         func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', from_status).cast(Text()).label('from_status'),
     ).subquery()
