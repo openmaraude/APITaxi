@@ -998,38 +998,78 @@ class GeotaxiSchema(Schema):
             raise ValidationError('Up to 50 positions are accepted')
 
 
+class StatsMilestones(Schema):
+    today = fields.Integer()
+    three_months_ago = fields.Integer()
+    six_months_ago = fields.Integer()
+    twelve_months_ago = fields.Integer()
+
 
 class StatsTaxisSchema(Schema):
-    connected_groupements = fields.Integer()
-    registered_taxis = fields.Integer()
-    connected_taxis = fields.Integer()
-    registered_taxis_since_threshold = fields.Integer()
-    connected_taxis_since_threshold = fields.Integer()
+    registered_taxis = fields.Nested(StatsMilestones())
+    connected_taxis = fields.Nested(StatsMilestones())
+    registered_taxis_since_threshold = fields.Nested(StatsMilestones())
+    connected_taxis_since_threshold = fields.Nested(StatsMilestones())
     connected_taxis_per_hour = fields.Dict()
     monthly_hails_per_taxi = fields.Float()
     average_radius = fields.Float()
     average_radius_change = fields.Float()
 
 
-class StatsHailAverageSchema(Schema):
-    total_average = fields.Float()
-    timeout_customer_average = fields.Float()
-    declined_by_customer_average = fields.Float()
-    incident_taxi_average = fields.Float()
-    declined_by_taxi_average = fields.Float()
+class StatsHailsTotal(Schema):
+    pass
+
+
+class StatsHailsAverageDetails(Schema):
+    total = fields.Float()
+    timeout_customer = fields.Float()
+    declined_by_customer = fields.Float()
+    incident_taxi = fields.Float()
+    declined_by_taxi = fields.Float()
+
+
+class StatsHailsAveragePeriods(Schema):
+    daily = fields.Nested(StatsHailsAverageDetails())
+    weekly = fields.Nested(StatsHailsAverageDetails())
+    monthly = fields.Nested(StatsHailsAverageDetails())
+
+
+class StatsHailsAverage(Schema):
+    last_three_months = fields.Nested(StatsHailsAveragePeriods())
+    current_year = fields.Nested(StatsHailsAveragePeriods())
+    last_year = fields.Nested(StatsHailsAveragePeriods())
+
+
+class StatsAverageTimes(Schema):
+    accepted_by_taxi = fields.Float()
+    accepted_by_customer = fields.Float()
+    timeout_customer = fields.Float()
+    declined_by_customer = fields.Float()
+    timeout_taxi = fields.Float()
+    incident_taxi = fields.Float()
+    customer_on_board_incident_taxi = fields.Float()
+    customer_on_board = fields.Float()
 
 
 class StatsHailsSchema(Schema):
-    hails_received = fields.Integer()
-    hails_daily = fields.Nested(StatsHailAverageSchema())
-    hails_weekly = fields.Nested(StatsHailAverageSchema())
-    hails_monthly = fields.Nested(StatsHailAverageSchema())
-    average_accepted_by_taxi_time = fields.Float()
-    average_accepted_by_customer_time = fields.Float()
-    average_timeout_customer_time = fields.Float()
-    average_declined_by_customer_time = fields.Float()
-    average_timeout_taxi_time = fields.Float()
-    average_incident_taxi_time = fields.Float()
+    hails_received = fields.Nested(StatsMilestones())
+    hails_total = fields.Nested(StatsHailsTotal())
+    hails_average = fields.Nested(StatsHailsAverage())
+    average_times = fields.Nested(StatsAverageTimes())
+
+
+class FleetDataSchema(Schema):
+    id = fields.Integer()
+    email = fields.String()
+    fleet_size = fields.Integer()
+    count = fields.Integer()
+    ratio = fields.Float()
+    last_taxi = fields.DateTime()
+
+
+class StatsGroupementsSchema(Schema):
+    registered_groupements = fields.Integer()
+    fleet_data = fields.List(fields.Nested(FleetDataSchema))
 
 
 def data_schema_wrapper(WrappedSchema, with_pagination=False):
@@ -1118,6 +1158,7 @@ DataGeotaxiSchema = data_schema_wrapper(GeotaxiSchema())
 DataTownSchema = data_schema_wrapper(TownSchema())
 DataStatsTaxisSchema = data_schema_wrapper(StatsTaxisSchema())
 DataStatsHailsSchema = data_schema_wrapper(StatsHailsSchema())
+DataStatsGroupementsSchema = data_schema_wrapper(StatsGroupementsSchema())
 
 # These schemas are only used to simplify the output of Swagger
 DataCreateTaxiSchema = data_schema_wrapper(CreateTaxiSchema())

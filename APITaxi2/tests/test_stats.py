@@ -12,3 +12,7 @@ class TestStats:
     def test_stats_hails(self, admin):
         resp = admin.client.get('/stats/hails')
         assert resp.status_code == 200
+
+    def test_stats_groupements(self, admin):
+        resp = admin.client.get('/stats/groupements')
+        assert resp.status_code == 200
