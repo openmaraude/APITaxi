@@ -1010,14 +1010,15 @@ class StatsTaxisSchema(Schema):
     connected_taxis = fields.Nested(StatsMilestones())
     registered_taxis_since_threshold = fields.Nested(StatsMilestones())
     connected_taxis_since_threshold = fields.Nested(StatsMilestones())
-    connected_taxis_per_hour = fields.Dict()
     monthly_hails_per_taxi = fields.Float()
     average_radius = fields.Float()
     average_radius_change = fields.Float()
+    connected_taxis_per_hour = fields.Dict()
 
 
 class StatsHailsTotal(Schema):
-    pass
+    current_year = fields.List(fields.List(fields.Int()))
+    last_year = fields.List(fields.List(fields.Int()))
 
 
 class StatsHailsAverageDetails(Schema):
