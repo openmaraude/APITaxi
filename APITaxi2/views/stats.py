@@ -138,7 +138,7 @@ def stats_taxis():
 
     def get_average_radius_change():
         query = db.session.query(
-            func.Count(VehicleDescription.radius) * 100.0 / func.Count()
+            func.Count(VehicleDescription.radius) * 100.0 / func.Nullif(func.Count(), 0)
         ).join(Taxi.vehicle).join(Vehicle.descriptions)
         query = apply_area_to_taxis(query, area)
         return query.scalar()
