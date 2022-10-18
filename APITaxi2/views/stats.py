@@ -5,7 +5,7 @@ import json
 from flask import Blueprint, request, current_app
 from flask_security import current_user, login_required, roles_accepted
 from sqlalchemy import func, Text, DateTime, Numeric
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
 from APITaxi_models2 import db, ADS, ArchivedHail, Hail, Role, Taxi, User, Vehicle, VehicleDescription
 from APITaxi_models2.stats import stats_hour_insee
@@ -24,28 +24,28 @@ threshold = datetime.datetime(2022, 1, 1)
 
 
 def get_intervals():
-    now = datetime.datetime.now()
     return [
-        now - datetime.timedelta(4 * 3),  # 3 months ago
-        now - datetime.timedelta(4 * 6),  # 6 months ago
-        now - datetime.timedelta(days=365)  # 12 months ago
+        func.now() - func.cast('3 months', INTERVAL()),
+        func.now() - func.cast('6 months', INTERVAL()),
+        func.now() - func.cast('12 months', INTERVAL()),
     ]
 
 
 def get_last_three_months_interval():
-    today = datetime.date.today()
-    return [today - datetime.timedelta(weeks=4 * 3), today]  # ongoing day excluded
+    today = func.current_date()
+    return [today - func.cast('3 months', INTERVAL()), today]  # ongoing day excluded
 
 
 def get_current_year_interval():
-    current_year = datetime.date.today().year
-    return [datetime.date(current_year, 1, 1), datetime.date(current_year + 1, 1, 1)]  # upper bound excluded
+    current_year = func.date_trunc('year', func.current_date())
+    next_year = current_year + func.cast('1 year', INTERVAL())
+    return [current_year, next_year]  # upper bound excluded
 
 
 def get_last_year_interval():
-    current_year = datetime.date.today().year
-    last_year = current_year - 1
-    return [datetime.date(last_year, 1, 1), datetime.date(current_year, 1, 1)]  # upper bound excluded
+    current_year = func.date_trunc('year', func.current_date())
+    last_year = current_year - func.cast('1 year', INTERVAL())
+    return [last_year, current_year]  # upper bound excluded
 
 
 def apply_area_to_taxis(query, area):
@@ -91,18 +91,18 @@ def stats_taxis():
 
     def get_registered_taxis(since=None, until=None):
         query = Taxi.query
-        if since:
+        if since is not None:
             query = query.filter(Taxi.added_at >= since)
-        if until:
+        if until is not None:
             query = query.filter(Taxi.added_at < until)
         query = apply_area_to_taxis(query, area)
         return query.count()
 
     def get_connected_taxis(since=None, until=None):
         query = Taxi.query.filter(Taxi.last_update_at.isnot(None))
-        if since:
+        if since is not None:
             query = query.filter(Taxi.last_update_at >= since)
-        if until:
+        if until is not None:
             query = query.filter(Taxi.last_update_at < until)
         query = apply_area_to_taxis(query, area)
         return query.count()
@@ -146,7 +146,7 @@ def stats_taxis():
         ).group_by(
             'trunc',
         )
-        if since:
+        if since is not None:
             counts = counts.filter(stats_hour_insee.time >= since)
         counts = apply_area_to_stats(counts, area).subquery()
         # Then just keep the time
@@ -204,9 +204,9 @@ def stats_hails():
     def get_hails_received(since=None, until=None):
         def _get_hails_received(model):
             query = model.query
-            if query:
+            if since is not None:
                 query = query.filter(model.added_at >= since)
-            if until:
+            if until is not None:
                 query = query.filter(model.added_at < until)
             query = apply_area_to_hails(query, area, archived=model == ArchivedHail)
             return query.count()
