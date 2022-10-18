@@ -7,7 +7,7 @@ PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
     'aniso8601',
-    'apispec[validation]',
+    'apispec[validation,marshmallow]>=6.0',
     'apispec-webframeworks',
     'openapi-spec-validator<0.5.0',  # prance needs a release
     'bcrypt',
@@ -24,7 +24,6 @@ DEPENDENCIES = [
     'GeoAlchemy2',
     'Geohash2',
     'geopy',
-    'marshmallow',
     'parse',
     'prettytable',
     'psycopg2',
