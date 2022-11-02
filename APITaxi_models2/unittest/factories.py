@@ -143,6 +143,7 @@ class DriverFactory(BaseFactory):
     birth_date = datetime.date(1978, 1, 11)
     professional_licence = factory.Sequence(lambda n: 'LICENCE_PRO_%d' % n)
     departement = factory.SubFactory(DepartementFactory)
+    added_at = factory.LazyFunction(datetime.datetime.now)
     added_via = 'api'
     source = 'added_by'
 
