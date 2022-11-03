@@ -41,6 +41,8 @@ def _run_postgresql_migrations(psql):
     with psycopg2.connect(**psql.dsn()) as conn:
         with conn.cursor() as cursor:
             cursor.execute('CREATE EXTENSION IF NOT EXISTS postgis')
+            cursor.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto')
+            cursor.execute('CREATE EXTENSION IF NOT EXISTS timescaledb')
         conn.commit()
 
     migrations_dir = pkg_resources.resource_filename(

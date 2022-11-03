@@ -1,6 +1,6 @@
 import datetime
 
-from APITaxi_models2 import db, Hail, ArchivedHail, Taxi, Driver, ADS, VehicleDescription
+from APITaxi_models2 import db, Hail, Taxi, Driver, ADS, VehicleDescription
 from APITaxi_models2 import Customer
 from APITaxi_models2.stats import *
 from APITaxi_models2.unittest import factories
@@ -107,14 +107,31 @@ class TestArchiveHails:
         over_two_months = now - datetime.timedelta(days=60)
         below_two_months = now - datetime.timedelta(days=59)
 
-        factories.HailFactory(id='old', creation_datetime=over_a_year, blurred=True)
-        factories.HailFactory(id='blurred', creation_datetime=over_two_months, blurred=True)
-        factories.HailFactory(id='recent', creation_datetime=below_two_months)
+        factories.HailFactory(id='old', added_at=over_a_year, blurred=True)
+        factories.HailFactory(id='blurred', added_at=over_two_months, blurred=True)
+        factories.HailFactory(id='recent', added_at=below_two_months)
 
-        assert clean_db.archive_hails() == 1
+        assert clean_db.delete_old_hails() == 1
 
         assert {hail.id for hail in Hail.query.all()} == {'blurred', 'recent'}
-        assert {hail.id for hail in ArchivedHail().query.all()} == {'old'}
+
+
+class TestComputeStatsHails:
+    def test_ok(self, app):
+        now = datetime.datetime.now()
+        yesterday = now - datetime.timedelta(days=1)
+
+        factories.HailFactory(id='yesterday', added_at=yesterday, transition_log=[
+            {"from_status": None, "to_status": "received", "timestamp": yesterday.isoformat()},
+        ])
+        factories.HailFactory(id='recent', added_at=now, transition_log=[
+            {"from_status": None, "to_status": "received", "timestamp": now.isoformat()},
+        ])
+
+        assert clean_db.compute_stats_hails() == 1
+
+        assert {hail.id for hail in Hail.query.all()} == {'yesterday', 'recent'}
+        assert {hail.id for hail in StatsHails.query.all()} == {'yesterday'}
 
 
 class TestDeleteOldTaxis:

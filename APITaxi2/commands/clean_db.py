@@ -139,10 +139,23 @@ def blur_hails():
     print(f"{count} hails blurred")
 
 
-@clean.command(help='Archive hails after a year')
-def archive_hails():
-    count = clean_db.archive_hails()
-    print(f"{count} hails archived")
+@clean.command(help='Compute stats for hails')
+def compute_stats_hails():
+    count = clean_db.compute_stats_hails()
+    print(f"{count} hails added to stats")
+
+
+# TODO remove after transition
+@clean.command(help='Compute stats for archived hails')
+def compute_archived_hails():
+    count = clean_db.compute_archived_hails()
+    print(f"{count} archived hails added to stats")
+
+
+@clean.command(help='Delete hails after a year')
+def delete_old_hails():
+    count = clean_db.delete_old_hails()
+    print(f"{count} hails deleted")
 
 
 @clean.command(help='Delete taxis after a year of inactivity')

@@ -21,10 +21,16 @@ def task_blur_hails():
     print(f"{count} hails blurred")
 
 
-@celery.task(name='archive_hails')
-def task_archive_hails():
-    count = clean_db.archive_hails()
-    print(f"{count} hails archived")
+@celery.task(name='compute_stats_hails')
+def task_compute_stats_hails():
+    count = clean_db.compute_stats_hails()
+    print(f"{count} hails added to stats")
+
+
+@celery.task(name='delete_old_hails')
+def task_delete_old_hails():
+    count = clean_db.delete_old_hails()
+    print(f"{count} hails deleted")
 
 
 @celery.task(name='delete_old_taxis')
@@ -46,6 +52,7 @@ def task_delete_old_orphans():
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(crontab(hour=4, minute=0), task_blur_geotaxi.s())
     sender.add_periodic_task(crontab(hour=4, minute=2), task_blur_hails.s())
-    sender.add_periodic_task(crontab(hour=4, minute=4), task_archive_hails.s())
+    sender.add_periodic_task(crontab(hour=4, minute=4), task_delete_old_hails.s())
     sender.add_periodic_task(crontab(hour=4, minute=6), task_delete_old_taxis.s())
     sender.add_periodic_task(crontab(hour=4, minute=8), task_delete_old_orphans.s())
+    sender.add_periodic_task(crontab(hour=4, minute=10), task_compute_stats_hails.s())

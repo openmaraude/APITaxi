@@ -2,14 +2,15 @@
 Quick'n dirty TimeScaleDB stats
 """
 
-from sqlalchemy import event, DDL
+from sqlalchemy.dialects import postgresql
 
 from . import db
+from .mixins import HistoryMixin
 
 
 class BaseStats(db.Model):
     __abstract__ = True
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # needed by SLQAlchemy
     time = db.Column(db.DateTime, primary_key=True)
     value = db.Column(db.Integer, nullable=False)
 
@@ -123,13 +124,40 @@ class stats_week_operator_zupc(BaseStats, OperatorMixin, ZupcMixin):
     pass
 
 
-__all__ = [classname for classname in locals() if classname.startswith('stats_')]
-
-
-for classname in __all__:
-    class_ = locals()[classname]
-    event.listen(
-        class_.__table__,
-        'after_create',
-        DDL(f"SELECT create_hypertable('{class_.__tablename__}', 'time');")
+class StatsHails(db.Model, HistoryMixin):
+    __table_args__ = (
+        db.PrimaryKeyConstraint('id', 'added_at', name='stats_hails_pkey'),
     )
+
+    id = db.Column(db.String, nullable=False)
+    status = db.Column(db.String, nullable=False)
+    moteur = db.Column(db.String, nullable=False)
+    operateur = db.Column(db.String, nullable=False)
+    incident_customer_reason = db.Column(db.String)
+    incident_taxi_reason = db.Column(db.String)
+    session_id = db.Column(postgresql.UUID(as_uuid=True), nullable=False)
+    reporting_customer = db.Column(db.Boolean)
+    reporting_customer_reason = db.Column(db.String)
+    insee = db.Column(db.String, nullable=True)  # In case not found
+    taxi_hash = db.Column(db.String, nullable=True)  # Nullable as we inject archived hails
+    # transition_log times
+    received = db.Column(db.DateTime, nullable=True)
+    sent_to_operator = db.Column(db.DateTime, nullable=True)
+    received_by_operator = db.Column(db.DateTime, nullable=True)
+    received_by_taxi = db.Column(db.DateTime, nullable=True)
+    accepted_by_taxi = db.Column(db.DateTime, nullable=True)
+    accepted_by_customer = db.Column(db.DateTime, nullable=True)
+    declined_by_taxi = db.Column(db.DateTime, nullable=True)
+    declined_by_customer = db.Column(db.DateTime, nullable=True)
+    timeout_taxi = db.Column(db.DateTime, nullable=True)
+    timeout_customer = db.Column(db.DateTime, nullable=True)
+    incident_taxi = db.Column(db.DateTime, nullable=True)
+    incident_customer = db.Column(db.DateTime, nullable=True)
+    customer_on_board = db.Column(db.DateTime, nullable=True)
+    finished = db.Column(db.DateTime, nullable=True)
+    failure = db.Column(db.DateTime, nullable=True)
+
+
+__all__ = [classname for classname in locals() if classname.startswith('stats_')] + [
+    'StatsHails',
+]
