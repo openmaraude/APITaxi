@@ -5,10 +5,12 @@ from flask import current_app
 from geoalchemy2.shape import to_shape
 from shapely.geometry import Point
 from shapely.strtree import STRtree
-from sqlalchemy.orm import joinedload
+from sqlalchemy import func, Text
+from sqlalchemy.orm import aliased, joinedload
+from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
 from APITaxi2 import redis_backend
-from APITaxi_models2 import db, ADS, ArchivedHail, Driver, Taxi, VehicleDescription, Hail, Town
+from APITaxi_models2 import db, ADS, ArchivedHail, Driver, Taxi, VehicleDescription, Hail, Town, User
 from APITaxi_models2 import Customer
 from APITaxi_models2.zupc import town_zupc
 from APITaxi_models2.stats import *
@@ -115,57 +117,132 @@ def blur_hails():
     return count
 
 
-def archive_hails():
+def compute_stats_hails():
     """
-    After a year, blurred hails aren't deleted but moved to a stripped down version in another table.
+    Extract what we need to build stats, then the hails can be deleted after they expire.
     """
-    threshold = datetime.datetime.now() - datetime.timedelta(days=365)
-
-    # First preload the subset of towns we'll work with. We can't tell which towns we'll need in advance
-    # but we can already limit to towns where taxis are registered.
-    ads_insee = {insee for insee, in db.session.query(ADS.insee)}
-    zupc_insee = {insee for insee, in db.session.query(Town.insee).join(town_zupc)}
-    town_helper = TownHelper(ads_insee | zupc_insee)
-
     count = 0
+    last_run = db.session.query(func.max(StatsHails.added_at)).scalar() or datetime.datetime.fromtimestamp(0)
+    Operateur = aliased(User)
+    Moteur = aliased(User)
+    query = db.session.query(
+        Hail,
+        Town.insee,
+        func.encode(func.digest(Hail.taxi_id, 'sha1'), 'hex').label('taxi_hash'),
+        Moteur.email,
+        Operateur.email,
+        # JSONB cannot be cast to a timestamp field, but TEXT can
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "received"}').cast(Text()).label('received'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "sent_to_operator"}').cast(Text()).label('sent_to_operator'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "received_by_operator"}').cast(Text()).label('received_by_operator'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "received_by_taxi"}').cast(Text()).label('received_by_taxi'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "accepted_by_taxi"}').cast(Text()).label('accepted_by_taxi'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "accepted_by_customer"}').cast(Text()).label('accepted_by_customer'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "declined_by_taxi"}').cast(Text()).label('declined_by_taxi'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "declined_by_customer"}').cast(Text()).label('declined_by_customer'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "timeout_taxi"}').cast(Text()).label('timeout_taxi'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "timeout_customer"}').cast(Text()).label('timeout_customer'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "incident_taxi"}').cast(Text()).label('incident_taxi'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "incident_customer"}').cast(Text()).label('incident_customer'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "customer_on_board"}').cast(Text()).label('customer_on_board'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "finished"}').cast(Text()).label('finished'),
+        func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', '{"status": "failure"}').cast(Text()).label('failure'),
+    ).join(
+        Moteur, Hail.added_by_id == Moteur.id
+    ).join(
+        Operateur, Hail.operateur_id == Operateur.id
+    ).outerjoin(
+        Town, func.st_intersects(Town.shape, func.st_point(Hail.customer_lon, Hail.customer_lat, 4326)),
+    ).filter(
+        Hail.added_at > last_run,
+        Hail.added_at < func.now() - func.cast('24 hours', INTERVAL()),
+    )
 
-    hail_ids = [
-        hail_id for hail_id, in db.session.query(Hail.id).filter(
-            Hail.creation_datetime < threshold,
-            Hail.blurred.is_(True),
-        )
-    ]
-    # Cut reference to foreign key, so we can delete them
-    db.session.query(Taxi).filter(Taxi.current_hail_id.in_(hail_ids)).update({
-        Taxi.current_hail_id: None
-    })
-
-    for count, hail in enumerate(db.session.query(Hail).filter(
-        Hail.id.in_(hail_ids)
-    ).options(
-        joinedload(Hail.added_by),
-        joinedload(Hail.operateur),
-    ), 1):
-        insee = town_helper.find_town(hail.customer_lon, hail.customer_lat)
-        archive = ArchivedHail(
+    for count, (hail, insee, taxi_hash, moteur, operateur, *timings) in enumerate(query, 1):
+        stats_hail = StatsHails(
             added_at=hail.added_at,
             added_via=hail.added_via,
             source=hail.source,
             last_update_at=hail.last_update_at,
             id=hail.id,
             status=hail.status,
-            moteur=hail.added_by.email,
-            operateur=hail.operateur.email,
+            moteur=moteur,
+            operateur=operateur,
             incident_customer_reason=hail.incident_customer_reason,
             incident_taxi_reason=hail.incident_taxi_reason,
             session_id=hail.session_id,
+            reporting_customer=hail.reporting_customer,
+            reporting_customer_reason=hail.reporting_customer_reason,
             insee=insee,
+            taxi_hash=taxi_hash,
+            received=timings[0],
+            sent_to_operator=timings[1],
+            received_by_operator=timings[2],
+            received_by_taxi=timings[3],
+            accepted_by_taxi=timings[4],
+            accepted_by_customer=timings[5],
+            declined_by_taxi=timings[6],
+            declined_by_customer=timings[7],
+            timeout_taxi=timings[8],
+            timeout_customer=timings[9],
+            incident_taxi=timings[10],
+            incident_customer=timings[11],
+            customer_on_board=timings[12],
+            finished=timings[13],
+            failure=timings[14],
         )
-        db.session.add(archive)
+        db.session.add(stats_hail)
+
+    db.session.commit()
+    return count
+
+
+# TODO remove after transition
+def compute_archived_hails():
+    count = 0
+    query = db.session.query(ArchivedHail)
+
+    for count, archived_hail in enumerate(query, 1):
+        stats_hail = StatsHails(
+            added_at=archived_hail.added_at,
+            added_via=archived_hail.added_via,
+            source=archived_hail.source,
+            last_update_at=archived_hail.last_update_at,
+            id=archived_hail.id,
+            status=archived_hail.status,
+            moteur=archived_hail.moteur,
+            operateur=archived_hail.operateur,
+            incident_customer_reason=archived_hail.incident_customer_reason,
+            incident_taxi_reason=archived_hail.incident_taxi_reason,
+            session_id=archived_hail.session_id,
+            insee=archived_hail.insee,
+
+        )
+        db.session.add(stats_hail)
+
+    db.session.commit()
+    return count
+
+
+def delete_old_hails():
+    """
+    After a year, blurred hails are deleted. We already saved what is needed for stats.
+    """
+    hail_ids = [
+        hail_id for hail_id, in db.session.query(Hail.id).filter(
+            Hail.added_at < func.now() - func.cast('1 year', INTERVAL()),
+            Hail.blurred.is_(True),
+        )
+    ]
+
+    # Cut reference to foreign key, so we can delete them
+    db.session.query(Taxi).filter(Taxi.current_hail_id.in_(hail_ids)).update({
+        Taxi.current_hail_id: None
+    })
 
     db.session.query(Hail).filter(Hail.id.in_(hail_ids)).delete()
     db.session.commit()
-    return count
+    return len(hail_ids)
 
 
 def delete_old_taxis():
@@ -173,7 +250,7 @@ def delete_old_taxis():
     If a taxi hasn't sent a location after a year, it can be deleted. Geolocation indices are deleted
     after two minutes, but we keep a reference in the main index, preserved by blur_geotaxi above.
 
-    As a taxi can be related to a hail, the latter must be archived before we can delete the taxi.
+    As a taxi can be related to a hail, the latter must be deleted before we can delete the taxi.
 
     Then we can delete now orphaned drivers, vehicles and ADS over a year old in the function below.
     """

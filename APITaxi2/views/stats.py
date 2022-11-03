@@ -7,8 +7,8 @@ from flask_security import current_user, login_required, roles_accepted
 from sqlalchemy import func, Text, DateTime, Numeric
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
-from APITaxi_models2 import db, ADS, ArchivedHail, Hail, Role, Taxi, User, Vehicle, VehicleDescription
-from APITaxi_models2.stats import stats_hour_insee
+from APITaxi_models2 import db, ADS, Role, Taxi, User, Vehicle, VehicleDescription
+from APITaxi_models2.stats import stats_hour_insee, StatsHails
 
 from .. import schemas
 
@@ -63,14 +63,10 @@ def apply_area_to_stats(query, area):
     return query
 
 
-def apply_area_to_hails(query, area, archived=False):
+def apply_area_to_hails(query, area):
     if area:
-        if archived:
-            insee_codes = INSEE_CODES[area]
-            query = query.filter(ArchivedHail.insee.in_(insee_codes))
-        else:
-            query = query.join(Hail.taxi)
-            query = apply_area_to_taxis(query, area)
+        insee_codes = INSEE_CODES[area]
+        query = query.filter(StatsHails.insee.in_(insee_codes))
     return query
 
 
@@ -109,9 +105,9 @@ def stats_taxis():
 
     def get_monthly_hails_per_taxi():
         counts = db.session.query(
-            func.Count(Hail.id)
+            func.Count(StatsHails.id)
         ).select_from(Taxi).outerjoin(
-            Hail, Hail.taxi_id == Taxi.id
+            StatsHails, StatsHails.taxi_hash == func.encode(func.digest(Taxi.id, 'sha1'), 'hex')
         ).group_by(Taxi.id)
         counts = apply_area_to_taxis(counts, area)        
         counts = counts.subquery()
@@ -138,7 +134,7 @@ def stats_taxis():
         query = apply_area_to_taxis(query, area)
         return query.scalar()
 
-    def get_connected_taxis_per_hour(since=None):
+    def get_connected_taxis_per_hour(since):
         # First "rebuild" stats_hour from stats_hour_insee
         counts = db.session.query(
             func.date_trunc('hour', stats_hour_insee.time).label('trunc'),
@@ -201,54 +197,40 @@ def stats_hails():
     last_year = get_last_year_interval()
     area = request.args.get('area')
 
-    def get_hails_received(since=None, until=None):
-        def _get_hails_received(model):
-            query = model.query
-            if since is not None:
-                query = query.filter(model.added_at >= since)
-            if until is not None:
-                query = query.filter(model.added_at < until)
-            query = apply_area_to_hails(query, area, archived=model == ArchivedHail)
-            return query.count()
-        return _get_hails_received(Hail) + _get_hails_received(ArchivedHail)
+    def get_hails_received(since, until=None):
+        query = StatsHails.query
+        if since is not None:
+            query = query.filter(StatsHails.added_at >= since)
+        if until is not None:
+            query = query.filter(StatsHails.added_at < until)
+        query = apply_area_to_hails(query, area)
+        return query.count()
 
     def get_hails_average_per(interval, since, until, status=None):
-        def _get_hails_average(model):
-            counts = db.session.query(
-                func.Count()
-            ).filter(
-                model.added_at >= since,
-                model.added_at < until,
-            ).group_by(
-                func.date_trunc(interval, model.added_at)
-            )
-            if status:
-                counts = counts.filter(model.status == status)
-            counts = apply_area_to_hails(counts, area, archived=model==ArchivedHail)
-            counts = counts.subquery()
-            query = db.session.query(func.Avg(counts.c.count))
-            return query.scalar() or 0
-        return _get_hails_average(Hail) + _get_hails_average(ArchivedHail)
+        counts = db.session.query(
+            func.Count()
+        ).filter(
+            StatsHails.added_at >= since,
+            StatsHails.added_at < until,
+        ).group_by(
+            func.date_trunc(interval, StatsHails.added_at)
+        )
+        if status:
+            counts = counts.filter(StatsHails.status == status)
+        counts = apply_area_to_hails(counts, area)
+        counts = counts.subquery()
+        query = db.session.query(func.Avg(counts.c.count))
+        return query.scalar() or 0
 
     def get_average_transition_time(from_status, to_status):
-        from_status = json.dumps({"status": from_status})
-        to_status = json.dumps({"status": to_status})
-        transition_logs = db.session.query(
-            # Having to cast transition_log to JSBON, json_path_query doesn't exist (should we convert transition_log to begin with?)
-            # then having to cast to Text because Postgres can't cast from JSONB to TIMESTAMP
-            # There is a datetime() function for path queries, but it doesn't recognize our ISO format, where the regular timestamp does
-            func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', to_status).cast(Text()).label('to_status'),
-            func.jsonb_path_query(Hail.transition_log.cast(JSONB()), '$[*] ? (@.to_status == $status).timestamp', from_status).cast(Text()).label('from_status'),
-        )
-        transition_logs = apply_area_to_hails(transition_logs, area)
-        transition_logs = transition_logs.subquery()
-        intervals = db.session.query(
-            (transition_logs.c.to_status.cast(DateTime()) - transition_logs.c.from_status.cast(DateTime())).label('interval')
+        from_status = getattr(StatsHails, from_status)
+        to_status = getattr(StatsHails, to_status)
+        query = db.session.query(func.Avg(
+            to_status - from_status
         ).filter(
-            transition_logs.c.to_status.isnot(None)
-        ).subquery()
-        average = db.session.query(func.Avg(intervals.c.interval))
-        return (average.scalar() or datetime.timedelta()).total_seconds()
+            to_status.isnot(None)
+        ))
+        return (query.scalar() or datetime.timedelta()).total_seconds()
 
     def get_hails_average(since, until):
         return {
@@ -276,20 +258,16 @@ def stats_hails():
         }
 
     def get_hails_total(since, until):
-        def _get_hails_total(model):
-            query = db.session.query(
-                func.date_part('month', model.added_at).label('month'),
-                func.count(),
-            ).filter(
-                model.added_at >= since,
-                model.added_at < until
-            ).group_by('month').order_by('month')
-            query = apply_area_to_hails(query, area, archived=model == ArchivedHail)
-            return query
+        query = db.session.query(
+            func.date_part('month', StatsHails.added_at).label('month'),
+            func.count(),
+        ).filter(
+            StatsHails.added_at >= since,
+            StatsHails.added_at < until
+        ).group_by('month').order_by('month')
+        query = apply_area_to_hails(query, area)
 
-        counter = collections.Counter(dict(_get_hails_total(ArchivedHail)))
-        counter.update(dict(_get_hails_total(Hail)))
-        return list(counter.items())
+        return query
 
     schema = schemas.DataStatsHailsSchema()
     return schema.dump({'data': [{
