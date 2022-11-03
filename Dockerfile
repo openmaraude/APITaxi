@@ -1,22 +1,42 @@
 ##### DEV API IMAGE #####
 
-FROM ubuntu:20.04 AS devenv
+# Timescale is required for tests, it's based on Ubuntu 22.04
+FROM timescale/timescaledb-ha:pg14-ts2.8-oss-latest AS base-devenv
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
+USER root
+RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y gpgv
-RUN apt-get update && apt-get install -y \
+RUN apt-get install -y \
   git \
   less \
+  gcc \
   libffi-dev \
   libgeos-dev \
   libpq-dev \
+  python3-dev \
   python3-pip \
-  postgis \
   redis-server \
   sudo \
   vim
+
+
+##### DEV TEST IMAGE #####
+
+FROM base-devenv AS test-devenv
+
+RUN pip3 install tox
+
+USER postgres
+
+ENTRYPOINT ["/usr/bin/bash"]
+
+
+#### DEV API IMAGE #####
+
+FROM base-devenv AS devenv
 
 RUN pip3 install virtualenv
 
@@ -42,7 +62,7 @@ CMD ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
 
 ##### DEV WORKER IMAGE #####
 
-FROM devenv AS  worker-devenv
+FROM devenv AS worker-devenv
 
 USER root
 RUN useradd worker
@@ -68,7 +88,7 @@ CMD watchmedo auto-restart --debug-force-polling --interval=2 --directory=/git/ 
 
 
 ##### PROD IMAGE #####
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true

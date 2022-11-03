@@ -3,15 +3,12 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: circleci/python:3-bullseye
+      - image: openmaraude/api_taxi-test-devenv:withtimescale
+        auth:
+          username: ${DOCKERHUB_USERNAME}
+          password: ${DOCKERHUB_PASS}
     steps:
       - checkout
-      - run:
-          name: Install system dependencies
-          command: |
-            sudo apt update
-            sudo apt install -y postgis redis-server
-            pip install tox
       - run:
           name: Run unittests
           command: |
@@ -29,6 +26,9 @@ jobs:
             docker build --target devenv -t openmaraude/api_taxi-devenv:${CIRCLE_TAG} .
             docker tag openmaraude/api_taxi-devenv:${CIRCLE_TAG} openmaraude/api_taxi-devenv:latest
 
+            docker build --target test-devenv -t openmaraude/api_taxi-test-devenv:${CIRCLE_TAG} .
+            docker tag openmaraude/api_taxi-test-devenv:${CIRCLE_TAG} openmaraude/api_taxi-test-devenv:latest
+
             docker build --target worker-devenv -t openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG} .
             docker tag openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG} openmaraude/api_taxi-worker-devenv:latest
 
@@ -44,6 +44,9 @@ jobs:
 
             docker push openmaraude/api_taxi-devenv:${CIRCLE_TAG}
             docker push openmaraude/api_taxi-devenv:latest
+
+            docker push openmaraude/api_taxi-test-devenv:${CIRCLE_TAG}
+            docker push openmaraude/api_taxi-test-devenv:latest
 
             docker push openmaraude/api_taxi-worker-devenv:${CIRCLE_TAG}
             docker push openmaraude/api_taxi-worker-devenv:latest
