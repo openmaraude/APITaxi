@@ -120,7 +120,7 @@ class TestGetHailDetails:
         hail = HailFactory(
             operateur=operateur.user,
             added_by=moteur.user,
-            creation_datetime=datetime.now() - timedelta(60)
+            added_at=datetime.now() - timedelta(60)
         )
 
         resp = moteur.client.get(f'/hails/{hail.id}')
@@ -469,7 +469,7 @@ class TestGetHailList:
         HailFactory(
             operateur=operateur.user,
             added_by=moteur.user,
-            creation_datetime=datetime.now() - timedelta(60)
+            added_at=datetime.now() - timedelta(60)
         )
 
         resp = moteur.client.get('/hails')

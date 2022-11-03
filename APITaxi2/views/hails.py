@@ -391,7 +391,7 @@ def hails_details(hail_id):
     # Hails can't be accessed after two months
     if not current_user.has_role('admin'):
         query = query.filter(
-            Hail.creation_datetime >= (datetime.now() - timedelta(days=60))
+            Hail.added_at >= (datetime.now() - timedelta(days=60))
         )
     query = query.one_or_none()
     if not query:
@@ -626,7 +626,7 @@ def hails_list():
     # Filter on querystring arguments, exact match.
     for qname, field in (
         ('status', Hail.status),
-        ('date', func.date(Hail.creation_datetime)),
+        ('date', func.date(Hail.added_at)),
     ):
         if qname not in querystring:
             continue
@@ -637,11 +637,11 @@ def hails_list():
     # Hails can't be accessed after two months
     if not current_user.has_role('admin'):
         query = query.filter(
-            Hail.creation_datetime >= (datetime.now() - timedelta(days=60))
+            Hail.added_at >= (datetime.now() - timedelta(days=60))
         )
 
     # Order by date
-    query = query.order_by(Hail.creation_datetime.desc())
+    query = query.order_by(Hail.added_at.desc())
 
     # Paginate
     hails = query.paginate(

@@ -71,12 +71,12 @@ class TestBlurHails:
         below_two_months = now - datetime.timedelta(days=59)
 
         old_hail = factories.HailFactory(
-            creation_datetime=over_two_months,
+            added_at=over_two_months,
             initial_taxi_lon=2.35,
             initial_taxi_lat=48.86,
         )
         recent_hail = factories.HailFactory(
-            creation_datetime=below_two_months,
+            added_at=below_two_months,
             # Bordeaux
             customer_lon=-0.57847,
             customer_lat=44.8434,

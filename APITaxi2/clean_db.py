@@ -90,7 +90,7 @@ def blur_hails():
     count = 0
 
     for count, hail in enumerate(db.session.query(Hail).filter(
-        Hail.creation_datetime < threshold,
+        Hail.added_at < threshold,
         Hail.blurred.is_(False),
         # Finding a way to order by position, to optimize the LRU cache?
     ), 1):
