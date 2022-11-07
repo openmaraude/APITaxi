@@ -145,13 +145,6 @@ def compute_stats_hails():
     print(f"{count} hails added to stats")
 
 
-# TODO remove after transition
-@clean.command(help='Compute stats for archived hails')
-def compute_archived_hails():
-    count = clean_db.compute_archived_hails()
-    print(f"{count} archived hails added to stats")
-
-
 @clean.command(help='Delete hails after a year')
 def delete_old_hails():
     count = clean_db.delete_old_hails()

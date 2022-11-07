@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
 from APITaxi2 import redis_backend
-from APITaxi_models2 import db, ADS, ArchivedHail, Driver, Taxi, VehicleDescription, Hail, Town, User
+from APITaxi_models2 import db, ADS, Driver, Taxi, VehicleDescription, Hail, Town, User
 from APITaxi_models2 import Customer
 from APITaxi_models2.zupc import town_zupc
 from APITaxi_models2.stats import *
@@ -157,33 +157,6 @@ def compute_stats_hails():
             customer_on_board=timings[12],
             finished=timings[13],
             failure=timings[14],
-        )
-        db.session.add(stats_hail)
-
-    db.session.commit()
-    return count
-
-
-# TODO remove after transition
-def compute_archived_hails():
-    count = 0
-    query = db.session.query(ArchivedHail)
-
-    for count, archived_hail in enumerate(query, 1):
-        stats_hail = StatsHails(
-            added_at=archived_hail.added_at,
-            added_via=archived_hail.added_via,
-            source=archived_hail.source,
-            last_update_at=archived_hail.last_update_at,
-            id=archived_hail.id,
-            status=archived_hail.status,
-            moteur=archived_hail.moteur,
-            operateur=archived_hail.operateur,
-            incident_customer_reason=archived_hail.incident_customer_reason,
-            incident_taxi_reason=archived_hail.incident_taxi_reason,
-            session_id=archived_hail.session_id,
-            insee=archived_hail.insee,
-
         )
         db.session.add(stats_hail)
 
