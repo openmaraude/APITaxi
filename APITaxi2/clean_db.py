@@ -152,7 +152,7 @@ def compute_stats_hails():
     ).join(
         Operateur, Hail.operateur_id == Operateur.id
     ).outerjoin(
-        Town, func.st_intersects(Town.shape, func.st_point(Hail.customer_lon, Hail.customer_lat, 4326)),
+        Town, func.st_intersects(Town.shape, func.ST_SetSRID(func.ST_Point(Hail.customer_lon, Hail.customer_lat), 4326)),
     ).filter(
         Hail.added_at > last_run,
         Hail.added_at < func.now() - func.cast('24 hours', INTERVAL()),
