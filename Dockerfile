@@ -45,11 +45,13 @@ WORKDIR /git/APITaxi
 ADD devenv/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Create user and add in sudo
-RUN useradd api
-RUN echo "api ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# needed to run "sudo -H /venv/bin/pip install"
+RUN echo "postgres ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-USER api
+# timescaledb-ha already creates a user with uid 1000, and the development environment
+# assumes you are also uid 1000 so both can read and write code
+# we used to create a user "api", now it's "postgres"
+USER postgres
 ENV VIRTUAL_ENV=/venv
 ENV PATH=/venv/bin/:$PATH
 ENV HOME=/tmp
