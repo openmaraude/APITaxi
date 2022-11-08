@@ -2,9 +2,8 @@ import datetime
 import functools
 
 from flask import current_app
-from geoalchemy2.shape import to_shape
-from shapely.geometry import Point
-from shapely.strtree import STRtree
+from geoalchemy2 import Geometry
+from shapely import wkt
 from sqlalchemy import func, Text
 from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
@@ -14,41 +13,6 @@ from APITaxi_models2 import db, ADS, ArchivedHail, Driver, Taxi, VehicleDescript
 from APITaxi_models2 import Customer
 from APITaxi_models2.zupc import town_zupc
 from APITaxi_models2.stats import *
-
-
-class TownHelper:
-
-    def __init__(self, insee_codes):
-        self._shape_to_insee = {}
-        self._insee_to_shape = {}
-        self._preload_towns(insee_codes)
-
-    def _preload_towns(self, insee_codes):
-        for town in db.session.query(Town).filter(Town.insee.in_(insee_codes)):
-            shape = to_shape(town.shape)
-            self._shape_to_insee[id(shape)] = town.insee  # MultiPolygon unhashable
-            self._insee_to_shape[town.insee] = shape
-        # Build an index of geometries
-        self._tree = STRtree(self._insee_to_shape.values())
-
-    def find_town(self, lon, lat):
-        if lon == 0.0 and lat == 0.0:  # Seen in production
-            return None
-        point = Point(lon, lat)
-        for shape in self._tree.query(point):
-            if not shape.contains(point):  # See STRtree docs
-                continue
-            return self._shape_to_insee[id(shape)]
-        return None
-
-    @functools.lru_cache()
-    def geometric_center(self, insee):
-        if insee is None:
-            return Point(0, 0)
-        # Quoting the documentation:
-        #   Returns a cheaply computed point that is guaranteed to be within the geometric object.
-        # whereas the centroid provides neither of these
-        return self._insee_to_shape[insee].representative_point()
 
 
 def blur_geotaxi():
@@ -83,28 +47,31 @@ def blur_hails():
     """
     threshold = datetime.datetime.now() - datetime.timedelta(days=60)
 
-    # First preload the subset of towns we'll work with. We can't tell which towns we'll need in advance
-    # but we can already limit to towns where taxis are registered.
-    ads_insee = {insee for insee, in db.session.query(ADS.insee)}
-    zupc_insee = {insee for insee, in db.session.query(Town.insee).join(town_zupc)}
-    town_helper = TownHelper(ads_insee | zupc_insee)
-
     count = 0
+    CustomerTown = aliased(Town)
+    TaxiTown = aliased(Town)
 
-    for count, hail in enumerate(db.session.query(Hail).filter(
+    for count, (hail, customer_blurred, taxi_blurred) in enumerate(db.session.query(
+        Hail,
+        # We use ST_PointOnSurface over ST_Centroid to guarantee the point is in the surface
+        # I found 210 towns were the centroid is outside the boundaries of funny-shaped town
+        func.ST_AsText(func.ST_PointOnSurface(func.Geometry(CustomerTown.shape))),
+        func.ST_AsText(func.ST_PointOnSurface(func.Geometry(TaxiTown.shape))),
+    ).outerjoin(
+        CustomerTown, func.st_intersects(CustomerTown.shape, func.ST_SetSRID(func.ST_Point(Hail.customer_lon, Hail.customer_lat), 4326)),
+    ).outerjoin(
+        TaxiTown, func.st_intersects(TaxiTown.shape, func.ST_SetSRID(func.ST_Point(Hail.initial_taxi_lon, Hail.initial_taxi_lat), 4326)),
+    ).filter(
         Hail.added_at < threshold,
         Hail.blurred.is_(False),
-        # Finding a way to order by position, to optimize the LRU cache?
     ), 1):
         # Blur customer position
-        insee = town_helper.find_town(hail.customer_lon, hail.customer_lat)
-        blurred = town_helper.geometric_center(insee)
-        hail.customer_lon, hail.customer_lat = blurred.x, blurred.y
+        customer_blurred = wkt.loads(str(customer_blurred))
+        hail.customer_lon, hail.customer_lat = customer_blurred.x, customer_blurred.y
         # Blur taxi position
-        if hail.initial_taxi_lon and hail.initial_taxi_lat:
-            insee = town_helper.find_town(hail.initial_taxi_lon, hail.initial_taxi_lat)
-            blurred = town_helper.geometric_center(insee)
-            hail.initial_taxi_lon, hail.initial_taxi_lat = blurred.x, blurred.y
+        if taxi_blurred:
+            taxi_blurred = wkt.loads(str(taxi_blurred))
+            hail.initial_taxi_lon, hail.initial_taxi_lat = taxi_blurred.x, taxi_blurred.y
         # Blur text-plain address
         hail.customer_address = "[REDACTED]"
         # Blur phone numbers

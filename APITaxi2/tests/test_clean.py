@@ -8,34 +8,6 @@ from APITaxi_models2.unittest import factories
 from APITaxi2 import clean_db, redis_backend
 
 
-class TestTownHelper:
-    def test_ok(self, app, QueriesTracker):
-        factories.TownFactory(bordeaux=True)
-        factories.TownFactory(charenton=True)
-        factories.TownFactory(paris=True)
-
-        with QueriesTracker() as qtracker:
-            town_helper = clean_db.TownHelper(['33063', '94018', '75056'])
-            assert qtracker.count == 1
-
-        insee = town_helper.find_town(2.35, 48.86)
-        assert insee == '75056'
-        insee = town_helper.find_town(-0.57847, 44.8434)
-        assert insee == '33063'
-
-        zero = town_helper.find_town(0, 0)
-        assert zero is None
-        not_found = town_helper.find_town(48.86, 2.35)  # Inverted lon/lat
-        assert not_found is None
-
-    def test_insee_missing(self, app):
-        factories.TownFactory(paris=True)
-        factories.TownFactory(bordeaux=True)
-        town_helper = clean_db.TownHelper(['33063'])
-        # Only Bordeaux preloaded, Paris is invisible
-        assert town_helper.find_town(2.35, 48.86) is None
-
-
 class TestBlurGeoTaxi:
     def test_ok(self, app):
         now = datetime.datetime.now()
