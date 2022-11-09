@@ -777,7 +777,10 @@ class HailSchema(Schema):
     customer_id = fields.String(dump_only=True)
     creation_datetime = fields.DateTime(dump_only=True)
     last_status_change = fields.DateTime(dump_only=True)
-    transitions = fields.Raw(attribute='transition_log', dump_only=True)
+    transitions = fields.Raw(
+        attribute='transition_log', dump_only=True,
+        metadata={'type': 'array', 'items': {'type': 'object'}, 'description': "events for debug purposes, not part of the API"},
+    )
 
     # Can be changed by both parties
     status = fields.String(
