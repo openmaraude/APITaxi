@@ -2,6 +2,7 @@ import datetime
 import uuid
 
 import factory
+from geoalchemy2 import WKTElement
 
 from APITaxi_models2 import (
     db,
@@ -10,6 +11,7 @@ from APITaxi_models2 import (
     Departement,
     Driver,
     Hail,
+    Station,
     Taxi,
     Town,
     User,
@@ -232,5 +234,21 @@ class HailFactory(BaseFactory):
     customer_phone_number = factory.Sequence(lambda n: '+336%09d' % n)
     added_at = factory.LazyFunction(datetime.datetime.now)
     added_by = factory.SubFactory(UserFactory)
+    added_via = 'api'
+    source = 'added_by'
+
+
+class StationFactory(BaseFactory):
+    class Meta:
+        model = Station
+
+    id = factory.LazyAttributeSequence(lambda o, n: f'{o.town.insee}-T-{n:03}')
+    name = factory.LazyAttributeSequence(lambda o, n: f'Station {o.town.name} {n:03}')
+    town = factory.SubFactory(TownFactory)
+    location = WKTElement('POINT(2.35 48.86)')
+    address = ""
+    places = 0
+    info = ""
+    added_at = factory.LazyFunction(datetime.datetime.now)
     added_via = 'api'
     source = 'added_by'
