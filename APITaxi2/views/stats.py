@@ -5,6 +5,7 @@ import json
 from flask import Blueprint, request, current_app
 from flask_security import current_user, login_required, roles_accepted
 from sqlalchemy import func, Text, DateTime, Numeric
+from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
 from APITaxi_models2 import db, ADS, Role, Taxi, User, Vehicle, VehicleDescription
@@ -319,23 +320,28 @@ def stats_groupements():
         return query.count()
 
     def get_fleet_data():
+        Manager = aliased(User)
         query = db.session.query(
             User.id,
             User.email,
             User.fleet_size,
             func.Count(Taxi.id).label('count'),
             (func.Count(Taxi.id) * 100.0 / User.fleet_size).label('ratio'),
-            func.Max(Taxi.added_at).label('last_taxi')
+            func.Max(Taxi.added_at).label('last_taxi'),
+            Manager.email.label('manager'),
         ).join(
             User.roles
         ).outerjoin(
             Taxi
+        ).outerjoin(
+            Manager, Manager.id == User.manager_id
         ).filter(
             Role.name == 'groupement'
         ).group_by(
             User.id,
             User.email,
             User.fleet_size,
+            Manager.email,
         ).order_by(
             User.email
         )

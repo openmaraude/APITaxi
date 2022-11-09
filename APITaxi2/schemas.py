@@ -1069,6 +1069,7 @@ class FleetDataSchema(Schema):
     count = fields.Integer()
     ratio = fields.Float()
     last_taxi = fields.DateTime()
+    manager = fields.String()
 
 
 class StatsGroupementsSchema(Schema):
