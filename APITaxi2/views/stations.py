@@ -12,6 +12,7 @@ from flask_security import login_required, roles_accepted
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
+from APITaxi2 import schemas
 from APITaxi_models2 import db, Station
 
 
@@ -30,6 +31,29 @@ PROPERTIES = {
 
 # The CSV format doesn't have exactly the same columns
 COLUMNS = ['id', 'nom', 'insee', 'geopoint', 'adresse', 'emplacements', 'no_appel', 'info']
+
+
+@blueprint.route('/stations/all', methods=['GET'])
+def stations_all():
+    """
+    Endpoint for the console
+    """
+    stations = db.session.query(
+        Station.id,
+        Station.name,
+        Station.places,
+        func.ST_AsGeoJSON(Station.location),
+    )
+
+    schema = schemas.DataStationSchema()
+    return schema.dump({
+        'data': [{
+            'id': id,
+            'name': name,
+            'places': places,
+            'geojson': json.loads(geojson),
+        } for (id, name, places, geojson) in stations
+    ]})
 
 
 @blueprint.route('/stations/stations.csv', methods=['GET'])

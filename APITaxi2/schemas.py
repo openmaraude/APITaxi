@@ -369,7 +369,7 @@ class ZUPCSchema(Schema):
 
 
 class ZUPCGeomSchema(Schema):
-    """Represents a ZUPC and it's shape."""
+    """Represents a ZUPC and its shape."""
     id = fields.String()
     nom = fields.String()
     geojson = fields.Raw()
@@ -1077,6 +1077,13 @@ class StatsGroupementsSchema(Schema):
     fleet_data = fields.List(fields.Nested(FleetDataSchema))
 
 
+class StationSchema(Schema):
+    id = fields.String()
+    name = fields.String()
+    places = fields.Integer()
+    geojson = fields.Raw()
+
+
 def data_schema_wrapper(WrappedSchema, with_pagination=False):
     """All API endpoints expect requests and responses to be formed as:
 
@@ -1164,6 +1171,7 @@ DataTownSchema = data_schema_wrapper(TownSchema())
 DataStatsTaxisSchema = data_schema_wrapper(StatsTaxisSchema())
 DataStatsHailsSchema = data_schema_wrapper(StatsHailsSchema())
 DataStatsGroupementsSchema = data_schema_wrapper(StatsGroupementsSchema())
+DataStationSchema = data_schema_wrapper(StationSchema())
 
 # These schemas are only used to simplify the output of Swagger
 DataCreateTaxiSchema = data_schema_wrapper(CreateTaxiSchema())
