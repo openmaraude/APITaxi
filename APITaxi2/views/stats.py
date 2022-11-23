@@ -4,7 +4,7 @@ import json
 
 from flask import Blueprint, request, current_app
 from flask_security import current_user, login_required, roles_accepted
-from sqlalchemy import func, Text, DateTime, Numeric
+from sqlalchemy import func, Text, DateTime, Numeric, or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
@@ -49,43 +49,44 @@ def get_last_year_interval():
     return [last_year, current_year]  # upper bound excluded
 
 
-def apply_filters_to_taxis(query, area, insee):
-    if area or insee:
+def apply_filters_to_taxis(query, area, departements, insee):
+    if area or departements or insee:
         query = query.join(Taxi.ads)
         if area:
             insee_codes = INSEE_CODES[area]
             query = query.filter(ADS.insee.in_(insee_codes))
+        if departements:
+            query = query.filter(or_(*(
+                ADS.insee.like(dpt + '%') for dpt in departements
+            )))
         if insee:
-            query = query.filter(ADS.insee.like(insee + '%'))
+            query = query.filter(ADS.insee == insee)
     return query
 
 
-def apply_filters_to_stats_hour(query, area, insee):
+def apply_filters_to_stats_hour(query, area, departements, insee):
     if area:
         insee_codes = INSEE_CODES[area]
         query = query.filter(stats_hour_insee.insee.in_(insee_codes))
+    if departements:
+        query = query.filter(or_(*(
+            stats_hour_insee.insee.like(dpt + '%') for dpt in departements
+        )))
     if insee:
-        query = query.filter(stats_hour_insee.insee.like(insee + '%'))
+        query = query.filter(stats_hour_insee.insee == insee)
     return query
 
 
-def apply_filters_to_hails(query, area, insee):
+def apply_filters_to_hails(query, area, departements, insee):
     if area:
         insee_codes = INSEE_CODES[area]
         query = query.filter(StatsHails.insee.in_(insee_codes))
+    if departements:
+        query = query.filter(or_(*(
+            StatsHails.insee.like(dpt + '%') for dpt in departements
+        )))
     if insee:
-        query = query.filter(StatsHails.insee.like(insee + '%'))
-    return query
-
-
-def apply_filters_to_users(query, area, insee):
-    if area or insee:
-        query = query.join(Taxi.ads)
-        if area:
-            insee_codes = INSEE_CODES[area]
-            query = query.filter(ADS.insee.in_(insee_codes))
-        if insee:
-            query = query.filter(ADS.insee.like(insee + '%'))
+        query = query.filter(StatsHails.insee == insee)
     return query
 
 
@@ -96,6 +97,7 @@ def stats_taxis():
     three_months_ago, six_months_ago, twelve_months_ago = get_intervals()
     area = request.args.get('area')
     insee = request.args.get('insee')
+    departements = request.args.get('departements', '').split(',')
 
     def get_registered_taxis(since=None, until=None):
         query = Taxi.query
@@ -103,7 +105,7 @@ def stats_taxis():
             query = query.filter(Taxi.added_at >= since)
         if until is not None:
             query = query.filter(Taxi.added_at < until)
-        query = apply_filters_to_taxis(query, area, insee)
+        query = apply_filters_to_taxis(query, area, departements, insee)
         return query.count()
 
     def get_connected_taxis(since=None, until=None):
@@ -112,7 +114,7 @@ def stats_taxis():
             query = query.filter(Taxi.last_update_at >= since)
         if until is not None:
             query = query.filter(Taxi.last_update_at < until)
-        query = apply_filters_to_taxis(query, area, insee)
+        query = apply_filters_to_taxis(query, area, departements, insee)
         return query.count()
 
     def get_monthly_hails_per_taxi():
@@ -121,7 +123,7 @@ def stats_taxis():
         ).select_from(Taxi).outerjoin(
             StatsHails, StatsHails.taxi_hash == func.encode(func.digest(Taxi.id, 'sha1'), 'hex')
         ).group_by(Taxi.id)
-        counts = apply_filters_to_taxis(counts, area, insee)
+        counts = apply_filters_to_taxis(counts, area, departements, insee)
         counts = counts.subquery()
         query = db.session.query(
             func.Avg(counts.c.count)
@@ -136,14 +138,14 @@ def stats_taxis():
         #     VehicleDescription.radius.isnot(None)
             func.Avg(VehicleDescription.radius)
         ).join(Taxi.vehicle).join(Vehicle.descriptions)
-        query = apply_filters_to_taxis(query, area, insee)
+        query = apply_filters_to_taxis(query, area, departements, insee)
         return query.scalar()
 
     def get_average_radius_change():
         query = db.session.query(
             func.Count(VehicleDescription.radius) * 100.0 / func.Nullif(func.Count(), 0)
         ).join(Taxi.vehicle).join(Vehicle.descriptions)
-        query = apply_filters_to_taxis(query, area, insee)
+        query = apply_filters_to_taxis(query, area, departements, insee)
         return query.scalar()
 
     def get_connected_taxis_per_hour(since):
@@ -156,7 +158,7 @@ def stats_taxis():
         )
         if since is not None:
             counts = counts.filter(stats_hour_insee.time >= since)
-        counts = apply_filters_to_stats_hour(counts, area, insee).subquery()
+        counts = apply_filters_to_stats_hour(counts, area, departements, insee).subquery()
         # Then just keep the time
         query = db.session.query(
             func.date_part('hour', counts.c.trunc).label('part'),
@@ -209,6 +211,7 @@ def stats_hails():
     last_year = get_last_year_interval()
     area = request.args.get('area')
     insee = request.args.get('insee')
+    departements = request.args.get('departements', '').split(',')
 
     def get_hails_received(since, until=None):
         query = StatsHails.query
@@ -216,7 +219,7 @@ def stats_hails():
             query = query.filter(StatsHails.added_at >= since)
         if until is not None:
             query = query.filter(StatsHails.added_at < until)
-        query = apply_filters_to_hails(query, area, insee)
+        query = apply_filters_to_hails(query, area, departements, insee)
         return query.count()
 
     def get_hails_average_per(interval, since, until, status=None):
@@ -230,7 +233,7 @@ def stats_hails():
         )
         if status:
             counts = counts.filter(StatsHails.status == status)
-        counts = apply_filters_to_hails(counts, area, insee)
+        counts = apply_filters_to_hails(counts, area, departements, insee)
         counts = counts.subquery()
         query = db.session.query(func.Avg(counts.c.count))
         return query.scalar() or 0
@@ -278,7 +281,7 @@ def stats_hails():
             StatsHails.added_at >= since,
             StatsHails.added_at < until
         ).group_by('month').order_by('month')
-        query = apply_filters_to_hails(query, area, insee)
+        query = apply_filters_to_hails(query, area, departements, insee)
 
         return query
 
@@ -318,6 +321,7 @@ def stats_hails():
 def stats_groupements():
     area = request.args.get('area')
     insee = request.args.get('insee')
+    departements = request.args.get('departements', '').split(',')
 
     def get_registered_groupements():
         query = User.query.join(
@@ -329,7 +333,7 @@ def stats_groupements():
         ).group_by(
             User.id,  # avoid a cartesian product
         )
-        query = apply_filters_to_users(query, area, insee)
+        query = apply_filters_to_taxis(query, area, departements, insee)
         return query.count()
 
     def get_fleet_data():
@@ -358,7 +362,7 @@ def stats_groupements():
         ).order_by(
             User.email
         )
-        query = apply_filters_to_users(query, area, insee)
+        query = apply_filters_to_taxis(query, area, departements, insee)
         return query
 
     schema = schemas.DataStatsGroupementsSchema()
