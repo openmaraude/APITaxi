@@ -66,8 +66,9 @@ def blur_hails():
         Hail.blurred.is_(False),
     ), 1):
         # Blur customer position
-        customer_blurred = wkt.loads(str(customer_blurred))
-        hail.customer_lon, hail.customer_lat = customer_blurred.x, customer_blurred.y
+        if customer_blurred:  # Could happen if the customer is wrongly located outside boundaries
+            customer_blurred = wkt.loads(str(customer_blurred))
+            hail.customer_lon, hail.customer_lat = customer_blurred.x, customer_blurred.y
         # Blur taxi position
         if taxi_blurred:
             taxi_blurred = wkt.loads(str(taxi_blurred))
