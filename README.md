@@ -89,3 +89,9 @@ clever applications
 clever ssh -a dev-api
 clever ssh -a prod-api
 ```
+
+Migrations are a bit tricky for some reason, you have to point to the Python environment:
+
+```
+PYTHONHOME=.. alembic upgrade head
+```

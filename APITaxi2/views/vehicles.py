@@ -108,6 +108,7 @@ def vehicle_create():
         'date_dernier_ct',
         'date_validite_ct',
         'special_need_vehicle',
+        'pmr',
         ('type', 'type_'),
         'luxury',
         'credit_card_accepted',
@@ -118,6 +119,7 @@ def vehicle_create():
         'dvd_player',
         'tablet',
         'wifi',
+        'pmr',
         'baby_seat',
         'bike_accepted',
         'pet_accepted',
@@ -129,7 +131,7 @@ def vehicle_create():
         'color',
         'nb_seats',
         'model',
-        'constructor'
+        'constructor',
     ):
         try:
             model_name, arg_name = attr

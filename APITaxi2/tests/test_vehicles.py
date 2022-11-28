@@ -38,7 +38,7 @@ class TestVehiclePost:
                     'taximetre': 'taximetre',
                     'date_dernier_ct': '2012-12-21',
                     'date_validite_ct': '2013-12-21',
-                    'special_need_vehicle': True,
+                    'pmr': True,
                     'type_': 'normal',
                     'luxury': True,
                     'credit_card_accepted': True,
@@ -89,7 +89,8 @@ class TestVehiclePost:
             'nb_seats': 18,
             'pet_accepted': True,
             'relais': False,
-            'wifi': True
+            'wifi': True,
+            'pmr': True,
         }]}
 
         # If we make a query with the same user to create the same vehicle

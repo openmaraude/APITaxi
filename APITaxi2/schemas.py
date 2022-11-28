@@ -243,6 +243,9 @@ class VehicleSchema(Schema):
     wifi = fields.Bool(required=False, allow_none=True, metadata={
         'description': "Wi-Fi à bord",
     })
+    pmr = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "Véhicule homologué PMR",
+    })
 
     # Obsolete but kept for backwards compatibility
     air_con = fields.Bool(required=False, allow_none=True, metadata={'deprecated': True})
@@ -305,6 +308,7 @@ class VehicleSchema(Schema):
             'pet_accepted': vehicle_description.pet_accepted,
             'amex_accepted': vehicle_description.amex_accepted,
             'wifi': vehicle_description.wifi,
+            'pmr': vehicle_description.pmr,
         })
         return ret
 
