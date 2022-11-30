@@ -982,7 +982,7 @@ class ListZUPCQueryStringSchema(PositionMixin, Schema):
 
 
 class ListTownQueryStringSchema(Schema):
-    pass
+    search = fields.String()
 
 
 class GeotaxiPositionSchema(PositionMixin, Schema):

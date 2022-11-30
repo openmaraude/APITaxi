@@ -131,10 +131,20 @@ def zupc_live():
     })
 
 
+@functools.lru_cache()  # Store in memory (~100k VIRT ~32k RES ~5k SHR for the full list)
+def _dump_towns(search):
+    schema = schemas.DataTownSchema()
+
+    towns = db.session.query(Town.insee, Town.name).order_by(Town.name)
+    if search:
+        towns = towns.filter(Town.name.ilike(search + '%'))
+
+    return schema.dump({'data': towns})
+
+
 @blueprint.route('/towns', methods=['GET'])
 @login_required
 @roles_accepted('admin', 'moteur', 'operateur')
-@functools.lru_cache()  # Store in memory (~100k VIRT ~32k RES ~5k SHR), reset on deploying an update
 def town_list():
     """
     This endpoint is not part of the public API but can be convenient to integrate le.taxi.
@@ -165,7 +175,4 @@ def town_list():
     if errors:
         return make_error_json_response(errors)
 
-    schema = schemas.DataTownSchema()
-
-    towns = db.session.query(Town.insee, Town.name).order_by(Town.insee)
-    return schema.dump({'data': towns})
+    return _dump_towns(args.get('search'))
