@@ -1077,6 +1077,13 @@ class StatsGroupementsSchema(Schema):
     fleet_data = fields.List(fields.Nested(FleetDataSchema))
 
 
+class StatsTaximapSchema(Schema):
+    count = fields.Integer()
+    insee = fields.String()
+    position = fields.Raw()
+    name = fields.String()
+
+
 class StationSchema(Schema):
     id = fields.String()
     name = fields.String()
@@ -1171,6 +1178,7 @@ DataTownSchema = data_schema_wrapper(TownSchema())
 DataStatsTaxisSchema = data_schema_wrapper(StatsTaxisSchema())
 DataStatsHailsSchema = data_schema_wrapper(StatsHailsSchema())
 DataStatsGroupementsSchema = data_schema_wrapper(StatsGroupementsSchema())
+DataStatsTaximapSchema = data_schema_wrapper(StatsTaximapSchema())
 DataStationSchema = data_schema_wrapper(StationSchema())
 
 # These schemas are only used to simplify the output of Swagger

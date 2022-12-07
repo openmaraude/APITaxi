@@ -8,7 +8,7 @@ from sqlalchemy import func, Text, DateTime, Numeric, or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
-from APITaxi_models2 import db, ADS, Role, Taxi, User, Vehicle, VehicleDescription
+from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicle, VehicleDescription
 from APITaxi_models2.stats import stats_hour_insee, StatsHails
 
 from .. import schemas
@@ -57,7 +57,7 @@ def apply_filters_to_taxis(query, area, departements, insee_codes):
             query = query.filter(ADS.insee.in_(area_insee))
         if departements:
             query = query.filter(or_(*(
-                ADS.insee.like(dpt + '%') for dpt in departements
+                func.substr(ADS.insee, 0, 3) == dpt for dpt in departements
             )))
         if insee_codes:
             query = query.filter(ADS.insee.in_(insee_codes))
@@ -70,7 +70,7 @@ def apply_filters_to_stats_hour(query, area, departements, insee_codes):
         query = query.filter(stats_hour_insee.insee.in_(area_codes))
     if departements:
         query = query.filter(or_(*(
-            stats_hour_insee.insee.like(dpt + '%') for dpt in departements
+            func.substr(stats_hour_insee.insee, 0, 3) == dpt for dpt in departements
         )))
     if insee_codes:
         query = query.filter(stats_hour_insee.insee.in_(insee_codes))
@@ -83,7 +83,7 @@ def apply_filters_to_hails(query, area, departements, insee_codes):
         query = query.filter(StatsHails.insee.in_(area_codes))
     if departements:
         query = query.filter(or_(*(
-            StatsHails.insee.like(dpt + '%') for dpt in departements
+            func.substr(StatsHails.insee, 0, 3) == dpt for dpt in departements
         )))
     if insee_codes:
         query = query.filter(StatsHails.insee.in_(insee_codes))
@@ -382,3 +382,45 @@ def stats_groupements():
         'registered_groupements': get_registered_groupements(),
         'fleet_data': get_fleet_data(),
     }]})
+
+
+@blueprint.route('/stats/taximap', methods=['GET'])
+@login_required
+@roles_accepted('admin')
+def stats_taximap():
+    area = request.args.get('area')
+    departements = request.args.get('departements')
+    if departements:
+        departements = departements.split(',')
+    insee_codes = request.args.get('insee')
+    if insee_codes:
+        insee_codes = insee_codes.split(',')
+
+    def get_registered_taxis():
+        query = db.session.query(
+            func.Count(Taxi.id),
+            Departement.numero,
+            Departement.nom,
+            func.ST_AsGeoJSON(func.ST_PointOnSurface(func.ST_Collect(func.Geometry(Town.shape)))),
+        ).join(
+            Taxi.ads
+        ).join(
+            Town, Town.insee == ADS.insee
+        ).join(
+            Departement, Departement.numero == func.substr(ADS.insee, 0 , 3)
+        ).group_by(
+            Departement.numero,
+            Departement.nom,
+        ).order_by(
+            Departement.numero,
+        )
+        query = apply_filters_to_taxis(query, area, departements, insee_codes)
+        return query
+
+    schema = schemas.DataStatsTaximapSchema()
+    return schema.dump({'data': [{
+        'count': taxis[0],
+        'insee': taxis[1],
+        'name': taxis[2],
+        'position': json.loads(taxis[3]),
+    } for taxis in get_registered_taxis()]})
