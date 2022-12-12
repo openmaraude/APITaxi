@@ -91,6 +91,7 @@ for _env_var, _alt_name, _env_type in (
     ('CELERY_BROKER_URL', 'REDIS_DIRECT_URI', str),
     ('CELERY_RESULT_BACKEND', 'REDIS_DIRECT_URI', str),
     ('SENTRY_DSN', None, str),
+    ('SENTRY_SAMPLE_RATE', None, float),
     ('CONSOLE_URL', None, str),
     ('SWAGGER_URL', None, str),
     ('NEUTRAL_OPERATOR', None, parse_env_bool),
