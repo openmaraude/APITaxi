@@ -9,7 +9,7 @@ DEPENDENCIES = [
     'aniso8601',
     'apispec[validation,marshmallow]>=6.0',
     'apispec-webframeworks',
-    'openapi-spec-validator<0.5.0',  # prance needs a release
+    'openapi-spec-validator',
     'bcrypt',
     'celery',
     'email-validator',
@@ -31,7 +31,7 @@ DEPENDENCIES = [
     'redis',
     'hiredis',
     'sentry-sdk[flask]',
-    'Shapely<2',
+    'Shapely',
     'shortuuid',
     'SQLAlchemy',
     'SQLAlchemy-Defaults',
