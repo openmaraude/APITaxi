@@ -1013,6 +1013,7 @@ class StatsTaxisSchema(Schema):
     connected_taxis = fields.Nested(StatsMilestones())
     registered_taxis_since_threshold = fields.Nested(StatsMilestones())
     connected_taxis_since_threshold = fields.Nested(StatsMilestones())
+    connected_taxis_now = fields.Integer()
     monthly_hails_per_taxi = fields.Float()
     average_radius = fields.Float()
     average_radius_change = fields.Float()
@@ -1057,6 +1058,12 @@ class StatsAverageTimes(Schema):
 
 class StatsHailsSchema(Schema):
     hails_received = fields.Nested(StatsMilestones())
+    hails_finished = fields.Nested(StatsMilestones())
+    hails_declined_by_taxi = fields.Nested(StatsMilestones())
+    hails_declined_by_customer = fields.Nested(StatsMilestones())
+    hails_timeout_taxi = fields.Nested(StatsMilestones())
+    hails_timeout_ride = fields.Nested(StatsMilestones())
+    hails_timeout_customer = fields.Nested(StatsMilestones())
     hails_total = fields.Nested(StatsHailsTotal())
     hails_average = fields.Nested(StatsHailsAverage())
     average_times = fields.Nested(StatsAverageTimes())
@@ -1089,6 +1096,12 @@ class StationSchema(Schema):
     name = fields.String()
     places = fields.Integer()
     geojson = fields.Raw()
+
+
+class GroupSchema(Schema):
+    id = fields.Integer()
+    email = fields.String()
+    commercial_name = fields.String()
 
 
 def data_schema_wrapper(WrappedSchema, with_pagination=False):
@@ -1180,6 +1193,7 @@ DataStatsHailsSchema = data_schema_wrapper(StatsHailsSchema())
 DataStatsGroupementsSchema = data_schema_wrapper(StatsGroupementsSchema())
 DataStatsADSmapSchema = data_schema_wrapper(StatsADSmapSchema())
 DataStationSchema = data_schema_wrapper(StationSchema())
+DataGroupSchema = data_schema_wrapper(GroupSchema())
 
 # These schemas are only used to simplify the output of Swagger
 DataCreateTaxiSchema = data_schema_wrapper(CreateTaxiSchema())

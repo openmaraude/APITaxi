@@ -1,5 +1,6 @@
 import collections
 import datetime
+import functools
 import json
 
 from flask import Blueprint, request, current_app
@@ -9,31 +10,33 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
 from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicle, VehicleDescription
-from APITaxi_models2.stats import stats_hour_insee, StatsHails
+from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails
 
 from .. import schemas
 
-
-INSEE_CODES = {
-    'grenoble': ('38185', '38057', '38059', '38071', '38068', '38111', '38126', '38150', '38151', '38158', '38169', '38170', '38179', '38187', '38188', '38200', '38229', '38235', '38258', '38252', '38271', '38277', '38279', '38281', '38309', '38317', '38325', '38328', '38364', '38382', '38388', '38421', '38423', '38436', '38445', '38471', '38472', '38474', '38478', '38485', '38486', '38516', '38524', '38528', '38529', '38533', '38540', '38545', '38562'),
-    'lyon': ('69123', '69003', '69029', '69033', '69034', '69040', '69044', '69046', '69271', '69063', '69273', '69068', '69069', '69071', '69072', '69275', '69081', '69276', '69085', '69087', '69088', '69089', '69278', '69091', '69096', '69100', '69279', '69116', '69117', '69127', '69282', '69283', '69284', '69142', '69143', '69149', '69152', '69153', '69163', '69286', '69168', '69191', '69194', '69202', '69199', '69204', '69205', '69207', '69290', '69233', '69292', '69293', '69296', '69244', '69250', '69256', '69259', '69260', '69266'),
-    'rouen': ('76540', '76005', '76020', '76039', '76056', '76069', '76088', '76095', '76108', '76103', '76116', '76131', '76157', '76165', '76178', '76212', '76216', '76222', '76231', '76237', '76273', '76475', '76282', '76313', '76319', '76322', '76350', '76354', '76366', '76367', '76377', '76378', '76391', '76402', '76410', '76429', '76436', '76451', '76448', '76457', '76464', '76474', '76484', '76486', '76497', '76498', '76513', '76514', '76536', '76550', '76558', '76560', '76561', '76575', '76591', '76599', '76614', '76617', '76631', '76634', '76636', '76640', '76608', '76681', '76682', '76705', '76709', '76717', '76750', '76753', '76759'),
-}
 
 blueprint = Blueprint('stats', __name__)
 threshold = datetime.datetime(2022, 1, 1)
 
 
 def get_filters():
-    area = request.args.get('area')
     departements = request.args.get('departements')
     if departements:
         departements = departements.split(',')
+    
     insee_codes = request.args.get('insee')
     if insee_codes:
         insee_codes = insee_codes.split(',')
+    
+    groups = request.args.get('groups')
+    if groups:
+        groups = groups.split(',')
 
-    return area, departements, insee_codes
+    manager = request.args.get('manager')
+    if manager:
+        manager = int(manager)
+
+    return departements, insee_codes, groups, manager
 
 
 def get_intervals():
@@ -61,44 +64,48 @@ def get_last_year_interval():
     return [last_year, current_year]  # upper bound excluded
 
 
-def apply_filters_to_taxis(query, area, departements, insee_codes):
-    if area or departements or insee_codes:
+def apply_filters_to_taxis(query, departements, insee_codes, groups, manager):
+    if departements or insee_codes:
         query = query.join(Taxi.ads)
-        if area:
-            area_insee = INSEE_CODES[area]
-            query = query.filter(ADS.insee.in_(area_insee))
         if departements:
             query = query.filter(or_(*(
                 func.substr(ADS.insee, 0, 3) == dpt for dpt in departements
             )))
         if insee_codes:
             query = query.filter(ADS.insee.in_(insee_codes))
+    if groups:
+        query = query.filter(Taxi.added_by_id.in_(groups))
+    if manager:
+        query = query.join(Taxi.added_by).filter(User.manager_id == manager)
     return query
 
 
-def apply_filters_to_stats_hour(query, area, departements, insee_codes):
-    if area:
-        area_codes = INSEE_CODES[area]
-        query = query.filter(stats_hour_insee.insee.in_(area_codes))
+def apply_filters_to_stats_hour(query, departements, insee_codes, groups, manager, model=stats_hour_insee):
     if departements:
         query = query.filter(or_(*(
-            func.substr(stats_hour_insee.insee, 0, 3) == dpt for dpt in departements
+            func.substr(model.insee, 0, 3) == dpt for dpt in departements
         )))
     if insee_codes:
-        query = query.filter(stats_hour_insee.insee.in_(insee_codes))
+        query = query.filter(model.insee.in_(insee_codes))
+    if groups or manager:
+        # TODO
+        return query.filter(False)
     return query
 
 
-def apply_filters_to_hails(query, area, departements, insee_codes):
-    if area:
-        area_codes = INSEE_CODES[area]
-        query = query.filter(StatsHails.insee.in_(area_codes))
+def apply_filters_to_hails(query, departements, insee_codes, groups, manager):
     if departements:
         query = query.filter(or_(*(
             func.substr(StatsHails.insee, 0, 3) == dpt for dpt in departements
         )))
     if insee_codes:
         query = query.filter(StatsHails.insee.in_(insee_codes))
+    if groups or manager:
+        query = query.join(User, user.email == StatsHails.operateur)
+        if groups:
+            query = query.filter(User.id.in_(groups))
+        if manager:
+            query = query.filter(User.manager_id == manager)
     return query
 
 
@@ -125,6 +132,11 @@ def stats_taxis():
         if until is not None:
             query = query.filter(Taxi.last_update_at < until)
         query = apply_filters_to_taxis(query, *filters)
+        return query.count()
+
+    def get_realtime_connected_taxis():
+        query = stats_minute_insee.query
+        query = apply_filters_to_stats_hour(query, *filters, model=stats_minute_insee)
         return query.count()
 
     def get_monthly_hails_per_taxi():
@@ -204,6 +216,7 @@ def stats_taxis():
             'six_months_ago': get_connected_taxis(since=threshold, until=six_months_ago),
             'twelve_months_ago': get_connected_taxis(since=threshold, until=twelve_months_ago),
         },
+        'connected_taxis_now': get_realtime_connected_taxis(),
         'monthly_hails_per_taxi': get_monthly_hails_per_taxi(),
         'average_radius': get_average_radius(),
         'average_radius_change': get_average_radius_change(),
@@ -221,12 +234,19 @@ def stats_hails():
     current_year = get_current_year_interval()
     last_year = get_last_year_interval()
 
-    def get_hails_received(since, until=None):
+    def get_hails_received(since, until=None, status=None):
         query = StatsHails.query
         if since is not None:
             query = query.filter(StatsHails.added_at >= since)
         if until is not None:
             query = query.filter(StatsHails.added_at < until)
+        if status is not None:
+            if status == 'timeout_taxi':
+                query = query.filter(StatsHails.status == 'timeout_taxi', (StatsHails.timeout_taxi - StatsHails.received) < func.Cast('1 hour', INTERVAL()))
+            elif status == 'timeout_ride':
+                query = query.filter(StatsHails.status == 'timeout_taxi', (StatsHails.timeout_taxi - StatsHails.received) > func.Cast('1 hour', INTERVAL()))
+            else:
+                query = query.filter(StatsHails.status == status)
         query = apply_filters_to_hails(query, *filters)
         return query.count()
 
@@ -300,6 +320,42 @@ def stats_hails():
             'three_months_ago': get_hails_received(since=threshold, until=three_months_ago),
             'six_months_ago': get_hails_received(since=threshold, until=six_months_ago),
             'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago),
+        },
+        'hails_finished': {
+            'today': get_hails_received(since=threshold, status='finished'),
+            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='finished'),
+            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='finished'),
+            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='finished'),
+        },
+        'hails_declined_by_taxi': {
+            'today': get_hails_received(since=threshold, status='declined_by_taxi'),
+            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='declined_by_taxi'),
+            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='declined_by_taxi'),
+            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='declined_by_taxi'),
+        },
+        'hails_declined_by_customer': {
+            'today': get_hails_received(since=threshold, status='declined_by_customer'),
+            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='declined_by_customer'),
+            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='declined_by_customer'),
+            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='declined_by_customer'),
+        },
+        'hails_timeout_taxi': {  # When the taxi received but didn't reply
+            'today': get_hails_received(since=threshold, status='timeout_taxi'),
+            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='timeout_taxi'),
+            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='timeout_taxi'),
+            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='timeout_taxi'),
+        },
+        'hails_timeout_ride': {  # When the ride happened but didn't close
+            'today': get_hails_received(since=threshold, status='timeout_ride'),
+            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='timeout_ride'),
+            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='timeout_ride'),
+            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='timeout_ride'),
+        },
+        'hails_timeout_customer': {
+            'today': get_hails_received(since=threshold, status='timeout_customer'),
+            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='timeout_customer'),
+            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='timeout_customer'),
+            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='timeout_customer'),
         },
         'hails_total': {
             'current_year': get_hails_total(*current_year),
@@ -412,3 +468,60 @@ def stats_adsmap():
         'name': taxis[2],
         'position': json.loads(taxis[3]),
     } for taxis in get_registered_taxis()]})
+
+
+@functools.lru_cache()
+def _get_groups(search):
+    query = db.session.query(
+        User.id,
+        User.email,
+        User.commercial_name,
+    ).join(
+        User.roles
+    ).filter(
+        Role.name == 'groupement'
+    ).order_by(
+        User.email,
+    )
+    if search:
+        query = query.filter(
+            or_(
+                User.email.ilike(f'%{search}%'),
+                User.commercial_name.ilike(f'%{search}%'),
+            )
+        )
+
+    schema = schemas.DataGroupSchema()
+    return schema.dump({'data': query})
+
+
+@blueprint.route('/stats/groups', methods=['GET'])
+@login_required
+@roles_accepted('admin')
+def stats_groups():
+    search = request.args.get('search')
+    return _get_groups(search)
+
+
+@functools.lru_cache()
+def _get_managers():
+    query = db.session.query(
+        User.id,
+        User.email,
+        User.commercial_name,
+    ).filter(
+        User.id.in_(db.session.query(User.manager_id))
+    ).order_by(
+        User.email
+    )
+
+    schema = schemas.DataGroupSchema()
+    return schema.dump({'data': query})
+
+
+@blueprint.route('/stats/managers', methods=['GET'])
+@login_required
+@roles_accepted('admin')
+def stats_managers():
+    # No search
+    return _get_managers()
