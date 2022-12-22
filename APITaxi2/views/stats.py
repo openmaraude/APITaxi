@@ -101,7 +101,7 @@ def apply_filters_to_hails(query, departements, insee_codes, groups, manager):
     if insee_codes:
         query = query.filter(StatsHails.insee.in_(insee_codes))
     if groups or manager:
-        query = query.join(User, user.email == StatsHails.operateur)
+        query = query.join(User, User.email == StatsHails.operateur)
         if groups:
             query = query.filter(User.id.in_(groups))
         if manager:
