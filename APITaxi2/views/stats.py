@@ -252,7 +252,7 @@ def stats_hails():
 
     def get_hails_average_per(interval, since, until, status=None):
         counts = db.session.query(
-            func.Count()
+            func.Count(StatsHails.id)
         ).filter(
             StatsHails.added_at >= since,
             StatsHails.added_at < until,
