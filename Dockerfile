@@ -78,15 +78,16 @@ ENV APITAXI_CONFIG_FILE=/settings.py
 # If we use the square bracket CMD style, process doesn't auto-reload on code change.
 # The simple CMD format is used on purpose, until we understand why CMD [...] doesn't work.
 #
-# --debug-force-polling is required for mac M1, see https://github.com/gorakhargosh/watchdog/issues/838
-CMD watchmedo auto-restart --debug-force-polling --interval=2 --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery worker -E -c 1
+# --debug-force-polling with an interval would be required for Mac M1, see https://github.com/gorakhargosh/watchdog/issues/838
+CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery worker -E -c 1
 
 
 ##### DEV WORKER BEAT IMAGE #####
 
 FROM worker-devenv AS worker-beat-devenv
 
-CMD watchmedo auto-restart --debug-force-polling --interval=2 --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery beat -s /tmp/celerybeat-schedule --pidfile /tmp/celerybeat.pid
+# Same comment as above for Mac M1
+CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery beat -s /tmp/celerybeat-schedule --pidfile /tmp/celerybeat.pid
 
 
 ##### PROD IMAGE #####
