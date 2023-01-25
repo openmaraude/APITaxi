@@ -868,6 +868,7 @@ class HailSchema(Schema):
 
         # The phone number is only needed when the two parties reach other
         if hail.status != 'accepted_by_customer':
+            ret['taxi_phone_number'] = "0600000000"
             ret['customer_phone_number'] = "0600000000"
 
         # Consider taxis on a neutral basis for clients, but keep the information for the admins and the operator itself
