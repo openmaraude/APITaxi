@@ -28,7 +28,7 @@ DEPENDENCIES = [
     'prettytable',
     'psycopg2',
     'pyshp',
-    'redis',
+    'redis<4.5.0',  # bug in py-redis 4.5.0 command packer TODO
     'hiredis',
     'sentry-sdk[flask]',
     'Shapely',
