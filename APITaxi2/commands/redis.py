@@ -31,6 +31,9 @@ def dump_hail(hail_id):
         if isinstance(body['payload'], str):
             body['payload'] = json.loads(body['payload'])
         if isinstance(body['return'], str):
-            body['return'] = json.loads(body['return'])
+            try:
+                body['return'] = json.loads(body['return'])
+            except json.JSONDecodeError:
+                pass
         print(json.dumps(body, indent=2))
         print('---')
