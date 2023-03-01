@@ -120,8 +120,8 @@ class TestTaxiPut:
                         'status': status
                     }]
                 })
-                # SELECT permissions, SELECT taxi, UPDATE hail, UPDATE vehicle_description, UPDATE taxi
-                assert qtracker.count <= 5
+                # SELECT permissions, SELECT taxi, UPDATE hail, UPDATE vehicle_description, INSERT log, UPDATE taxi
+                assert qtracker.count <= 6
             return taxi, resp
 
         taxi, resp = _set_taxi_status('off')
@@ -287,7 +287,8 @@ class TestTaxiPost:
         with QueriesTracker() as qtracker:
             resp = operateur.client.post('/taxis', json=payload)
             # Queries:
-            # - permissions
+            # - SELECT permissions
+            # - INSERT log
             # - SELECT ADS
             # - SELECT vehicle
             # - SELECT departement
@@ -295,7 +296,7 @@ class TestTaxiPost:
             # - SELECT taxi to check if it exists
             # - INSERT taxi
             # - SELECT added_at
-            assert qtracker.count == 8
+            assert qtracker.count == 9
 
         assert resp.status_code == 201
         assert Taxi.query.count() == 1

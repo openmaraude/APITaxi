@@ -19,6 +19,7 @@ from werkzeug.exceptions import BadRequest
 
 from APITaxi_models2 import db, Role, User
 
+from . import activity_logs
 from . import commands
 from . import views
 from .middlewares import ForceJSONContentTypeMiddleware
@@ -57,7 +58,22 @@ def load_user_from_api_key_header(request):
     if value:
         user = User.query.filter_by(apikey=value).first()
         if user:
-            return load_logas(user)
+            logas_user = load_logas(user)
+            if logas_user and request.method not in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+                if logas_user.id != user.id:
+                    activity_logs.log_user_auth_logas(
+                        logas_user.id,
+                        method=request.method,
+                        location=request.path,
+                        apikey_belongs_to=str(user.id),
+                    )
+                else:
+                    activity_logs.log_user_auth_apikey(
+                        user.id,
+                        method=request.method,
+                        location=request.path
+                    )
+            return logas_user
     return None
 
 

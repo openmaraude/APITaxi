@@ -7,7 +7,7 @@ from flask import Blueprint, request, current_app
 from flask_security import current_user, login_required, roles_accepted
 from sqlalchemy import func, Text, DateTime, Numeric, or_
 from sqlalchemy.orm import aliased
-from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
+from sqlalchemy.dialects.postgresql import INTERVAL
 
 from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicle, VehicleDescription
 from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails

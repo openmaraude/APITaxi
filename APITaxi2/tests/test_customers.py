@@ -53,8 +53,8 @@ class TestEditCustomers:
                     'ban_end': '2004-04-04 04:04:04'
                 }]
             })
-            # SELECT permissions, SELECT customer, UPDATE customer
-            assert qtrack.count == 3
+            # SELECT permissions, INSERT LOG, SELECT customer, UPDATE customer
+            assert qtrack.count == 4
 
         assert resp.status_code == 200
         assert customer.reprieve_begin.year == 2001

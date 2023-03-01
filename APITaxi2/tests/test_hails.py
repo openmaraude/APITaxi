@@ -37,7 +37,7 @@ class TestGetHailDetails:
             resp = admin.client.get('/hails/%s' % hail.id)
         assert resp.status_code == 200
         assert resp.json['data'][0]['operateur'] == operateur.user.email
-        # user authentication and everything about the hail in a single request
+        # SELECT permissions, SELECT hail
         assert qtracker.count == 2
 
         # The user is the moteur
@@ -409,7 +409,7 @@ class TestGetHailList:
         # Admin get all hails
         with QueriesTracker() as qtracker:
             resp = admin.client.get('/hails/')
-            # Get permissions, list hails. Depending on version, COUNT(*) for
+            # SELECT permissions, SELECT hails. Depending on version, COUNT(*) for
             # pagination.
             assert qtracker.count <= 3
 

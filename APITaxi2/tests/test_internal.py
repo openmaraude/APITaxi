@@ -38,7 +38,8 @@ class TestInternalAuth:
                 'email': moteur.user.email,
                 'password': moteur.user.password,
             }]})
-            assert qtracker.count == 2
+            # SELECT permissions, INSERT LOG (auth_apikey), SELECT user, INSERT LOG (login_password)
+            assert qtracker.count == 4
         assert resp.status_code == 200
 
         resp = moteur.client.post('/internal/auth', json={'data': [{

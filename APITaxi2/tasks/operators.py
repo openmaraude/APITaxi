@@ -8,7 +8,7 @@ from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import db, Hail, Taxi, Vehicle, VehicleDescription
 
-from .. import redis_backend, schemas, processes
+from .. import activity_logs, redis_backend, schemas, processes
 from . import celery
 
 
@@ -58,7 +58,14 @@ def handle_hail_timeout(hail_id, operateur_id,
     processes.change_status(hail, new_hail_status, reason='timeout')
 
     if new_taxi_status:
+        old_taxi_status = vehicle_description.status
         vehicle_description.status = new_taxi_status
+        activity_logs.log_taxi_status(
+            hail.taxi_id,
+            old_taxi_status,
+            new_taxi_status,
+            task='handle_hail_timeout',
+        )
 
     db.session.commit()
 
@@ -109,7 +116,15 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             hail.id
         )
         processes.change_status(hail, 'failure', reason='Task send_request_operator called after more than 10 seconds.')
-        vehicle_description.status = 'free'
+        old_taxi_status = vehicle_description.status
+        new_taxi_status = 'free'
+        vehicle_description.status = new_taxi_status
+        activity_logs.log_taxi_status(
+            hail.taxi_id,
+            old_taxi_status,
+            new_taxi_status,
+            task='send_request_operator',
+        )
         db.session.commit()
         return False
 
@@ -145,7 +160,15 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_status_code=None
         )
         processes.change_status(hail, 'failure', reason=str(exc))
-        vehicle_description.status = 'free'
+        old_taxi_status = vehicle_description.status
+        new_taxi_status = 'free'
+        vehicle_description.status = new_taxi_status
+        activity_logs.log_taxi_status(
+            hail.taxi_id,
+            old_taxi_status,
+            new_taxi_status,
+            task='send_request_operator',
+        )
         db.session.commit()
         return False
 
@@ -166,7 +189,15 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_status_code=resp.status_code
         )
         processes.change_status(hail, 'failure', reason=str(exc))
-        vehicle_description.status = 'free'
+        old_taxi_status = vehicle_description.status
+        new_taxi_status = 'free'
+        vehicle_description.status = new_taxi_status
+        activity_logs.log_taxi_status(
+            hail.taxi_id,
+            old_taxi_status,
+            new_taxi_status,
+            task='send_request_operator',
+        )
         db.session.commit()
         return False
 
@@ -187,7 +218,15 @@ def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_
             response_status_code=resp.status_code
         )
         processes.change_status(hail, 'failure', reason="HTTP response status code %s" % resp.status_code)
-        vehicle_description.status = 'free'
+        old_taxi_status = vehicle_description.status
+        new_taxi_status = 'free'
+        vehicle_description.status = new_taxi_status
+        activity_logs.log_taxi_status(
+            hail.taxi_id,
+            old_taxi_status,
+            new_taxi_status,
+            task='send_request_operator',
+        )
         db.session.commit()
         return False
 

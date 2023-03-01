@@ -29,7 +29,7 @@ class TestUsersDetails:
     def test_ok(self, operateur, QueriesTracker):
         with QueriesTracker() as qtrack:
             resp = operateur.client.get('/users/%d' % operateur.user.id)
-            # SELECT for permissions, SELECT users
+            # SELECT permissions, SELECT users
             assert qtrack.count == 2
 
         assert resp.status_code == 200

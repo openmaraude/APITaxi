@@ -36,8 +36,8 @@ class TestPostPositions:
                 }]
             })
             assert response.status_code == 200
-            # SELECT permissions, SELECT taxi
-            assert qtracker.count == 2
+            # SELECT permissions, INSERT LOG, SELECT taxi (writing is done in Redis)
+            assert qtracker.count == 3
 
         # There should be five keys stored (after the IP index was dropped)
         taxi_key = taxi.id.encode()
@@ -159,5 +159,5 @@ class TestPostPositions:
                 }]
             })
             assert response.status_code == 200
-            # SELECT permissions, SELECT taxi
-            assert qtracker.count == 2
+            # SELECT permissions, INSERT LOG, SELECT taxi (writing is done in Redis)
+            assert qtracker.count == 3

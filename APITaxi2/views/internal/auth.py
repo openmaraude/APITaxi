@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import User
 
-from APITaxi2 import schemas
+from APITaxi2 import activity_logs, schemas
 from APITaxi2.validators import (
     make_error_json_response,
     validate_schema
@@ -20,6 +20,7 @@ class AuthSchema(Schema):
 
     apikey = fields.String(required=False)
     password = fields.String(required=False)
+    referrer = fields.Integer(required=False)
 
     @validates_schema
     def check_required(self, data, **kwargs):
@@ -68,6 +69,11 @@ def auth():
                 }
             }
         }, status_code=401)
+
+    if args.get('apikey'):
+        activity_logs.log_user_login_apikey(user.id, referrer=args.get('referrer'))
+    else:
+        activity_logs.log_user_login_password(user.id, referrer=args.get('referrer'))
 
     dump_schema = schemas.DataUserSchema()
     return dump_schema.dump({'data': [user]})

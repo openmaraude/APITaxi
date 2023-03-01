@@ -12,7 +12,7 @@ from sqlalchemy.orm import aliased, joinedload
 from APITaxi_models2 import Customer, db, Hail, Taxi, User, Vehicle, VehicleDescription
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
-from .. import redis_backend, schemas, tasks, processes
+from .. import activity_logs, redis_backend, schemas, tasks, processes
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -132,7 +132,14 @@ def _set_hail_status(hail, vehicle_description, new_status, new_taxi_phone_numbe
     }
 
     if new_status in new_taxi_status:
+        old_taxi_status = vehicle_description.status
         vehicle_description.status = new_taxi_status[new_status]
+        activity_logs.log_taxi_status(
+            hail.taxi_id,
+            old_taxi_status,
+            new_taxi_status[new_status],
+            hail_id=hail.id,
+        )
 
     return True
 
@@ -844,6 +851,8 @@ def hails_create():
     hail_endpoint_production = hail.operateur.hail_endpoint_production
     operator_header_name = hail.operateur.operator_header_name
     operator_api_key = hail.operateur.operator_api_key
+
+    activity_logs.log_customer_hail(customer.id, taxi.id, hail.id)
 
     db.session.commit()
 

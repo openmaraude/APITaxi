@@ -35,7 +35,7 @@ class TestZUPCList:
 
         with QueriesTracker() as qtracker:
             resp = moteur.client.get('zupc?lon=2.35&lat=48.86')
-            # List permissions, List Town, List ZUPC
+            # SELECT permissions, SELECT town, SELECT ZUPC
             assert qtracker.count == 3
 
         assert resp.status_code == 200
@@ -71,7 +71,7 @@ class TestZUPCLive:
 
         with QueriesTracker() as qtracker:
             resp = operateur.client.get('/zupc/live')
-            # List permissions, SELECT zupc, total active taxis, operator's active taxis
+            # SELECT permissions, SELECT zupc, total active taxis, operator's active taxis
             assert qtracker.count == 4
 
         assert resp.status_code == 200
@@ -96,7 +96,7 @@ class TestTownList:
 
         with QueriesTracker() as qtracker:
             resp = operateur.client.get('/towns')
-            # List permissions, SELECT towns
+            # SELECT permissions, SELECT towns
             assert qtracker.count == 2
 
         assert resp.status_code == 200

@@ -93,9 +93,9 @@ class TestADSCreate:
                 'category': 'category',
                 'vehicle_id': vehicle.id
             }]})
-            # SELECT permissions, SELECT vehicle, SELECT ZUPC corresponding to
+            # SELECT permissions, INSERT LOG, SELECT vehicle, SELECT ZUPC corresponding to
             # insee, SELECT existing ADS, INSERT ADS
-            assert qtracker.count == 5
+            assert qtracker.count == 6
 
         assert resp.status_code == 201
         assert resp.json['data'][0]['numero'] == '1337'

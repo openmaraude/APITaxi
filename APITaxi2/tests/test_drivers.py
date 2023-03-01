@@ -100,9 +100,9 @@ class TestDriversCreate:
                 }
             }]})
 
-            # SELECT permissions, SELECT departement, SELECT driver (to check
+            # SELECT permissions, INSERT LOG, SELECT departement, SELECT driver (to check
             # if exists), INSERT driver
-            assert qtracker.count == 4
+            assert qtracker.count == 5
 
         assert resp.status_code == 201
         assert Driver.query.count() == 1

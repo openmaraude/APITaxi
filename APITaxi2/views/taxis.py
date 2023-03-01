@@ -20,7 +20,7 @@ from APITaxi_models2 import (
     ZUPC,
 )
 
-from .. import debug, redis_backend, schemas
+from .. import activity_logs, debug, redis_backend, schemas
 from ..exclusions import ExclusionHelper
 from ..utils import get_short_uuid
 from ..validators import (
@@ -331,7 +331,9 @@ def taxis_details(taxi_id):
         db.session.flush()
 
         vehicle_description.last_update_at = func.now()
+        old_taxi_status = vehicle_description.status
         vehicle_description.status = args['status']
+        activity_logs.log_taxi_status(taxi_id, old_taxi_status, args['status'])
         db.session.flush()
 
         redis_backend.set_taxi_availability(

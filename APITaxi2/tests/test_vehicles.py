@@ -65,11 +65,12 @@ class TestVehiclePost:
             })
             assert resp.status_code == 201, resp.json
             # SELECT permissions
+            # INSERT log
             # SELECT vehicle
             # INSERT vehicle
             # SELECT vehicle_description
             # INSERT vehicle_description
-            assert qtracker.count == 5
+            assert qtracker.count == 6
 
         assert resp.status_code == 201
         assert Vehicle.query.count() == 1
