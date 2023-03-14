@@ -14,6 +14,20 @@ town_zupc = db.Table(
 )
 
 
+class Exclusion(db.Model):
+    """Zones like airports may have different regulations about taxis."""
+    __table_args__ = (
+        db.Index('idx_exclusion_shape', 'shape'),
+    )
+
+    def __repr__(self):
+        return f'<Exclusion {self.id} - {self.insee} ({self.name})>'
+
+    id = db.Column(db.String, primary_key=True)  # OpenStreetMap ID
+    name = db.Column(db.String(255), nullable=False)
+    shape = db.Column(Geography(geometry_type='MULTIPOLYGON', srid=4326), nullable=False)
+
+
 class Town(db.Model):
     """All the French towns, whether they are part of a ZUPC or not."""
     __table_args__ = (
