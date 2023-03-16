@@ -54,6 +54,7 @@ class User(db.Model, UserMixin, mixins.HistoryMixin):
     operator_header_name = Column(db.String, server_default='', nullable=False)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+    # For users of kind "groupement", record how many taxis they operate
     fleet_size = db.Column(db.Integer)
 
     roles = db.relationship(Role, secondary=RolesUsers.__table__, lazy='joined')

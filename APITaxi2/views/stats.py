@@ -4,11 +4,12 @@ import functools
 import json
 
 from flask import Blueprint, request, current_app
-from sqlalchemy import func, Text, DateTime, Numeric, or_
+from sqlalchemy import func, Text, DateTime, Numeric, or_, column
 from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import INTERVAL
 
 from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicle, VehicleDescription
+from APITaxi_models2 import Conurbation
 from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails
 
 from .. import schemas
@@ -23,11 +24,11 @@ def get_filters():
     departements = request.args.get('departements')
     if departements:
         departements = departements.split(',')
-    
+
     insee_codes = request.args.get('insee')
     if insee_codes:
         insee_codes = insee_codes.split(',')
-    
+
     groups = request.args.get('groups')
     if groups:
         groups = groups.split(',')
@@ -519,3 +520,92 @@ def _get_managers():
 def stats_managers():
     # No search
     return _get_managers()
+
+
+@blueprint.route('/stats/letaxi', methods=['GET'])
+def stats_letaxi():
+    def _get_user_count(role):
+        query = db.session.query(User).join(User.roles).filter(Role.name == role)
+        return query.count()
+
+    def _get_taxis_connected(conurbations):
+        # Get the number of taxis for each conurbation in the past months
+        #        milestone        |    id    | count 
+        # ------------------------+----------+-------
+        #  2022-04-01 00:00:00+00 | lyon     |   XXX
+        taxis_count = db.session.query(
+            column('milestone'),
+            Conurbation.id,
+            func.count(Taxi.id)
+        ).select_from(
+            func.generate_series(
+                func.date_trunc('month', func.now() - func.cast('1 year', INTERVAL())),
+                func.date_trunc('month', func.now()),
+                func.cast('1 month', INTERVAL()),
+            ).alias('milestone')
+        ).join(
+            Taxi, Taxi.added_at < column('milestone'),
+        ).join(
+            Taxi.ads,
+        ).join(
+            Conurbation, ADS.insee == func.any(Conurbation.members),
+        ).filter(
+            Conurbation.id.in_(conurbations),
+        ).group_by(
+            column('milestone'),
+            Conurbation.id,
+        ).order_by(
+            column('milestone'),
+        )
+
+        # Use the expected number of taxis for each conurbation to compute a ratio
+        taxis_connected = {}
+        for milestone, conurbation_id, count in taxis_count:
+            taxis_connected.setdefault(milestone, {})[conurbation_id] = round(100.0 * count / conurbations[conurbation_id], 2)
+
+        return taxis_connected.items()
+
+    def _get_hails_growth(conurbations):
+        query = db.session.query(
+            Conurbation.id.label('conurbation_id'),
+            func.date_trunc('month', StatsHails.added_at).label('milestone'),
+            func.count('*').label('count'),
+        ).join(
+            Conurbation, StatsHails.insee == func.any(Conurbation.members)
+        ).filter(
+            StatsHails.added_at >= (func.now() - func.cast('2 month', INTERVAL())),
+            Conurbation.id.in_(conurbations),
+        ).group_by(
+            'conurbation_id',
+            'milestone',
+        ).order_by(
+            'conurbation_id',
+            'milestone',
+        )
+        subq = query.subquery()
+        query = db.session.query(
+            subq.c.conurbation_id,
+            subq.c.milestone,
+            func.round(
+                100.0 * (subq.c.count - func.lag(subq.c.count).over(order_by=subq.c.milestone)) / func.lag(subq.c.count).over(order_by=subq.c.milestone),
+                2
+        ))
+
+        # Group by conurbation
+        hails_growth = {}
+        for conurbation_id, milestone, growth in query:
+            hails_growth.setdefault(conurbation_id, []).append([milestone, growth])
+
+        return hails_growth
+
+    schema = schemas.PublicStatsSchema()
+    return schema.dump({
+        'groups': _get_user_count('groupement'),
+        'apps': _get_user_count('editeur'),
+        'taxis_connected': _get_taxis_connected({
+            'lyon': 1417,  # Known ADS count from Mes ADS
+            'grenoble': 213,
+            'rouen': 301,
+        }),
+        'hails_growth': _get_hails_growth(['lyon']),
+    })

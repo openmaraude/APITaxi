@@ -77,6 +77,7 @@ class Conurbation(mixins.HistoryMixin, db.Model):
 
     # Mmemonic like "lyon" or "grenoble"
     id = db.Column(db.String, primary_key=True)
+    # Official name, like "Lyon Métropole"
     name = db.Column(db.String, nullable=False)
     # Don't make another foreign key to towns, we just want the list of city codes
     members = db.Column(postgresql.ARRAY(db.String(5)))

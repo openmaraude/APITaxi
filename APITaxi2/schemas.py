@@ -1108,6 +1108,15 @@ class GroupSchema(Schema):
     commercial_name = fields.String()
 
 
+class PublicStatsSchema(Schema):
+    groups = fields.Integer()
+    apps = fields.Integer()
+    # Key is the month
+    taxis_connected = fields.List(fields.Tuple([fields.Date(), fields.Dict(keys=fields.Str(), values=fields.Float())]))
+    # Key is the conurbation ID
+    hails_growth = fields.Dict(keys=fields.Str(), values=fields.List(fields.Tuple([fields.Date(), fields.Float()])))
+
+
 def data_schema_wrapper(WrappedSchema, with_pagination=False):
     """All API endpoints expect requests and responses to be formed as:
 
