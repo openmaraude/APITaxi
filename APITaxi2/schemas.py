@@ -614,15 +614,13 @@ class ListUserQuerystringSchema(Schema, PageQueryStringMixin):
     name = fields.List(fields.String)
     email = fields.List(fields.String)
     manager = fields.List(fields.String)
+    role = fields.List(fields.String)
 
     @validates_schema
     def check_lengths(self, data, **kwargs):
-        if len(data.get('name', [])) > 1:
-            raise ValidationError('Argument `name` should not be specified more than once')
-        if len(data.get('email', [])) > 1:
-            raise ValidationError('Argument `email` should not be specified more than once')
-        if len(data.get('manager', [])) > 1:
-            raise ValidationError('Argument `email` should not be specified more than once')
+        for field in ('name', 'email', 'manager', 'role'):
+            if len(data.get(field, [])) > 1:
+                raise ValidationError(f'Argument `{field}` should not be specified more than once')
 
 
 class ManagerSchema(Schema):

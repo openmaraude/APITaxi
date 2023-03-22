@@ -5,7 +5,7 @@ from flask_security.utils import hash_password
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload, aliased
 
-from APITaxi_models2 import db, User
+from APITaxi_models2 import db, Role, User
 
 from .. import schemas
 from ..validators import (
@@ -100,6 +100,10 @@ def users_list():
             query = query.outerjoin(Manager, User.manager_id == Manager.id).filter(or_(*[
                 func.lower(Manager.email).contains(value.lower())
                 for value in querystring['manager']
+            ]))
+        if 'role' in querystring:
+            query = query.join(User.roles).filter(or_(*[
+                Role.name == value for value in querystring['role']
             ]))
     else:
         query = query.filter_by(manager=current_user)
