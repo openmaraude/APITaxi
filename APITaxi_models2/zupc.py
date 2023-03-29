@@ -2,7 +2,7 @@ from geoalchemy2 import Geography
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import synonym
 
-from . import db
+from . import db, mixins
 
 
 # A given town can be part of several ZUPC
@@ -64,3 +64,18 @@ class ZUPC(db.Model):
 
     # Taxis from these towns are allowed to accept customer hails in this zone
     allowed = db.relationship('Town', secondary=town_zupc)
+
+
+class Conurbation(mixins.HistoryMixin, db.Model):
+    """A conurbation, or metropolis, is a big town, and its surroundings,
+    seen as one administrative entity.
+    """
+
+    def __repr__(self):
+        return f'<Conurbation of {self.id}>'
+
+    # Mmemonic like "lyon" or "grenoble"
+    id = db.Column(db.String, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    # Don't make another foreign key to towns, we just want the list of city codes
+    members = db.Column(postgresql.ARRAY(db.String(5)))
