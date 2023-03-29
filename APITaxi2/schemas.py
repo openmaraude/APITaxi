@@ -481,7 +481,7 @@ class SearchVehicleSchema(Schema):
 
     # Obsolete but kept for backwards compatibility
     type = fields.Constant("normal", metadata={'deprecated': True})
-    cpam_conventionne = fields.Constant(None, metadata={'deprecated': True})
+    cpam_conventionne = fields.Constant(None, metadata={'deprecated': True, 'description': "always null, kept for compatibility"})
 
 
 class SearchTaxiSchema(Schema):
