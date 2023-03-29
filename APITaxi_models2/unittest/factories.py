@@ -47,6 +47,10 @@ class UserFactory(BaseFactory):
     active = True
     confirmed_at = datetime.datetime(2015, 12, 1, 13, 37)
     apikey = factory.Sequence(lambda n: 'API_KEY_%d' % n)
+    added_at = factory.SelfAttribute('confirmed_at')
+    added_via = 'api'
+    source = 'factory'
+    last_update_at = factory.SelfAttribute('confirmed_at')
 
 
 class RolesUsersFactory(BaseFactory):

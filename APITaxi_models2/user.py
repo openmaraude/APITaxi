@@ -2,7 +2,7 @@ from sqlalchemy import Column
 
 from flask_security import UserMixin, RoleMixin
 
-from . import db
+from . import db, mixins
 
 
 class RolesUsers(db.Model):
@@ -27,7 +27,7 @@ class Role(db.Model, RoleMixin):
     description = db.Column(db.String(255), server_default='', nullable=False)
 
 
-class User(db.Model, UserMixin):
+class User(db.Model, UserMixin, mixins.HistoryMixin):
 
     def __repr__(self):
         return '<User %s (%s - %s)>' % (

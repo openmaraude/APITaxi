@@ -72,6 +72,8 @@ def users_details(user_id):
     if args.get('password'):
         user.password = hash_password(args['password'])
 
+    user.last_update_at = func.now()
+
     ret = schema.dump({'data': [user]})
     db.session.commit()
     return ret

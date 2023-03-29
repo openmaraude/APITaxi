@@ -4,6 +4,7 @@ import click
 from flask import Blueprint, current_app
 from flask.cli import with_appcontext
 from flask_security.utils import hash_password
+from sqlalchemy import func
 
 from APITaxi_models2 import db, Role, User
 
@@ -47,7 +48,11 @@ def create_user(email, password, roles):
         password=hashed_password,
         commercial_name=email,
         apikey=str(uuid.uuid4()),
-        active=True
+        active=True,
+        added_at=func.now(),
+        added_via='api',
+        source='create_user',
+        last_update_at=func.now(),
     )
     db.session.add(user)
     db.session.flush()
