@@ -37,11 +37,18 @@ REPORTING_CUSTOMER_REASONS = (
 )
 
 INCIDENT_CUSTOMER_REASONS = (
-    '', 'mud_river', 'parade', 'earthquake'
+    '', 'mud_river', 'parade', 'earthquake',  # test values to ignore
+    'no_show',  # The taxi didn't show
+    'no_specs',  # The taxi doesn't have the characteristics announced
 )
 
 INCIDENT_TAXI_REASONS = (
-    'no_show', 'address', 'traffic', 'breakdown', 'traffic_jam', 'garbage_truck'
+    'no_show',  # The customer didn't show at the address
+    'address',  # Address cannot be found
+    'traffic',  # Slowed down by traffic
+    'breakdown',  # Vehicle broke down
+    'traffic_jam',  # Stuck in a traffic jam
+    'garbage_truck',  # Stuck behind a garbage truck or other vehicle blocking the road
 )
 
 RATING_RIDE_REASONS = (
