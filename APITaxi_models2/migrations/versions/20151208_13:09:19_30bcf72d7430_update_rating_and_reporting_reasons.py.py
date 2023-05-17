@@ -48,6 +48,7 @@ tmp_incident_customer_reason_enum = sa.Enum('',
         name='_incident_customer_reason_enum')
 new_incident_customer_reason_enum = sa.Enum('',
         'mud_river', 'parade', 'earthquake',
+        'no_show', 'no_specs',
         name='incident_customer_reason_enum')
 
 hail = sa.sql.table('hail',
