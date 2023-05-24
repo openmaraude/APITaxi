@@ -7,7 +7,8 @@ import sys
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from apispec_webframeworks.flask import FlaskPlugin
-from flask import current_app, Flask, jsonify, request
+from celery import Celery, Task
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_redis import FlaskRedis
 from flask_security import Security, SQLAlchemyUserDatastore
@@ -19,62 +20,10 @@ from werkzeug.exceptions import BadRequest
 
 from APITaxi_models2 import db, Role, User
 
-from . import activity_logs
 from . import commands
 from . import views
 from .middlewares import ForceJSONContentTypeMiddleware
-from .tasks import celery
-
-
-def load_logas(user):
-    logas_email = request.headers.get('X-Logas')
-    if logas_email:
-        # Trying to log as yourself.
-        if logas_email == user.email:
-            return user
-
-        query = User.query.filter_by(email=logas_email)
-
-        # Administrators can log as any other user.
-        if user.has_role('admin'):
-            user = query.one_or_none()
-        # If integration feature is enabled, logas is always possible for
-        # integration user.
-        elif (
-            current_app.config.get('INTEGRATION_ENABLED')
-            and current_app.config.get('INTEGRATION_ACCOUNT_EMAIL') == logas_email
-        ):
-            user = query.one_or_none()
-        # Otherwise, logas is only possible if user is the manager.
-        else:
-            query = query.filter_by(manager=user)
-            user = query.one_or_none()
-    return user
-
-
-def load_user_from_api_key_header(request):
-    """Callback to extract X-Api-Key header from the request and get user."""
-    value = request.headers.get('X-Api-Key')
-    if value:
-        user = User.query.filter_by(apikey=value).first()
-        if user:
-            logas_user = load_logas(user)
-            if logas_user and request.method not in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
-                if logas_user.id != user.id:
-                    activity_logs.log_user_auth_logas(
-                        logas_user.id,
-                        method=request.method,
-                        location=request.path,
-                        apikey_belongs_to=str(user.id),
-                    )
-                else:
-                    activity_logs.log_user_auth_apikey(
-                        user.id,
-                        method=request.method,
-                        location=request.path
-                    )
-            return logas_user
-    return None
+from .security import auth
 
 
 def handler_401():
@@ -98,7 +47,7 @@ def handler_401():
     }), 401
 
 
-def handler_403(exc=None):
+def handler_403(exc=None, func_name=None, params=None):
     """Called when flask_security.roles_accepted fails.
 
     exc is set if flask.abort(403) is called, and None if @roles_accepted fails.
@@ -134,6 +83,13 @@ def handler_500(exc):
     }), 500
 
 
+@auth.error_handler
+def error_handler(status_code):
+    if status_code == 403:
+        return handler_403()
+    return handler_401()
+
+
 def check_content_type():
     if request.method in ('POST', 'PUT', 'PATCH'):
         if 'application/json' not in request.headers.get('Content-Type', ''):
@@ -162,30 +118,46 @@ def print_url_map(url_map):
         print(('\t%-45s -> %s' % (rule.rule, ', '.join(methods))))
 
 
-def configure_celery(flask_app):
+def redis_init_app(app):
+    redis_kwargs = {}
+    # Redis listens on a unix socket in tests, no keepalive
+    if not app.config.get('REDIS_URL', '').startswith('unix://'):
+        redis_kwargs['socket_keepalive'] = True
+    app.redis = FlaskRedis(app, **redis_kwargs)
+
+
+def celery_init_app(app):
     """Configure tasks.celery:
 
-    * read configuration from flask_app.config and update celery config
+    * read configuration from app.config and update celery config
     * create a task context so tasks can access flask.current_app
 
     Doing so is recommended by flask documentation:
-    https://flask.palletsprojects.com/en/2.0.x/patterns/celery/
+    https://flask.palletsprojects.com/en/2.3.x/patterns/celery/
     """
+    class FlaskTask(Task):
+        def __call__(self, *args: object, **kwargs: object) -> object:
+            # For a reason I haven't figured out, if I open another app context during tests,
+            # Celery tasks don't see objects created by test factories
+            if app.testing:
+                return super().__call__(*args, **kwargs)
+            else:
+                with app.app_context():
+                    return super().__call__(*args, **kwargs)
+
     # Settings list:
     # https://docs.celeryproject.org/en/stable/userguide/configuration.html
     celery_conf = {
         key[len('CELERY_'):].lower(): value
-        for key, value in flask_app.config.items()
+        for key, value in app.config.items()
         if key.startswith('CELERY_')
     }
-    celery.conf.update(celery_conf)
 
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with flask_app.app_context():
-                return self.run(*args, **kwargs)
-
-    celery.Task = ContextTask
+    celery_app = Celery(app.name, task_cls=FlaskTask)
+    celery_app.config_from_object(celery_conf)
+    celery_app.set_default()
+    app.extensions['celery'] = celery_app
+    return celery_app
 
 
 def create_app():
@@ -216,24 +188,20 @@ def create_app():
         )
 
     db.init_app(app)
-    redis_kwargs = {}
-    # Redis listens on a unix socket in tests, no keepalive
-    if not app.config.get('REDIS_URL', '').startswith('unix://'):
-        redis_kwargs['socket_keepalive'] = True
-    app.redis = FlaskRedis(app, **redis_kwargs)
-    configure_celery(app)
+    redis_init_app(app)
+    celery_init_app(app)
 
-    # Setup flask-security
+    # Setup flask-security (though we don't use it for authentication)
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-    security = Security()
     # register_blueprint is set to False because we do not register /login and
     # /logout views.
-    security_state = security.init_app(app, user_datastore, register_blueprint=False)
+    app.security = Security(app, user_datastore, register_blueprint=False)
 
     # Load flask_security.current_user from X-API-Key HTTP header
-    app.login_manager.request_loader(load_user_from_api_key_header)
+    # XXX use Flask-HTTPAuth for now
+    # app.login_manager.request_loader(security.load_user_from_api_key_header)
 
-    security_state.unauthorized_handler(handler_403)  # called if @roles_accepted fails
+    app.security.unauthz_handler(handler_403)  # called if @roles_accepted fails
     app.login_manager.unauthorized_handler(handler_401)  # called if @login_required fails
     app.errorhandler(403)(handler_403)  # called by flask.abort(403)
     app.errorhandler(404)(handler_404)  # page not found

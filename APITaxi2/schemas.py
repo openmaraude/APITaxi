@@ -4,7 +4,6 @@ import socket
 import urllib.parse
 
 from flask import current_app
-from flask_security import current_user
 
 from marshmallow import (
     EXCLUDE,
@@ -34,6 +33,8 @@ from APITaxi_models2.vehicle import (
     UPDATABLE_VEHICLE_STATUS,
     VehicleDescription,
 )
+
+from .security import current_user
 
 
 # Range to adjust the visibility of taxis to clients

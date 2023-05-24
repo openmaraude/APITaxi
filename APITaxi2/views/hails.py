@@ -4,7 +4,6 @@ import time
 import uuid
 
 from flask import Blueprint, request
-from flask_security import current_user, login_required, roles_accepted
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased, joinedload
@@ -13,6 +12,7 @@ from APITaxi_models2 import Customer, db, Hail, Taxi, User, Vehicle, VehicleDesc
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
 from .. import activity_logs, redis_backend, schemas, tasks, processes
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -265,8 +265,7 @@ def _get_existing_session_id(operator, customer):
 
 
 @blueprint.route('/hails/<string:hail_id>', methods=['GET', 'PUT'])
-@login_required
-@roles_accepted('admin', 'moteur', 'operateur')
+@auth.login_required(role=['admin', 'moteur', 'operateur'])
 def hails_details(hail_id):
     """
     ---
@@ -562,8 +561,7 @@ def hails_details(hail_id):
 
 
 @blueprint.route('/hails/', methods=['GET'])
-@login_required
-@roles_accepted('admin', 'moteur', 'operateur')
+@auth.login_required(role=['admin', 'moteur', 'operateur'])
 def hails_list():
     """Returns the list of hails paginated.
 
@@ -667,8 +665,7 @@ def hails_list():
 
 
 @blueprint.route('/hails/', methods=['POST'])
-@login_required
-@roles_accepted('admin', 'moteur')
+@auth.login_required(role=['admin', 'moteur'])
 def hails_create():
     """
     ---

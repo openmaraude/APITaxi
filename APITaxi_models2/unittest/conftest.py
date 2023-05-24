@@ -11,28 +11,12 @@ import alembic
 import alembic.config
 import psycopg2
 import pytest
-from pytest_factoryboy import register
 import requests
 import sqlalchemy
 import subprocess
 import testing.postgresql
 
 import APITaxi_models2
-
-from . import factories
-
-
-# Create fixtures from factories. The name of the fixture is the snake case of
-# the class. For example, VehicleFactory corresponds to the fixture
-# vehicle_factory.
-register(factories.ADSFactory)
-register(factories.DepartementFactory)
-register(factories.DriverFactory)
-register(factories.HailFactory)
-register(factories.TaxiFactory)
-register(factories.UserFactory)
-register(factories.VehicleFactory)
-register(factories.ZUPCFactory)
 
 
 def _run_postgresql_migrations(psql):

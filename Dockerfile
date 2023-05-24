@@ -45,7 +45,7 @@ WORKDIR /git/APITaxi
 ADD devenv/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 
-# needed to run "sudo -H /venv/bin/pip install"
+# needed to run "sudo -E /venv/bin/pip install"
 RUN echo "postgres ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # timescaledb-ha already creates a user with uid 1000, and the development environment
@@ -57,9 +57,7 @@ ENV PATH=/venv/bin/:$PATH
 ENV HOME=/tmp
 
 ENV APITAXI_CONFIG_FILE=/settings.py
-ENV FLASK_DEBUG=1
-ENV FLASK_APP=APITaxi
-CMD ["flask", "run", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["flask", "run", "--debug", "--app", "APITaxi", "--host", "0.0.0.0", "--port", "5000"]
 
 
 ##### DEV WORKER IMAGE #####
@@ -79,7 +77,7 @@ ENV APITAXI_CONFIG_FILE=/settings.py
 # The simple CMD format is used on purpose, until we understand why CMD [...] doesn't work.
 #
 # --debug-force-polling with an interval would be required for Mac M1, see https://github.com/gorakhargosh/watchdog/issues/838
-CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery worker -E -c 1
+CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker worker -E -c 1
 
 
 ##### DEV WORKER BEAT IMAGE #####
@@ -87,7 +85,7 @@ CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- cel
 FROM worker-devenv AS worker-beat-devenv
 
 # Same comment as above for Mac M1
-CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker.celery beat -s /tmp/celerybeat-schedule --pidfile /tmp/celerybeat.pid
+CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- celery --app=APITaxi2.celery_worker beat -s /tmp/celerybeat-schedule --pidfile /tmp/celerybeat.pid
 
 
 ##### PROD IMAGE #####
