@@ -1,5 +1,7 @@
 import os
 
+from celery.schedules import crontab
+
 
 # SQLALCHEMY_ECHO = True
 
@@ -45,6 +47,33 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'store_active_taxis',
         'schedule': _ONE_DAY,
         'args': (10080,)
+    },
+
+    # crontab
+
+    'blur-geotaxi': {
+        'task': 'blur_geotaxi',
+        'schedule': crontab(hour=4, minute=0),
+    },
+    'blur-hails': {
+        'task': 'blur_hails',
+        'schedule': crontab(hour=4, minute=2),
+    },
+    'delete-old-hails': {
+        'task': 'delete_old_hails',
+        'schedule': crontab(hour=4, minute=4),
+    },
+    'delete-old-taxis': {
+        'task': 'delete_old_taxis',
+        'schedule': crontab(hour=4, minute=6),
+    },
+    'delete-old-orphans': {
+        'task': 'delete_old_orphans',
+        'schedule': crontab(hour=4, minute=8),
+    },
+    'compute-stats-hails': {
+        'task': 'compute_stats_hails',
+        'schedule': crontab(hour=4, minute=10),
     },
 }
 

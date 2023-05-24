@@ -1,5 +1,6 @@
-from flask_login import current_user
 from flask import request
+
+from .security import current_user
 
 
 class DebugContext:

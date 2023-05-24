@@ -4,12 +4,12 @@ import collections
 from datetime import datetime
 import time
 
+from celery import shared_task
 from flask import current_app
 from sqlalchemy.orm import joinedload
 
 from APITaxi_models2 import db, Taxi, Town, User, VehicleDescription, ZUPC
 
-from . import celery
 from .. import stats_backend
 from .. import redis_backend
 
@@ -113,7 +113,7 @@ def _log_active_taxis(last_update, data):
         )
 
 
-@celery.task(name='store_active_taxis')
+@shared_task(name='store_active_taxis')
 def store_active_taxis(last_update):
     """Store statistics into time series tables of taxis with a location update
     made since `last_update` minutes ago.

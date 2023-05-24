@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from flask_security import current_user, login_required, roles_accepted
 
 from sqlalchemy import func
 
@@ -10,6 +9,7 @@ from APITaxi_models2 import (
 )
 
 from .. import schemas
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -20,8 +20,7 @@ blueprint = Blueprint('vehicles', __name__)
 
 
 @blueprint.route('/vehicles', methods=['POST'])
-@login_required
-@roles_accepted('admin', 'operateur')
+@auth.login_required(role=['admin', 'operateur'])
 def vehicle_create():
     """
     ---

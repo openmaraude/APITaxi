@@ -1,6 +1,7 @@
 from datetime import timedelta
 import json
 
+from celery import shared_task
 from flask import current_app
 import requests
 from sqlalchemy import func
@@ -9,10 +10,9 @@ from sqlalchemy.orm import joinedload
 from APITaxi_models2 import db, Hail, Taxi, Vehicle, VehicleDescription
 
 from .. import activity_logs, redis_backend, schemas, processes
-from . import celery
 
 
-@celery.task(name='handle_hail_timeout')
+@shared_task(name='handle_hail_timeout')
 def handle_hail_timeout(hail_id, operateur_id,
                         initial_hail_status, new_hail_status,
                         new_taxi_status=None):
@@ -70,7 +70,7 @@ def handle_hail_timeout(hail_id, operateur_id,
     db.session.commit()
 
 
-@celery.task(name='send_request_operator')
+@shared_task(name='send_request_operator')
 def send_request_operator(hail_id, endpoint, operator_header_name, operator_api_key):
     """Send the hail request to the operator's API.
 

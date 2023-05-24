@@ -13,14 +13,15 @@ DEPENDENCIES = [
     'bcrypt',
     'celery',
     'email-validator',
-    'Flask<2.2',
+    'Flask>=2.3.2,<2.4',
     'Flask-Cors',
-    'Flask-Login==0.6.1',  # 0.6.2 breaks because of Flask<2.2 ?
-    'Flask-Migrate',
+    'Flask-HTTPAuth>=4.8<4.9',
+    'Flask-Login>=0.6.2,<0.7',
+    'Flask-Migrate>=4.0.4,<5',
     'Flask-Principal',
     'Flask-Redis',
-    'Flask-Security',
-    'Flask-SQLAlchemy<3.0',  # requires Flask>=2.2
+    'Flask-Security-Too[common]>=5.2,<5.3',
+    'Flask-SQLAlchemy>=3.0,<4',
     'GeoAlchemy2',
     'Geohash2',
     'geopy',
@@ -28,7 +29,7 @@ DEPENDENCIES = [
     'prettytable',
     'psycopg2',
     'pyshp',
-    'redis<4.5.0',  # bug in py-redis 4.5.0 command packer TODO
+    'redis>=4.5.5,<5',
     'hiredis',
     'sentry-sdk[flask]',
     'Shapely',
@@ -36,11 +37,13 @@ DEPENDENCIES = [
     'SQLAlchemy<2.0',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
-    'Werkzeug<2.2',
+    'Werkzeug>=2.3,<2.4',
+    'watchdog[watchmedo]>=3.0.0',
 ]
 
 TEST_DEPENDENCIES = [
     'pytest',
+    'pytest-celery',
     'pytest-factoryboy',
     'testing.postgresql',
 ]

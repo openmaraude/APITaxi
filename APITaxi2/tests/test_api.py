@@ -3,9 +3,10 @@ import json
 from apispec import exceptions
 from apispec.core import APISpec
 from apispec.utils import build_reference
-from flask import abort
-from flask_security import current_user, login_required, roles_accepted
+from flask import abort, current_app
+from flask_security import roles_accepted
 
+from APITaxi2.security import auth, current_user
 from APITaxi_models2.unittest.factories import UserFactory
 
 
@@ -75,18 +76,18 @@ def test_content_type(anonymous):
         assert 'valid json' in resp.json['errors'][''][0].lower()
 
 
-def test_errors_handlers(app, anonymous):
+def test_errors_handlers(app, anonymous, moteur):
     @app.route('/abort_403')
     def abort_403():
         abort(403)
 
     @app.route('/roles_403')
-    @roles_accepted('xxxx')
+    @auth.login_required(role=['xxxx'])
     def roles_403():
         return ''
 
     @app.route('/login_401')
-    @login_required
+    @auth.login_required
     def login_401():
         return ''
 
@@ -109,7 +110,7 @@ def test_errors_handlers(app, anonymous):
     assert 'permissions' in resp.json['errors'][''][0]
 
     # Request for view with not enough permissions
-    resp = anonymous.client.get('/roles_403')
+    resp = moteur.client.get('/roles_403')
     assert resp.status_code == 403
     assert len(resp.json['errors'].get('', [])) == 1
     assert 'permissions' in resp.json['errors'][''][0]
@@ -149,7 +150,7 @@ def test_logas(app, admin, operateur):
     to be administrator or the manager of the logas account."""
 
     @app.route('/current_user', methods=['GET'])
-    @login_required
+    @auth.login_required
     def root():
         return {'user': current_user.email}
 

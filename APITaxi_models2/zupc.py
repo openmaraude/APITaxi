@@ -51,6 +51,7 @@ class ZUPC(db.Model):
 
     Towns are now in a separate model above.
     """
+    __tablename__ = 'ZUPC'  # Flask-SQLAlchemy 3+ is lowercasing
 
     def __repr__(self):
         return f'<ZUPC {self.id} ({self.nom})>'

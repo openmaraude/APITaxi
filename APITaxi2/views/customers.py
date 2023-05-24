@@ -1,9 +1,9 @@
 from flask import Blueprint, request
-from flask_security import current_user, login_required, roles_accepted
 
 from APITaxi_models2 import Customer, db
 
 from .. import schemas
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -14,8 +14,7 @@ blueprint = Blueprint('customers', __name__)
 
 
 @blueprint.route('/customers/<string:customer_id>', methods=['PUT'])
-@login_required
-@roles_accepted('admin', 'moteur')
+@auth.login_required(role=['admin', 'moteur'])
 def customers_edit(customer_id):
     """
     ---

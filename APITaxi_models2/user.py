@@ -1,4 +1,5 @@
 from sqlalchemy import Column
+from sqlalchemy.orm import synonym
 
 from flask_security import UserMixin, RoleMixin
 
@@ -62,3 +63,6 @@ class User(db.Model, UserMixin, mixins.HistoryMixin):
 
     # List of User managed by this User
     managed = db.relationship('User', lazy='raise', viewonly=True)
+
+    # Required by Flask-Security 4+
+    fs_uniquifier = synonym('apikey')

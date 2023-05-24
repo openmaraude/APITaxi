@@ -2,12 +2,12 @@ import socket
 import time
 
 from flask import Blueprint, current_app, request
-from flask_security import current_user, login_required, roles_accepted
 import redis
 
 from APITaxi_models2 import db, Taxi, Vehicle, VehicleDescription
 
 from .. import schemas
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -88,8 +88,7 @@ def _update_redis(pipe, data, user):
 
 
 @blueprint.route('/geotaxi/', methods=['POST'])
-@login_required
-@roles_accepted('admin', 'operateur')
+@auth.login_required(role=['admin', 'operateur'])
 def geotaxi_batch():
     """
     ---

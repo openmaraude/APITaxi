@@ -3,11 +3,10 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.orm import aliased
 
-from flask_security import current_user, login_required, roles_accepted
-
 from APITaxi_models2 import db, Hail, User
 
 from .. import schemas
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -18,8 +17,7 @@ blueprint = Blueprint('sessions', __name__)
 
 
 @blueprint.route('/sessions')
-@login_required
-@roles_accepted('admin', 'moteur')
+@auth.login_required(role=['admin', 'moteur'])
 def hails_sessions():
     querystring_schema = schemas.ListHailsBySessionQuerystringSchema()
     querystring, errors = validate_schema(querystring_schema, dict(request.args.lists()))

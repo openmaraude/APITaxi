@@ -2,7 +2,6 @@ import functools
 import json
 
 from flask import Blueprint, request
-from flask_security import current_user, login_required, roles_accepted
 from sqlalchemy import cast, func, or_
 
 from geoalchemy2 import Geometry
@@ -12,6 +11,7 @@ from APITaxi_models2.zupc import town_zupc
 
 from .. import stats_backend
 from .. import schemas
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -44,7 +44,7 @@ def _get_zupc_stats(filter_name, filter_value, include_total, include_operators)
 
 
 @blueprint.route('/zupc', methods=['GET'])
-@login_required
+@auth.login_required
 def zupc_list():
     """
     Get the list of ZUPC known and used by the API.
@@ -93,7 +93,7 @@ def zupc_list():
 
 
 @blueprint.route('/zupc/live', methods=['GET'])
-@login_required
+@auth.login_required
 def zupc_live():
     """List all ZUPCs, and number of taxis connected.
 
@@ -143,8 +143,7 @@ def _dump_towns(search):
 
 
 @blueprint.route('/towns', methods=['GET'])
-@login_required
-@roles_accepted('admin', 'moteur', 'operateur')
+@auth.login_required(role=['admin', 'moteur', 'operateur'])
 def town_list():
     """
     This endpoint is not part of the public API but can be convenient to integrate le.taxi.

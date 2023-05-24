@@ -4,7 +4,6 @@ import functools
 import json
 
 from flask import Blueprint, request, current_app
-from flask_security import current_user, login_required, roles_accepted
 from sqlalchemy import func, Text, DateTime, Numeric, or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import INTERVAL
@@ -13,6 +12,7 @@ from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicl
 from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails
 
 from .. import schemas
+from ..security import auth, current_user
 
 
 blueprint = Blueprint('stats', __name__)
@@ -110,8 +110,7 @@ def apply_filters_to_hails(query, departements, insee_codes, groups, manager):
 
 
 @blueprint.route('/stats/taxis', methods=['GET'])
-@login_required
-@roles_accepted('admin')
+@auth.login_required(role=['admin'])
 def stats_taxis():
     filters = get_filters()
     three_months_ago, six_months_ago, twelve_months_ago = get_intervals()
@@ -225,8 +224,7 @@ def stats_taxis():
 
 
 @blueprint.route('/stats/hails', methods=['GET'])
-@login_required
-@roles_accepted('admin')
+@auth.login_required(role=['admin'])
 def stats_hails():
     filters = get_filters()
     three_months_ago, six_months_ago, twelve_months_ago = get_intervals()
@@ -380,8 +378,7 @@ def stats_hails():
 
 
 @blueprint.route('/stats/groupements', methods=['GET'])
-@login_required
-@roles_accepted('admin')
+@auth.login_required(role=['admin'])
 def stats_groupements():
     filters = get_filters()
 
@@ -435,8 +432,7 @@ def stats_groupements():
 
 
 @blueprint.route('/stats/adsmap', methods=['GET'])
-@login_required
-@roles_accepted('admin')
+@auth.login_required(role=['admin'])
 def stats_adsmap():
     filters = get_filters()
 
@@ -496,8 +492,7 @@ def _get_groups(search):
 
 
 @blueprint.route('/stats/groups', methods=['GET'])
-@login_required
-@roles_accepted('admin')
+@auth.login_required(role=['admin'])
 def stats_groups():
     search = request.args.get('search')
     return _get_groups(search)
@@ -520,8 +515,7 @@ def _get_managers():
 
 
 @blueprint.route('/stats/managers', methods=['GET'])
-@login_required
-@roles_accepted('admin')
+@auth.login_required(role=['admin'])
 def stats_managers():
     # No search
     return _get_managers()

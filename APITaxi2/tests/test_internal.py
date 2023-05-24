@@ -38,8 +38,11 @@ class TestInternalAuth:
                 'email': moteur.user.email,
                 'password': moteur.user.password,
             }]})
+            # If we used Flask-Security (the X-Api-Key header would be found)
             # SELECT permissions, INSERT LOG (auth_apikey), SELECT user, INSERT LOG (login_password)
-            assert qtracker.count == 4
+            # Since we use Flask-HTTPAuth, and this view is not decorated with login_required
+            # SELECT user, INSERT LOG (login_password)
+            assert qtracker.count == 2
         assert resp.status_code == 200
 
         resp = moteur.client.post('/internal/auth', json={'data': [{
