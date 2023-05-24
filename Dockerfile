@@ -57,7 +57,7 @@ ENV PATH=/venv/bin/:$PATH
 ENV HOME=/tmp
 
 ENV APITAXI_CONFIG_FILE=/settings.py
-CMD ["flask", "run", "--debug", "--app", "APITaxi", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["flask", "--debug", "--app", "APITaxi", "run", "--host", "0.0.0.0", "--port", "5000"]
 
 
 ##### DEV WORKER IMAGE #####
