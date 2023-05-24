@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from flask_security import current_user, login_required, roles_accepted
 import psycopg2.errors
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
@@ -7,6 +6,7 @@ from sqlalchemy.orm import joinedload
 from APITaxi_models2 import Departement, Driver, db
 
 from .. import schemas
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema
@@ -17,8 +17,7 @@ blueprint = Blueprint('drivers', __name__)
 
 
 @blueprint.route('/drivers', methods=['POST'])
-@login_required
-@roles_accepted('admin', 'operateur')
+@auth.login_required(role=['admin', 'operateur'])
 def drivers_create():
     """
     ---

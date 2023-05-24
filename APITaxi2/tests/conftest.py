@@ -35,6 +35,7 @@ SECRET_KEY = 's3cr3t'
 REDIS_URL = '%(redis)s'
 SECURITY_PASSWORD_HASH = 'plaintext'
 DEBUG = True
+TESTING = True
 CONSOLE_URL = 'http://console'
 NEUTRAL_OPERATOR = True
 ''' % {
@@ -71,42 +72,42 @@ def _create_client(app, roles):
 
     with app.test_client() as client:
         if not create_user:
-            yield Client(client=client)
+            return Client(client=client)
         else:
             # Setup X-Api-Key HTTP header
             client.environ_base['HTTP_X_API_KEY'] = user.apikey
-            yield Client(user=user, client=client)
+            return Client(user=user, client=client)
 
 
 @pytest.fixture
 def all_roles(app):
-    yield from _create_client(app, ['admin', 'moteur', 'operateur'])
+    return _create_client(app, ['admin', 'moteur', 'operateur'])
 
 
 @pytest.fixture
 def no_roles(app):
     """Authenticated user without any roles."""
-    yield from _create_client(app, [])
+    return _create_client(app, [])
 
 
 @pytest.fixture
 def anonymous(app):
-    yield from _create_client(app, None)
+    return _create_client(app, None)
 
 
 @pytest.fixture
 def admin(app):
-    yield from _create_client(app, ['admin'])
+    return _create_client(app, ['admin'])
 
 
 @pytest.fixture
 def moteur(app):
-    yield from _create_client(app, ['moteur'])
+    return _create_client(app, ['moteur'])
 
 
 @pytest.fixture
 def operateur(app):
-    yield from _create_client(app, ['operateur'])
+    return _create_client(app, ['operateur'])
 
 
 @pytest.fixture

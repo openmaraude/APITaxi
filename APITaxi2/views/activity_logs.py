@@ -1,11 +1,12 @@
 from flask import Blueprint, request, current_app
-from flask_security import current_user, login_required, roles_accepted
 from marshmallow import fields, Schema, validate, ValidationError
 from sqlalchemy import select, desc
 
 from APITaxi2 import activity_logs, schemas, validators
 from APITaxi_models2 import db
 from APITaxi_models2.activity_logs import activity_log
+
+from ..security import auth, current_user
 
 
 blueprint = Blueprint('activity_logs', __name__)
@@ -32,8 +33,7 @@ DataActivityLogsSchema = schemas.data_schema_wrapper(ActivityLogsSchema())
 
 
 @blueprint.route('/activity_logs', methods=['GET'])
-@login_required
-@roles_accepted('admin')
+@auth.login_required(role=['admin'])
 def activity_logs_list():
     """"""
     querystring_schema = ActivityLogsSchema()

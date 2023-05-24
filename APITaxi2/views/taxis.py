@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from functools import reduce
 
 from flask import Blueprint, request
-from flask_security import current_user, login_required, roles_accepted
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
@@ -22,6 +21,7 @@ from APITaxi_models2 import (
 
 from .. import activity_logs, debug, redis_backend, schemas
 from ..exclusions import ExclusionHelper
+from ..security import auth, current_user
 from ..utils import get_short_uuid
 from ..validators import (
     make_error_json_response,
@@ -33,8 +33,7 @@ blueprint = Blueprint('taxis', __name__)
 
 
 @blueprint.route('/taxis', methods=['POST'])
-@login_required
-@roles_accepted('admin', 'operateur')
+@auth.login_required(role=['admin', 'operateur'])
 def taxis_create():
     """Endpoint POST /taxis to create Taxi object. If the taxi already exists, which is
     defined as the combination of an ads, a vehicle and a driver, it is
@@ -188,8 +187,7 @@ def taxis_create():
 
 
 @blueprint.route('/taxis/<string:taxi_id>', methods=['GET', 'PUT'])
-@login_required
-@roles_accepted('admin', 'operateur')
+@auth.login_required(role=['admin', 'operateur'])
 def taxis_details(taxi_id):
     """Get or update a taxi.
 
@@ -355,8 +353,7 @@ def taxis_details(taxi_id):
 
 
 @blueprint.route('/taxis', methods=['GET'])
-@login_required
-@roles_accepted('admin', 'moteur', 'operateur')
+@auth.login_required(role=['admin', 'moteur', 'operateur'])
 def taxis_search():
     """Get the taxis around a location.
 
@@ -557,8 +554,7 @@ def taxis_search():
 
 
 @blueprint.route('/taxis/all', methods=['GET'])
-@login_required
-@roles_accepted('operateur')
+@auth.login_required(role=['operateur'])
 def taxis_list():
     """Return the list of taxis registered for an operator. This endpoint
     should have been called /taxis (and /taxis should have been /search or

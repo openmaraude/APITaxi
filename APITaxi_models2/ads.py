@@ -6,6 +6,7 @@ OWNER_TYPES = ('company', 'individual')
 
 
 class ADS(HistoryMixin, db.Model):
+    __tablename__ = 'ADS'  # Flask-SQLAlchemy 3+ is lowercasing
 
     __table_args__ = (
         db.Index('ads_insee_index', 'insee'),

@@ -1,11 +1,10 @@
 import time
 
+from celery import shared_task
 from flask import current_app
 
-from . import celery
 
-
-@celery.task(name='clean_geoindex_timestamps')
+@shared_task(name='clean_geoindex_timestamps')
 def clean_geoindex_timestamps():
     """Geotaxi stores locations in several Redis keys:
 

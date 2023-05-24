@@ -1,5 +1,4 @@
 from flask import Blueprint, request
-from flask_security import current_user, login_required
 from flask_security.utils import hash_password
 
 from sqlalchemy import func, or_
@@ -8,6 +7,7 @@ from sqlalchemy.orm import joinedload, aliased
 from APITaxi_models2 import db, Role, User
 
 from .. import schemas
+from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
     validate_schema,
@@ -18,7 +18,7 @@ blueprint = Blueprint('users', __name__)
 
 
 @blueprint.route('/users/<int:user_id>', methods=['GET', 'PUT'])
-@login_required
+@auth.login_required
 def users_details(user_id):
     query = User.query.options(
         joinedload(User.manager),
@@ -80,7 +80,7 @@ def users_details(user_id):
 
 
 @blueprint.route('/users/', methods=['GET'])
-@login_required
+@auth.login_required
 def users_list():
     """If user is administrator, list all accounts. Otherwise, list all managed
     accounts.
