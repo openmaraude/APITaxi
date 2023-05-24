@@ -77,6 +77,10 @@ def parse_env_bool(value):
 #   variable named SQLALCHEMY_DATABASE_URI with it's value.
 # - otherwise, create a global variable SQLALCHEMY_DATABASE_URI with the value of
 #   the environment variable POSTGRESQL_ADDON_URI.
+# - if both the environment variable and the alternative name exist,
+#   the alternative name has priority. So REDIS_URL will be overwritten by
+#   REDIS_DIRECT_URI if defined (for cloud hosting).
+#   
 for _env_var, _alt_name, _env_type in (
     ('DEBUG', None, parse_env_bool),
     ('SERVER_NAME', None, str),
@@ -86,7 +90,7 @@ for _env_var, _alt_name, _env_type in (
     ('GEOTAXI_PORT', None, int),
     ('SECRET_KEY', None, str),
     ('SQLALCHEMY_DATABASE_URI', 'POSTGRESQL_ADDON_DIRECT_URI', str),
-    ('REDIS_URL', None, str),
+    ('REDIS_URL', 'REDIS_DIRECT_URI', str),
     ('SECURITY_PASSWORD_SALT', None, str),
     ('CELERY_BROKER_URL', 'REDIS_DIRECT_URI', str),
     ('CELERY_RESULT_BACKEND', 'REDIS_DIRECT_URI', str),
@@ -96,7 +100,7 @@ for _env_var, _alt_name, _env_type in (
     ('SWAGGER_URL', None, str),
     ('NEUTRAL_OPERATOR', None, parse_env_bool),
 ):
-    _val = os.getenv(_env_var) or (_alt_name and os.getenv(_alt_name))
+    _val = os.getenv(_alt_name) if _alt_name else os.getenv(_env_var)
     if not _val:
         continue
 
