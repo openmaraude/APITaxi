@@ -57,6 +57,9 @@ ENV PATH=/venv/bin/:$PATH
 ENV HOME=/tmp
 
 ENV APITAXI_CONFIG_FILE=/settings.py
+# `flask shell` and flask commands like `flask create_user` need FLASK_APP to be set.
+ENV FLASK_APP=APITaxi
+
 CMD ["flask", "--debug", "--app", "APITaxi", "run", "--host", "0.0.0.0", "--port", "5000"]
 
 
