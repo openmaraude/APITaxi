@@ -6,7 +6,7 @@ from unittest import mock
 
 from sqlalchemy.orm import joinedload
 
-from APITaxi_models2 import Hail, Taxi, VehicleDescription, ZUPC
+from APITaxi_models2 import db, Hail, Taxi, VehicleDescription, ZUPC
 from APITaxi_models2.unittest.factories import (
     HailFactory,
     TaxiFactory,
@@ -63,7 +63,7 @@ class TestHandleHailTimeout:
 
         # Since handle_hail_timeout commits the session, we have to fetch Hail
         # back to read its properties.
-        hail = Hail.query.get(hail_id)
+        hail = db.session.get(Hail, hail_id)
         assert hail.status == 'failure'
 
         vehicle_description = VehicleDescription.query.one()
@@ -154,10 +154,10 @@ class TestSendRequestOperator:
             assert mocked_logger.call_count == 1
             assert ret is False
 
-        hail = Hail.query.get(hail_id)
+        hail = db.session.get(Hail, hail_id)
         assert hail.status == 'failure'
 
-        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        vehicle_description = db.session.get(VehicleDescription, vehicle_description_id)
         assert vehicle_description.status == 'free'
 
         # Check transition log
@@ -246,10 +246,10 @@ class TestSendRequestOperator:
             assert ret is False
             assert mocked_logger.call_count == 1
 
-        hail = Hail.query.get(hail_id)
+        hail = db.session.get(Hail, hail_id)
         assert hail.status == 'failure'
 
-        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        vehicle_description = db.session.get(VehicleDescription, vehicle_description_id)
         assert vehicle_description.status == 'free'
 
         # Check that failure is logged
@@ -286,10 +286,10 @@ class TestSendRequestOperator:
             assert ret is False
             assert mocked_logger.call_count == 1
 
-        hail = Hail.query.get(hail_id)
+        hail = db.session.get(Hail, hail_id)
         assert hail.status == 'failure'
 
-        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        vehicle_description = db.session.get(VehicleDescription, vehicle_description_id)
         assert vehicle_description.status == 'free'
 
         # Check that failure is logged
@@ -326,10 +326,11 @@ class TestSendRequestOperator:
             assert ret is False
             assert mocked_logger.call_count == 1
 
-        hail = Hail.query.get(hail_id)
+        hail = db.session.get(Hail, hail_id)
         assert hail.status == 'failure'
 
-        vehicle_description = VehicleDescription.query.get(vehicle_description_id)
+        # TODO sqlalchemy 1.4 / 2.0 cross-compatible use
+        vehicle_description = db.session.get(VehicleDescription, vehicle_description_id)
         assert vehicle_description.status == 'free'
 
         # Check that failure is logged

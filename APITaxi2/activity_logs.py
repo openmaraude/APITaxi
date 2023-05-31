@@ -1,4 +1,4 @@
-from sqlalchemy import func, insert
+from sqlalchemy import func
 
 from APITaxi_models2 import db
 from APITaxi_models2.activity_logs import activity_log
@@ -31,8 +31,8 @@ def _log_activity(resource, resource_id, action, **extra):
     assert resource in RESOURCES
     assert action in ACTIONS
 
-    with db.engine.connect() as conn:
-        stmt = insert(activity_log).values(
+    with db.engine.begin() as conn:
+        stmt = activity_log.insert().values(
             time=func.now(),
             resource=resource,
             resource_id=resource_id,

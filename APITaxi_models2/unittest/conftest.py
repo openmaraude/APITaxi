@@ -135,7 +135,7 @@ def postgresql_empty():
     """Returns a function to remove all data from database. Useful to get a
     clean state after running a unittest."""
     def clean_db():
-        APITaxi_models2.db.session.execute('SET CONSTRAINTS ALL DEFERRED')
+        APITaxi_models2.db.session.execute(sqlalchemy.text('SET CONSTRAINTS ALL DEFERRED'))
         inspector = sqlalchemy.inspect(APITaxi_models2.db.engine)
         for table in reversed(APITaxi_models2.db.metadata.sorted_tables):
             # Ignore tables declared as SQLALchemy models but not present in
