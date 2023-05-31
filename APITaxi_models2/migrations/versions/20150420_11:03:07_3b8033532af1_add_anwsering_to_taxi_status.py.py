@@ -24,22 +24,22 @@ taxi = sa.sql.table('taxi',
 
 def upgrade():
     tmp_enum.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE taxi ALTER COLUMN status TYPE _status_taxi_enum'
-                           ' USING status::text::_status_taxi_enum')
+    op.execute(sa.text('ALTER TABLE taxi ALTER COLUMN status TYPE _status_taxi_enum'
+                           ' USING status::text::_status_taxi_enum'))
     old_enum.drop(op.get_bind(), checkfirst=False)
     new_enum.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE taxi ALTER COLUMN status TYPE status_taxi_enum'
-                           ' USING status::text::status_taxi_enum')
+    op.execute(sa.text('ALTER TABLE taxi ALTER COLUMN status TYPE status_taxi_enum'
+                           ' USING status::text::status_taxi_enum'))
     tmp_enum.drop(op.get_bind(), checkfirst=False)
 
 def downgrade():
     op.execute(taxi.update().where(taxi.c.status=='answering')
                .values(status='free'))
     tmp_enum.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE taxi ALTER COLUMN status TYPE _status_taxi_enum'
-               ' USING status::text::_status_taxi_enum');
+    op.execute(sa.text('ALTER TABLE taxi ALTER COLUMN status TYPE _status_taxi_enum'
+               ' USING status::text::_status_taxi_enum'))
     new_enum.drop(op.get_bind(), checkfirst=False)
     old_enum.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE taxi ALTER COLUMN status TYPE status_taxi_enum'
-               ' USING status::text::status_taxi_enum');
+    op.execute(sa.text('ALTER TABLE taxi ALTER COLUMN status TYPE status_taxi_enum'
+               ' USING status::text::status_taxi_enum'))
     tmp_enum.drop(op.get_bind(), checkfirst=False)

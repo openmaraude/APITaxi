@@ -34,13 +34,13 @@ tcr = sa.sql.table(table_name,
 
 def upgrade():
     tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
-               ' USING status::text::{}'.format(table_name, column_name, tmp_name, tmp_name))
+    op.execute(sa.text('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
+               ' USING status::text::{}'.format(table_name, column_name, tmp_name, tmp_name)))
     old_type.drop(op.get_bind(), checkfirst=False)
     # Create and convert to the "new" status type
     new_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
-               ' USING status::text::{}'.format(table_name, column_name, name, name))
+    op.execute(sa.text('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
+               ' USING status::text::{}'.format(table_name, column_name, name, name)))
     tmp_type.drop(op.get_bind(), checkfirst=False)
 
 def downgrade():
@@ -48,11 +48,11 @@ def downgrade():
                .values(status='failure'))
     # Create a tempoary "_status" type, convert and drop the "new" type
     tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
-               ' USING status::text::{}'.format(table_name, column_name, tmp_name, tmp_name))
+    op.execute(sa.text('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
+               ' USING status::text::{}'.format(table_name, column_name, tmp_name, tmp_name)))
     new_type.drop(op.get_bind(), checkfirst=False)
     # Create and convert to the "old" status type
     old_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
-               ' USING status::text::{}'.format(table_name, column_name, name, name))
+    op.execute(sa.text('ALTER TABLE {} ALTER COLUMN {} TYPE {}'
+               ' USING status::text::{}'.format(table_name, column_name, name, name)))
     tmp_type.drop(op.get_bind(), checkfirst=False)

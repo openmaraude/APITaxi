@@ -18,13 +18,13 @@ depends_on = None
 
 def upgrade():
     conn = op.get_bind()
-    conn.execute('''update "user" set commercial_name = '' where commercial_name is null;''')
-    conn.execute('''update "user" set email_customer = '' where email_customer is null;''')
-    conn.execute('''update "user" set email_technical = '' where email_technical is null;''')
-    conn.execute('''update "user" set operator_api_key = '' where operator_api_key is null;''')
-    conn.execute('''update "user" set operator_header_name = '' where operator_header_name is null;''')
-    conn.execute('''update "user" set phone_number_customer = '' where phone_number_customer is null;''')
-    conn.execute('''update "user" set phone_number_technical = '' where phone_number_technical is null;''')
+    conn.execute(sa.text('''update "user" set commercial_name = '' where commercial_name is null;'''))
+    conn.execute(sa.text('''update "user" set email_customer = '' where email_customer is null;'''))
+    conn.execute(sa.text('''update "user" set email_technical = '' where email_technical is null;'''))
+    conn.execute(sa.text('''update "user" set operator_api_key = '' where operator_api_key is null;'''))
+    conn.execute(sa.text('''update "user" set operator_header_name = '' where operator_header_name is null;'''))
+    conn.execute(sa.text('''update "user" set phone_number_customer = '' where phone_number_customer is null;'''))
+    conn.execute(sa.text('''update "user" set phone_number_technical = '' where phone_number_technical is null;'''))
 
     op.alter_column('user', 'commercial_name',
                     existing_type=sa.VARCHAR(),

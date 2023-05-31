@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 def upgrade():
     op.add_column('ZUPC', sa.Column('active', sa.Boolean(), nullable=True))
-    op.execute('UPDATE "ZUPC" set active = False;')
+    op.execute(sa.text('UPDATE "ZUPC" set active = False;'))
     op.alter_column('ZUPC', 'active', nullable=False)
 
 

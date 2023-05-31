@@ -30,14 +30,14 @@ hail = sa.sql.table('hail',
 
 def upgrade():
     tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {tmp_name}'
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {tmp_name}'
                ' USING rating_ride_reason::text::{tmp_name}'.format(
-                   tmp_name=tmp_name, column_name=column_name));
+                   tmp_name=tmp_name, column_name=column_name)))
     old_type.drop(op.get_bind(), checkfirst=False)
     new_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {old_name}'
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {old_name}'
                ' USING rating_ride_reason::text::{old_name}'.format(
-               old_name=old_name, column_name=column_name));
+               old_name=old_name, column_name=column_name)))
     tmp_type.drop(op.get_bind(), checkfirst=False)
 
 
@@ -45,12 +45,12 @@ def downgrade():
     op.execute(hail.update().where(hail.c.rating_ride_reason=='automatic_rating')
                .values(rating_ride_reason='ko'))
     tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {tmp_name}'
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {tmp_name}'
                ' USING rating_ride_reason::text::{tmp_name}'.format(
-               column_name=column_name, tmp_name=tmp_name));
+               column_name=column_name, tmp_name=tmp_name)))
     new_type.drop(op.get_bind(), checkfirst=False)
     old_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {old_name}'
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN {column_name} TYPE {old_name}'
                ' USING rating_ride_reason::text::{old_name}'.format(
-               column_name=column_name, old_name=old_name))
+               column_name=column_name, old_name=old_name)))
     tmp_type.drop(op.get_bind(), checkfirst=False)

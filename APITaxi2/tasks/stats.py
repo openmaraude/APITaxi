@@ -47,7 +47,7 @@ def _log_active_taxis(last_update, data):
 
     # Group by ZUPC
     covered_zupc = db.session.query(ZUPC).options(
-        joinedload(Town, ZUPC.allowed)
+        joinedload(ZUPC.allowed)
     ).filter(
         ZUPC.allowed.any(Town.insee.in_(taxis_by_insee))
     ).all()

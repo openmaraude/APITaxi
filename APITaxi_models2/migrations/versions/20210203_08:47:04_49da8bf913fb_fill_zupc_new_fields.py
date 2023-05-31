@@ -7,6 +7,7 @@ Create Date: 2021-02-03 08:47:04.960369
 """
 import uuid
 from alembic import op
+import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
@@ -23,17 +24,19 @@ def upgrade():
 
     conn = op.get_bind()
 
-    for i, (zupc_pk,) in enumerate(conn.execute('SELECT id FROM "ZUPC" WHERE parent_id = id')):  # Mind the comma
+    for i, (zupc_pk,) in enumerate(conn.execute(sa.text('SELECT id FROM "ZUPC" WHERE parent_id = id'))):  # Mind the comma
         if i % 1000 == 0:
             print(int(i / 36706 * 100), end='% ', flush=True)
         # Generate a disposable ZUPC unique identifier
-        conn.execute('UPDATE "ZUPC" set zupc_id = %s WHERE id = %s', [str(uuid.uuid4()), zupc_pk])
+        conn.execute(sa.text('UPDATE "ZUPC" set zupc_id=:zupc_id WHERE id=:id', {'zupc_id': str(uuid.uuid4()), 'id': zupc_pk}))
         # Allowed towns
-        conn.execute('INSERT INTO town_zupc SELECT id, %s FROM town WHERE insee IN (SELECT insee FROM "ZUPC" WHERE parent_id=%s)', [zupc_pk, zupc_pk])
+        conn.execute(sa.text('INSERT INTO town_zupc SELECT id, :zupc_pk FROM town WHERE insee IN (SELECT insee FROM "ZUPC" WHERE parent_id=:zupc_pk)', {
+            'zupc_pk': zupc_pk
+        }))
 
     print('100%')
 
 
 def downgrade():
     op.drop_index('zupc_parent_id_idx')
-    op.execute('DELETE FROM town_zupc')
+    op.execute(sa.text('DELETE FROM town_zupc'))

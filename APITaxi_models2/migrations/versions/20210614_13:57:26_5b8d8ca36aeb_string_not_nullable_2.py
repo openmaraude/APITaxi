@@ -18,13 +18,13 @@ depends_on = None
 
 def upgrade():
     conn = op.get_bind()
-    conn.execute('''update customer set phone_number = '' where phone_number is null''')
-    conn.execute('''update hail set taxi_phone_number = '' where taxi_phone_number is null''')
-    conn.execute('''update role set description = '' where description is null''')
-    conn.execute('''update vehicle_description set color = '' where color is null''')
-    conn.execute('''update vehicle_description set engine = '' where engine is null''')
-    conn.execute('''update vehicle_description set horodateur = '' where horodateur is null''')
-    conn.execute('''update vehicle_description set taximetre = '' where taximetre is null''')
+    conn.execute(sa.text('''update customer set phone_number = '' where phone_number is null'''))
+    conn.execute(sa.text('''update hail set taxi_phone_number = '' where taxi_phone_number is null'''))
+    conn.execute(sa.text('''update role set description = '' where description is null'''))
+    conn.execute(sa.text('''update vehicle_description set color = '' where color is null'''))
+    conn.execute(sa.text('''update vehicle_description set engine = '' where engine is null'''))
+    conn.execute(sa.text('''update vehicle_description set horodateur = '' where horodateur is null'''))
+    conn.execute(sa.text('''update vehicle_description set taximetre = '' where taximetre is null'''))
 
     op.alter_column('customer', 'phone_number',
                     existing_type=sa.VARCHAR(),

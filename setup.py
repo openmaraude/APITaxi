@@ -34,7 +34,7 @@ DEPENDENCIES = [
     'sentry-sdk[flask]',
     'Shapely>=2.0.1,<2.1',
     'shortuuid',
-    'SQLAlchemy<2.0',
+    'SQLAlchemy>=2.0,<2.1',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
     'Werkzeug>=2.3,<2.4',

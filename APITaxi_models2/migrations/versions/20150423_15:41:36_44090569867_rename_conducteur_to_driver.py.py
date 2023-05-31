@@ -32,7 +32,7 @@ def upgrade():
     sa.ForeignKeyConstraint(['departement_id'], ['departement.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.execute('drop table conducteur cascade')
+    op.execute(sa.text('drop table conducteur cascade'))
     op.add_column('taxi', sa.Column('driver_id', sa.Integer(), nullable=True))
     op.create_foreign_key(None, 'taxi', 'driver', ['driver_id'], ['id'])
     op.drop_column('taxi', 'conducteur_id')

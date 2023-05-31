@@ -25,11 +25,11 @@ def upgrade():
             nullable=False)
 
 def downgrade():
-    op.execute('ALTER TABLE taxi ALTER COLUMN id TYPE INTEGER'
-            ' USING id::INTEGER');
-    op.execute('ALTER TABLE hail ALTER COLUMN taxi_id TYPE INTEGER'
-            ' USING taxi_id::INTEGER');
-    op.execute('ALTER TABLE "ADS" ALTER COLUMN numero TYPE INTEGER'
-            ' USING numero::INTEGER');
-    op.execute('ALTER TABLE "ADS" ALTER COLUMN insee TYPE INTEGER'
-            ' USING insee::INTEGER');
+    op.execute(sa.text('ALTER TABLE taxi ALTER COLUMN id TYPE INTEGER'
+            ' USING id::INTEGER'))
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN taxi_id TYPE INTEGER'
+            ' USING taxi_id::INTEGER'))
+    op.execute(sa.text('ALTER TABLE "ADS" ALTER COLUMN numero TYPE INTEGER'
+            ' USING numero::INTEGER'))
+    op.execute(sa.text('ALTER TABLE "ADS" ALTER COLUMN insee TYPE INTEGER'
+            ' USING insee::INTEGER'))

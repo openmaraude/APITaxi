@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 def upgrade():
     op.add_column('taxi', sa.Column('rating', sa.Float(), nullable=True))
-    op.execute('UPDATE taxi set rating=4.5;')
+    op.execute(sa.text('UPDATE taxi set rating=4.5;'))
 
 
 def downgrade():

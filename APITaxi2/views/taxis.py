@@ -431,7 +431,7 @@ def taxis_search():
     # Now ask the potential ZUPCs the town is part of
     # There may be several: union of towns, airport, TGV station...
     zupcs = ZUPC.query.options(
-        joinedload(Town, ZUPC.allowed)
+        joinedload(ZUPC.allowed)
     ).filter(
         ZUPC.allowed.contains(town)
     ).all()

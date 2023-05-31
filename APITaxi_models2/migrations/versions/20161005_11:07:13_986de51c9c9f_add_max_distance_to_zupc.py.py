@@ -15,13 +15,13 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 def upgrade():
-    op.execute('CREATE TABLE "ZUPC_new" (LIKE "ZUPC" INCLUDING CONSTRAINTS);')
-    op.execute('INSERT INTO "ZUPC_new" SELECT * FROM "ZUPC";')
+    op.execute(sa.text('CREATE TABLE "ZUPC_new" (LIKE "ZUPC" INCLUDING CONSTRAINTS);'))
+    op.execute(sa.text('INSERT INTO "ZUPC_new" SELECT * FROM "ZUPC";'))
     op.add_column('ZUPC_new', sa.Column('max_distance', sa.Integer(), nullable=True))
-    op.execute('ALTER TABLE "ADS" DROP CONSTRAINT "fkey_zupc_ads"')
-    op.execute('ALTER TABLE "ZUPC" DROP CONSTRAINT "zupc_parent_foreign_key"')
-    op.execute('DROP TABLE "ZUPC"')
-    op.execute('ALTER TABLE "ZUPC_new" RENAME TO "ZUPC";')
+    op.execute(sa.text('ALTER TABLE "ADS" DROP CONSTRAINT "fkey_zupc_ads"'))
+    op.execute(sa.text('ALTER TABLE "ZUPC" DROP CONSTRAINT "zupc_parent_foreign_key"'))
+    op.execute(sa.text('DROP TABLE "ZUPC"'))
+    op.execute(sa.text('ALTER TABLE "ZUPC_new" RENAME TO "ZUPC";'))
     op.execute("""
                ALTER TABLE "ZUPC" ADD PRIMARY KEY (id);
                CREATE INDEX zupc_shape_igx ON "ZUPC" USING GIST (shape);
@@ -34,13 +34,13 @@ def upgrade():
 
 
 def downgrade():
-    op.execute('CREATE TABLE "ZUPC_new" (LIKE "ZUPC" INCLUDING CONSTRAINTS);')
-    op.execute('INSERT INTO "ZUPC_new" SELECT * FROM "ZUPC";')
+    op.execute(sa.text('CREATE TABLE "ZUPC_new" (LIKE "ZUPC" INCLUDING CONSTRAINTS);'))
+    op.execute(sa.text('INSERT INTO "ZUPC_new" SELECT * FROM "ZUPC";'))
     op.drop_column('ZUPC', 'max_distance')
-    op.execute('ALTER TABLE "ADS" DROP CONSTRAINT "fkey_zupc_ads"')
-    op.execute('ALTER TABLE "ZUPC" DROP CONSTRAINT "zupc_parent_foreign_key"')
-    op.execute('DROP TABLE "ZUPC"')
-    op.execute('ALTER TABLE "ZUPC_new" RENAME TO "ZUPC";')
+    op.execute(sa.text('ALTER TABLE "ADS" DROP CONSTRAINT "fkey_zupc_ads"'))
+    op.execute(sa.text('ALTER TABLE "ZUPC" DROP CONSTRAINT "zupc_parent_foreign_key"'))
+    op.execute(sa.text('DROP TABLE "ZUPC"'))
+    op.execute(sa.text('ALTER TABLE "ZUPC_new" RENAME TO "ZUPC";'))
     op.execute("""
                ALTER TABLE "ZUPC" ADD PRIMARY KEY (id);
                CREATE INDEX zupc_shape_igx ON "ZUPC" USING GIST (shape);

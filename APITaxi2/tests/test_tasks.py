@@ -400,8 +400,8 @@ class TestStoreActiveTaxis:
         assert stats_backend.get_nb_active_taxis('75056') == 3
         assert stats_backend.get_nb_active_taxis('33063') == 3
         # Number of taxis per ZUPC
-        assert stats_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id) == 3
-        assert stats_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id) == 3
+        assert stats_backend.get_nb_active_taxis(zupc_id=str(zupc_paris.zupc_id)) == 3
+        assert stats_backend.get_nb_active_taxis(zupc_id=str(zupc_bordeaux.zupc_id)) == 3
         # Number of taxis per operator
         assert stats_backend.get_nb_active_taxis(operator='H8') == 2
         assert stats_backend.get_nb_active_taxis(operator="Beta Taxis") == 2
@@ -412,8 +412,8 @@ class TestStoreActiveTaxis:
         assert stats_backend.get_nb_active_taxis('33063', operator="Beta Taxis") == 1
         assert stats_backend.get_nb_active_taxis('33063', operator="Cab'ernet") == 2
         # Number of taxis per ZUPC and operator
-        assert stats_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='H8') == 2
-        assert stats_backend.get_nb_active_taxis(zupc_id=zupc_paris.zupc_id, operator='Beta Taxis') == 1
-        assert stats_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator="Cab'ernet") == 2
-        assert stats_backend.get_nb_active_taxis(zupc_id=zupc_bordeaux.zupc_id, operator='Beta Taxis') == 1
+        assert stats_backend.get_nb_active_taxis(zupc_id=str(zupc_paris.zupc_id), operator='H8') == 2
+        assert stats_backend.get_nb_active_taxis(zupc_id=str(zupc_paris.zupc_id), operator='Beta Taxis') == 1
+        assert stats_backend.get_nb_active_taxis(zupc_id=str(zupc_bordeaux.zupc_id), operator="Cab'ernet") == 2
+        assert stats_backend.get_nb_active_taxis(zupc_id=str(zupc_bordeaux.zupc_id), operator='Beta Taxis') == 1
     

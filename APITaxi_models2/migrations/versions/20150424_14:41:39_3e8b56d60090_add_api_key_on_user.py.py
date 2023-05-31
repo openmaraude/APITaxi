@@ -20,10 +20,10 @@ def upgrade():
     op.add_column('user', sa.Column('apikey', sa.String(length=36),
         nullable=True))
     conn = op.get_bind()
-    result = conn.execute('SELECT id from "user"')
+    result = conn.execute(sa.text('SELECT id from "user"'))
     for r in result.fetchall():
-        conn.execute('UPDATE "user" SET apikey=\'{}\' where id={}'.format(
-            str(uuid4()), r[0]))
+        conn.execute(sa.text('UPDATE "user" SET apikey=:apikey where id=:id', {
+            'apikey': str(uuid4()), 'id': r[0]}))
     op.alter_column('user', 'apikey', nullable=False)
     ### end Alembic commands ###
 

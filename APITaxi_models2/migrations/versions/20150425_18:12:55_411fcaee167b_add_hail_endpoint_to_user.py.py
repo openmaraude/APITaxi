@@ -31,12 +31,12 @@ tcr = sa.sql.table('hail',
 
 def upgrade():
     tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN status TYPE _status'
-               ' USING status::text::_status');
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN status TYPE _status'
+               ' USING status::text::_status'))
     old_type.drop(op.get_bind(), checkfirst=False)
     new_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN status TYPE hail_status'
-               ' USING status::text::hail_status');
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN status TYPE hail_status'
+               ' USING status::text::hail_status'))
     tmp_type.drop(op.get_bind(), checkfirst=False)
 
 
@@ -44,10 +44,10 @@ def downgrade():
     op.execute(hail.update().where(hail.c.status=='failure')
                .values(status='outdated_taxi'))
     tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN status TYPE hail__status'
-               ' USING status::text::hail__status');
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN status TYPE hail__status'
+               ' USING status::text::hail__status'))
     new_type.drop(op.get_bind(), checkfirst=False)
     old_type.create(op.get_bind(), checkfirst=False)
-    op.execute('ALTER TABLE hail ALTER COLUMN status TYPE hail_status'
-               ' USING status::text::hail_status');
+    op.execute(sa.text('ALTER TABLE hail ALTER COLUMN status TYPE hail_status'
+               ' USING status::text::hail_status'))
     tmp_type.drop(op.get_bind(), checkfirst=False)

@@ -21,12 +21,12 @@ def upgrade():
 
     # Store all models
     models = {}
-    for model_id, name in conn.execute('SELECT id, name FROM model'):
+    for model_id, name in conn.execute(sa.text('SELECT id, name FROM model')):
         models[model_id] = name
 
     # Store all constructors
     constructors = {}
-    for constructor_id, name in conn.execute('SELECT id, name FROM constructor'):
+    for constructor_id, name in conn.execute(sa.text('SELECT id, name FROM constructor')):
         constructors[constructor_id] = name
 
     # Create new columns "constructor" and "model"
@@ -34,15 +34,15 @@ def upgrade():
     op.add_column('vehicle_description', sa.Column('model', sa.String(), server_default='', nullable=False))
 
     # Fill the new columns with the values stored in "model" and "constructor"
-    for obj_id, model_id, constructor_id in conn.execute(
+    for obj_id, model_id, constructor_id in conn.execute(sa.text(
         'SELECT id, model_id, constructor_id FROM vehicle_description'
-    ):
-        conn.execute(
+    )):
+        conn.execute(sa.text(
             'UPDATE vehicle_description SET model = %s, constructor = %s WHERE id = %s',
             models.get(model_id, ''),
             constructors.get(constructor_id, ''),
             obj_id
-        )
+        ))
 
     # Remove tables model and constructor
     op.drop_constraint('vehicle_description_model_id_fkey', 'vehicle_description', type_='foreignkey')
@@ -92,7 +92,7 @@ def downgrade():
     conn = op.get_bind()
 
     models = {}
-    for model, in conn.execute('SELECT DISTINCT(model) FROM vehicle_description'):
+    for model, in conn.execute(sa.text('SELECT DISTINCT(model) FROM vehicle_description')):
         if not model:
             continue
         model_id = conn.execute(
@@ -101,12 +101,12 @@ def downgrade():
         models[model] = model_id
 
     constructors = {}
-    for constructor, in conn.execute('SELECT DISTINCT(constructor) FROM vehicle_description'):
+    for constructor, in conn.execute(sa.text('SELECT DISTINCT(constructor) FROM vehicle_description')):
         if not constructor:
             continue
-        constructor_id = conn.execute(
+        constructor_id = conn.execute(sa.text(
             'INSERT INTO constructor(name) VALUES(%s) RETURNING id', constructor
-        ).fetchone()[0]
+        )).fetchone()[0]
         constructors[constructor] = constructor_id
 
     for obj_id, model, constructor in conn.execute(

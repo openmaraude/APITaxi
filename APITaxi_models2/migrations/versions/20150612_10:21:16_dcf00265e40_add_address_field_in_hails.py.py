@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 def upgrade():
     op.add_column('hail', sa.Column('customer_address', sa.String()))
-    op.execute('UPDATE hail SET customer_address=\'\'')
+    op.execute(sa.text('UPDATE hail SET customer_address=\'\''))
     op.alter_column('hail', 'customer_address', nullable=False)
 
 

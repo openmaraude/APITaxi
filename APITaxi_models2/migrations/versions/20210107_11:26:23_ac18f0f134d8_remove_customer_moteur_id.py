@@ -36,7 +36,7 @@ def downgrade():
 
     # Copy data from added_by
     conn = op.get_bind()
-    conn.execute('UPDATE customer SET moteur_id = added_by')
+    conn.execute(sa.text('UPDATE customer SET moteur_id = added_by'))
 
     # Set moteur_id not nullable
     op.alter_column('customer', 'moteur_id', nullable=False)

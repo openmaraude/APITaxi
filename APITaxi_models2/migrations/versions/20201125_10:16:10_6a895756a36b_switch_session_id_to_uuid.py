@@ -18,14 +18,14 @@ depends_on = None
 
 
 def upgrade():
-    op.execute('create extension if not exists "uuid-ossp"')
+    op.execute(sa.text('create extension if not exists "uuid-ossp"'))
     # First just make the column nullable
     op.alter_column('hail', 'session_id',
                     existing_type=sa.VARCHAR(),
                     nullable=True,
                     existing_server_default=sa.text("''::character varying"),
                     server_default=None)
-    op.execute('update hail set session_id = null')
+    op.execute(sa.text('update hail set session_id = null'))
     # Now we can convert from varchar to uuid
     op.alter_column('hail', 'session_id',
                     type_=postgresql.UUID(),

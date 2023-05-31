@@ -22,7 +22,7 @@ depends_on = None
 def upgrade():
     op.drop_column('user', 'hail_endpoint_staging')
     op.drop_column('user', 'hail_endpoint_testing')
-    op.execute('''update "user" set hail_endpoint_production = '' where hail_endpoint_production is null''')
+    op.execute(sa.text('''update "user" set hail_endpoint_production = '' where hail_endpoint_production is null'''))
     op.alter_column('user', 'hail_endpoint_production', existing_type=sa.VARCHAR(), server_default='', nullable=False)
 
 

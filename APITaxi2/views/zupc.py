@@ -126,7 +126,7 @@ def zupc_live():
             'id': zupc.zupc_id,
             'nom': zupc.nom,
             'geojson': json.loads(zupc.geojson),
-            'stats': _get_zupc_stats('zupc_id', zupc.zupc_id, is_admin, is_operator),
+            'stats': _get_zupc_stats('zupc_id', str(zupc.zupc_id), is_admin, is_operator),
         } for zupc in zupcs]
     })
 

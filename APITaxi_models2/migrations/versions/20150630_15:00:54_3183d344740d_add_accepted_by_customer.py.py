@@ -31,8 +31,8 @@ tmp_type = sa.Enum(*new_options, name='_status')
 tcr = sa.sql.table('hail',
                            sa.Column('status', new_type, nullable=False))
 def upgrade():
-    op.execute('COMMIT')
-    op.execute("ALTER TYPE hail_status ADD value 'accepted_by_customer' after 'accepted_by_taxi';")
+    op.execute(sa.text('COMMIT'))
+    op.execute(sa.text("ALTER TYPE hail_status ADD value 'accepted_by_customer' after 'accepted_by_taxi';"))
 
 
 def downgrade():

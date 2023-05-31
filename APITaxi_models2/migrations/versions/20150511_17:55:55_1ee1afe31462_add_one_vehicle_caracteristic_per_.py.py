@@ -30,7 +30,7 @@ def upgrade():
     )
 
     map_model_id = dict()
-    for r in conn.execute('SELECT DISTINCT(model) from vehicle'):
+    for r in conn.execute(sa.text('SELECT DISTINCT(model) from vehicle')):
         ins = conn.execute(model_table.insert().values(name=r[0]))
         map_model_id[r[0]] = ins.inserted_primary_key[0]
 
@@ -42,7 +42,7 @@ def upgrade():
     )
 
     map_constructor_id = dict()
-    for r in conn.execute('SELECT DISTINCT(constructor) from vehicle'):
+    for r in conn.execute(sa.text('SELECT DISTINCT(constructor) from vehicle')):
         ins = conn.execute(constructor_table.insert().values(name=r[0]))
         map_constructor_id[r[0]] = ins.inserted_primary_key[0]
 
@@ -104,7 +104,7 @@ def upgrade():
             'horse_power', 'engine', 'horodateur', 'taximetre',
             'date_dernier_ct', 'date_validite_ct']
     print('select')
-    res = conn.execute('SELECT {} FROM vehicle'.format(",".join(args)))
+    res = conn.execute(sa.text('SELECT {} FROM vehicle'.format(",".join(args))))
     results = res.fetchall()
     vehicles_characs = [dict([(args[i], r[i]) for i in range(0, len(args))]) for r in results]
     for v in vehicles_characs:
@@ -117,34 +117,34 @@ def upgrade():
     op.bulk_insert(vehicle_descriptions, vehicles_characs)
 
     print('Create temp table')
-    conn.execute("""CREATE TEMP TABLE vehicle_temp AS 
+    conn.execute(sa.text("""CREATE TEMP TABLE vehicle_temp AS 
                   SELECT DISTINCT(licence_plate) as licence_plate, min(id) as id
-                  FROM vehicle GROUP BY licence_plate""")
+                  FROM vehicle GROUP BY licence_plate"""))
 
     print('Update ADS')
-    conn.execute("""UPDATE "ADS" set vehicle_id =
+    conn.execute(sa.text("""UPDATE "ADS" set vehicle_id =
                     (SELECT vehicle_temp.id FROM vehicle
                      JOIN vehicle_temp 
                      ON vehicle_temp.licence_plate = vehicle.licence_plate
-                     WHERE "ADS".vehicle_id = vehicle.id)""")
+                     WHERE "ADS".vehicle_id = vehicle.id)"""))
 
     print('Update taxi')
-    conn.execute("""UPDATE taxi set vehicle_id =
+    conn.execute(sa.text("""UPDATE taxi set vehicle_id =
                     (SELECT vehicle_temp.id FROM vehicle
                      JOIN vehicle_temp 
                      ON vehicle_temp.licence_plate = vehicle.licence_plate
-                     WHERE taxi.vehicle_id = vehicle.id)""")
+                     WHERE taxi.vehicle_id = vehicle.id)"""))
     print('Update vehicle_description')
-    conn.execute("""UPDATE vehicle_description set vehicle_id =
+    conn.execute(sa.text("""UPDATE vehicle_description set vehicle_id =
                     (SELECT vehicle_temp.id FROM vehicle_temp
-                     WHERE vehicle_temp.licence_plate = vehicle_description.licence_plate)""")
+                     WHERE vehicle_temp.licence_plate = vehicle_description.licence_plate)"""))
     op.drop_constraint('taxi_vehicle_id_fkey', 'taxi')
     op.drop_constraint('ADS_vehicle_id_fkey', 'ADS')
     op.drop_constraint('vehicle_description_vehicle_id_fkey', 'vehicle_description')
     op.drop_column('vehicle_description', 'licence_plate')
 
     print('Delete duplicate')
-    conn.execute('TRUNCATE vehicle')
+    conn.execute(sa.text('TRUNCATE vehicle'))
 
 
 
@@ -186,10 +186,10 @@ def upgrade():
     op.drop_column('vehicle', 'bike_accepted')
     op.drop_column('vehicle', 'model')
 
-    conn.execute("""INSERT INTO vehicle 
+    conn.execute(sa.text("""INSERT INTO vehicle 
                     (licence_plate, id)
                     SELECT licence_plate, id
-                    FROM vehicle_temp""")
+                    FROM vehicle_temp"""))
 
     op.create_foreign_key('taxi_vehicle_id_fkey', 'taxi', 'vehicle',
             ['vehicle_id'], ['id'])

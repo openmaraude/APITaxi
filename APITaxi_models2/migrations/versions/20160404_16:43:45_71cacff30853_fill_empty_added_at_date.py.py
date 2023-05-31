@@ -18,12 +18,12 @@ from datetime import datetime
 
 def upgrade():
     when = datetime(2015, 1, 1)
-    op.execute('UPDATE customer SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
-    op.execute('UPDATE hail SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
-    op.execute('UPDATE "ADS" SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
-    op.execute('UPDATE driver SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
-    op.execute('UPDATE taxi SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
-    op.execute('UPDATE vehicle_description SET added_at = \'2015-1-1\' WHERE added_at IS NULL')
+    op.execute(sa.text('UPDATE customer SET added_at = \'2015-1-1\' WHERE added_at IS NULL'))
+    op.execute(sa.text('UPDATE hail SET added_at = \'2015-1-1\' WHERE added_at IS NULL'))
+    op.execute(sa.text('UPDATE "ADS" SET added_at = \'2015-1-1\' WHERE added_at IS NULL'))
+    op.execute(sa.text('UPDATE driver SET added_at = \'2015-1-1\' WHERE added_at IS NULL'))
+    op.execute(sa.text('UPDATE taxi SET added_at = \'2015-1-1\' WHERE added_at IS NULL'))
+    op.execute(sa.text('UPDATE vehicle_description SET added_at = \'2015-1-1\' WHERE added_at IS NULL'))
 
 
 def downgrade():

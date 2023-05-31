@@ -17,14 +17,14 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.execute('''
+    op.execute(sa.text('''
         CREATE SEQUENCE ZUPC_id_seq;
         ALTER TABLE "ZUPC" ALTER COLUMN id SET DEFAULT nextval('ZUPC_id_seq');
-    ''')
+    '''))
 
 
 def downgrade():
-    op.execute('''
+    op.execute(sa.text('''
         ALTER TABLE "ZUPC" ALTER COLUMN id DROP DEFAULT;
         DROP SEQUENCE ZUPC_id_seq
-    ''')
+    '''))

@@ -24,7 +24,7 @@ user_table = sa.Table('user', sa.MetaData(),
 def upgrade():
     conn = op.get_bind()
     for u in conn.execute(user_table.select()):
-        conn.execute('UPDATE "user" set password=\'{}\' where id = {}'.format(hash_password(u[1]), u[0]))
+        conn.execute(sa.text('UPDATE "user" set password=:password where id=:id', {'password': hash_password(u[1]), 'id': u[0]}))
 
 
 def downgrade():
