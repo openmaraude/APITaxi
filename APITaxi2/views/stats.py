@@ -530,7 +530,7 @@ def stats_letaxi():
 
     def _get_taxis_connected(conurbations):
         # Get the number of taxis for each conurbation in the past months
-        #        milestone        |    id    | count 
+        #        milestone        |    id    | count
         # ------------------------+----------+-------
         #  2022-04-01 00:00:00+00 | lyon     |   XXX
         taxis_count = db.session.query(
@@ -566,35 +566,31 @@ def stats_letaxi():
         return taxis_connected.items()
 
     def _get_hails_growth(conurbations):
-        query = db.session.query(
-            Conurbation.id.label('conurbation_id'),
-            func.date_trunc('month', StatsHails.added_at).label('milestone'),
-            func.count('*').label('count'),
-        ).join(
-            Conurbation, StatsHails.insee == func.any(Conurbation.members)
-        ).filter(
-            StatsHails.added_at >= (func.now() - func.cast('2 month', INTERVAL())),
-            Conurbation.id.in_(conurbations),
-        ).group_by(
-            'conurbation_id',
-            'milestone',
-        ).order_by(
-            'conurbation_id',
-            'milestone',
-        )
-        subq = query.subquery()
-        query = db.session.query(
-            subq.c.conurbation_id,
-            subq.c.milestone,
-            func.round(
-                100.0 * (subq.c.count - func.lag(subq.c.count).over(order_by=subq.c.milestone)) / func.lag(subq.c.count).over(order_by=subq.c.milestone),
-                2
-        ))
+        def _get_hails_count(when):
+            query = db.session.query(
+                Conurbation.id.label('conurbation_id'),
+                func.count(StatsHails.id).label('count'),
+            ).join(
+                Conurbation, StatsHails.insee == func.any(Conurbation.members)
+            ).filter(
+                func.date_trunc('month', StatsHails.added_at) == func.date_trunc('month', when),
+                Conurbation.id.in_(conurbations),
+            ).group_by(
+                'conurbation_id',
+            ).order_by(
+                'conurbation_id',
+            )
+            return query
+
+        # Number of hails this past month
+        this_month = dict(_get_hails_count(func.now() - func.cast('1 month', INTERVAL())))
+        # Same question same month last year
+        last_year = dict(_get_hails_count(func.now() - func.cast('1 year 1 month', INTERVAL())))
 
         # Group by conurbation
         hails_growth = {}
-        for conurbation_id, milestone, growth in query:
-            hails_growth.setdefault(conurbation_id, []).append([milestone, growth])
+        for conurbation_id, count in this_month.items():
+            hails_growth[conurbation_id] = 100.0 * (count - last_year[conurbation_id]) / last_year[conurbation_id]
 
         return hails_growth
 

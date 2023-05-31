@@ -1114,7 +1114,7 @@ class PublicStatsSchema(Schema):
     # Key is the month
     taxis_connected = fields.List(fields.Tuple([fields.Date(), fields.Dict(keys=fields.Str(), values=fields.Float())]))
     # Key is the conurbation ID
-    hails_growth = fields.Dict(keys=fields.Str(), values=fields.List(fields.Tuple([fields.Date(), fields.Float()])))
+    hails_growth = fields.Dict(keys=fields.Str(), values=fields.Float())
 
 
 def data_schema_wrapper(WrappedSchema, with_pagination=False):
