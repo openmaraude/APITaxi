@@ -65,6 +65,12 @@ class Postgresql(testing.postgresql.Postgresql):
             return
         return super().setup()
 
+    def initialize_database(self):
+        super().initialize_database()
+        # timescaledb must be preloaded
+        with open('%s/postgresql.conf' % self.get_data_directory(), 'a') as f:
+            f.write("shared_preload_libraries = 'timescaledb'\n")
+
 
 class PostgresqlFactory(testing.postgresql.PostgresqlFactory):
     target_class = Postgresql
