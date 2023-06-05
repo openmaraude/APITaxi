@@ -29,6 +29,7 @@ DEPENDENCIES = [
     'prettytable',
     'psycopg2>=2.9.6,<3',
     'pyshp',
+    'pytz>=2023.3',
     'redis>=4.5.5,<5',
     'hiredis>=2.2.3,<2.3',
     'sentry-sdk[flask]',
