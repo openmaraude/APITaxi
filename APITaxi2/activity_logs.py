@@ -1,7 +1,8 @@
 from sqlalchemy import func
+from sqlalchemy.orm import sessionmaker
 
 from APITaxi_models2 import db
-from APITaxi_models2.activity_logs import activity_log
+from APITaxi_models2.activity_logs import ActivityLog
 
 
 RESOURCES = (
@@ -31,15 +32,16 @@ def _log_activity(resource, resource_id, action, **extra):
     assert resource in RESOURCES
     assert action in ACTIONS
 
-    with db.engine.begin() as conn:
-        stmt = activity_log.insert().values(
+    Session = sessionmaker(db.engine)
+    with Session() as session:
+        session.add(ActivityLog(
             time=func.now(),
             resource=resource,
             resource_id=resource_id,
             action=action,
             extra=extra,
-        )
-        conn.execute(stmt)
+        ))
+        session.commit()
 
 
 def log_user_login_password(user_id, **extra):

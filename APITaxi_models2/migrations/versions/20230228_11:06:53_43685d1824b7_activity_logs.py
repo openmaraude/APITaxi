@@ -19,18 +19,20 @@ depends_on = None
 
 def upgrade():
     op.create_table('activity_log',
+        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('time', sa.DateTime(), nullable=False),
         sa.Column('resource', sa.String(), nullable=False),
         sa.Column('resource_id', sa.String(), nullable=False),
         sa.Column('action', sa.String(), nullable=False),
         sa.Column('extra', postgresql.JSONB(), nullable=True),
+        sa.PrimaryKeyConstraint('id', 'time'),
     )
     op.execute("SELECT create_hypertable('activity_log', 'time')")
     op.execute("""
         ALTER TABLE activity_log SET (
             timescaledb.compress,
             timescaledb.compress_segmentby = 'resource, resource_id',
-            timescaledb.compress_orderby = 'time DESC'
+            timescaledb.compress_orderby = 'id,time DESC'
         )
     """)
     op.execute("SELECT add_compression_policy('activity_log', INTERVAL '7 days')")
