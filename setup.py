@@ -38,6 +38,7 @@ DEPENDENCIES = [
     'SQLAlchemy>=2.0,<2.1',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
+    'tzdata',
     'Werkzeug>=2.3,<2.4',
     'watchdog[watchmedo]>=3.0.0',
 ]
