@@ -85,7 +85,7 @@ def zupc_list():
 
     ret = schema.dump({
         'data': [
-            (zupc, _get_zupc_stats('zupc_id', zupc.zupc_id, is_admin, is_operator))
+            (zupc, _get_zupc_stats('zupc_id', str(zupc.zupc_id), is_admin, is_operator))
             for zupc in zupcs
         ]
     })
