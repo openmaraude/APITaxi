@@ -32,7 +32,7 @@ def upgrade():
         ALTER TABLE activity_log SET (
             timescaledb.compress,
             timescaledb.compress_segmentby = 'resource, resource_id',
-            timescaledb.compress_orderby = 'id,time DESC'
+            timescaledb.compress_orderby = 'id DESC,time DESC'
         )
     """)
     op.execute("SELECT add_compression_policy('activity_log', INTERVAL '7 days')")

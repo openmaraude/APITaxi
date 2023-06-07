@@ -46,7 +46,7 @@ def activity_logs_list():
     if errors:
         return validators.make_error_json_response(errors)
 
-    query = ActivityLog.query.order_by(ActivityLog.time.desc())
+    query = ActivityLog.query.order_by(ActivityLog.id.desc(), ActivityLog.time.desc())
     if querystring.get('resource'):
         query = query.filter_by(resource=querystring['resource'][0])
     if querystring.get('resource_id'):
