@@ -46,6 +46,14 @@ TAXI_MAX_RADIUS = 500
 NEUTRAL_OPERATOR = "chauffeur professionnel"
 
 
+def hide_phone_numbers(ret):
+    if ret['status'] != 'accepted_by_customer':
+        is_admin = current_user.has_role('admin') if current_user else None
+        if not is_admin:
+            ret['taxi_phone_number'] = "0600000000"
+            ret['customer_phone_number'] = "0600000000"
+
+
 class PageQueryStringMixin:
     """Used to accept a querystring param ?p, and make sure it is specified
     only once.
@@ -870,9 +878,7 @@ class HailSchema(Schema):
             ret['taxi']['driver']['last_name'] = ""
 
         # The phone number is only needed when the two parties reach other
-        if hail.status != 'accepted_by_customer':
-            ret['taxi_phone_number'] = "0600000000"
-            ret['customer_phone_number'] = "0600000000"
+        hide_phone_numbers(ret)
 
         # Consider taxis on a neutral basis for clients, but keep the information for the admins and the operator itself
         # which includes celery tasks where there is no current user when we send the hail request to the callback endpoint
@@ -953,6 +959,9 @@ class HailBySessionSchema(Schema):
 
     def dump(self, obj, *args, **kwargs):
         ret = super().dump(obj, *args, **kwargs)
+
+        # The phone number is only needed when the two parties reach other
+        hide_phone_numbers(ret)
 
         # Consider taxis on a neutral basis for clients
         # but keep the information for the admins and the hail operator itself
