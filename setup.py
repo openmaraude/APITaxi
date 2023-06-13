@@ -27,6 +27,8 @@ DEPENDENCIES = [
     'geopy',
     'parse',
     'prettytable',
+    # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
+    # Check for a transparent shapely integration
     'psycopg2>=2.9.6,<3',
     'pyshp',
     'pytz>=2023.3',
@@ -35,7 +37,7 @@ DEPENDENCIES = [
     'sentry-sdk[flask]',
     'Shapely>=2.0.1,<2.1',
     'shortuuid',
-    'SQLAlchemy>=2.0,<2.1',
+    'SQLAlchemy>=2.0.16,<2.1',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
     'tzdata',

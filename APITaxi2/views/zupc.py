@@ -59,7 +59,7 @@ def zupc_list():
     schema = schemas.DataZUPCSchema()
 
     towns = Town.query.filter(
-        func.ST_Intersects(Town.shape, 'Point({} {})'.format(args['lon'], args['lat'])),
+        func.ST_Intersects(Town.shape, 'POINT({lon} {lat})'.format(**args)),
     ).all()
 
     if not towns:

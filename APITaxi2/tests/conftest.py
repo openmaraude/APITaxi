@@ -39,7 +39,7 @@ TESTING = True
 CONSOLE_URL = 'http://console'
 NEUTRAL_OPERATOR = True
 ''' % {
-        'database': postgresql.url(),
+        'database': postgresql.sqlalchemy_url(),
         'redis': 'unix://%s' % redis_server,
     })
     os.environ['APITAXI_CONFIG_FILE'] = settings_file.as_posix()

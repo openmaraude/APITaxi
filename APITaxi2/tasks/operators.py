@@ -30,7 +30,7 @@ def handle_hail_timeout(hail_id, operateur_id,
         Taxi.vehicle_id == Vehicle.id,
         VehicleDescription.vehicle_id == Vehicle.id,
         Hail.id == hail_id,
-        VehicleDescription.added_by_id == operateur_id
+        VehicleDescription.added_by_id == int(operateur_id)
     ).one_or_none()
     if not res:
         current_app.logger.warning(

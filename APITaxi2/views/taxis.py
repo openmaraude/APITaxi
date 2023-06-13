@@ -419,7 +419,7 @@ def taxis_search():
 
     # First ask in what town the customer is
     towns = Town.query.filter(
-        func.ST_Intersects(Town.shape, 'Point({} {})'.format(params['lon'], params['lat'])),
+        func.ST_Intersects(Town.shape, 'POINT({lon} {lat})'.format(**params)),
     ).all()  # Shouldn't happen but in case geometries overlap on OSM
     debug_ctx.log(f'Towns matching lon={params["lon"]} lat={params["lat"]}: {towns}')
 

@@ -22,7 +22,7 @@ import APITaxi_models2
 def _run_postgresql_migrations(psql):
     """Connect to PostgreSQL and run migrations from APITaxi_models2."""
     # Create required extension on database.
-    with psycopg2.connect(**psql.dsn()) as conn:
+    with psycopg2.connect(psql.url()) as conn:
         with conn.cursor() as cursor:
             cursor.execute('CREATE EXTENSION IF NOT EXISTS postgis')
             cursor.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto')
@@ -36,7 +36,7 @@ def _run_postgresql_migrations(psql):
 
     # Build Alembic configuration to run migrations
     alembic_cfg = alembic.config.Config()
-    alembic_cfg.set_main_option('sqlalchemy.url', psql.url())
+    alembic_cfg.set_main_option('sqlalchemy.url', psql.sqlalchemy_url())
     alembic_cfg.set_main_option('script_location', migrations_dir)
 
     # APITaxi_models2/migrations/env.py loads APITAXI_CONFIG_FILE to get the
@@ -70,6 +70,10 @@ class Postgresql(testing.postgresql.Postgresql):
         # timescaledb must be preloaded
         with open('%s/postgresql.conf' % self.get_data_directory(), 'a') as f:
             f.write("shared_preload_libraries = 'timescaledb'\n")
+
+    def sqlalchemy_url(self):
+        """Make sure to use the psycopg2 or psycopg 3 driver"""
+        return self.url().replace('postgresql://', 'postgresql+psycopg2://')
 
 
 class PostgresqlFactory(testing.postgresql.PostgresqlFactory):
