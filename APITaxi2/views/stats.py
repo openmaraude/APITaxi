@@ -167,9 +167,13 @@ def stats_taxis():
         }
 
     def get_realtime_connected_taxis():
-        query = stats_minute_insee.query
+        query = db.session.query(
+            func.sum(stats_minute_insee.value),
+        ).filter(
+            stats_minute_insee.time > func.now() - interval('1 minute')
+        )
         query = apply_filters_to_stats_hour(query, *filters, model=stats_minute_insee)
-        return query.count()
+        return query.scalar() or 0
 
     def get_monthly_hails_per_taxi():
         counts = db.session.query(
