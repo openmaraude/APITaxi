@@ -20,6 +20,10 @@ blueprint = Blueprint('stats', __name__)
 threshold = datetime.datetime(2022, 1, 1)
 
 
+def interval(string):
+    return func.cast(string, INTERVAL())
+
+
 def get_filters():
     departements = request.args.get('departements')
     if departements:
@@ -38,14 +42,6 @@ def get_filters():
         manager = int(manager)
 
     return departements, insee_codes, groups, manager
-
-
-def get_intervals():
-    return [
-        func.now() - func.cast('3 months', INTERVAL()),
-        func.now() - func.cast('6 months', INTERVAL()),
-        func.now() - func.cast('12 months', INTERVAL()),
-    ]
 
 
 def get_last_three_months_interval():
@@ -114,25 +110,61 @@ def apply_filters_to_hails(query, departements, insee_codes, groups, manager):
 @auth.login_required(role=['admin'])
 def stats_taxis():
     filters = get_filters()
-    three_months_ago, six_months_ago, twelve_months_ago = get_intervals()
+    milestone_series = func.generate_series(
+        func.now() - interval('1 year'),
+        func.now(),
+        interval('3 month'),
+    ).alias('milestone')
 
-    def get_registered_taxis(since=None, until=None):
-        query = Taxi.query
+    def get_registered_taxis(since=None):
+        query = db.session.query(
+            func.count(Taxi.id),
+        ).select_from(
+            milestone_series,
+        ).join(
+            Taxi, Taxi.added_at < column('milestone'),
+        ).group_by(
+            column('milestone'),
+        ).order_by(
+            column('milestone').desc(),
+        )
         if since is not None:
             query = query.filter(Taxi.added_at >= since)
-        if until is not None:
-            query = query.filter(Taxi.added_at < until)
         query = apply_filters_to_taxis(query, *filters)
-        return query.count()
 
-    def get_connected_taxis(since=None, until=None):
-        query = Taxi.query.filter(Taxi.last_update_at.isnot(None))
+        today, three, six, _ignored, twelve = [int(count) for count, in query]
+
+        return {
+            'today': today,
+            'three_months_ago': three,
+            'six_months_ago': six,
+            'twelve_months_ago': twelve,
+        }
+
+    def get_connected_taxis(since=None):
+        query = db.session.query(
+            func.count(Taxi.id),
+        ).select_from(
+            milestone_series,
+        ).join(
+            Taxi, Taxi.last_update_at < column('milestone')
+        ).group_by(
+            column('milestone'),
+        ).order_by(
+            column('milestone').desc(),
+        )
         if since is not None:
             query = query.filter(Taxi.last_update_at >= since)
-        if until is not None:
-            query = query.filter(Taxi.last_update_at < until)
         query = apply_filters_to_taxis(query, *filters)
-        return query.count()
+
+        today, three, six, _ignored, twelve = [int(count) for count, in query]
+
+        return {
+            'today': today,
+            'three_months_ago': three,
+            'six_months_ago': six,
+            'twelve_months_ago': twelve,
+        }
 
     def get_realtime_connected_taxis():
         query = stats_minute_insee.query
@@ -192,30 +224,10 @@ def stats_taxis():
 
     schema = schemas.DataStatsTaxisSchema()
     return schema.dump({'data': [{
-        'registered_taxis': {
-            'today': get_registered_taxis(),
-            'three_months_ago': get_registered_taxis(until=three_months_ago),
-            'six_months_ago': get_registered_taxis(until=six_months_ago),
-            'twelve_months_ago': get_registered_taxis(until=twelve_months_ago),
-        },
-        'connected_taxis': {
-            'today': get_connected_taxis(),
-            'three_months_ago': get_connected_taxis(until=three_months_ago),
-            'six_months_ago': get_connected_taxis(until=six_months_ago),
-            'twelve_months_ago': get_connected_taxis(until=twelve_months_ago),
-        },
-        'registered_taxis_since_threshold': {
-            'today': get_registered_taxis(since=threshold),
-            'three_months_ago': get_registered_taxis(since=threshold, until=three_months_ago),
-            'six_months_ago': get_registered_taxis(since=threshold, until=six_months_ago),
-            'twelve_months_ago': get_registered_taxis(since=threshold, until=twelve_months_ago),
-        },
-        'connected_taxis_since_threshold': {
-            'today': get_connected_taxis(since=threshold),
-            'three_months_ago': get_connected_taxis(since=threshold, until=three_months_ago),
-            'six_months_ago': get_connected_taxis(since=threshold, until=six_months_ago),
-            'twelve_months_ago': get_connected_taxis(since=threshold, until=twelve_months_ago),
-        },
+        'registered_taxis': get_registered_taxis(),
+        'connected_taxis': get_connected_taxis(),
+        'registered_taxis_since_threshold': get_registered_taxis(since=threshold),
+        'connected_taxis_since_threshold': get_connected_taxis(since=threshold),
         'connected_taxis_now': get_realtime_connected_taxis(),
         'monthly_hails_per_taxi': get_monthly_hails_per_taxi(),
         'average_radius': get_average_radius(),
@@ -228,17 +240,30 @@ def stats_taxis():
 @auth.login_required(role=['admin'])
 def stats_hails():
     filters = get_filters()
-    three_months_ago, six_months_ago, twelve_months_ago = get_intervals()
+
+    milestone_series = func.generate_series(
+        func.now() - interval('1 year'),
+        func.now(),
+        interval('3 month'),
+    ).alias('milestone')
+
     last_three_months = get_last_three_months_interval()
     current_year = get_current_year_interval()
     last_year = get_last_year_interval()
 
-    def get_hails_received(since, until=None, status=None):
-        query = StatsHails.query
-        if since is not None:
-            query = query.filter(StatsHails.added_at >= since)
-        if until is not None:
-            query = query.filter(StatsHails.added_at < until)
+    def get_hails_received(since, status=None):
+        query = db.session.query(
+            func.count(StatsHails.id),
+        ).select_from(
+            milestone_series,
+        ).join(
+            StatsHails, StatsHails.added_at < column('milestone'),
+        ).group_by(
+            column('milestone'),
+        ).order_by(
+            column('milestone').desc(),
+        )
+        query = query.filter(StatsHails.added_at >= since)
         if status is not None:
             if status == 'timeout_taxi':
                 query = query.filter(StatsHails.status == 'timeout_taxi', (StatsHails.timeout_taxi - StatsHails.received) < func.Cast('1 hour', INTERVAL()))
@@ -247,7 +272,21 @@ def stats_hails():
             else:
                 query = query.filter(StatsHails.status == status)
         query = apply_filters_to_hails(query, *filters)
-        return query.count()
+
+        # Might be zero to five length
+        result = list(query)
+        today = int(result.pop(0)[0]) if result else 0
+        three = int(result.pop(0)[0]) if result else 0
+        six = int(result.pop(0)[0]) if result else 0
+        _ignored = int(result.pop(0)[0]) if result else 0
+        twelve = int(result.pop(0)[0]) if result else 0
+
+        return {
+            'today': today,
+            'three_months_ago': three,
+            'six_months_ago': six,
+            'twelve_months_ago': twelve,
+        }
 
     def get_hails_average_per(interval, since, until, status=None):
         counts = db.session.query(
@@ -314,48 +353,15 @@ def stats_hails():
 
     schema = schemas.DataStatsHailsSchema()
     return schema.dump({'data': [{
-        'hails_received': {
-            'today': get_hails_received(since=threshold),
-            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago),
-            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago),
-            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago),
-        },
-        'hails_finished': {
-            'today': get_hails_received(since=threshold, status='finished'),
-            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='finished'),
-            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='finished'),
-            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='finished'),
-        },
-        'hails_declined_by_taxi': {
-            'today': get_hails_received(since=threshold, status='declined_by_taxi'),
-            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='declined_by_taxi'),
-            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='declined_by_taxi'),
-            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='declined_by_taxi'),
-        },
-        'hails_declined_by_customer': {
-            'today': get_hails_received(since=threshold, status='declined_by_customer'),
-            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='declined_by_customer'),
-            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='declined_by_customer'),
-            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='declined_by_customer'),
-        },
-        'hails_timeout_taxi': {  # When the taxi received but didn't reply
-            'today': get_hails_received(since=threshold, status='timeout_taxi'),
-            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='timeout_taxi'),
-            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='timeout_taxi'),
-            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='timeout_taxi'),
-        },
-        'hails_timeout_ride': {  # When the ride happened but didn't close
-            'today': get_hails_received(since=threshold, status='timeout_ride'),
-            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='timeout_ride'),
-            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='timeout_ride'),
-            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='timeout_ride'),
-        },
-        'hails_timeout_customer': {
-            'today': get_hails_received(since=threshold, status='timeout_customer'),
-            'three_months_ago': get_hails_received(since=threshold, until=three_months_ago, status='timeout_customer'),
-            'six_months_ago': get_hails_received(since=threshold, until=six_months_ago, status='timeout_customer'),
-            'twelve_months_ago': get_hails_received(since=threshold, until=twelve_months_ago, status='timeout_customer'),
-        },
+        'hails_received': get_hails_received(since=threshold),
+        'hails_finished': get_hails_received(since=threshold, status='finished'),
+        'hails_declined_by_taxi': get_hails_received(since=threshold, status='declined_by_taxi'),
+        'hails_declined_by_customer': get_hails_received(since=threshold, status='declined_by_customer'),
+        # When the taxi received but didn't reply
+        'hails_timeout_taxi': get_hails_received(since=threshold, status='timeout_taxi'),
+        # When the ride happened but didn't close
+        'hails_timeout_ride': get_hails_received(since=threshold, status='timeout_ride'),
+        'hails_timeout_customer': get_hails_received(since=threshold, status='timeout_customer'),
         'hails_total': {
             'current_year': get_hails_total(*current_year),
             'last_year': get_hails_total(*last_year),
