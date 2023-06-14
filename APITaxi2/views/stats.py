@@ -132,7 +132,10 @@ def stats_taxis():
             query = query.filter(Taxi.added_at >= since)
         query = apply_filters_to_taxis(query, *filters)
 
-        today, three, six, _ignored, twelve = [int(count) for count, in query]
+        result = list(query)
+        # Might be zero to five length
+        result.extend([(0,)] * (5 - len(result)))
+        today, three, six, _ignored, twelve = [int(count) for count, in result]
 
         return {
             'today': today,
@@ -157,7 +160,10 @@ def stats_taxis():
             query = query.filter(Taxi.last_update_at >= since)
         query = apply_filters_to_taxis(query, *filters)
 
-        today, three, six, _ignored, twelve = [int(count) for count, in query]
+        result = list(query)
+        # Might be zero to five length
+        result.extend([(0,)] * (5 - len(result)))
+        today, three, six, _ignored, twelve = [int(count) for count, in result]
 
         return {
             'today': today,
@@ -277,13 +283,10 @@ def stats_hails():
                 query = query.filter(StatsHails.status == status)
         query = apply_filters_to_hails(query, *filters)
 
-        # Might be zero to five length
         result = list(query)
-        today = int(result.pop(0)[0]) if result else 0
-        three = int(result.pop(0)[0]) if result else 0
-        six = int(result.pop(0)[0]) if result else 0
-        _ignored = int(result.pop(0)[0]) if result else 0
-        twelve = int(result.pop(0)[0]) if result else 0
+        # Might be zero to five length
+        result.extend([(0,)] * (5 - len(result)))
+        today, three, six, _ignored, twelve = [int(count) for count, in result]
 
         return {
             'today': today,
