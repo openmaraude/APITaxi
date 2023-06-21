@@ -17,5 +17,3 @@ from . import create_app
 # Create flask application and configure Celery
 flask_app = create_app()
 celery_app = flask_app.extensions['celery']
-# TODO remove
-celery = celery_app
