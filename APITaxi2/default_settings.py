@@ -1,6 +1,7 @@
 import os
 
 from celery.schedules import crontab
+from flask_security.utils import uia_username_mapper
 
 
 # SQLALCHEMY_ECHO = True
@@ -80,6 +81,12 @@ CELERY_BEAT_SCHEDULE = {
 SQLALCHEMY_ENGINE_OPTIONS = {
     'pool_pre_ping': True
 }
+
+
+# Flask-Security-Too introduced email validation, but we use the email field as a username
+SECURITY_USER_IDENTITY_ATTRIBUTES = [
+    {"email": {"mapper": uia_username_mapper, "case_insensitive": True}}
+]
 
 
 def parse_env_bool(value):
