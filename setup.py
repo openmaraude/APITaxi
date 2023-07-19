@@ -25,6 +25,7 @@ DEPENDENCIES = [
     'GeoAlchemy2>=0.14,<0.15',
     'Geohash2',
     'geopy',
+    'jsonschema>=4.17.3,<4.18',
     'parse',
     'prettytable',
     # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
