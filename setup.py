@@ -50,7 +50,7 @@ TEST_DEPENDENCIES = [
     'pytest-celery',
     'pytest-factoryboy',
     'testing.postgresql',
-    'prance',
+    'prance>=0.21.8.0,<0.22',
 ]
 
 
