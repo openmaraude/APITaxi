@@ -8,7 +8,7 @@ PACKAGE = 'APITaxi'
 DEPENDENCIES = [
     'alembic>=1.11.1,<1.12',
     'aniso8601',
-    'apispec[validation,marshmallow]>=6.3.0,<6.4',
+    'apispec[validation,marshmallow]', #>=6.3.0,<6.4',
     'apispec-webframeworks',
     'bcrypt',
     'celery>=5.3.1',
@@ -50,6 +50,7 @@ TEST_DEPENDENCIES = [
     'pytest-celery',
     'pytest-factoryboy',
     'testing.postgresql',
+    'prance==23.06.21.0',
 ]
 
 
