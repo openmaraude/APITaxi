@@ -242,6 +242,7 @@ class HailFactory(BaseFactory):
     id = factory.Sequence(lambda n: 'HAIL_%d' % n)
     creation_datetime = factory.SelfAttribute('added_at')
     taxi = factory.SubFactory(TaxiFactory, added_by=factory.SelfAttribute('..operateur'))
+    fake_taxi_id = factory.Sequence(lambda n: 'FAKE_%d' % n)
     status = 'received'
     customer = factory.SubFactory(
         CustomerFactory,

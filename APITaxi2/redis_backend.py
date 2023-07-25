@@ -206,3 +206,17 @@ def log_hail(hail_id, http_method, request_payload, hail_initial_status,
 
     current_app.redis.zadd(key, {json.dumps(data): time.time()})
     current_app.redis.expire(key, timedelta(weeks=+6))
+
+
+def set_fake_taxi_ids(current_user, fake_taxi_ids):
+    current_app.redis.hset(f'fake_taxi_id:{current_user.email}', mapping=fake_taxi_ids)
+    current_app.redis.expire(f'fake_taxi_id:{current_user.email}', timedelta(hours=1))
+
+
+def get_real_taxi_id(current_user, fake_taxi_id):
+    # Redis-py returns bytes, which is impractical
+    real_taxi_id = current_app.redis.hget(f'fake_taxi_id:{current_user.email}', fake_taxi_id)
+    if real_taxi_id:
+        return real_taxi_id.decode()
+    # Assume already real taxi ID (e.g. simulator)
+    return fake_taxi_id

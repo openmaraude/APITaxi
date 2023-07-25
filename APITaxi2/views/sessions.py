@@ -51,6 +51,7 @@ def hails_sessions():
                     'taxi_phone_number', Hail.taxi_phone_number,
                     'initial_taxi_lat', Hail.initial_taxi_lat,
                     'initial_taxi_lon', Hail.initial_taxi_lon,
+                    'fake_taxi_id', Hail.fake_taxi_id,
                     'moteur', func.JSON_BUILD_OBJECT(
                         'id', moteur.id,
                         'email', moteur.email,

@@ -3,7 +3,7 @@ import json
 import time
 import uuid
 
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import aliased, joinedload
@@ -711,6 +711,11 @@ def hails_create():
 
     args = params['data'][0]
 
+    if current_app.config.get('FAKE_TAXI_ID'):
+        real_taxi_id = redis_backend.get_real_taxi_id(current_user, args['taxi_id'])
+    else:
+        real_taxi_id = args['taxi_id']
+
     # Get taxi registered with the operateur, or return HTTP/404
     res = db.session.query(
         Taxi,
@@ -729,7 +734,7 @@ def hails_create():
         # taxi IDs are already unique, but vehicle descriptions are not for a given vehicle ID
         # This is all caused by our insanely complex vehicle model
         VehicleDescription.added_by_id == Taxi.added_by_id,
-        Taxi.id == args['taxi_id'],
+        Taxi.id == real_taxi_id,
     ).one_or_none()
     if not res:
         return make_error_json_response({
@@ -826,6 +831,7 @@ def hails_create():
         customer_phone_number=args['customer_phone_number'],
         initial_taxi_lon=taxi_position.lon,
         initial_taxi_lat=taxi_position.lat,
+        fake_taxi_id=args['taxi_id'],
         session_id=session_id,
 
         added_by=current_user,

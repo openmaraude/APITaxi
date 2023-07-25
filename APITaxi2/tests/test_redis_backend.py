@@ -85,3 +85,15 @@ def test_log_hail(app, moteur):
         response_status_code=200, hail_final_status='failure'
     )
     assert len(app.redis.zrange('hail:hail_id', 0, -1, withscores=True)) == 1
+
+
+def test_fake_taxi_ids(app, moteur):
+    fake_taxi_ids = {'123': 'abc', '456': 'def'}
+    redis_backend.set_fake_taxi_ids(moteur.user, fake_taxi_ids)
+    assert redis_backend.get_real_taxi_id(moteur.user, '123') == 'abc'
+    try:
+        redis_backend.get_real_taxi_id(moteur.user, 'abc')
+    except KeyError:
+        pass
+    else:
+        assert False, "KeyError not raised"

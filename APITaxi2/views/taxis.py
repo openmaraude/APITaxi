@@ -2,7 +2,7 @@ import collections
 from datetime import datetime, timedelta
 from functools import reduce
 
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
@@ -549,6 +549,16 @@ def taxis_search():
         data,
         key=lambda o: o[2].distance
     )
+
+    # Replace real taxi ID by a temporary ID
+    if current_app.config.get('FAKE_TAXI_ID'):
+        fake_taxi_ids = {}
+        for taxi, _, _ in data:
+            taxi.fake_taxi_id = get_short_uuid()
+            fake_taxi_ids[taxi.fake_taxi_id] = taxi.id
+        if fake_taxi_ids:
+            # Use the current user as a key, blindly overwrite on subsequent searches
+            redis_backend.set_fake_taxi_ids(current_user, fake_taxi_ids)
 
     return debug_ctx.add_to_response(schema.dump({'data': data}))
 

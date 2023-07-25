@@ -5,7 +5,7 @@ import uuid
 
 import sqlalchemy
 
-from APITaxi2 import tasks
+from APITaxi2 import tasks, utils
 from APITaxi_models2 import Hail, Taxi, Vehicle, VehicleDescription
 from APITaxi_models2.unittest.factories import (
     CustomerFactory,
@@ -492,6 +492,45 @@ class TestGetHailList:
 
 
 class TestCreateHail:
+
+    @staticmethod
+    def _create_hail(app, operateur, moteur, customer_id='some user', session_id=None):
+        taxi = TaxiFactory(added_by=operateur.user)
+        taxi_id = taxi.id
+
+        # Simulate search before hailing
+        if app.config.get('FAKE_TAXI_ID'):
+            taxi_id = utils.get_short_uuid()
+            app.redis.hset(
+                f'fake_taxi_id:{moteur.user.email}',
+                mapping={taxi_id: taxi.id}
+            )
+
+        # Report recent location in redis
+        app.redis.hset(
+            'taxi:%s' % taxi.id,
+            operateur.user.email,
+            '%s 48.84 2.35 free phone 2' % int(time.time())
+        )
+
+        with mock.patch.object(tasks.send_request_operator, 'apply_async') as mocked:
+            resp = moteur.client.post('/hails', json={
+                'data': [{
+                    'customer_address': '23 avenue de Ségur, 75007 Paris',
+                    'customer_id': customer_id,
+                    'customer_lon': 2.3098,
+                    'customer_lat': 48.851,
+                    'customer_phone_number': '+336868686',
+                    'taxi_id': taxi_id,
+                    'operateur': "chauffeur professionnel",
+                    'session_id': session_id,
+                }]
+            })
+            if resp.status_code == '201':
+                assert mocked.call_count == 1
+
+        return resp
+
     def test_invalid(self, anonymous, operateur):
         # Login required
         resp = anonymous.client.post('/hails', json={})
@@ -564,28 +603,8 @@ class TestCreateHail:
         assert resp.json['errors']['data']['0']['taxi_id'] == ['Taxi is not free.']
 
     def test_ok(self, app, moteur, operateur):
-        taxi = TaxiFactory(added_by=operateur.user)
 
-        # Report recent location in redis
-        app.redis.hset(
-            'taxi:%s' % taxi.id,
-            operateur.user.email,
-            '%s 48.84 2.35 free phone 2' % int(time.time())
-        )
-
-        with mock.patch.object(tasks.send_request_operator, 'apply_async') as mocked:
-            resp = moteur.client.post('/hails', json={
-                'data': [{
-                    'customer_address': '23 avenue de Ségur, 75007 Paris',
-                    'customer_id': 'Lucky Luke',
-                    'customer_lon': 2.3098,
-                    'customer_lat': 48.851,
-                    'customer_phone_number': '+336868686',
-                    'taxi_id': taxi.id,
-                    'operateur': "chauffeur professionnel",
-                }]
-            })
-            assert mocked.call_count == 1
+        resp = self._create_hail(app, operateur, moteur)
 
         assert resp.status_code == 201
         assert 'id' in resp.json['data'][0]
@@ -604,30 +623,6 @@ class TestCreateHail:
         assert hail.transition_log[-1]['user'] == moteur.user.id
 
     def test_automatic_session_id(self, app, moteur, operateur):
-
-        def _create_hail(customer_id, session_id=None):
-            taxi = TaxiFactory(added_by=operateur.user)
-            # Report recent location in redis
-            app.redis.hset(
-                'taxi:%s' % taxi.id,
-                operateur.user.email,
-                '%s 48.84 2.35 free phone 2' % int(time.time())
-            )
-
-            with mock.patch.object(tasks.send_request_operator, 'apply_async'):
-                return moteur.client.post('/hails', json={
-                    'data': [{
-                        'customer_address': '23 avenue de Ségur, 75007 Paris',
-                        'customer_id': customer_id,
-                        'customer_lon': 2.3098,
-                        'customer_lat': 48.851,
-                        'customer_phone_number': '+336868686',
-                        'taxi_id': taxi.id,
-                        'operateur': "chauffeur professionnel",
-                        'session_id': session_id,
-                    }]
-                })
-
         hail = HailFactory(
             operateur=operateur.user, added_by=moteur.user,
             last_status_change=datetime.now(),
@@ -635,44 +630,26 @@ class TestCreateHail:
         )
 
         # Another hail from the same user
-        resp = _create_hail(hail.customer_id)
+        resp = self._create_hail(app, operateur, moteur, hail.customer_id)
         assert resp.status_code == 201, resp.json
         # Identified as the same session from the same user
         assert resp.json['data'][0]['session_id'] == str(hail.session_id)
 
         # Another hail with the same session ID
-        resp = _create_hail(hail.customer_id, session_id=hail.session_id)
+        resp = self._create_hail(app, operateur, moteur, hail.customer_id, hail.session_id)
         assert resp.status_code == 201, resp.json
         assert resp.json['data'][0]['session_id'] == str(hail.session_id)
 
         # Another hail from a different user of the same moteur
-        resp = _create_hail('other_user')
+        resp = self._create_hail(app, operateur, moteur, 'other_user')
         assert resp.status_code == 201, resp.json
         assert resp.json['data'][0]['session_id'] != str(hail.session_id)
 
     def test_unknown_session_id(self, app, moteur, operateur):
         """Receiving a session ID not coming from us."""
-        taxi = TaxiFactory(added_by=operateur.user)
 
-        # Report recent location in redis
-        app.redis.hset(
-            'taxi:%s' % taxi.id,
-            operateur.user.email,
-            '%s 48.84 2.35 free phone 2' % int(time.time())
-        )
-
-        resp = moteur.client.post('/hails', json={
-            'data': [{
-                'customer_address': '23 avenue de Ségur, 75007 Paris',
-                'customer_id': 'other_user',
-                'customer_lon': 2.3098,
-                'customer_lat': 48.851,
-                'customer_phone_number': '+336868686',
-                'taxi_id': taxi.id,
-                'operateur': "chauffeur professionnel",
-                'session_id': uuid.uuid4(),
-            }]
-        })
+        # No prior customer hail with that session ID
+        resp = self._create_hail(app, operateur, moteur, 'other_user', uuid.uuid4())
 
         assert resp.status_code == 400, resp.json
         assert 'session_id' in resp.json['errors']['data']['0']
@@ -684,27 +661,9 @@ class TestCreateHail:
             last_status_change=datetime.now(),
             session_id=uuid.uuid4()
         )
-        taxi = TaxiFactory(added_by=operateur.user)
 
-        # Report recent location in redis
-        app.redis.hset(
-            'taxi:%s' % taxi.id,
-            operateur.user.email,
-            '%s 48.84 2.35 free phone 2' % int(time.time())
-        )
-
-        resp = moteur.client.post('/hails', json={
-            'data': [{
-                'customer_address': '23 avenue de Ségur, 75007 Paris',
-                'customer_id': 'other_user',
-                'customer_lon': 2.3098,
-                'customer_lat': 48.851,
-                'customer_phone_number': '+336868686',
-                'taxi_id': taxi.id,
-                'operateur': "chauffeur professionnel",
-                'session_id': hail.session_id,  # Reuse someone's session ID
-            }]
-        })
+        # Reuse someone's session ID
+        resp = self._create_hail(app, operateur, moteur, 'other_user', hail.session_id)
 
         assert resp.status_code == 400, resp.json
         assert 'session_id' in resp.json['errors']['data']['0']
@@ -718,28 +677,9 @@ class TestCreateHail:
             last_status_change=datetime.now() - timedelta(hours=1),
             session_id=session_id
         )
-        taxi = TaxiFactory(added_by=operateur.user)
 
-        # Report recent location in redis
-        app.redis.hset(
-            'taxi:%s' % taxi.id,
-            operateur.user.email,
-            '%s 48.84 2.35 free phone 2' % int(time.time())
-        )
-
-        with mock.patch.object(tasks.send_request_operator, 'apply_async'):
-            resp = moteur.client.post('/hails', json={
-                'data': [{
-                    'customer_address': '23 avenue de Ségur, 75007 Paris',
-                    'customer_id': hail.customer_id,
-                    'customer_lon': 2.3098,
-                    'customer_lat': 48.851,
-                    'customer_phone_number': '+336868686',
-                    'taxi_id': taxi.id,
-                    'operateur': "chauffeur professionnel",
-                    'session_id': hail.session_id,  # Reuse this customer's session ID
-                }]
-            })
+        # Reuse this customer's session ID
+        resp = self._create_hail(app, operateur, moteur, hail.customer_id, hail.session_id)
 
         # Session ID reused anyway as we trust the search engine
         assert resp.status_code == 201, resp.json
@@ -753,28 +693,19 @@ class TestCreateHail:
             last_status_change=datetime.now() - timedelta(hours=1),
             session_id=session_id,
         )
-        taxi = TaxiFactory(added_by=operateur.user)
 
-        # Report recent location in redis
-        app.redis.hset(
-            'taxi:%s' % taxi.id,
-            operateur.user.email,
-            '%s 48.84 2.35 free phone 2' % int(time.time())
-        )
-
-        with mock.patch.object(tasks.send_request_operator, 'apply_async'):
-            resp = moteur.client.post('/hails', json={
-                'data': [{
-                    'customer_address': '23 avenue de Ségur, 75007 Paris',
-                    'customer_id': hail.customer_id,
-                    'customer_lon': 2.3098,
-                    'customer_lat': 48.851,
-                    'customer_phone_number': '+336868686',
-                    'taxi_id': taxi.id,
-                    'operateur': "chauffeur professionnel",
-                    # no session_id
-                }]
-            })
+        # Let the API generate another session ID after some time
+        resp = self._create_hail(app, operateur, moteur, hail.customer_id)
 
         assert resp.status_code == 201, resp.json
         assert resp.json['data'][0]['session_id'] != str(session_id)
+
+    def test_fake_taxi_id(self, app, moteur, operateur):
+        app.config['FAKE_TAXI_ID'] = True
+        resp = self._create_hail(app, operateur, moteur)
+        assert resp.status_code == 201
+        hail = Hail.query.one()
+        # Real taxi ID not exposed
+        assert resp.json['data'][0]['taxi']['id'] != hail.taxi_id
+        # Fake taxi ID exposed instead
+        assert resp.json['data'][0]['taxi']['id'] == hail.fake_taxi_id

@@ -135,6 +135,7 @@ for _env_var, _alt_name, _env_type in (
     ('CONSOLE_URL', None, str),
     ('SWAGGER_URL', None, str),
     ('NEUTRAL_OPERATOR', None, parse_env_bool),
+    ('FAKE_TAXI_ID', None, parse_env_bool),
 ):
     _val = os.getenv(_alt_name) if _alt_name else os.getenv(_env_var)
     if not _val:

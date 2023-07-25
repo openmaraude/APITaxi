@@ -87,6 +87,8 @@ class Hail(HistoryMixin, db.Model):
     rating_ride = db.Column(db.Integer)
     initial_taxi_lat = db.Column(db.Float)
     initial_taxi_lon = db.Column(db.Float)
+    # The ID used for the taxi at search time
+    fake_taxi_id = db.Column(db.String, nullable=False)
 
     session_id = db.Column(
         postgresql.UUID(as_uuid=True), nullable=False, server_default=func.uuid_generate_v4()
