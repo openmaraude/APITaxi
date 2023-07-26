@@ -1,6 +1,5 @@
 import hashlib
 import os
-import pkg_resources
 import random
 import signal
 import sys
@@ -19,6 +18,12 @@ import testing.postgresql
 import APITaxi_models2
 
 
+migrations_dir = os.path.join(
+    APITaxi_models2.__name__,
+    'migrations'
+)
+
+
 def _run_postgresql_migrations(psql):
     """Connect to PostgreSQL and run migrations from APITaxi_models2."""
     # Create required extension on database.
@@ -28,11 +33,6 @@ def _run_postgresql_migrations(psql):
             cursor.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto')
             cursor.execute('CREATE EXTENSION IF NOT EXISTS timescaledb')
         conn.commit()
-
-    migrations_dir = pkg_resources.resource_filename(
-        APITaxi_models2.__name__,
-        'migrations'
-    )
 
     # Build Alembic configuration to run migrations
     alembic_cfg = alembic.config.Config()
@@ -87,10 +87,6 @@ def get_hash_from_migrations_content():
     If any migration content changes, or if migrations are added or removed,
     the hash will be different.
     """
-    migrations_dir = pkg_resources.resource_filename(
-        APITaxi_models2.__name__,
-        'migrations/'
-    )
     versions_dir = os.path.join(migrations_dir, 'versions')
     h = hashlib.md5()
 
