@@ -422,7 +422,7 @@ def hails_details(hail_id):
     if errors:
         return make_error_json_response(errors)
 
-    args = request.json.get('data', [{}])[0]
+    args = params.get('data', [{}])[0]
 
     hail_initial_status = hail.status
 

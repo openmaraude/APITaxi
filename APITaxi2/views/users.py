@@ -45,14 +45,14 @@ def users_details(user_id):
     if errors:
         return make_error_json_response(errors)
 
-    args = request.json.get('data', [{}])[0]
+    args = params.get('data', [{}])[0]
 
     # It is not yet possible to update the fields "roles" and "manager".
     # Email should **not** be editable, as it is used as a fixed identifier for
     # the account.
     # It is not possible yet to update api key.
-    for field in (
-        (User.commercial_name, 'name'),
+    for model_name, arg_name in (
+        (User.commercial_name, 'commercial_name'),
         (User.email_customer, 'email_customer'),
         (User.email_technical, 'email_technical'),
         (User.hail_endpoint_production, 'hail_endpoint_production'),
@@ -61,7 +61,6 @@ def users_details(user_id):
         (User.operator_api_key, 'operator_api_key'),
         (User.operator_header_name, 'operator_header_name'),
     ):
-        model_name, arg_name = field
         if arg_name in args:
             value = args[arg_name]
             # All of these fields are strings

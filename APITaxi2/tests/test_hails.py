@@ -240,10 +240,13 @@ class TestEditHail:
 
     def test_ok_ban_customer(self, moteur, operateur):
         # Create unbanned customer
-        customer = CustomerFactory(added_by=moteur.user, ban_begin=None, ban_end=None,)
-        hail = HailFactory(customer=customer, added_by=moteur.user,
-                           operateur=operateur.user,
-                           status='accepted_by_taxi')
+        customer = CustomerFactory(added_by=moteur.user, ban_begin=None, ban_end=None)
+        hail = HailFactory(
+            customer=customer,
+            added_by=moteur.user,
+            operateur=operateur.user,
+            status='accepted_by_taxi',
+        )
         # Ban
         resp = operateur.client.put('/hails/%s' % hail.id, json={'data': [{
             'incident_taxi_reason': 'no_show',
@@ -252,6 +255,30 @@ class TestEditHail:
         assert resp.status_code == 200
         assert customer.ban_begin
         assert customer.ban_end
+
+    def test_ok_ban_customer_again(self, moteur, operateur):
+        # Create banned customer
+        customer = CustomerFactory(
+            added_by=moteur.user,
+            ban_begin=sqlalchemy.func.NOW(),
+            ban_end=sqlalchemy.func.NOW() + timedelta(hours=+24),
+        )
+        original_ban_begin = customer.ban_begin
+        original_ban_end = customer.ban_end
+        # Ban again
+        hail = HailFactory(
+            customer=customer,
+            added_by=moteur.user,
+            operateur=operateur.user,
+            status='accepted_by_taxi',
+        )
+        resp = operateur.client.put('/hails/%s' % hail.id, json={'data': [{
+            'reporting_customer': True,
+            'incident_taxi_reason': 'no_show',
+        }]})
+        assert resp.status_code == 200
+        assert customer.ban_begin == original_ban_begin
+        assert customer.ban_end > original_ban_end
 
     def test_ok_unban_customer(self, moteur, operateur):
         # Create banned customer
@@ -263,9 +290,13 @@ class TestEditHail:
         assert customer.ban_begin
         assert customer.ban_end
         # Unban
-        hail = HailFactory(customer=customer, added_by=moteur.user,
-                           operateur=operateur.user,
-                           status='accepted_by_taxi')
+        hail = HailFactory(
+            customer=customer,
+            added_by=moteur.user,
+            operateur=operateur.user,
+            status='accepted_by_taxi',
+            reporting_customer=True,
+        )
         resp = operateur.client.put('/hails/%s' % hail.id, json={'data': [{
             'reporting_customer': False
         }]})
