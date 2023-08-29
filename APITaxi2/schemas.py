@@ -41,9 +41,10 @@ from .security import current_user
 TAXI_MIN_RADIUS = 150
 TAXI_MAX_RADIUS = 500
 
-
 # Consider taxis on a neutral basis for clients
 NEUTRAL_OPERATOR = "chauffeur professionnel"
+
+NOT_EMPTY = validate.Length(min=1, error="Field may not be empty.")
 
 
 def hide_phone_numbers(ret):
@@ -105,7 +106,7 @@ class DriverSchema(Schema):
         'description': "date de naissance du conducteur",
     })
     professional_licence = fields.String(
-        required=True, allow_none=False, validate=validate.Length(min=1), metadata={
+        required=True, allow_none=False, validate=NOT_EMPTY, metadata={
             'description': "n° carte professionnelle",
         }
     )
@@ -132,7 +133,7 @@ class RefADSSchema(Schema):
 
     # Required to create a taxi
     numero = fields.String(
-        required=True, allow_none=False, validate=validate.Length(min=1),
+        required=True, allow_none=False, validate=NOT_EMPTY,
     )
     insee = fields.String(required=True, allow_none=False)
 
@@ -152,7 +153,7 @@ class RefADSSchema(Schema):
 class ADSSchema(Schema):
     """ADS creation require to provide all these fields."""
     numero = fields.String(
-        required=True, allow_none=False, validate=validate.Length(min=1), metadata={
+        required=True, allow_none=False, validate=NOT_EMPTY, metadata={
             'description': "numéro attribué à l'ADS par l'autorité de délivrance",
         }
     )
@@ -188,7 +189,7 @@ class RefDriverSchema(Schema):
 
     # Required to create a taxi
     professional_licence = fields.String(
-        required=True, allow_none=False, validate=validate.Length(min=1),
+        required=True, allow_none=False, validate=NOT_EMPTY,
     )
     departement = fields.String(
         attribute='departement.numero', required=True, validate=validate.Length(min=2, max=3),
