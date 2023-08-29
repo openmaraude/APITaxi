@@ -788,3 +788,10 @@ class TestCreateHail:
             resp = self._create_hail(app, operateur, moteur, customer_address='')
             assert resp.status_code == 201
             assert resp.json['data'][0]['customer_address'] == "8 Boulevard du Port, Amiens"
+
+    def test_no_customer_address_failure(self, app, moteur, operateur):
+        with mock.patch('requests.get') as mocked:
+            mocked.side_effect = requests.Timeout()
+            resp = self._create_hail(app, operateur, moteur, customer_address='')
+            assert resp.status_code == 400
+            assert 'customer_address' in resp.json['errors']['data']['0']

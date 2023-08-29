@@ -12,13 +12,11 @@ def get_short_uuid():
 
 
 def reverse_geocode(lon, lat):
-    response = requests.get(REVERSE_API_URL, {'lon': lon, 'lat': lat, 'limit': 1})
     try:
+        response = requests.get(REVERSE_API_URL, {'lon': lon, 'lat': lat, 'limit': 1})
         properties = response.json()['features'][0]['properties']
         return "{name}, {city}".format(**properties)
-    except Exception:
-        # Covers both local development and development environment
-        if current_app.config.get('INTEGRATION_ENABLED'):
-            raise
+    except (KeyError, requests.RequestException) as exc:
+        current_app.logger.warning('Exception in reverse geocoding', exc_info=True)
         # Play it safe, ignore network errors, etc.
         return ""

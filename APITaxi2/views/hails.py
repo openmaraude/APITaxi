@@ -821,6 +821,15 @@ def hails_create():
     # at the risk of being wrong, but you should have sent the good address then.
     if not args['customer_address']:
         args['customer_address'] = utils.reverse_geocode(args['customer_lon'], args['customer_lat'])
+        if not args['customer_address']:
+            return make_error_json_response({
+                'data': {
+                    '0': {
+                        'customer_address': ["Customer can't be located, please provide an pickup address for the taxi."]
+                    }
+                }
+            })
+
 
     hail = Hail(
         id=_get_short_uuid(),
