@@ -11,7 +11,7 @@ from sqlalchemy.orm import aliased, joinedload
 from APITaxi_models2 import Customer, db, Hail, Taxi, User, Vehicle, VehicleDescription
 from APITaxi_models2.hail import HAIL_TERMINAL_STATUS
 
-from .. import activity_logs, redis_backend, schemas, tasks, processes
+from .. import activity_logs, redis_backend, schemas, tasks, processes, utils
 from ..security import auth, current_user
 from ..validators import (
     make_error_json_response,
@@ -816,6 +816,11 @@ def hails_create():
             })
     else:
         session_id = _get_existing_session_id(current_user, customer)
+
+    # If no address was given (may happen with web apps), deduce it from reverse geocoding
+    # at the risk of being wrong, but you should have sent the good address then.
+    if not args['customer_address']:
+        args['customer_address'] = utils.reverse_geocode(args['customer_lon'], args['customer_lat'])
 
     hail = Hail(
         id=_get_short_uuid(),

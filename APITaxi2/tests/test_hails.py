@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
+import json
 import time
 from unittest import mock
 import uuid
 
+import requests
 import sqlalchemy
 
 from APITaxi2 import tasks, utils
@@ -525,7 +527,7 @@ class TestGetHailList:
 class TestCreateHail:
 
     @staticmethod
-    def _create_hail(app, operateur, moteur, customer_id='some user', session_id=None):
+    def _create_hail(app, operateur, moteur, customer_id='some user', session_id=None, customer_address='23 avenue de Ségur, 75007 Paris'):
         taxi = TaxiFactory(added_by=operateur.user)
         taxi_id = taxi.id
 
@@ -547,7 +549,7 @@ class TestCreateHail:
         with mock.patch.object(tasks.send_request_operator, 'apply_async') as mocked:
             resp = moteur.client.post('/hails', json={
                 'data': [{
-                    'customer_address': '23 avenue de Ségur, 75007 Paris',
+                    'customer_address': customer_address,
                     'customer_id': customer_id,
                     'customer_lon': 2.3098,
                     'customer_lat': 48.851,
@@ -740,3 +742,49 @@ class TestCreateHail:
         assert resp.json['data'][0]['taxi']['id'] != hail.taxi_id
         # Fake taxi ID exposed instead
         assert resp.json['data'][0]['taxi']['id'] == hail.fake_taxi_id
+
+    def test_no_customer_address(self, app, moteur, operateur):
+        def requests_get(*args, **kwargs):
+            # From the docs
+            content = {
+                "type":"FeatureCollection",
+                "version":"draft",
+                "features":[
+                    {
+                        "type":"Feature",
+                        "geometry":{
+                            "type":"Point",
+                            "coordinates":[2.290084, 49.897443]
+                        },
+                        "properties":{
+                            "label":"8 Boulevard du Port 80000 Amiens",
+                            "score":0.49159121588068583,
+                            "housenumber":"8",
+                            "id":"80021_6590_00008",
+                            "type":"housenumber",
+                            "name":"8 Boulevard du Port",
+                            "postcode":"80000",
+                            "citycode":"80021",
+                            "x":648952.58,
+                            "y":6977867.25,
+                            "city":"Amiens",
+                            "context":"80, Somme, Hauts-de-France",
+                            "importance":0.6706612694243868,
+                            "street":"Boulevard du Port"
+                        }
+                    }
+                ],
+                "attribution":"BAN",
+                "licence":"ODbL 1.0",
+                "query":"8 bd du port",
+                "limit":1
+            }
+            resp = requests.Response()
+            resp.status_code = 200
+            resp._content = json.dumps(content).encode('utf8')
+            return resp
+
+        with mock.patch('requests.get', requests_get) as mocked:
+            resp = self._create_hail(app, operateur, moteur, customer_address='')
+            assert resp.status_code == 201
+            assert resp.json['data'][0]['customer_address'] == "8 Boulevard du Port, Amiens"
