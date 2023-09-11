@@ -34,7 +34,7 @@ DEPENDENCIES = [
     'psycopg2>=2.9.6,<3',
     'pyshp',
     'pytz>=2023.3',
-    'redis>=4.6.0,<5',
+    'redis>=5.0.0,<6',
     'hiredis>=2.2.3,<2.3',
     'sentry-sdk[flask]>=1.28.1',
     'Shapely>=2.0.1,<2.1',
