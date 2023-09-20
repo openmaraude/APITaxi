@@ -417,6 +417,24 @@ class TestEditHail:
         assert resp.status_code == 400, resp.json
         assert len(resp.json['errors']['data']['0']['status']) == 1
 
+    def test_update_customer_phone_number(self, moteur):
+        """Customer shouldn't be allowed to change the phone number once hailing"""
+        hail = HailFactory(
+            added_by=moteur.user,
+            status='accepted_by_taxi',
+            customer_phone_number='+33607080910',
+        )
+
+        with mock.patch.object(tasks.handle_hail_timeout, 'apply_async'):
+            resp = moteur.client.put(f'/hails/{hail.id}', json={'data': [{
+                'status': 'accepted_by_customer',
+                'customer_phone_number': '0600000000',
+            }]})
+        # Don't fail though
+        assert resp.status_code == 200, resp.json
+        assert hail.status == 'accepted_by_customer'
+        assert hail.customer_phone_number == '+33607080910'
+
 
 class TestGetHailList:
     def test_invalid(self, anonymous, moteur):

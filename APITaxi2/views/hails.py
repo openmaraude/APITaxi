@@ -467,7 +467,6 @@ def hails_details(hail_id):
             'customer_lon',
             'customer_lat',
             'customer_address',
-            'customer_phone_number',
             'rating_ride',
             'rating_ride_reason',
             'incident_customer_reason'
