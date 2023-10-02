@@ -362,7 +362,18 @@ def hails_details(hail_id):
                         {
                             "data": [
                                 {
-                                    "incident_taxi_reason": "no_show",
+                                    "incident_taxi_reason": "no_show"
+                                }
+                            ]
+                        }
+                accepted_by_taxi:
+                    summary: Taxi to accept a hail request. The taxi must give their phone number to accept the hail.
+                    value:
+                        {
+                            "data": [
+                                {
+                                    "status": "accepted_by_taxi",
+                                    "taxi_phone_number": "0678901234"
                                 }
                             ]
                         }
