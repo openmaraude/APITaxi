@@ -53,4 +53,3 @@ class Taxi(HistoryMixin, db.Model):
     ads = db.relationship('ADS', lazy='raise')
     added_by = db.relationship('User', lazy='raise')
     driver = db.relationship('Driver', lazy='raise')
-    current_hail = db.relationship('Hail', foreign_keys=[current_hail_id], lazy='raise')

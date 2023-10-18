@@ -868,7 +868,6 @@ def hails_create():
     db.session.add(hail)
     db.session.flush()
 
-    taxi.current_hail = hail
     vehicle_description.status = 'answering'
 
     # A dedicated schema was used to create

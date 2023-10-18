@@ -283,7 +283,6 @@ def taxis_details(taxi_id):
         joinedload(Taxi.driver).joinedload(Driver.departement),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
-        joinedload(Taxi.current_hail)
     ).filter(
         VehicleDescription.vehicle_id == Taxi.vehicle_id
     ).filter(
@@ -468,7 +467,6 @@ def taxis_search():
     ).options(
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
-        joinedload(Taxi.current_hail)
     ).filter(
         VehicleDescription.vehicle_id == Taxi.vehicle_id
     ).filter(
@@ -582,7 +580,6 @@ def taxis_list():
         joinedload(Taxi.driver).joinedload(Driver.departement),
         joinedload(Taxi.vehicle).joinedload(Vehicle.descriptions).joinedload(VehicleDescription.added_by),
         joinedload(Taxi.added_by),
-        joinedload(Taxi.current_hail)
     ).filter(
         Vehicle.id == Taxi.vehicle_id,
         VehicleDescription.vehicle_id == Taxi.vehicle_id

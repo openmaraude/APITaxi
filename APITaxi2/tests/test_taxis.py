@@ -112,7 +112,7 @@ class TestTaxiPut:
                 added_by=operateur.user,
                 status=initial_status
             )
-            taxi = TaxiFactory(vehicle=vehicle, current_hail=hail)
+            taxi = TaxiFactory(vehicle=vehicle)
 
             with QueriesTracker() as qtracker:
                 resp = operateur.client.put('/taxis/%s' % taxi.id, json={
