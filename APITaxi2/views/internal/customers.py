@@ -3,9 +3,9 @@ import functools
 
 from flask import Blueprint, current_app, request
 from geoalchemy2 import Geometry
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, validate
 from shapely import wkt
-from sqlalchemy import func, Text
+from sqlalchemy import func, Text, or_
 from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.dialects.postgresql import JSONB, INTERVAL
 
@@ -25,7 +25,12 @@ blueprint = Blueprint('internal_customers', __name__)
 
 class ListCustomerSupportQuerystringSchema(Schema, schemas.PageQueryStringMixin):
     """Querystring arguments for GET /hails/."""
-    pass
+    id = fields.List(fields.String)
+    moteur = fields.List(fields.String)
+    operateur = fields.List(fields.String)
+    status = fields.List(fields.String(
+        validate=validate.OneOf(Hail.status.property.columns[0].type.enums),
+    ))
 
 
 class CustomerSupportListSchema(Schema):
@@ -39,7 +44,6 @@ class CustomerSupportListSchema(Schema):
     operateur = fields.String()
     status = fields.String()
     taxi_phone_number = fields.String()
-    taxi_id = fields.String()
 
 
 DataCustomerSupportListSchema = schemas.data_schema_wrapper(CustomerSupportListSchema(), with_pagination=True)
@@ -75,6 +79,28 @@ def customers():
     ).order_by(
         Hail.added_at.desc()
     )
+
+    # Filter on querystring arguments, partial match.
+    for qname, field in (
+        ('id', Hail.id),
+        ('moteur', Moteur.email),
+        ('operateur', Operateur.email),
+    ):
+        if qname not in querystring:
+            continue
+        query = query.filter(or_(*[
+            func.lower(field).startswith(value.lower()) for value in querystring[qname]
+        ]))
+
+    # Filter on querystring arguments, exact match.
+    for qname, field in (
+        ('status', Hail.status),
+    ):
+        if qname not in querystring:
+            continue
+        query = query.filter(or_(*[
+            field == value for value in querystring[qname]
+        ]))
 
     hails = query.paginate(
         page=querystring.get('p', [1])[0],
