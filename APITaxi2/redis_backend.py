@@ -129,6 +129,11 @@ def set_taxi_availability(taxi_id, taxi_operator, available):
         current_app.redis.zadd(redis_key, {key: 0})
 
 
+def list_taxi_positions(taxi_ids):
+    # We don't try to map a taxi to its position, just a cloud of points
+    return current_app.redis.geopos('geoindex', *taxi_ids)
+
+
 @dataclass
 class Location:
     lon: float

@@ -13,7 +13,7 @@ from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicl
 from APITaxi_models2 import Conurbation, Hail
 from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails
 
-from .. import schemas
+from .. import schemas, redis_backend
 from ..security import auth, current_user
 
 
@@ -628,12 +628,30 @@ class HeatmapSchema(schemas.Schema):
 DataHeatmapSchema = schemas.data_schema_wrapper(HeatmapSchema())
 
 
-@blueprint.route('/stats/heatmap', methods=['GET'])
+@blueprint.route('/stats/heatmap_hails', methods=['GET'])
 @auth.login_required(role=['admin'])
-def stats_heatmap():
+def stats_heatmap_hails():
     query = db.session.query(Hail.customer_lat, Hail.customer_lon)
 
     schema = DataHeatmapSchema()
     return schema.dump({'data': [{
         'points': query,
+    }]})
+
+
+@blueprint.route('/stats/heatmap_taxis', methods=['GET'])
+@auth.login_required(role=['admin'])
+def stats_heatmap_taxis():
+    available_taxis = [
+        taxi_id
+        for taxi_id,
+        in db.session.query(Taxi.id).join(Taxi.vehicle).join(Vehicle.descriptions).filter(VehicleDescription.status == 'free')
+    ]
+    locations = redis_backend.list_taxi_positions(available_taxis)
+    # Redis is storing (lon, lat)
+    points = [(position[1], position[0]) for position in locations if position]
+
+    schema = DataHeatmapSchema()
+    return schema.dump({'data': [{
+        'points': points,
     }]})
