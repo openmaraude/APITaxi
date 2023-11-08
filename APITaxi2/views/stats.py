@@ -4,12 +4,13 @@ import functools
 import json
 
 from flask import Blueprint, request, current_app
+from marshmallow import fields
 from sqlalchemy import func, Text, DateTime, Numeric, or_, column
 from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import INTERVAL
 
 from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicle, VehicleDescription
-from APITaxi_models2 import Conurbation
+from APITaxi_models2 import Conurbation, Hail
 from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails
 
 from .. import schemas
@@ -618,3 +619,21 @@ def stats_letaxi():
         }),
         'hails_growth': _get_hails_growth(['lyon']),
     })
+
+
+class HeatmapSchema(schemas.Schema):
+    points = fields.List(fields.Tuple([fields.Float(), fields.Float()]))
+
+
+DataHeatmapSchema = schemas.data_schema_wrapper(HeatmapSchema())
+
+
+@blueprint.route('/stats/heatmap', methods=['GET'])
+@auth.login_required(role=['admin'])
+def stats_heatmap():
+    query = db.session.query(Hail.customer_lat, Hail.customer_lon)
+
+    schema = DataHeatmapSchema()
+    return schema.dump({'data': [{
+        'points': query,
+    }]})
