@@ -176,11 +176,6 @@ def delete_old_hails():
         )
     ]
 
-    # Cut reference to foreign key, so we can delete them
-    db.session.query(Taxi).filter(Taxi.current_hail_id.in_(hail_ids)).update({
-        Taxi.current_hail_id: None
-    })
-
     db.session.query(Hail).filter(Hail.id.in_(hail_ids)).delete()
     db.session.commit()
     return len(hail_ids)
