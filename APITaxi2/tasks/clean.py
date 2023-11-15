@@ -11,6 +11,11 @@ def clean_geoindex_timestamps():
     - in the sorted sets "geoindex" and "timestamps_id", members are "taxi_id"
     - in the sorted sets "geoindex_2" and "timestamps", members are "taxi_id:operator"
 
+    A spatial index is a sorted set with the geohash as the score, so zremrangebyscore isn't an option.
+    Instead we store location update time as a score in a separare "timestamps" sorted set,
+    and every two minutes, we delete scores inferior to the threshold timestamp, and then we delete
+    geoindex members not found in "timestamps" anymore.
+
     This task removes data older than two minutes.
 
     The taxi hash set (taxi:<taxi_id>) is not affected.

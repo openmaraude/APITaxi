@@ -38,10 +38,9 @@ def _run_redis_action(pipe, action, *params):
         )
 
 
-def _update_redis(pipe, data, user):
+def _update_redis(pipe, data, operator):
     now = int(time.time())
     taxi_id = data['taxi_id']
-    operator = user.email
     # Hardcoded for backwards compatibility with the geotaxi worker
     timestamp = now
     # These fields are unused, fill them with whatever is expected
@@ -71,6 +70,10 @@ def _update_redis(pipe, data, user):
         'geoindex_2',
         [data['lon'], data['lat'], f"{taxi_id}:{operator}"],
     )
+    #
+    # We have to clean geoindex(_2) after two minutes, so we use the timestamp as a score
+    # but in another sorted set.
+    #
     # ZADD timestamps (expired after two minutes by clean_geoindex_timestamps)
     _run_redis_action(
         pipe,
@@ -160,7 +163,7 @@ def geotaxi_batch():
     # (we rejected the query on the slightest error, so the dict only contains valid data)
     pipe = current_app.redis.pipeline()
     for position in requested_taxi_ids.values():
-        _update_redis(pipe, position, current_user)
+        _update_redis(pipe, position, current_user.email)
     pipe.execute()
 
     return '', 200
