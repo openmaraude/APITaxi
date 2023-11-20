@@ -42,8 +42,15 @@ class CustomerSupportListSchema(Schema):
     customer_lat = fields.Float()
     customer_phone_number = fields.String()
     operateur = fields.String()
-    status = fields.String()
     taxi_phone_number = fields.String()
+    status = fields.String()
+    duration = fields.TimeDelta()  # Round number of seconds
+
+    def dump(self, obj, *args, **kwargs):
+        ret = super().dump(obj, *args, **kwargs)
+        # No equivalent tool on the client side
+        ret['duration'] = str(datetime.timedelta(seconds=int(obj.duration.total_seconds())))
+        return ret
 
 
 DataCustomerSupportListSchema = schemas.data_schema_wrapper(CustomerSupportListSchema(), with_pagination=True)
@@ -70,6 +77,7 @@ def customers():
         Operateur.email.label('operateur'),
         Hail.taxi_phone_number,
         Hail.status,
+        (Hail.last_update_at - Hail.added_at).label('duration'),
     ).join(
         Moteur, Hail.added_by_id == Moteur.id
     ).join(
