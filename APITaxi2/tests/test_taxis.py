@@ -435,9 +435,7 @@ class TestTaxiSearch:
 
         TaxiFactory(vehicle=taxi_2_vehicle)
 
-        lon = tmp_lon = 2.35
-        lat = tmp_lat = 48.86
-
+        lon, lat = tmp_lon, tmp_lat = 2.35, 48.86
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         assert resp.json['data'] == []
@@ -472,15 +470,6 @@ class TestTaxiSearch:
         assert resp.json['data'][1]['operator'] == 'chauffeur professionnel'
         assert resp.json['data'][1]['position']['lon']
         assert resp.json['data'][1]['position']['lat']
-
-        # TODO remove If favorite_operator is set, ignore it.
-        resp = moteur.client.get('/taxis?lon=%s&lat=%s&favorite_operator=%s' % (
-            lon, lat, taxi_2_vehicle_descriptions_2.added_by.email
-        ))
-        assert resp.status_code == 200
-        assert len(resp.json['data']) == 2
-        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'
-        assert resp.json['data'][1]['operator'] == 'chauffeur professionnel'
 
         # Search for a location still in the ZUPC, but too far to reach taxis.
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon + 0.02, lat + 0.01))
@@ -539,8 +528,7 @@ class TestTaxiSearch:
         taxi = TaxiFactory(vehicle=vehicle)
         ZUPCFactory()
 
-        lon = 2.367895
-        lat = 48.86789
+        lon, lat = 2.367895, 48.86789
         self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
 
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
@@ -563,8 +551,7 @@ class TestTaxiSearch:
         taxi = TaxiFactory(ads__insee='33063', vehicle=vehicle)
 
         # Report location in Paris.
-        lon = 2.367895
-        lat = 48.86789
+        lon, lat = 2.367895, 48.86789
         self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
 
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
@@ -576,9 +563,7 @@ class TestTaxiSearch:
         ZUPCFactory()  # Paris
         TaxiFactory()  # Competitor
 
-        lon = 2.35
-        lat = 48.86
-
+        lon, lat = 2.35, 48.86
         now = datetime.now()
         vehicle = VehicleFactory(descriptions=[])
 
@@ -605,6 +590,40 @@ class TestTaxiSearch:
         assert resp.json['data'][0]['id'] == my_taxi.id
         assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'  # No exception
 
+    def test_ok_operateur_fake_taxi_id(self, app, operateur):
+        app.config['FAKE_TAXI_ID'] = True
+        ZUPCFactory()
+        lon, lat = 2.35, 48.86
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(added_by=operateur.user, vehicle=vehicle)
+        taxi = TaxiFactory(added_by=operateur.user, vehicle=vehicle)
+        self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
+        # Operators can see their own taxis, but under an anonymous ID
+        resp = operateur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        taxi = Taxi.query.one()  # refresh to access fake_taxi_id
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['id'] != taxi.id
+        assert resp.json['data'][0]['id'] == taxi.fake_taxi_id
+        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'  # No exception
+
+    def test_ok_moteur_and_operateur_fake_taxi_id(self, app, moteur_and_operateur):
+        app.config['FAKE_TAXI_ID'] = True
+        ZUPCFactory()
+        lon, lat = 2.35, 48.86
+        vehicle = VehicleFactory(descriptions=[])
+        vehicle_description = VehicleDescriptionFactory(added_by=moteur_and_operateur.user, vehicle=vehicle)
+        taxi = TaxiFactory(added_by=moteur_and_operateur.user, vehicle=vehicle)
+        self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
+        # Operators also moteurs can see their own taxis, but under an anonymous ID
+        resp = moteur_and_operateur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
+        taxi = Taxi.query.one()  # refresh to access fake_taxi_id
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['id'] != taxi.id
+        assert resp.json['data'][0]['id'] == taxi.fake_taxi_id
+        assert resp.json['data'][0]['operator'] == 'chauffeur professionnel'  # No exception
+
     def test_ok_admin(self, app, admin):
         ZUPCFactory()  # Paris
         vehicle = VehicleFactory(descriptions=[])
@@ -614,8 +633,7 @@ class TestTaxiSearch:
         )
         taxi = TaxiFactory(vehicle=vehicle, added_by=vehicle_description.added_by)
 
-        lon = 2.35
-        lat = 48.86
+        lon, lat = 2.35, 48.86
         self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
 
         # Admins can see the real operateur
@@ -635,9 +653,7 @@ class TestTaxiSearch:
             vehicle__descriptions__radius=500, vehicle__descriptions__last_update_at=now
         )
 
-        lon = tmp_lon = 2.35
-        lat = tmp_lat = 48.86
-
+        lon, lat = tmp_lon, tmp_lat = 2.35, 48.86
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         assert resp.json['data'] == []
@@ -684,8 +700,7 @@ class TestTaxiSearch:
         helper.reset()
 
         # EuroAirport Bâle-Mulhouse-Fribourg
-        lon = 7.52637979704597
-        lat = 47.5973205076925
+        lon, lat = 7.52637979704597, 47.5973205076925
 
         # Taxi is at the airport
         self._post_geotaxi(app, lon, lat, taxi, vehicle_description)

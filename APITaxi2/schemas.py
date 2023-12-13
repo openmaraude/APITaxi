@@ -890,19 +890,17 @@ class HailSchema(Schema):
 
         # Don't expose the real taxi ID to the customer
         if current_app.config.get('FAKE_TAXI_ID'):
-            if current_user and not current_user.has_role('admin') and current_user.email == hail.added_by.email:
-                # Don't hide when moteur is our virtual operator, we'll need this for the simulator
-                if current_user.email != current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
-                    ret['taxi']['id'] = hail.fake_taxi_id
+            if current_user and not current_user.has_role('admin') and current_user.email != hail.operateur.email:
+                # Don't hide when moteur is also the operateur of the taxi (I can't say which side requested)
+                ret['taxi']['id'] = hail.fake_taxi_id
 
         # Consider taxis on a neutral basis for clients, but keep the information for the admins and the operator itself
         # which includes celery tasks where there is no current user when we send the hail request to the callback endpoint
         # so everyone but moteurs see the real operateur, including when an operateur+moteur is not the hail operateur itself
         if current_app.config.get('NEUTRAL_OPERATOR'):
-            if current_user and not current_user.has_role('admin') and current_user.email == hail.added_by.email:
-                # Don't hide when taxis are from our virtual operator, we'll need this for the simulator
-                if ret['operateur'] != current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
-                    ret['operateur'] = NEUTRAL_OPERATOR
+            if current_user and not current_user.has_role('admin') and current_user.email != hail.operateur.email:
+                # Don't hide when moteur is also the operateur of the taxi (I can't say which side requested)
+                ret['operateur'] = NEUTRAL_OPERATOR
 
         return ret
 
@@ -935,18 +933,16 @@ class HailListSchema(Schema):
 
         # Don't expose the real taxi ID to the customer
         if current_app.config.get('FAKE_TAXI_ID'):
-            if current_user and not current_user.has_role('admin') and current_user.email == obj.added_by.email:
-                # Don't hide when moteur is our virtual operator, we'll need this for the simulator
-                if current_user.email != current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
-                    ret['taxi_id'] = obj.fake_taxi_id
+            if current_user and not current_user.has_role('admin') and current_user.email != obj.operateur.email:
+                # Don't hide when moteur is also the operateur of the taxi (I can't say which side requested)
+                ret['taxi_id'] = obj.fake_taxi_id
 
         # Consider taxis on a neutral basis for clients
         # but keep the information for the admins and the hail operator itself
         if current_app.config.get('NEUTRAL_OPERATOR'):
-            if current_user and not current_user.has_role('admin') and current_user.email == obj.added_by.email:
-                # Don't hide when taxis are from our virtual operator, we'll need this for the simulator
-                if ret['operateur'] != current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
-                    ret['operateur'] = NEUTRAL_OPERATOR
+            if current_user and not current_user.has_role('admin') and current_user.email != obj.operateur.email:
+                # Don't hide when moteur is also the operateur of the taxi (I can't say which side requested)
+                ret['operateur'] = NEUTRAL_OPERATOR
 
         return ret
 
@@ -987,19 +983,17 @@ class HailBySessionSchema(Schema):
 
         # Don't expose the real taxi ID to the customer
         if current_app.config.get('FAKE_TAXI_ID'):
-            if current_user and not current_user.has_role('admin') and current_user.email == obj['moteur']['email']:
-                # Don't hide when moteur is our virtual operator, we'll need this for the simulator
-                if current_user.email != current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
-                    ret['taxi']['id'] = obj['fake_taxi_id']
+            if current_user and not current_user.has_role('admin') and current_user.email != obj['operateur']['email']:
+                # Don't hide when moteur is also the operateur of the taxi (I can't say which side requested)
+                ret['taxi']['id'] = obj['fake_taxi_id']
 
         # Consider taxis on a neutral basis for clients
         # but keep the information for the admins and the hail operator itself
         if current_app.config.get('NEUTRAL_OPERATOR'):
-            if current_user and not current_user.has_role('admin') and current_user.email == obj['moteur']['email']:
-                # Don't hide when taxis are from our virtual operator, we'll need this for the simulator
-                if ret['operateur'] != current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
-                    ret['operateur']['email'] = NEUTRAL_OPERATOR
-                    ret['operateur']['commercial_name'] = NEUTRAL_OPERATOR
+            if current_user and not current_user.has_role('admin') and current_user.email != obj['operateur']['email']:
+                # Don't hide when moteur is also the operateur of the taxi (I can't say which side requested)
+                ret['operateur']['email'] = NEUTRAL_OPERATOR
+                ret['operateur']['commercial_name'] = NEUTRAL_OPERATOR
 
         return ret
 

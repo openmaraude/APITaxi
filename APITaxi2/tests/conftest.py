@@ -111,5 +111,10 @@ def operateur(app):
 
 
 @pytest.fixture
+def moteur_and_operateur(app):
+    return _create_client(app, ['moteur', 'operateur'])
+
+
+@pytest.fixture
 def QueriesTracker():
     return lambda: SQLAlchemyQueriesTracker(APITaxi_models2.db.engine)

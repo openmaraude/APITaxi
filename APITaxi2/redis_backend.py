@@ -215,7 +215,7 @@ def log_hail(hail_id, http_method, request_payload, hail_initial_status,
 
 def set_fake_taxi_ids(current_user, fake_taxi_ids):
     current_app.redis.hset(f'fake_taxi_id:{current_user.email}', mapping=fake_taxi_ids)
-    current_app.redis.expire(f'fake_taxi_id:{current_user.email}', timedelta(hours=1))
+    current_app.redis.expire(f'fake_taxi_id:{current_user.email}', timedelta(days=62))
 
 
 def get_real_taxi_id(current_user, fake_taxi_id):

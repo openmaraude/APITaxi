@@ -760,6 +760,24 @@ class TestCreateHail:
         assert resp.json['data'][0]['taxi']['id'] != hail.taxi_id
         # Fake taxi ID exposed instead
         assert resp.json['data'][0]['taxi']['id'] == hail.fake_taxi_id
+        # Same when fetching the hail
+        resp = moteur.client.get(f"/hails/{resp.json['data'][0]['id']}")
+        assert resp.json['data'][0]['taxi']['id'] != hail.taxi_id
+        assert resp.json['data'][0]['taxi']['id'] == hail.fake_taxi_id
+
+    def test_fake_taxi_id_moteur_and_operateur(self, app, moteur_and_operateur):
+        app.config['FAKE_TAXI_ID'] = True
+        resp = self._create_hail(app, moteur_and_operateur, moteur_and_operateur)
+        assert resp.status_code == 201
+        hail = Hail.query.one()
+        # Real taxi ID exposed
+        assert resp.json['data'][0]['taxi']['id'] == hail.taxi_id
+        # Fake taxi ID not used
+        assert resp.json['data'][0]['taxi']['id'] != hail.fake_taxi_id
+        # Same when fetching the hail
+        resp = moteur_and_operateur.client.get(f"/hails/{resp.json['data'][0]['id']}")
+        assert resp.json['data'][0]['taxi']['id'] == hail.taxi_id
+        assert resp.json['data'][0]['taxi']['id'] != hail.fake_taxi_id
 
     def test_no_customer_address(self, app, moteur, operateur):
         def requests_get(*args, **kwargs):
