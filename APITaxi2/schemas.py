@@ -582,9 +582,10 @@ class SearchTaxiSchema(Schema):
         # but keep the information for the admin console
         if current_app.config.get('NEUTRAL_OPERATOR'):
             if current_user and not current_user.has_role('admin'):
-                # Don't hide when taxis are from our virtual operator, we'll need this for the simulator
-                if ret['operator'] != current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
-                    ret['operator'] = NEUTRAL_OPERATOR
+                # We still need to tell our virtual operator apart
+                if ret['operator'] == current_app.config.get('INTEGRATION_ACCOUNT_EMAIL'):
+                    ret['driver']['professional_licence'] = "integration"
+                ret['operator'] = NEUTRAL_OPERATOR
 
         return ret
 

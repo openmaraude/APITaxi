@@ -214,11 +214,19 @@ def log_hail(hail_id, http_method, request_payload, hail_initial_status,
 
 
 def set_fake_taxi_ids(current_user, fake_taxi_ids):
+    """
+    Save a mapping of fake-to-real taxi IDs for the current client application.
+    This mapping was generated following a taxi search.
+    (without overwriting fake IDs for other users of the same app)
+    """
     current_app.redis.hset(f'fake_taxi_id:{current_user.email}', mapping=fake_taxi_ids)
-    current_app.redis.expire(f'fake_taxi_id:{current_user.email}', timedelta(days=62))
+    # Keep this mapping for a little time, waiting for one of the taxis in the list to be hailed
+    current_app.redis.expire(f'fake_taxi_id:{current_user.email}', timedelta(hours=1))
+    # The fake ID will then be stored on the hail itself, so no worry with expiry
 
 
 def get_real_taxi_id(current_user, fake_taxi_id):
+    """Translate the fake taxi ID given in a search result to the real taxi ID"""
     # Redis-py returns bytes, which is impractical
     real_taxi_id = current_app.redis.hget(f'fake_taxi_id:{current_user.email}', fake_taxi_id)
     if real_taxi_id:
