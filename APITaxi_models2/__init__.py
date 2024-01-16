@@ -40,3 +40,4 @@ from .taxi import Taxi  # noqa
 from .user import Role, RolesUsers, User  # noqa
 from .vehicle import Vehicle, VehicleDescription  # noqa
 from .zupc import Conurbation, Exclusion, Town, ZUPC  # noqa
+from .gare import GareVoyageur  # noqa
