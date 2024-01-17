@@ -1,4 +1,5 @@
-from flask import current_app
+import click
+from flask import Blueprint, current_app
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
@@ -11,8 +12,10 @@ from APITaxi_models2 import (
     ZUPC,
 )
 
-from ...security import auth
-from ...exclusions import ExclusionHelper
+from APITaxi2.exclusions import ExclusionHelper
+
+
+blueprint = Blueprint('commands_service', __name__, cli_group=None)
 
 
 def _taxis_search(lon, lat, exclusions=False):
@@ -62,14 +65,32 @@ def _taxis_search(lon, lat, exclusions=False):
     return query.count()
 
 
-def service_gares():
-    for gare in db.session.query(
+@blueprint.cli.group()
+def service():
+    """Taxi service in different situations"""
+
+
+@service.command()
+@click.option(
+    "--drg",
+    type=str,
+    help='Segment DRG',
+)
+def gares(drg):
+    query = db.session.query(
         GareVoyageur
     ).filter(
-        func.lower(GareVoyageur.segmentdrg_libelle) == 'a'  # Biggest stations
+        GareVoyageur.latitude_entreeprincipale_wgs84.isnot(None),
+        GareVoyageur.longitude_entreeprincipale_wgs84.isnot(None),
     ).order_by(
-        GareVoyageur.alias_libelle_noncontraint
-    ):
+        GareVoyageur.gare_alias_libelle_noncontraint
+    )
+    if drg:
+        query = query.filter(
+            func.lower(GareVoyageur.segmentdrg_libelle) == drg
+        )
+
+    for gare in query:
         print(
             gare.gare_alias_libelle_noncontraint,
             _taxis_search(
