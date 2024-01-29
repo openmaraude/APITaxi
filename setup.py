@@ -10,7 +10,7 @@ DEPENDENCIES = [
     'aniso8601',
     'apispec[validation,marshmallow]>=6.3.0,<6.4',
     'apispec-webframeworks',
-    'bcrypt',
+    'bcrypt==4.1.2',
     'celery>=5.3.1',
     'email-validator',
     'Flask>=3.0,<3.1',
