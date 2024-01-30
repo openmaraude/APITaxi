@@ -156,6 +156,8 @@ class StatsHails(db.Model, HistoryMixin):
     customer_on_board = db.Column(db.DateTime, nullable=True)
     finished = db.Column(db.DateTime, nullable=True)
     failure = db.Column(db.DateTime, nullable=True)
+    # Distance from the taxi when the client hailed
+    hail_distance = db.Column(db.Float, nullable=True)
 
 
 __all__ = [classname for classname in locals() if classname.startswith('stats_')] + [

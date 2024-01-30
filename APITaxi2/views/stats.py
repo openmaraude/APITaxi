@@ -296,6 +296,37 @@ def stats_hails():
             'twelve_months_ago': twelve,
         }
 
+    def get_average_hail_distance(since):
+        """Average distance between the taxi and client when the hail is emittted.
+        Only covering the last two months, before hails are anonymised.
+        """
+        query = db.session.query(
+            func.avg(StatsHails.hail_distance),
+        ).select_from(
+            milestone_series,
+        ).join(
+            StatsHails, StatsHails.added_at < column('milestone'),
+        ).filter(
+            StatsHails.added_at >= since,
+        ).group_by(
+            column('milestone'),
+        ).order_by(
+            column('milestone').desc(),
+        )
+        query = apply_filters_to_hails(query, *filters)
+
+        result = list(query)
+        # Might be zero to five length
+        result.extend([(0,)] * (5 - len(result)))
+        today, three, six, _ignored, twelve = [count for count, in result]
+
+        return {
+            'today': today,
+            'three_months_ago': three,
+            'six_months_ago': six,
+            'twelve_months_ago': twelve,
+        }
+
     def get_hails_average_per(interval, since, until, status=None):
         counts = db.session.query(
             func.Count(StatsHails.id)
@@ -370,6 +401,7 @@ def stats_hails():
         # When the ride happened but didn't close
         'hails_timeout_ride': get_hails_received(since=threshold, status='timeout_ride'),
         'hails_timeout_customer': get_hails_received(since=threshold, status='timeout_customer'),
+        'average_hail_distance': get_average_hail_distance(since=threshold),
         'hails_total': {
             'current_year': get_hails_total(*current_year),
             'last_year': get_hails_total(*last_year),
@@ -614,8 +646,8 @@ def stats_letaxi():
         'apps': _get_user_count('editeur'),
         'taxis_connected': _get_taxis_connected({
             'lyon': 1417,  # Known ADS count from Mes ADS
-            'grenoble': 213,
-            'rouen': 301,
+            'grenoble': 213,  # FIXME Grenoble city only
+            'rouen': 301,  # FIXME City? Conurbation?
         }),
         'hails_growth': _get_hails_growth(['lyon']),
     })

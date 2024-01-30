@@ -93,9 +93,15 @@ class TestComputeStatsHails:
         now = datetime.datetime.now()
         yesterday = now - datetime.timedelta(days=1)
 
-        factories.HailFactory(id='yesterday', added_at=yesterday, transition_log=[
-            {"from_status": None, "to_status": "received", "timestamp": yesterday.isoformat()},
-        ])
+        factories.HailFactory(
+            id='yesterday',
+            added_at=yesterday,
+            initial_taxi_lat=48.850,
+            initial_taxi_lon=2.308,
+            transition_log=[
+                {"from_status": None, "to_status": "received", "timestamp": yesterday.isoformat()},
+            ]
+        )
         factories.HailFactory(id='recent', added_at=now, transition_log=[
             {"from_status": None, "to_status": "received", "timestamp": now.isoformat()},
         ])
@@ -104,6 +110,7 @@ class TestComputeStatsHails:
 
         assert {hail.id for hail in Hail.query.all()} == {'yesterday', 'recent'}
         assert {hail.id for hail in StatsHails.query.all()} == {'yesterday'}
+        assert int(StatsHails.query.one().hail_distance) == 89  # double checked
 
 
 class TestDeleteOldTaxis:

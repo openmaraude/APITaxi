@@ -1104,6 +1104,7 @@ class StatsHailsSchema(Schema):
     hails_total = fields.Nested(StatsHailsTotal())
     hails_average = fields.Nested(StatsHailsAverage())
     average_times = fields.Nested(StatsAverageTimes())
+    average_hail_distance = fields.Nested(StatsMilestones())
 
 
 class FleetDataSchema(Schema):

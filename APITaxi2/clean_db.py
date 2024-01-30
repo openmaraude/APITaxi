@@ -2,7 +2,7 @@ import datetime
 import functools
 
 from flask import current_app
-from geoalchemy2 import Geometry
+from geoalchemy2 import Geometry, Geography
 from shapely import wkt
 from sqlalchemy import func, Text
 from sqlalchemy.orm import aliased, joinedload
@@ -95,6 +95,10 @@ def compute_stats_hails():
     Moteur = aliased(User)
     query = db.session.query(
         Hail,
+        func.st_distance(
+            func.cast(func.st_point(Hail.customer_lon, Hail.customer_lat, 4326), Geography),
+            func.cast(func.st_point(Hail.initial_taxi_lon, Hail.initial_taxi_lat, 4326), Geography),
+        ),
         Town.insee,
         func.encode(func.digest(Hail.taxi_id, 'sha1'), 'hex').label('taxi_hash'),
         Moteur.email,
@@ -126,7 +130,7 @@ def compute_stats_hails():
         Hail.added_at < func.now() - func.cast('24 hours', INTERVAL()),
     )
 
-    for count, (hail, insee, taxi_hash, moteur, operateur, *timings) in enumerate(query, 1):
+    for count, (hail, hail_distance, insee, taxi_hash, moteur, operateur, *timings) in enumerate(query, 1):
         stats_hail = StatsHails(
             added_at=hail.added_at,
             added_via=hail.added_via,
@@ -158,6 +162,7 @@ def compute_stats_hails():
             customer_on_board=timings[12],
             finished=timings[13],
             failure=timings[14],
+            hail_distance=hail_distance,
         )
         db.session.add(stats_hail)
 
