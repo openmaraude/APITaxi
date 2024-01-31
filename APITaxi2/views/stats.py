@@ -653,6 +653,8 @@ def stats_letaxi():
             'lyon': 1417,  # Known ADS count from Mes ADS
             'grenoble': 213,  # FIXME Grenoble city only
             'rouen': 301,  # FIXME City? Conurbation?
+            'toulouse': 251,  # FIXME City only
+            'stetienne': 86,  # FIXME City only
         }),
         'hails_growth': _get_hails_growth(['lyon']),
     })
