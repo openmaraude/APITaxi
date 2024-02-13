@@ -24,7 +24,7 @@ def drivers_create():
     post:
       tags:
         - operator
-      summary: Create a new driver.
+      summary: Create a new driver, or update an existing one (same departement & professional licence).
       description: |
         If the same user posts an existing tuple of (departement, professional_licence),
         this driver is updated instead, and the API returns 200.

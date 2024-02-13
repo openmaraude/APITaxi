@@ -70,8 +70,8 @@ class VehicleDescription(HistoryMixin, db.Model):
     bike_accepted = db.Column(db.Boolean)
     # animaux de compagnie acceptés
     pet_accepted = db.Column(db.Boolean)
-    # Homologué PMR
-    pmr = db.Column(db.Boolean)
+    # Catégorie VASP (J1) handicap (J3) sur la carte grise
+    vasp_handicap = db.Column(db.Boolean)
 
     vehicle_id = db.Column(db.Integer, db.ForeignKey(Vehicle.id))
     added_by_id = db.Column('added_by', db.Integer, db.ForeignKey('user.id'))
@@ -112,7 +112,7 @@ class VehicleDescription(HistoryMixin, db.Model):
                 'bike_accepted',
                 'baby_seat',
                 'wifi',
-                'pmr',
+                'vasp_handicap',
                 'amex_accepted',
                 'bank_check_accepted',
             ) if getattr(self, field)

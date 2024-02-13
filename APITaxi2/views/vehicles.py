@@ -27,7 +27,7 @@ def vehicle_create():
     post:
       tags:
         - operator
-      summary: Create a new vehicle.
+      summary: Create a new vehicle, or update the existing one (same licence plate).
       description: |
         If the same user posts the same licence plate again,
         this vehicle is updated instead, and the API return 200.
@@ -76,7 +76,7 @@ def vehicle_create():
         vehicle = Vehicle(licence_plate=args['licence_plate'])
         db.session.add(vehicle)
 
-    # Get or create VehicleDescription.
+    # Get or create VehicleDescription
     vehicle_description = VehicleDescription.query.filter_by(
         vehicle=vehicle,
         added_by=current_user
@@ -107,7 +107,6 @@ def vehicle_create():
         'date_dernier_ct',
         'date_validite_ct',
         'special_need_vehicle',
-        'pmr',
         ('type', 'type_'),
         'luxury',
         'credit_card_accepted',
@@ -118,7 +117,7 @@ def vehicle_create():
         'dvd_player',
         'tablet',
         'wifi',
-        'pmr',
+        'vasp_handicap',
         'baby_seat',
         'bike_accepted',
         'pet_accepted',

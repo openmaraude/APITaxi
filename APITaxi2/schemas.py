@@ -253,8 +253,8 @@ class VehicleSchema(Schema):
     wifi = fields.Bool(required=False, allow_none=True, metadata={
         'description': "Wi-Fi à bord",
     })
-    pmr = fields.Bool(required=False, allow_none=True, metadata={
-        'description': "Véhicule homologué PMR",
+    vasp_handicap = fields.Bool(required=False, allow_none=True, metadata={
+        'description': "Catégorie VASP (J1) carrosserie handicap (J3) sur la carte grise",
     })
 
     # Obsolete but kept for backwards compatibility
@@ -318,7 +318,7 @@ class VehicleSchema(Schema):
             'pet_accepted': vehicle_description.pet_accepted,
             'amex_accepted': vehicle_description.amex_accepted,
             'wifi': vehicle_description.wifi,
-            'pmr': vehicle_description.pmr,
+            'vasp_handicap': vehicle_description.vasp_handicap,
         })
         return ret
 

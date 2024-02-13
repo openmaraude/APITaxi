@@ -24,7 +24,7 @@ def ads_create():
     post:
       tags:
         - operator
-      summary: Create a new ADS.
+      summary: Create a new ADS, or update the existing one (same numero & insee).
       description: |
         If the same user posts an existing tuple of (numero, insee),
         this ADS is updated instead, and the API returns 200.

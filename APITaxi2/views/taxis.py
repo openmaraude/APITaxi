@@ -43,7 +43,7 @@ def taxis_create():
     post:
       tags:
         - operator
-      summary: Create a new taxi.
+      summary: Create a new taxi, or update the existing one (same ADS & vehicle & driver).
       description: |
         This is the last step after creating the driver, the vehicle, and the ADS.
 
