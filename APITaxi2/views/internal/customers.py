@@ -112,7 +112,7 @@ def customers():
 
     hails = query.paginate(
         page=querystring.get('p', [1])[0],
-        per_page=30,
+        per_page=100,
         error_out=False  # if True, invalid page or pages without results raise 404
     )
 
