@@ -40,6 +40,7 @@ class CustomerSupportListSchema(Schema):
     moteur = fields.String()
     customer_lon = fields.Float()
     customer_lat = fields.Float()
+    customer_address = fields.String()
     customer_phone_number = fields.String()
     operateur = fields.String()
     taxi_phone_number = fields.String()
@@ -73,6 +74,7 @@ def customers():
         Moteur.email.label('moteur'),
         Hail.customer_lon,
         Hail.customer_lat,
+        Hail.customer_address,
         Hail.customer_phone_number,
         Operateur.email.label('operateur'),
         Hail.taxi_phone_number,
