@@ -336,7 +336,7 @@ def hails_details(hail_id):
                             ]
                         }
                 report_customer:
-                    summary: Report customer
+                    summary: Report customer (operator)
                     value:
                         {
                             "data": [
@@ -357,7 +357,7 @@ def hails_details(hail_id):
                             ]
                         }
                 incident_taxi_reason:
-                    summary: Reason for status "incident_taxi"
+                    summary: Reason for status "incident_taxi" after the fact
                     value:
                         {
                             "data": [
