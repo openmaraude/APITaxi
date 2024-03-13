@@ -14,7 +14,9 @@ from APITaxi_models2 import db, Exclusion
 
 blueprint = Blueprint('commands_client', __name__, cli_group=None)
 
-BASE_URL = "http://localhost:5000"  # "https://dev.api.taxi"
+BASE_URL = "http://localhost:5000"
+# BASE_URL = "https://dev.api.taxi"
+# BASE_URL = "https://api.taxi"
 
 
 @blueprint.cli.command()
@@ -68,7 +70,7 @@ def client():
     print("Demande de prise en charge", hail['id'])
 
     print("En attente de confirmation du chauffeur...")
-    while True:  # 
+    while True:
         r = session.get(f"{BASE_URL}/hails/{hail['id']}")
         if r.status_code != 200:
             print(r.status_code, r.json())

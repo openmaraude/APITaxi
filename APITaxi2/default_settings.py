@@ -116,7 +116,7 @@ def parse_env_bool(value):
 # - if both the environment variable and the alternative name exist,
 #   the alternative name has priority. So REDIS_URL will be overwritten by
 #   REDIS_DIRECT_URI if defined (for cloud hosting).
-#   
+#
 for _env_var, _alt_name, _env_type in (
     ('DEBUG', None, parse_env_bool),
     ('SERVER_NAME', None, str),

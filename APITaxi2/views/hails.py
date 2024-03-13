@@ -404,7 +404,7 @@ def hails_details(hail_id):
         VehicleDescription.vehicle_id == Vehicle.id,
         VehicleDescription.added_by_id == Hail.operateur_id,
         Hail.id == hail_id
-    )   
+    )
     # Hails can't be accessed after two months
     if not current_user.has_role('admin'):
         query = query.filter(
