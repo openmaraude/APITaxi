@@ -100,6 +100,12 @@ def parse_env_bool(value):
     raise ValueError(f'Invalid boolean value "{value}" in environment')
 
 
+def parse_env_list(type_):
+    def _parse_env_list(value):
+        return [type_(v.strip()) for v in value.split(',')]
+    return _parse_env_list
+
+
 # The following code reads environment to create settings.
 #
 # The first entry of the list is the name of the setting to create, and also
@@ -136,6 +142,7 @@ for _env_var, _alt_name, _env_type in (
     ('SWAGGER_URL', None, str),
     ('NEUTRAL_OPERATOR', None, parse_env_bool),
     ('FAKE_TAXI_ID', None, parse_env_bool),
+    ('HAIL_TAXI_VEHICLE_DETAILS', None, parse_env_list(int)),
 ):
     _val = os.getenv(_alt_name) if _alt_name else os.getenv(_env_var)
     if not _val:

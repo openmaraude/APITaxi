@@ -872,7 +872,7 @@ def hails_create():
 
     # A dedicated schema was used to create
     full_schema = schemas.DataHailSchema()
-    ret = full_schema.dump({'data': [(hail, taxi_position, None)]})
+    ret = full_schema.dump({'data': [(hail, taxi_position, vehicle_description)]})
 
     hail_endpoint_production = hail.operateur.hail_endpoint_production
     operator_header_name = hail.operateur.operator_header_name

@@ -767,6 +767,8 @@ class HailVehicleSchema(Schema):
     """
     licence_plate = fields.String(dump_only=True)
     color = fields.String(dump_only=True)
+    nb_seats = fields.Int(dump_only=True)
+    characteristics = fields.List(fields.String, dump_only=True)
 
 
 class HailDriverSchema(Schema):
@@ -874,6 +876,11 @@ class HailSchema(Schema):
             ret['taxi']['crowfly_distance'] = None
             ret['taxi']['last_update'] = None
 
+        # Those were already given at the search step, but treated like an API change
+        if vehicle_description and current_user and current_user.id in current_app.config.get('HAIL_TAXI_VEHICLE_DETAILS', []):
+            ret['taxi']['vehicle']['nb_seats'] = vehicle_description.nb_seats
+            ret['taxi']['vehicle']['characteristics'] = vehicle_description.characteristics
+        # Those are more identifying, and require taxi approval
         if vehicle_description and hail.status in (
             'accepted_by_taxi',
             'accepted_by_customer',
