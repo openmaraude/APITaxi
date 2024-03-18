@@ -401,6 +401,11 @@ def stats_hails():
         # When the ride happened but didn't close
         'hails_timeout_ride': get_hails_received(since=threshold, status='timeout_ride'),
         'hails_timeout_customer': get_hails_received(since=threshold, status='timeout_customer'),
+        'hails_incident_taxi': get_hails_received(since=threshold, status='incident_taxi'),
+        'hails_incident_customer': get_hails_received(since=threshold, status='incident_customer'),
+        'hails_timeout_accepted_by_customer': get_hails_received(since=threshold, status='timeout_accepted_by_customer'),
+        'hails_failure': get_hails_received(since=threshold, status='failure'),
+        #
         'average_hail_distance': get_average_hail_distance(since=threshold),
         'hails_total': {
             'current_year': get_hails_total(*current_year),
