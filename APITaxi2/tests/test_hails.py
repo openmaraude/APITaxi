@@ -435,6 +435,33 @@ class TestEditHail:
         assert hail.status == 'accepted_by_customer'
         assert hail.customer_phone_number == '+33607080910'
 
+    def test_update_incident_taxi_reason(self, operateur):
+        """Incident reason can be set after the fact."""
+        hail = HailFactory(
+            operateur=operateur.user,
+            status='incident_taxi',
+        )
+
+        resp = operateur.client.put(f'/hails/{hail.id}', json={'data': [{
+            'incident_taxi_reason': 'traffic',
+        }]})
+        assert resp.status_code == 200, resp.json
+        assert hail.incident_taxi_reason == 'traffic'
+
+    def test_update_incident_customer_reason(self, moteur):
+        """Incident reason can be set after the fact."""
+        hail = HailFactory(
+            added_by=moteur.user,
+            status='incident_customer',
+            customer_phone_number='+33607080910',
+        )
+
+        resp = moteur.client.put(f'/hails/{hail.id}', json={'data': [{
+            'incident_customer_reason': 'no_show',
+        }]})
+        assert resp.status_code == 200, resp.json
+        assert hail.incident_customer_reason == 'no_show'
+
 
 class TestGetHailList:
     def test_invalid(self, anonymous, moteur):

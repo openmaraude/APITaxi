@@ -297,23 +297,34 @@ def hails_details(hail_id):
         - both
       summary: Edit hail details.
       description: |
-        Mostly the status for the time of the fare.
+        Mostly for updating the field `status` for the time of the fare, until it's `finished`.
 
-        Besides, operators can append the reason a hail ended up with `incident_taxi`
-        when submitting the field `incident_taxi_reason` with one of the accepted values
-        in the schema.
+        Besides the normal course of a fare, operators can:
+        - declare an incident preventing the hail from properly finishing;
+        - report a customer with inappropriate behavior.
+        
+        Similarly, customer apps can:
+        - update the customer's position, address, and phone number;
+        - declare an incident preventing the hail from properly finishing.
 
+        **Declaring an incident from the operator side:**
+        A hail can be prematurely ended with sending the field `status` with the value `incident_taxi`.
+        The operator can send the reason by sending the field `incident_taxi_reason`
+        with one of the accepted values in the schema below (in the same call, or a consecutive call).
+
+        **Reporting a customer:**
         The customer with inappropriate behavior on this hail can be reported
-        by sending `reporting_customer` with a true value, and one of the accepted
-        `reporting_customer_reason` in the schema. This will prevent them from hailing
-        for the next 24 hours. The ban can be cancelled with a false value.
+        by the operator with sending the field `reporting_customer` with a true value,
+        and the field `reporting_customer_reason` with one of the accepted values.
+        This will prevent them from hailing for the next 24 hours.
+        The ban can be cancelled with a false value.
 
-        As for client apps, they can update the customer's position, address and phone
-        number. They can also append the reason a hail ended up with `incident_customer`
-        when submitting the field `incident_customer_reason` with one of the accepted
-        values in the schema.
+        **Declaring an incident from the customer side:**
+        A hail can be prematurely ended with sending the field `status` with the value `incident_customer`.
+        The customer app can send the reason by sending the field `incident_customer_reason`
+        with one of the accepted values in the schema below (in the same call, or a consecutive call).
 
-        Fields editable by operators or client apps, or both, are tagged in the schema.
+        Fields editable by operators or customer apps, or both, are tagged in the schema below.
       parameters:
         - name: hail_id
           in: path
