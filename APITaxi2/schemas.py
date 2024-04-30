@@ -569,6 +569,8 @@ class SearchTaxiSchema(Schema):
             'characteristics': vehicle_description.characteristics,
             # Moved to HailVehicleSchema
             'color': "",
+            # Needed for tracing down issues
+            'licence_plate': taxi.vehicle.licence_plate if current_user and current_user.has_role('admin') else "",
         })
 
         # Don't expose the real taxi ID to the customer
