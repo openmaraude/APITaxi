@@ -1,29 +1,10 @@
-import json
-
-from apispec import exceptions
 from apispec.core import APISpec
-from apispec.utils import build_reference
 from flask import abort, current_app
 from flask_security import roles_accepted
-import prance
+from openapi_spec_validator import validate
 
 from APITaxi2.security import auth, current_user
 from APITaxi_models2.unittest.factories import UserFactory
-
-
-def validate_spec(spec: APISpec) -> bool:
-    """Validate the output of an :class:`APISpec` object against the
-    OpenAPI specification.
-    Note: Requires installing apispec with the ``[validation]`` extras.
-    ::
-        pip install 'apispec[validation]'
-    :raise: apispec.exceptions.OpenAPIError if validation fails.
-    """
-    parser_kwargs = {}
-    if spec.openapi_version.major == 3:
-        parser_kwargs["backend"] = "openapi-spec-validator"
-    prance.BaseParser(spec_string=json.dumps(spec.to_dict()), **parser_kwargs)
-    return True
 
 
 def test_content_type(anonymous):
@@ -166,4 +147,4 @@ def test_logas(app, admin, operateur):
 
 def test_api_spec(app):
     """Ensure swagger documentation follows openapi specifications."""
-    validate_spec(app.apispec)
+    validate(app.apispec.to_dict())
