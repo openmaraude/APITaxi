@@ -25,6 +25,7 @@ DEPENDENCIES = [
     'hiredis==2.3.2',
     'openapi-spec-validator==0.7.1',
     'prettytable==3.10.0',
+    'pyshp==2.3.1',  # import shapefile
     # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
     # Check for a transparent shapely integration
     'psycopg2==2.9.9',
