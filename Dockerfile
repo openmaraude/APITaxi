@@ -92,7 +92,7 @@ CMD watchmedo auto-restart --directory=/git/ --pattern='*.py' --recursive -- cel
 
 
 ##### PROD IMAGE #####
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
@@ -100,6 +100,7 @@ ENV DEBCONF_NONINTERACTIVE_SEEN=true
 RUN apt-get update && apt-get install -y \
   libpq-dev \
   python3-pip \
+  python3-venv \
   libgeos-dev \
   supervisor \
   less
@@ -110,7 +111,9 @@ RUN useradd api
 ENV LC_ALL=C.UTF-8
 
 # Install admin interface
-RUN pip3 install uwsgi flower
+RUN python3 -m venv /venv
+RUN /venv/bin/pip3 install -U setuptools
+RUN /venv/bin/pip3 install uwsgi flower
 
 # `flask shell` and flask commands like `flask create_user` need FLASK_APP to be set.
 ENV FLASK_APP=APITaxi
@@ -125,7 +128,7 @@ COPY setup.py /app/
 COPY APITaxi/__init__.py /app/APITaxi/
 WORKDIR /app
 
-RUN pip3 install .
+RUN /venv/bin/pip3 install .
 
 # Supervisor and services configuration
 COPY deploy/supervisor/* /etc/supervisor/conf.d/
