@@ -1,7 +1,7 @@
 ##### DEV API IMAGE #####
 
 # Timescale is required for tests, it's based on Ubuntu 22.04
-FROM timescale/timescaledb-ha:pg14-ts2.9-oss-latest AS base-devenv
+FROM timescale/timescaledb-ha:pg14-ts2.9-latest AS base-devenv
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
