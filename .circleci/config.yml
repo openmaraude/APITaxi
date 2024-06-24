@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: openmaraude/api_taxi-test-devenv:withtimescale
+      - image: openmaraude/api_taxi-test-devenv:latest
         auth:
           username: ${DOCKERHUB_USERNAME}
           password: ${DOCKERHUB_PASS}
