@@ -23,6 +23,7 @@ DEPENDENCIES = [
     'GeoAlchemy2==0.15.1',
     'geopy==2.4.1',
     'hiredis==2.3.2',
+    'numpy>=1.14,<2.0.0',  # breaking changes
     'openapi-spec-validator==0.7.1',
     'prettytable==3.10.0',
     'pyshp==2.3.1',  # import shapefile
