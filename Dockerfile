@@ -113,7 +113,7 @@ ENV LC_ALL=C.UTF-8
 # Install admin interface
 RUN python3 -m venv /venv
 RUN /venv/bin/pip3 install -U setuptools
-RUN /venv/bin/pip3 install uwsgi flower
+RUN /venv/bin/pip3 install uwsgi
 
 # `flask shell` and flask commands like `flask create_user` need FLASK_APP to be set.
 ENV FLASK_APP=APITaxi
