@@ -117,6 +117,8 @@ RUN /venv/bin/pip3 install uwsgi
 
 # `flask shell` and flask commands like `flask create_user` need FLASK_APP to be set.
 ENV FLASK_APP=APITaxi
+ENV VIRTUAL_ENV=/venv
+ENV PATH=/venv/bin/:$PATH
 
 RUN mkdir -p /var/run/api-taxi
 RUN chown api:api /var/run/api-taxi
