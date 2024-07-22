@@ -14,6 +14,7 @@ HAIL_TERMINAL_STATUS = (
     'incident_taxi',
     'timeout_taxi',
     'declined_by_customer',
+    'incident_customer',
     'timeout_customer',
     'timeout_accepted_by_customer',
     'finished',
@@ -28,7 +29,6 @@ HAIL_STATUS = (
     'accepted_by_taxi',
     'accepted_by_customer',
     'customer_on_board',
-    'incident_customer',
 ) + HAIL_TERMINAL_STATUS
 
 REPORTING_CUSTOMER_REASONS = (

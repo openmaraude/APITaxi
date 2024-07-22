@@ -128,6 +128,8 @@ def compute_stats_hails():
     ).filter(
         Hail.added_at > last_run,
         Hail.added_at < func.now() - func.cast('24 hours', INTERVAL()),
+    ).order_by(
+        Hail.added_at
     )
 
     for count, (hail, hail_distance, insee, taxi_hash, moteur, operateur, *timings) in enumerate(query, 1):
