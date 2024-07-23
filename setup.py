@@ -9,7 +9,7 @@ DEPENDENCIES = [
     'alembic==1.13.1',
     'apispec[validation,marshmallow]==6.6.1',
     'apispec-webframeworks==1.1.0',
-    'bcrypt==4.1.3',
+    'bcrypt==4.2.0',
     'celery==5.4.0',
     'Flask==3.0.3',
     'Flask-Cors==4.0.1',
@@ -20,23 +20,23 @@ DEPENDENCIES = [
     'Flask-Redis==0.4.0',
     'Flask-Security-Too[common]==5.4.3',
     'Flask-SQLAlchemy==3.1.1',
-    'GeoAlchemy2==0.15.1',
+    'GeoAlchemy2==0.15.2',
     'geopy==2.4.1',
-    'hiredis==2.3.2',
+    'hiredis==3.0.0',
     'numpy>=1.14,<2.0.0',  # breaking changes
     'openapi-spec-validator==0.7.1',
-    'prettytable==3.10.0',
+    'prettytable==3.10.2',
     'pyshp==2.3.1',  # import shapefile
     # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
     # Check for a transparent shapely integration
     'psycopg2==2.9.9',
     'pytz',
-    'redis==5.0.5',
+    'redis==5.0.7',
     'requests==2.32.3',
-    'sentry-sdk[flask]==2.5.1',
-    'Shapely==2.0.4',
-    'shortuuid==1.0.11',
-    'SQLAlchemy==2.0.30',
+    'sentry-sdk[flask]==2.10.0',
+    'Shapely==2.0.5',
+    'shortuuid==1.0.13',
+    'SQLAlchemy==2.0.31',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
     'tzdata',
@@ -45,7 +45,7 @@ DEPENDENCIES = [
 ]
 
 TEST_DEPENDENCIES = [
-    'pytest>=7.4.4',
+    'pytest>=8.3.1',
     'pytest-celery',
     'pytest-factoryboy',
     'testing.postgresql',
