@@ -26,7 +26,7 @@ def verify_token(value):
                         location=request.path,
                         apikey_belongs_to=str(user.id),
                     )
-                elif request.path != '/geotaxi':  # Too much verbose
+                elif request.path not in ('/geotaxi', '/geotaxi/'):  # Too much verbose
                     activity_logs.log_user_auth_apikey(
                         user.id,
                         method=request.method,
