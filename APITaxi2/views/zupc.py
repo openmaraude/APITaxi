@@ -137,7 +137,7 @@ def _dump_towns(search):
 
     towns = db.session.query(Town.insee, Town.name).order_by(Town.name)
     if search:
-        towns = towns.filter(Town.name.ilike(search + '%'))
+        towns = towns.filter(func.unaccent(Town.name).ilike(search + '%'))
 
     return schema.dump({'data': towns})
 
