@@ -1,6 +1,7 @@
 import collections
 from datetime import datetime, timedelta
 from functools import reduce
+import re
 
 from flask import Blueprint, request, current_app
 
@@ -30,6 +31,16 @@ from ..validators import (
 
 
 blueprint = Blueprint('taxis', __name__)
+
+LICENCE_PLATE_PATTERN = re.compile(r'^([a-z]+)?\ ?\-?([0-9]+)?\ ?\-?([a-z]+)?$', flags=re.IGNORECASE)
+
+
+def search_licence_place(value):
+    """Make licence plates easier to search"""
+    match = LICENCE_PLATE_PATTERN.match(value)
+    if not match:
+        return value
+    return '%'.join(group for group in match.groups() if group is not None) + '%'
 
 
 @blueprint.route('/taxis', methods=['POST'])
@@ -600,7 +611,9 @@ def taxis_list():
         if qname not in querystring:
             continue
         query = query.filter(or_(*[
-            func.lower(field).startswith(value.lower()) for value in querystring[qname]
+            func.lower(field).ilike(
+                search_licence_place(value.lower())
+            ) for value in querystring[qname]
         ]))
 
     taxis = query.paginate(
