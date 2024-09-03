@@ -6,42 +6,42 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
-    'alembic==1.13.1',
+    'alembic==1.13.2',
     'apispec[validation,marshmallow]==6.6.1',
     'apispec-webframeworks==1.1.0',
     'bcrypt==4.2.0',
     'celery==5.4.0',
     'Flask==3.0.3',
-    'Flask-Cors==4.0.1',
+    'Flask-Cors==5.0.0',
     'Flask-HTTPAuth==4.8.0',
     'Flask-Login==0.6.3',
     'Flask-Migrate==4.0.7',
     'Flask-Principal==0.4.0',
     'Flask-Redis==0.4.0',
-    'Flask-Security-Too[common]==5.4.3',
+    'Flask-Security-Too[common]==5.5.2',
     'Flask-SQLAlchemy==3.1.1',
     'GeoAlchemy2==0.15.2',
     'geopy==2.4.1',
     'hiredis==3.0.0',
     'numpy>=1.14,<2.0.0',  # breaking changes
     'openapi-spec-validator==0.7.1',
-    'prettytable==3.10.2',
+    'prettytable==3.11.0',
     'pyshp==2.3.1',  # import shapefile
     # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
     # Check for a transparent shapely integration
     'psycopg2==2.9.9',
     'pytz',
-    'redis==5.0.7',
+    'redis==5.0.8',
     'requests==2.32.3',
-    'sentry-sdk[flask]==2.10.0',
-    'Shapely==2.0.5',
+    'sentry-sdk[flask]==2.13.0',
+    'Shapely==2.0.6',
     'shortuuid==1.0.13',
-    'SQLAlchemy==2.0.31',
+    'SQLAlchemy==2.0.32',
     'SQLAlchemy-Defaults',
     'SQLAlchemy-Utils',
     'tzdata',
     'watchdog[watchmedo]==4.0.1',
-    'Werkzeug==3.0.3',
+    'Werkzeug==3.0.4',
 ]
 
 TEST_DEPENDENCIES = [
