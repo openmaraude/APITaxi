@@ -5,6 +5,7 @@ from sqlalchemy.orm import lazyload
 
 from APITaxi2.exclusions import ExclusionHelper
 from APITaxi_models2 import Taxi, VehicleDescription
+from APITaxi_models2.stats import StatsSearches
 from APITaxi_models2.unittest.factories import (
     ADSFactory,
     ExclusionFactory,
@@ -419,6 +420,7 @@ class TestTaxiSearch:
         now = datetime.now()
 
         taxi_1 = TaxiFactory()
+        taxi_1_operateur = taxi_1.added_by.email
 
         taxi_2_vehicle = VehicleFactory(descriptions=[])
 
@@ -456,8 +458,8 @@ class TestTaxiSearch:
 
         with QueriesTracker() as qtracker:
             resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
-            # SELECT permissions, SELECT TOWN, SELECT ZUPC, SELECT taxi
-            assert qtracker.count == 4
+            # SELECT permissions, SELECT TOWN, SELECT ZUPC, SELECT taxi, INSERT STATS
+            assert qtracker.count == 5
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2
@@ -497,7 +499,7 @@ class TestTaxiSearch:
         # First taxi's location is too old.
         app.redis.zadd(
             'timestamps', {
-                '%s:%s' % (taxi_1.id, taxi_1.vehicle.descriptions[0].added_by.email):
+                '%s:%s' % (taxi_1.id, taxi_1_operateur):
                     # 5 minutes old
                     int(time.time()) - 60 * 5
             }
@@ -505,6 +507,9 @@ class TestTaxiSearch:
         resp = moteur.client.get('/taxis?lon=%s&lat=%s' % (lon, lat))
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
+
+        # You can count seven client.get() above indeed
+        assert StatsSearches.query.count() == 7
 
     def test_ok_taxi_two_operators(self, app, moteur):
         """Taxi is registered with two operators, but reports its location with
@@ -632,6 +637,7 @@ class TestTaxiSearch:
             last_update_at=datetime.now(),
         )
         taxi = TaxiFactory(vehicle=vehicle, added_by=vehicle_description.added_by)
+        operateur = vehicle_description.added_by.email
 
         lon, lat = 2.35, 48.86
         self._post_geotaxi(app, lon, lat, taxi, vehicle_description)
@@ -641,7 +647,7 @@ class TestTaxiSearch:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == taxi.id
-        assert resp.json['data'][0]['operator'] == vehicle_description.added_by.email
+        assert resp.json['data'][0]['operator'] == operateur
 
     def test_radius(self, app, moteur):
         ZUPCFactory()

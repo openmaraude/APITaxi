@@ -19,6 +19,7 @@ from APITaxi_models2 import (
     VehicleDescription,
     ZUPC,
 )
+from APITaxi_models2.stats import StatsSearches
 
 from .. import activity_logs, debug, redis_backend, schemas
 from ..exclusions import ExclusionHelper
@@ -465,7 +466,8 @@ def taxis_search():
     # }
     #
     locations = redis_backend.taxis_locations_by_operator(
-        params['lon'], params['lat'], schemas.TAXI_MAX_RADIUS
+        # Experiment a wider radius (taxis will still be filtered out following their preference later on)
+        params['lon'], params['lat'], schemas.TAXI_MAX_RADIUS * 2
     )
     debug_ctx.log_admin(
         f'List of taxis around lon={params["lon"]} lat={params["lat"]}',
@@ -544,6 +546,24 @@ def taxis_search():
         for taxi in data
     }
 
+    # Stats: keep track of the number of available taxis, and the distance to the closest one
+    taxis_found = len(data)
+    if taxis_found:
+        closest_taxi = min(redis_location.distance for (_, redis_location) in data.values())
+    else:
+        closest_taxi = None
+    stats_search = StatsSearches(
+        lon=params['lon'],
+        lat=params['lat'],
+        town=town.name,
+        insee=town.insee,
+        moteur=current_user.email,
+        taxis_found=taxis_found,
+        closest_taxi=closest_taxi,
+        added_at=func.now(),
+    )
+    db.session.add(stats_search)
+
     # schema.dump expects a list of tuples
     # (taxi, vehicle_description, location).
     data = [
@@ -569,7 +589,9 @@ def taxis_search():
             # Use the current user as a key, blindly overwrite on subsequent searches
             redis_backend.set_fake_taxi_ids(current_user, fake_taxi_ids)
 
-    return debug_ctx.add_to_response(schema.dump({'data': data}))
+    response = debug_ctx.add_to_response(schema.dump({'data': data}))
+    db.session.commit()
+    return response
 
 
 @blueprint.route('/taxis/all', methods=['GET'])

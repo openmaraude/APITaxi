@@ -3,6 +3,7 @@ Quick'n dirty TimeScaleDB stats
 """
 
 from sqlalchemy.dialects import postgresql
+import geoalchemy2
 
 from . import db
 from .mixins import HistoryMixin
@@ -160,6 +161,23 @@ class StatsHails(db.Model, HistoryMixin):
     hail_distance = db.Column(db.Float, nullable=True)
 
 
+class StatsSearches(db.Model):
+    __table_args__ = (
+        db.PrimaryKeyConstraint('id', 'added_at', name='stats_searches_pkey'),
+    )
+
+    id = db.Column(db.Integer, autoincrement=True, nullable=False)
+    lon = db.Column(db.Float, nullable=False)
+    lat = db.Column(db.Float, nullable=False)
+    insee = db.Column(db.String(5), nullable=False)
+    town = db.Column(db.String, nullable=False)
+    moteur = db.Column(db.String, nullable=False)
+    taxis_found = db.Column(db.Integer, nullable=False)
+    closest_taxi = db.Column(db.Float)
+    added_at = db.Column(db.DateTime, nullable=False)
+
+
 __all__ = [classname for classname in locals() if classname.startswith('stats_')] + [
     'StatsHails',
+    'StatsSearches',
 ]
