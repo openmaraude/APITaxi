@@ -573,6 +573,32 @@ def stats_managers():
     return _get_managers()
 
 
+class SearchesSchema(schemas.Schema):
+    mean = fields.Float()
+    quartile_25 = fields.Float()
+    quartile_50 = fields.Float()
+    quartile_75 = fields.Float()
+
+DataSearchesSchema = schemas.data_schema_wrapper(SearchesSchema())
+
+
+@blueprint.route('/stats/searches', methods=['GET'])
+@auth.login_required(role=['admin'])
+def stats_searches():
+    filters = get_filters()
+
+    query = db.session.query(
+        func.avg(StatsSearches.closest_taxi).label('mean'),
+        func.percentile_cont(0.25).within_group(StatsSearches.closest_taxi).label('quartile_25'),
+        func.percentile_cont(0.50).within_group(StatsSearches.closest_taxi).label('quartile_50'),
+        func.percentile_cont(0.75).within_group(StatsSearches.closest_taxi).label('quartile_75'),
+    )
+    query = apply_filters_to_stats_hour(query, *filters, model=StatsSearches)
+
+    schema = DataSearchesSchema()
+    return schema.dump({'data': [query.one()]})
+
+
 @blueprint.route('/stats/letaxi', methods=['GET'])
 def stats_letaxi():
     def _get_user_count(role):
