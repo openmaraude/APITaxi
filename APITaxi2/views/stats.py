@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import INTERVAL
 
 from APITaxi_models2 import db, ADS, Departement, Role, Taxi, Town, User, Vehicle, VehicleDescription
 from APITaxi_models2 import Conurbation, Hail
-from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails
+from APITaxi_models2.stats import stats_minute_insee, stats_hour_insee, StatsHails, StatsSearches
 
 from .. import schemas, redis_backend
 from ..security import auth, current_user
@@ -693,4 +693,15 @@ def stats_heatmap_taxis():
     schema = DataHeatmapSchema()
     return schema.dump({'data': [{
         'points': points,
+    }]})
+
+
+@blueprint.route('/stats/heatmap_searches', methods=['GET'])
+@auth.login_required(role=['admin'])
+def stats_heatmap_searches():
+    query = db.session.query(StatsSearches.lat, StatsSearches.lon)
+
+    schema = DataHeatmapSchema()
+    return schema.dump({'data': [{
+        'points': query,
     }]})
