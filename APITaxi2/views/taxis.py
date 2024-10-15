@@ -552,6 +552,17 @@ def taxis_search():
         closest_taxi = min(redis_location.distance for (_, redis_location) in data.values())
     else:
         closest_taxi = None
+
+    # Filter out taxis outside the legal radius, or outside their custom radius
+    # Plus schema.dump expects a list of tuples (taxi, vehicle_description, location).
+    data = [
+        (taxi, vehicle_description, redis_location)
+        for taxi, (vehicle_description, redis_location) in data.items()
+        # Filter out of reach taxis based on each driver's preference
+        if redis_location.distance <= (vehicle_description.radius or schemas.TAXI_MAX_RADIUS)
+    ]
+
+    # Stats: store client search results
     stats_search = StatsSearches(
         lon=params['lon'],
         lat=params['lat'],
@@ -561,17 +572,9 @@ def taxis_search():
         taxis_found=taxis_found,
         closest_taxi=closest_taxi,
         added_at=func.now(),
+        taxis_seen=len(data),
     )
     db.session.add(stats_search)
-
-    # schema.dump expects a list of tuples
-    # (taxi, vehicle_description, location).
-    data = [
-        (taxi, vehicle_description, redis_location)
-        for taxi, (vehicle_description, redis_location) in data.items()
-        # Filter out of reach taxis based on each driver's preference
-        if redis_location.distance <= (vehicle_description.radius or schemas.TAXI_MAX_RADIUS)
-    ]
 
     # Sort entries by distance.
     data = sorted(

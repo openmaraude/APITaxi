@@ -573,11 +573,26 @@ def stats_managers():
     return _get_managers()
 
 
+class NestedTaxisSearchesSchema(schemas.Schema):
+    taxis_found_25 = fields.Float()
+    taxis_found_50 = fields.Float()
+    taxis_found_75 = fields.Float()
+    taxis_seen_25 = fields.Float()
+    taxis_seen_50 = fields.Float()
+    taxis_seen_75 = fields.Float()
+    closest_taxi_25 = fields.Float()
+    closest_taxi_50 = fields.Float()
+    closest_taxi_75 = fields.Float()
+
+
+class NestedMoteursSearchesSchema(schemas.Schema):
+    moteur = fields.String()
+    count = fields.Integer()
+
+
 class SearchesSchema(schemas.Schema):
-    mean = fields.Float()
-    quartile_25 = fields.Float()
-    quartile_50 = fields.Float()
-    quartile_75 = fields.Float()
+    taxis = fields.Nested(NestedTaxisSearchesSchema())
+    moteurs = fields.List(fields.Nested(NestedMoteursSearchesSchema()))
 
 DataSearchesSchema = schemas.data_schema_wrapper(SearchesSchema())
 
@@ -587,16 +602,37 @@ DataSearchesSchema = schemas.data_schema_wrapper(SearchesSchema())
 def stats_searches():
     filters = get_filters()
 
-    query = db.session.query(
-        func.avg(StatsSearches.closest_taxi).label('mean'),
-        func.percentile_cont(0.25).within_group(StatsSearches.closest_taxi).label('quartile_25'),
-        func.percentile_cont(0.50).within_group(StatsSearches.closest_taxi).label('quartile_50'),
-        func.percentile_cont(0.75).within_group(StatsSearches.closest_taxi).label('quartile_75'),
+    query_taxis = db.session.query(
+        func.percentile_cont(0.25).within_group(StatsSearches.taxis_found).label('taxis_found_25'),
+        func.percentile_cont(0.50).within_group(StatsSearches.taxis_found).label('taxis_found_50'),  # Median
+        func.percentile_cont(0.75).within_group(StatsSearches.taxis_found).label('taxis_found_75'),
+        func.percentile_cont(0.25).within_group(StatsSearches.taxis_seen).label('taxis_seen_25'),
+        func.percentile_cont(0.50).within_group(StatsSearches.taxis_seen).label('taxis_seen_50'),  # Median
+        func.percentile_cont(0.75).within_group(StatsSearches.taxis_seen).label('taxis_seen_75'),
+        func.percentile_cont(0.25).within_group(StatsSearches.closest_taxi).label('closest_taxi_25'),
+        func.percentile_cont(0.50).within_group(StatsSearches.closest_taxi).label('closest_taxi_50'),  # Median
+        func.percentile_cont(0.75).within_group(StatsSearches.closest_taxi).label('closest_taxi_75'),
     )
-    query = apply_filters_to_stats_hour(query, *filters, model=StatsSearches)
+    query_taxis = apply_filters_to_stats_hour(query_taxis, *filters, model=StatsSearches)
+
+    query_moteurs = db.session.query(
+        func.count().label('count'),
+        StatsSearches.moteur
+    ).filter(
+        StatsSearches.added_at >= (func.current_date() - func.cast('1 month', INTERVAL()))
+    ).group_by(
+        StatsSearches.moteur
+    ).order_by(
+        column('count').desc()
+    )
+    query_moteurs = apply_filters_to_stats_hour(query_moteurs, *filters, model=StatsSearches)
+    query_moteurs = query_moteurs.limit(10)
 
     schema = DataSearchesSchema()
-    return schema.dump({'data': [query.one()]})
+    return schema.dump({'data': [{
+        'taxis': query_taxis.one(),
+        'moteurs': query_moteurs,
+    }]})
 
 
 @blueprint.route('/stats/letaxi', methods=['GET'])

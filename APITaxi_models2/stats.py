@@ -172,9 +172,11 @@ class StatsSearches(db.Model):
     insee = db.Column(db.String(5), nullable=False)
     town = db.Column(db.String, nullable=False)
     moteur = db.Column(db.String, nullable=False)
-    taxis_found = db.Column(db.Integer, nullable=False)
+    taxis_found = db.Column(db.Integer, nullable=False)  # Found wihtin the wider radius
     closest_taxi = db.Column(db.Float)
     added_at = db.Column(db.DateTime, nullable=False)
+    # Actually seen by the client (legal maximum radius, and taxis with a shorter custom radius)
+    taxis_seen = db.Column(db.Integer, nullable=False)
 
 
 __all__ = [classname for classname in locals() if classname.startswith('stats_')] + [

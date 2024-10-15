@@ -26,6 +26,7 @@ def upgrade():
         sa.Column('taxis_found', sa.Integer(), nullable=False),
         sa.Column('closest_taxi', sa.Float(), nullable=True),
         sa.Column('added_at', sa.DateTime(), nullable=False),
+        sa.Column('taxis_seen', sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint('id', 'added_at', name='stats_searches_pkey')
     )
 
