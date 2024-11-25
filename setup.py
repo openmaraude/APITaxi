@@ -6,12 +6,12 @@ import re
 PACKAGE = 'APITaxi'
 
 DEPENDENCIES = [
-    'alembic==1.13.3',
-    'apispec[validation,marshmallow]==6.6.1',
-    'apispec-webframeworks==1.1.0',
+    'alembic==1.14.0',
+    'apispec[validation,marshmallow]==6.7.1',
+    'apispec-webframeworks==1.2.0',
     'bcrypt==4.2.0',
     'celery==5.4.0',
-    'Flask==3.0.3',
+    'Flask==3.1.0',
     'Flask-Cors==5.0.0',
     'Flask-HTTPAuth==4.8.0',
     'Flask-Login==0.6.3',
@@ -20,12 +20,12 @@ DEPENDENCIES = [
     'Flask-Redis==0.4.0',
     'Flask-Security-Too[common]==5.5.2',
     'Flask-SQLAlchemy==3.1.1',
-    'GeoAlchemy2==0.15.2',
+    'GeoAlchemy2==0.16.0',
     'geopy==2.4.1',
     'hiredis==3.0.0',
     'numpy>=1.26,<2.0.0',  # breaking changes
     'openapi-spec-validator==0.7.1',
-    'prettytable==3.11.0',
+    'prettytable==3.12.0',
     'pyshp==2.3.1',  # import shapefile
     # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
     # Check for a transparent shapely integration
@@ -33,7 +33,7 @@ DEPENDENCIES = [
     'pytz',
     'redis==5.2.0',
     'requests==2.32.3',
-    'sentry-sdk[flask]==2.17.0',
+    'sentry-sdk[flask]==2.18.0',
     'Shapely==2.0.6',
     'shortuuid==1.0.13',
     'SQLAlchemy==2.0.36',
@@ -41,7 +41,7 @@ DEPENDENCIES = [
     'SQLAlchemy-Utils',
     'tzdata',
     'watchdog[watchmedo]==4.0.1',
-    'Werkzeug==3.0.6',
+    'Werkzeug==3.1.3',
 ]
 
 TEST_DEPENDENCIES = [
