@@ -22,7 +22,7 @@ DEPENDENCIES = [
     'Flask-SQLAlchemy==3.1.1',
     'GeoAlchemy2==0.16.0',
     'geopy==2.4.1',
-    'hiredis==3.0.0',
+    'hiredis==3.1.0',
     'numpy>=1.26,<2.0.0',  # breaking changes
     'openapi-spec-validator==0.7.1',
     'prettytable==3.12.0',
@@ -31,9 +31,9 @@ DEPENDENCIES = [
     # Check for a transparent shapely integration
     'psycopg2==2.9.10',
     'pytz',
-    'redis==5.2.0',
+    'redis==5.2.1',
     'requests==2.32.3',
-    'sentry-sdk[flask]==2.18.0',
+    'sentry-sdk[flask]==2.19.2',
     'Shapely==2.0.6',
     'shortuuid==1.0.13',
     'SQLAlchemy==2.0.36',
