@@ -159,6 +159,7 @@ class StatsHails(db.Model, HistoryMixin):
     failure = db.Column(db.DateTime, nullable=True)
     # Distance from the taxi when the client hailed
     hail_distance = db.Column(db.Float, nullable=True)
+    tags = db.Column(postgresql.JSONB)
 
 
 class StatsSearches(db.Model):

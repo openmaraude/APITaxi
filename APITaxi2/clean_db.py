@@ -133,6 +133,15 @@ def compute_stats_hails():
     )
 
     for count, (hail, hail_distance, insee, taxi_hash, moteur, operateur, *timings) in enumerate(query, 1):
+        tags = None
+        # Fragile, but I don't know better
+        if hail.customer_address in (
+            "1 Av. Carnot, 11100 Narbonne, France",
+            "11 Av. Thiers, 06000 Nice, France",
+            "1 Bd Sergent Triaire, 30000 Nîmes, France",
+            "1 Pl. de l'Europe, 83000 Toulon, France"
+        ):
+            tags = ["sncf"]
         stats_hail = StatsHails(
             added_at=hail.added_at,
             added_via=hail.added_via,
@@ -165,6 +174,7 @@ def compute_stats_hails():
             finished=timings[13],
             failure=timings[14],
             hail_distance=hail_distance,
+            tags=tags,
         )
         db.session.add(stats_hail)
 
