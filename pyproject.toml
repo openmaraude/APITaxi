@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "APITaxi"
+authors = [
+  { name="Julien Castets", email="julien.castets@beta.gouv.fr" },
+  { name="Hervé Cauwelier", email="herve.cauwelier@beta.gouv.fr" },
+]
+readme = "README.md"
+description = "REST API of le.taxi"
+requires-python = ">=3.8"
+keywords = ["taxi transportation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+]
+license = { file = "LICENSE" }
+dynamic = ["version"]
+
+dependencies = [
+    'alembic==1.14.0',
+    'apispec[validation,marshmallow]==6.7.1',
+    'apispec-webframeworks==1.2.0',
+    'bcrypt==4.2.0',
+    'celery==5.4.0',
+    'Flask==3.1.0',
+    'Flask-Cors==5.0.0',
+    'Flask-HTTPAuth==4.8.0',
+    'Flask-Login==0.6.3',
+    'Flask-Migrate==4.0.7',
+    'Flask-Principal==0.4.0',
+    'Flask-Redis==0.4.0',
+    'Flask-Security-Too[common]==5.5.2',
+    'Flask-SQLAlchemy==3.1.1',
+    'GeoAlchemy2==0.16.0',
+    'geopy==2.4.1',
+    'hiredis==3.1.0',
+    'numpy>=1.26,<2.0.0',  # breaking changes
+    'openapi-spec-validator==0.7.1',
+    'prettytable==3.12.0',
+    'pyshp==2.3.1',  # import shapefile
+    # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
+    # Check for a transparent shapely integration
+    'psycopg2-binary==2.9.10',
+    'pytz',
+    'redis==5.2.1',
+    'requests==2.32.3',
+    'sentry-sdk[flask]==2.19.2',
+    'Shapely==2.0.6',
+    'shortuuid==1.0.13',
+    'SQLAlchemy==2.0.36',
+    'SQLAlchemy-Defaults',
+    'SQLAlchemy-Utils',
+    'tzdata',
+    'watchdog[watchmedo]==4.0.1',
+    'Werkzeug==3.1.3',
+]
+
+[project.optional-dependencies]
+tests = [
+    'pytest>=8.3.1',
+    'pytest-celery',
+    'pytest-factoryboy',
+    'testing.postgresql',
+]
+
+[project.urls]
+Homepage = "https://github.com/openmaraude/APITaxi"
+Issues = "https://github.com/openmaraude/APITaxi/issues"
+
+[tool.setuptools]
+packages = [
+    "APITaxi",
+    "APITaxi2",
+    "APITaxi_models2",
+    "APITaxi2.commands",
+    "APITaxi2.processes",
+    "APITaxi2.tasks",
+    "APITaxi2.tests",
+    "APITaxi2.views",
+    "APITaxi2.views.internal",
+    "APITaxi_models2.unittest",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "APITaxi.__version__"}

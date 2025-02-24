@@ -38,7 +38,7 @@ ENTRYPOINT ["/usr/bin/bash"]
 
 FROM base-devenv AS devenv
 
-RUN pip3 install virtualenv
+RUN apt-get install -y python3-venv
 
 WORKDIR /git/APITaxi
 
