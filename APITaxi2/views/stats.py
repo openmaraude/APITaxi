@@ -434,51 +434,39 @@ def stats_hails():
 def stats_groupements():
     filters = get_filters()
 
-    def get_registered_groupements():
-        query = User.query.join(
-            User.roles
-        ).outerjoin(
-            Taxi  # needed for filtering on INSEE
-        ).filter(
-            Role.name == 'groupement'
-        ).group_by(
-            User.id,  # avoid a cartesian product
-        )
-        query = apply_filters_to_taxis(query, *filters)
-        return query.count()
-
     def get_fleet_data():
+        Groupement = aliased(User)
         Manager = aliased(User)
         query = db.session.query(
-            User.id,
-            User.email,
-            User.fleet_size,
+            Groupement.id,
+            Groupement.email,
+            Groupement.fleet_size,
             func.Count(Taxi.id).label('count'),
-            (func.Count(Taxi.id) * 100.0 / User.fleet_size).label('ratio'),
+            (func.Count(Taxi.id) * 100.0 / Groupement.fleet_size).label('ratio'),
             func.Max(Taxi.added_at).label('last_taxi'),
             Manager.email.label('manager'),
         ).join(
-            User.roles
+            Groupement.roles
         ).outerjoin(
             Taxi
         ).outerjoin(
-            Manager, Manager.id == User.manager_id
+            Manager, Manager.id == Groupement.manager_id
         ).filter(
             Role.name == 'groupement'
         ).group_by(
-            User.id,
-            User.email,
-            User.fleet_size,
+            Groupement.id,
+            Groupement.email,
+            Groupement.fleet_size,
             Manager.email,
         ).order_by(
-            User.email
+            Groupement.email
         )
         query = apply_filters_to_taxis(query, *filters)
         return query
 
     schema = schemas.DataStatsGroupementsSchema()
     return schema.dump({'data': [{
-        'registered_groupements': get_registered_groupements(),
+        'registered_groupements': 0,
         'fleet_data': get_fleet_data(),
     }]})
 
