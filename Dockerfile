@@ -123,14 +123,12 @@ ENV PATH=/venv/bin/:$PATH
 RUN mkdir -p /var/run/api-taxi
 RUN chown api:api /var/run/api-taxi
 
-# COPY setup.py first before running `pip3 install .` to use Docker cache if
-# dependencies did not change. APITaxi/__init__.py is read by setup.py, so it
-# is also required.
-COPY setup.py /app/
-COPY APITaxi/__init__.py /app/APITaxi/
+# COPY requirements first before running `pip3 install .` to use Docker cache if
+# dependencies did not change.
+COPY requirements.txt /app/
 WORKDIR /app
 
-RUN /venv/bin/pip3 install .
+RUN /venv/bin/pip3 install -r requirements.txt
 
 # Supervisor and services configuration
 COPY deploy/supervisor/* /etc/supervisor/conf.d/
