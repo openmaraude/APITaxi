@@ -565,6 +565,7 @@ class TestTaxiSearch:
         assert len(resp.json['data']) == 0
 
     def test_ok_operateur(self, app, operateur):
+        app.config['FAKE_TAXI_ID'] = False
         ZUPCFactory()  # Paris
         TaxiFactory()  # Competitor
 
@@ -650,6 +651,7 @@ class TestTaxiSearch:
         assert resp.json['data'][0]['operator'] == operateur
 
     def test_radius(self, app, moteur):
+        app.config['FAKE_TAXI_ID'] = False
         ZUPCFactory()
         now = datetime.now()
         TaxiFactory(
