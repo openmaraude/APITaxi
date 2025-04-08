@@ -1,8 +1,8 @@
-alembic==1.14.1
+alembic==1.15.2
 apispec[validation,marshmallow]==6.7.1
 apispec-webframeworks==1.2.0
 bcrypt==4.3.0
-celery==5.4.0
+celery==5.5.1
 Flask==3.1.0
 Flask-Cors==5.0.1
 Flask-HTTPAuth==4.8.0
@@ -10,14 +10,14 @@ Flask-Login==0.6.3
 Flask-Migrate==4.1.0
 Flask-Principal==0.4.0
 Flask-Redis==0.4.0
-Flask-Security[common]==5.6.0
+Flask-Security[common]==5.6.1
 Flask-SQLAlchemy==3.1.1
 GeoAlchemy2==0.17.1
 geopy==2.4.1
 hiredis==3.1.0
 numpy>=1.26,<2.0.0  # breaking changes
 openapi-spec-validator==0.7.1
-prettytable==3.15.1
+prettytable==3.16.0
 pyshp==2.3.1  # import shapefile
 # While psycopg 3 is compatible, SQLAlchemy doesn't make it convenient
 # Check for a transparent shapely integration
@@ -25,10 +25,10 @@ psycopg2-binary==2.9.10
 pytz
 redis==5.2.1
 requests==2.32.3
-sentry-sdk[flask]==2.22.0
-Shapely==2.0.7
+sentry-sdk[flask]==2.25.1
+Shapely==2.1.0
 shortuuid==1.0.13
-SQLAlchemy==2.0.38
+SQLAlchemy==2.0.40
 SQLAlchemy-Defaults
 SQLAlchemy-Utils
 tzdata
