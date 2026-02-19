@@ -25,7 +25,7 @@ pyshp==2.3.1  # import shapefile
 psycopg2-binary==2.9.10
 pytz
 redis==5.2.1
-requests==2.32.3
+requests==2.32.4
 sentry-sdk[flask]==2.25.1
 Shapely==2.1.0
 shortuuid==1.0.13
