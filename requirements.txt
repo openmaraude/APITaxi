@@ -3,7 +3,7 @@ apispec[validation,marshmallow]==6.7.1
 apispec-webframeworks==1.2.0
 bcrypt==4.3.0
 celery==5.5.1
-Flask==3.1.0
+Flask==3.1.1
 Flask-Cors==5.0.1
 Flask-HTTPAuth==4.8.0
 Flask-Login==0.6.3
